@@ -11,6 +11,7 @@ import { TeacherDashboard } from './components/teacher/TeacherDashboard';
 import { ParentDashboard } from './components/parent/ParentDashboard';
 import { CopticCalendarTab } from './components/coptic/CopticCalendarTab';
 import { HymnsSchoolTab } from './components/hymns/HymnsSchoolTab';
+import { CopticTaxisTab } from './components/taxis/CopticTaxisTab';
 import { AgpeyaPrayerTab } from './components/agpeya/AgpeyaPrayerTab';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { StudentOnboardingModal } from './components/auth/StudentOnboardingModal';
@@ -152,6 +153,8 @@ function AppContent() {
         return <CopticCalendarTab lang={lang} />;
       case 'hymns':
         return <HymnsSchoolTab lang={lang} />;
+      case 'taxis':
+        return <CopticTaxisTab lang={lang} />;
       case 'agpeya':
         return <AgpeyaPrayerTab lang={lang} />;
       case 'points':

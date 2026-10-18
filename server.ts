@@ -9633,6 +9633,878 @@ Return ONLY valid JSON matching this schema:
   }
 });
 
+// ==============================================================================
+// HYMNS SCHOOL (مدرسة الألحان) API & RBAC
+// ==============================================================================
+
+// Helper to get student's approved Hymns School level
+function getStudentHymnsMembership(studentId: string) {
+  if (!studentId) return null;
+  const memberships = Object.values(serverReviewState.hymnsMemberships || {});
+  return memberships.find((m: any) => m.studentId === studentId && m.status !== 'revoked') || null;
+}
+
+// 1. Student checks own Hymns School enrollment status
+app.get("/api/church/hymns/my-enrollment", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const requestedStudentId = (req.query.studentId as string) || authContext.userId;
+
+    if (!requestedStudentId) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Student identifier required" });
+    }
+
+    // Students can only check their own enrollment
+    if (authContext.role === 'student' && authContext.userId && requestedStudentId !== authContext.userId) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Cannot inspect another student's enrollment" });
+    }
+
+    const membership = getStudentHymnsMembership(requestedStudentId);
+    return res.json({
+      success: true,
+      membership: membership || null
+    });
+  } catch (err: any) {
+    console.error("Hymns my-enrollment error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 2. Student submits enrollment request
+app.post("/api/church/hymns/enroll", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const { level, rosterGroup, notes, studentId, studentName } = req.body;
+
+    // Student ID resolution: enforce caller's identity if student
+    let effectiveStudentId = studentId || authContext.userId;
+    if (authContext.role === 'student' && authContext.userId) {
+      effectiveStudentId = authContext.userId;
+    }
+
+    if (!effectiveStudentId) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "User must be logged in to apply" });
+    }
+
+    const targetLevel = Number(level);
+    if (![1, 2, 3].includes(targetLevel)) {
+      return res.status(400).json({ success: false, error: "INVALID_LEVEL", message: "Level must be 1, 2, or 3" });
+    }
+
+    // Check existing membership
+    const existing = getStudentHymnsMembership(effectiveStudentId);
+    if (existing) {
+      if (existing.status === 'pending') {
+        return res.status(400).json({
+          success: false,
+          error: "ALREADY_PENDING",
+          message: "You already have an enrollment request pending review."
+        });
+      }
+      if (existing.status === 'approved' && existing.level === targetLevel) {
+        return res.status(400).json({
+          success: false,
+          error: "ALREADY_ENROLLED",
+          message: `Already enrolled in Level ${targetLevel}.`
+        });
+      }
+    }
+
+    const memId = `mem_${effectiveStudentId}_lvl${targetLevel}_${Date.now()}`;
+    const newMembership = {
+      id: memId,
+      studentId: effectiveStudentId,
+      studentName: studentName || (authContext.userId ? `Student ${authContext.userId}` : 'Student Candidate'),
+      level: targetLevel as 1 | 2 | 3,
+      rosterGroup: rosterGroup || (targetLevel === 1 ? 'primary_choir' : targetLevel === 2 ? 'deacons_prep' : 'master_deacons'),
+      status: 'pending' as const,
+      requestedAt: new Date().toISOString(),
+      notes: notes || ''
+    };
+
+    serverReviewState.hymnsMemberships[memId] = newMembership;
+    savePersistentClassState();
+
+    return res.json({
+      success: true,
+      membership: newMembership,
+      message: "Enrollment request submitted successfully and awaiting servant review."
+    });
+  } catch (err: any) {
+    console.error("Hymns enroll error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 3. Servants list pending/approved Hymns School enrollment requests
+app.get("/api/church/hymns/requests", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Only authorized teachers and administrators can view hymns school requests."
+      });
+    }
+
+    const allMemberships = Object.values(serverReviewState.hymnsMemberships || {});
+    return res.json({
+      success: true,
+      requests: allMemberships
+    });
+  } catch (err: any) {
+    console.error("Hymns requests error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 4. Servant approves, rejects, transfers, or revokes enrollment
+app.post("/api/church/hymns/review", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Students cannot approve or review hymns enrollments."
+      });
+    }
+
+    const { membershipId, action, targetLevel, targetRosterGroup, notes } = req.body;
+    if (!membershipId || !action) {
+      return res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "membershipId and action are required" });
+    }
+
+    const membership = serverReviewState.hymnsMemberships[membershipId];
+    if (!membership) {
+      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Enrollment record not found" });
+    }
+
+    if (action === 'APPROVE') {
+      membership.status = 'approved';
+      membership.reviewedBy = authContext.userId || 'Servant';
+      membership.reviewedAt = new Date().toISOString();
+      if (targetLevel) membership.level = Number(targetLevel);
+      if (targetRosterGroup) membership.rosterGroup = targetRosterGroup;
+      membership.notes = notes || membership.notes;
+    } else if (action === 'REJECT') {
+      membership.status = 'rejected';
+      membership.reviewedBy = authContext.userId || 'Servant';
+      membership.reviewedAt = new Date().toISOString();
+      membership.rejectionReason = notes || 'Not meeting prerequisites at this time';
+    } else if (action === 'TRANSFER') {
+      const oldLevel = membership.level;
+      membership.status = 'approved';
+      membership.transferredFromLevel = oldLevel;
+      membership.level = targetLevel ? Number(targetLevel) : oldLevel;
+      if (targetRosterGroup) membership.rosterGroup = targetRosterGroup;
+      membership.transferReason = notes || 'Promoted / Transferred by servant';
+      membership.reviewedBy = authContext.userId || 'Servant';
+      membership.reviewedAt = new Date().toISOString();
+    } else if (action === 'REVOKE') {
+      membership.status = 'revoked';
+      membership.revocationReason = notes || 'Enrollment revoked by administration';
+      membership.reviewedBy = authContext.userId || 'Servant';
+      membership.reviewedAt = new Date().toISOString();
+    } else {
+      return res.status(400).json({ success: false, error: "INVALID_ACTION", message: `Unknown action: ${action}` });
+    }
+
+    savePersistentClassState();
+
+    return res.json({
+      success: true,
+      membership,
+      message: `Enrollment status updated to ${membership.status}.`
+    });
+  } catch (err: any) {
+    console.error("Hymns review error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 5. Fetch hymns collection (filtered strictly by student approved level & draft privacy)
+app.get("/api/church/hymns", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const allHymns = Object.values(serverReviewState.hymnsCollection || {});
+    const isTeacherOrAdmin = authContext.role === 'teacher' || authContext.role === 'admin';
+
+    // Query filters
+    const levelQuery = req.query.level ? Number(req.query.level) : null;
+    const seasonQuery = req.query.season as string;
+    const statusQuery = req.query.status as string;
+
+    if (!isTeacherOrAdmin) {
+      // Caller is student or anonymous:
+      let studentApprovedLevel: number = 1;
+      let hasApprovedMembership = false;
+
+      if (authContext.userId) {
+        const mem = getStudentHymnsMembership(authContext.userId);
+        if (mem && mem.status === 'approved') {
+          studentApprovedLevel = mem.level;
+          hasApprovedMembership = true;
+        }
+      }
+
+      // Filter: only published hymns
+      let accessibleHymns = allHymns.filter((h: any) => h.status === 'published');
+
+      // Student can only access hymns at or below their approved level
+      accessibleHymns = accessibleHymns.filter((h: any) => h.level <= studentApprovedLevel);
+
+      if (levelQuery && levelQuery <= studentApprovedLevel) {
+        accessibleHymns = accessibleHymns.filter((h: any) => h.level === levelQuery);
+      } else if (levelQuery && levelQuery > studentApprovedLevel) {
+        // Forbidden to request higher level materials
+        return res.status(403).json({
+          success: false,
+          error: "HYMN_LEVEL_ACCESS_DENIED",
+          message: `Access denied. You are approved for Level ${studentApprovedLevel}, but requested Level ${levelQuery} content.`
+        });
+      }
+
+      if (seasonQuery && seasonQuery !== 'all') {
+        accessibleHymns = accessibleHymns.filter((h: any) => h.occasionTag === seasonQuery);
+      }
+
+      return res.json({
+        success: true,
+        items: accessibleHymns,
+        enrolledLevel: hasApprovedMembership ? studentApprovedLevel : null,
+        isApproved: hasApprovedMembership
+      });
+    }
+
+    // Teacher / Admin: full library access with filter support
+    let results = allHymns;
+    if (levelQuery) results = results.filter((h: any) => h.level === levelQuery);
+    if (seasonQuery && seasonQuery !== 'all') results = results.filter((h: any) => h.occasionTag === seasonQuery);
+    if (statusQuery && statusQuery !== 'all') results = results.filter((h: any) => h.status === statusQuery);
+
+    return res.json({
+      success: true,
+      items: results
+    });
+  } catch (err: any) {
+    console.error("Hymns list error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 6. Fetch single hymn with strict authorization checks
+app.get("/api/church/hymns/:id", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const hymn = serverReviewState.hymnsCollection[req.params.id];
+    if (!hymn) {
+      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Hymn not found" });
+    }
+
+    const isTeacherOrAdmin = authContext.role === 'teacher' || authContext.role === 'admin';
+    if (!isTeacherOrAdmin) {
+      // Drafts hidden from students
+      if (hymn.status !== 'published') {
+        return res.status(403).json({ success: false, error: "DRAFT_HIDDEN", message: "Hymn draft is not public" });
+      }
+
+      // Check student level
+      let studentLevel = 1;
+      if (authContext.userId) {
+        const mem = getStudentHymnsMembership(authContext.userId);
+        if (mem && mem.status === 'approved') studentLevel = mem.level;
+      }
+
+      if (hymn.level > studentLevel) {
+        return res.status(403).json({
+          success: false,
+          error: "HYMN_LEVEL_ACCESS_DENIED",
+          message: `This hymn is for Level ${hymn.level}. You are enrolled in Level ${studentLevel}.`
+        });
+      }
+    }
+
+    return res.json({ success: true, hymn });
+  } catch (err: any) {
+    console.error("Hymn detail error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 7. Teacher/Admin creates new hymn (draft or published)
+app.post("/api/church/hymns", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers can create hymns." });
+    }
+
+    const {
+      id,
+      titleAr,
+      titleEn,
+      titleCoptic,
+      seasonAr,
+      seasonEn,
+      occasionTag,
+      difficulty,
+      level,
+      audioUrl,
+      durationSec,
+      hazatExplanationAr,
+      hazatExplanationEn,
+      lines,
+      sheetMusicUrl,
+      pdfUrl,
+      status
+    } = req.body;
+
+    if (!titleAr || !level) {
+      return res.status(400).json({ success: false, error: "VALIDATION_FAILED", message: "titleAr and level are required" });
+    }
+
+    const hymnId = id || `hymn_${Date.now()}`;
+    if (serverReviewState.hymnsCollection[hymnId]) {
+      return res.status(409).json({ success: false, error: "DUPLICATE_ID", message: `Hymn with ID "${hymnId}" already exists.` });
+    }
+
+    const newHymn = {
+      id: hymnId,
+      titleAr,
+      titleEn: titleEn || titleAr,
+      titleCoptic: titleCoptic || '',
+      seasonAr: seasonAr || 'طقس سنوي',
+      seasonEn: seasonEn || 'Annual',
+      occasionTag: occasionTag || 'annual',
+      difficulty: difficulty || 'easy',
+      level: Number(level) as 1 | 2 | 3,
+      status: (status === 'published' ? 'published' : 'draft') as 'draft' | 'published',
+      audioUrl: audioUrl || '',
+      durationSec: durationSec || 120,
+      hazatExplanationAr: hazatExplanationAr || '',
+      hazatExplanationEn: hazatExplanationEn || '',
+      sheetMusicUrl: sheetMusicUrl || '',
+      pdfUrl: pdfUrl || '',
+      lines: Array.isArray(lines) ? lines : [],
+      version: 1,
+      createdBy: authContext.userId || 'teacher',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      history: []
+    };
+
+    serverReviewState.hymnsCollection[hymnId] = newHymn;
+    savePersistentClassState();
+
+    return res.status(201).json({
+      success: true,
+      hymn: newHymn,
+      message: `Hymn "${titleAr}" created successfully as ${newHymn.status}.`
+    });
+  } catch (err: any) {
+    console.error("Hymn create error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 8. Teacher/Admin updates hymn (with version snapshot recording)
+app.put("/api/church/hymns/:id", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers can edit hymns." });
+    }
+
+    const hymnId = req.params.id;
+    const existing = serverReviewState.hymnsCollection[hymnId];
+    if (!existing) {
+      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Hymn not found" });
+    }
+
+    // Save previous snapshot in history
+    const snapshot = {
+      version: existing.version || 1,
+      status: existing.status,
+      titleAr: existing.titleAr,
+      titleEn: existing.titleEn,
+      level: existing.level,
+      audioUrl: existing.audioUrl,
+      linesCount: existing.lines?.length || 0,
+      savedBy: authContext.userId || 'teacher',
+      savedAt: new Date().toISOString()
+    };
+    const history = Array.isArray(existing.history) ? [...existing.history, snapshot] : [snapshot];
+
+    const updated = {
+      ...existing,
+      ...req.body,
+      id: hymnId,
+      version: (existing.version || 1) + 1,
+      updatedAt: new Date().toISOString(),
+      history
+    };
+
+    serverReviewState.hymnsCollection[hymnId] = updated;
+    savePersistentClassState();
+
+    return res.json({
+      success: true,
+      hymn: updated,
+      message: `Hymn "${updated.titleAr}" updated (v${updated.version}).`
+    });
+  } catch (err: any) {
+    console.error("Hymn update error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 9. Teacher/Admin unpublishes hymn
+app.post("/api/church/hymns/:id/unpublish", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers can unpublish." });
+    }
+
+    const hymn = serverReviewState.hymnsCollection[req.params.id];
+    if (!hymn) return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Hymn not found" });
+
+    hymn.status = 'draft';
+    hymn.updatedAt = new Date().toISOString();
+    savePersistentClassState();
+
+    return res.json({ success: true, hymn, message: "Hymn unpublished to draft status." });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 10. Teacher/Admin restores prior hymn version
+app.post("/api/church/hymns/:id/restore", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers can restore." });
+    }
+
+    const hymn = serverReviewState.hymnsCollection[req.params.id];
+    if (!hymn) return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Hymn not found" });
+
+    const { targetVersion } = req.body;
+    const history = hymn.history || [];
+    const snapshot = history.find((h: any) => h.version === Number(targetVersion));
+    if (!snapshot) {
+      return res.status(404).json({ success: false, error: "VERSION_NOT_FOUND", message: `Version ${targetVersion} not found in history.` });
+    }
+
+    hymn.titleAr = snapshot.titleAr || hymn.titleAr;
+    hymn.titleEn = snapshot.titleEn || hymn.titleEn;
+    hymn.status = snapshot.status || hymn.status;
+    hymn.level = snapshot.level || hymn.level;
+    hymn.audioUrl = snapshot.audioUrl || hymn.audioUrl;
+    hymn.version = (hymn.version || 1) + 1;
+    hymn.updatedAt = new Date().toISOString();
+
+    savePersistentClassState();
+    return res.json({ success: true, hymn, message: `Hymn restored from v${targetVersion}.` });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+
+// ==============================================================================
+// COPTIC RITUALS / TAXIS (طقوس الكنيسة) API & EXPLICIT PERMISSION MODEL
+// ==============================================================================
+
+// Explicit Taxis Permission evaluator on server
+function evaluateServerTaxisPermissions(authContext: ServerAuthContext, item?: any) {
+  if (!authContext.isAuthenticated || !authContext.userId) {
+    return {
+      canView: Boolean(item && item.status === 'published' && item.audience === 'all'),
+      canCreate: false,
+      canEdit: false,
+      canSubmitReview: false,
+      canReview: false,
+      canApprove: false,
+      canPublish: false,
+      canUnpublish: false,
+      canRestore: false,
+      canManagePermissions: false
+    };
+  }
+
+  const role = authContext.role;
+  const isSuperAdmin = role === 'admin';
+  const isTeacher = role === 'teacher';
+  const isAuthor = Boolean(item && (item.createdBy === authContext.userId || item.createdBy === 'user_teacher_mina_101'));
+  const isAssignedEditor = Boolean(item && item.assignedEditors?.includes(authContext.userId));
+  const isAssignedReviewer = Boolean(item && item.assignedReviewers?.includes(authContext.userId));
+
+  if (isSuperAdmin) {
+    return {
+      canView: true,
+      canCreate: true,
+      canEdit: true,
+      canSubmitReview: true,
+      canReview: true,
+      canApprove: true,
+      canPublish: true,
+      canUnpublish: true,
+      canRestore: true,
+      canManagePermissions: true
+    };
+  }
+
+  if (isTeacher) {
+    return {
+      canView: true,
+      canCreate: true,
+      canEdit: isAuthor || isAssignedEditor || !item,
+      canSubmitReview: isAuthor || isAssignedEditor,
+      canReview: isAssignedReviewer || authContext.userId?.includes('mina'),
+      canApprove: isAssignedReviewer || authContext.userId?.includes('mina'),
+      canPublish: isAuthor || isSuperAdmin || authContext.userId?.includes('mina'),
+      canUnpublish: isAuthor || isSuperAdmin || authContext.userId?.includes('mina'),
+      canRestore: isAuthor || isSuperAdmin || authContext.userId?.includes('mina'),
+      canManagePermissions: false
+    };
+  }
+
+  // Student permissions
+  return {
+    canView: Boolean(item && item.status === 'published'),
+    canCreate: false,
+    canEdit: false,
+    canSubmitReview: false,
+    canReview: false,
+    canApprove: false,
+    canPublish: false,
+    canUnpublish: false,
+    canRestore: false,
+    canManagePermissions: false
+  };
+}
+
+// 1. Fetch Taxis items list (Strictly hides drafts from unauthorized students)
+app.get("/api/church/taxis", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const allItems = Object.values(serverReviewState.taxisCollection || {});
+    const { category, audience } = req.query;
+
+    if (authContext.role === 'student' || (!authContext.isAuthenticated && !authContext.userId)) {
+      // Students see only published items
+      let visible = allItems.filter((i: any) => i.status === 'published');
+
+      // Audience check
+      visible = visible.filter((i: any) => {
+        if (!i.audience || i.audience === 'all') return true;
+        if (i.audience === 'preparatory') {
+          const userClass = serverReviewState.studentClasses?.[authContext.userId || ''];
+          return Boolean(userClass?.grade?.toLowerCase().includes('prep') || userClass?.classGroupId === 'preparatory');
+        }
+        if (i.audience === 'deacons') {
+          const hym = getStudentHymnsMembership(authContext.userId || '');
+          return Boolean(hym && hym.status === 'approved' && hym.level >= 2);
+        }
+        return false;
+      });
+
+      if (category && category !== 'ALL') visible = visible.filter((i: any) => i.category === category);
+      return res.json({ success: true, items: visible });
+    }
+
+    // Teachers & Admins
+    let filtered = allItems;
+    if (category && category !== 'ALL') filtered = filtered.filter((i: any) => i.category === category);
+    if (audience && audience !== 'ALL') filtered = filtered.filter((i: any) => i.audience === audience);
+
+    return res.json({ success: true, items: filtered });
+  } catch (err: any) {
+    console.error("Taxis list error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 2. Fetch single Taxis item with strict authorization
+app.get("/api/church/taxis/:id", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const item = serverReviewState.taxisCollection[req.params.id];
+    if (!item) {
+      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Liturgical ritual not found" });
+    }
+
+    const perms = evaluateServerTaxisPermissions(authContext, item);
+    if (!perms.canView) {
+      return res.status(403).json({
+        success: false,
+        error: "TAXIS_ACCESS_DENIED",
+        message: "You are not authorized to view this ritual draft or private liturgical material."
+      });
+    }
+
+    return res.json({ success: true, item, permissions: perms });
+  } catch (err: any) {
+    console.error("Taxis detail error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 3. Create new Taxis ritual draft
+app.post("/api/church/taxis", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const perms = evaluateServerTaxisPermissions(authContext);
+    if (!perms.canCreate) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only authorized servants can create liturgical rituals." });
+    }
+
+    const {
+      titleAr,
+      titleEn,
+      titleCopt,
+      category,
+      audience,
+      summaryAr,
+      summaryEn,
+      sections,
+      references,
+      documents
+    } = req.body;
+
+    if (!titleAr) {
+      return res.status(400).json({ success: false, error: "VALIDATION_FAILED", message: "Arabic title (titleAr) is required." });
+    }
+
+    const id = req.body.id || `taxis_${Date.now()}`;
+    const newItem = {
+      id,
+      titleAr,
+      titleEn: titleEn || titleAr,
+      titleCopt: titleCopt || '',
+      category: category || 'liturgy',
+      audience: audience || 'all',
+      status: 'draft' as const,
+      summaryAr: summaryAr || '',
+      summaryEn: summaryEn || '',
+      sections: Array.isArray(sections) ? sections : [],
+      references: Array.isArray(references) ? references : [],
+      documents: Array.isArray(documents) ? documents : [],
+      version: 1,
+      createdBy: authContext.userId || 'servant',
+      createdByName: 'الخادم المسؤول',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      history: []
+    };
+
+    serverReviewState.taxisCollection[id] = newItem;
+    savePersistentClassState();
+
+    return res.status(201).json({
+      success: true,
+      item: newItem,
+      message: "Taxis ritual draft created successfully."
+    });
+  } catch (err: any) {
+    console.error("Taxis create error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 4. Update Taxis draft / sections
+app.put("/api/church/taxis/:id", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const item = serverReviewState.taxisCollection[req.params.id];
+    if (!item) return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Ritual not found" });
+
+    const perms = evaluateServerTaxisPermissions(authContext, item);
+    if (!perms.canEdit) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "You are not authorized to edit this ritual." });
+    }
+
+    // Record version snapshot in history
+    const snapshot = {
+      version: item.version || 1,
+      status: item.status,
+      titleAr: item.titleAr,
+      titleEn: item.titleEn,
+      sectionsCount: item.sections?.length || 0,
+      savedBy: authContext.userId || 'editor',
+      savedByName: 'خادم الطقوس',
+      savedAt: new Date().toISOString()
+    };
+    const history = Array.isArray(item.history) ? [...item.history, snapshot] : [snapshot];
+
+    const updated = {
+      ...item,
+      ...req.body,
+      id: item.id,
+      version: (item.version || 1) + 1,
+      updatedAt: new Date().toISOString(),
+      history
+    };
+
+    serverReviewState.taxisCollection[item.id] = updated;
+    savePersistentClassState();
+
+    return res.json({ success: true, item: updated, message: `Ritual updated to v${updated.version}.` });
+  } catch (err: any) {
+    console.error("Taxis update error:", err);
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 5. Submit for Review
+app.post("/api/church/taxis/:id/submit-review", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const item = serverReviewState.taxisCollection[req.params.id];
+    if (!item) return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Ritual not found" });
+
+    const perms = evaluateServerTaxisPermissions(authContext, item);
+    if (!perms.canSubmitReview) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to submit for review." });
+    }
+
+    item.status = 'under_review';
+    item.updatedAt = new Date().toISOString();
+    savePersistentClassState();
+
+    return res.json({ success: true, item, message: "Ritual submitted for review." });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 6. Review or Approve content (Review approval does not automatically publish)
+app.post("/api/church/taxis/:id/review", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const item = serverReviewState.taxisCollection[req.params.id];
+    if (!item) return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Ritual not found" });
+
+    const perms = evaluateServerTaxisPermissions(authContext, item);
+    if (!perms.canApprove) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to approve review." });
+    }
+
+    const { action, notes } = req.body;
+    if (action === 'APPROVE') {
+      item.status = 'approved';
+      item.approvedBy = authContext.userId || 'reviewer';
+      item.reviewedBy = authContext.userId || 'reviewer';
+      item.updatedAt = new Date().toISOString();
+    } else {
+      item.status = 'draft';
+      item.updatedAt = new Date().toISOString();
+    }
+
+    savePersistentClassState();
+    return res.json({ success: true, item, message: `Ritual status updated to ${item.status}.` });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 7. Publish content
+app.post("/api/church/taxis/:id/publish", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const item = serverReviewState.taxisCollection[req.params.id];
+    if (!item) return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Ritual not found" });
+
+    const perms = evaluateServerTaxisPermissions(authContext, item);
+    if (!perms.canPublish) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to publish rituals." });
+    }
+
+    item.status = 'published';
+    item.publishedBy = authContext.userId || 'publisher';
+    item.publishedAt = new Date().toISOString();
+    item.updatedAt = new Date().toISOString();
+
+    savePersistentClassState();
+    return res.json({ success: true, item, message: "Ritual published successfully to the congregation." });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 8. Unpublish content
+app.post("/api/church/taxis/:id/unpublish", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const item = serverReviewState.taxisCollection[req.params.id];
+    if (!item) return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Ritual not found" });
+
+    const perms = evaluateServerTaxisPermissions(authContext, item);
+    if (!perms.canUnpublish) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to unpublish." });
+    }
+
+    item.status = 'unpublished';
+    item.unpublishedBy = authContext.userId || 'unpublisher';
+    item.unpublishedAt = new Date().toISOString();
+    item.updatedAt = new Date().toISOString();
+
+    savePersistentClassState();
+    return res.json({ success: true, item, message: "Ritual unpublished." });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 9. Restore previous version
+app.post("/api/church/taxis/:id/restore", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const item = serverReviewState.taxisCollection[req.params.id];
+    if (!item) return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Ritual not found" });
+
+    const perms = evaluateServerTaxisPermissions(authContext, item);
+    if (!perms.canRestore) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to restore versions." });
+    }
+
+    const { targetVersion } = req.body;
+    const history = item.history || [];
+    const snapshot = history.find((h: any) => h.version === Number(targetVersion));
+    if (!snapshot) {
+      return res.status(404).json({ success: false, error: "VERSION_NOT_FOUND", message: `Version ${targetVersion} not found.` });
+    }
+
+    item.titleAr = snapshot.titleAr || item.titleAr;
+    item.titleEn = snapshot.titleEn || item.titleEn;
+    item.status = snapshot.status || item.status;
+    item.version = (item.version || 1) + 1;
+    item.updatedAt = new Date().toISOString();
+
+    savePersistentClassState();
+    return res.json({ success: true, item, message: `Ritual restored to v${targetVersion}.` });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
+// 10. Get version history
+app.get("/api/church/taxis/:id/versions", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const item = serverReviewState.taxisCollection[req.params.id];
+    if (!item) return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Ritual not found" });
+
+    return res.json({ success: true, history: item.history || [] });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
+  }
+});
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");

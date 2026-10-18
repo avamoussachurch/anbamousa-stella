@@ -317,8 +317,12 @@ export async function saveTaxisItem(
 ): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
-    const res = await fetch('/api/church/taxis/save', {
-      method: 'POST',
+    const isNew = !item.id || item.id.startsWith('new_');
+    const url = isNew ? '/api/church/taxis' : `/api/church/taxis/${encodeURIComponent(item.id!)}`;
+    const method = isNew ? 'POST' : 'PUT';
+
+    const res = await fetch(url, {
+      method,
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -404,28 +408,42 @@ export async function executeTaxisStatusAction(
 ): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
-    const res = await fetch('/api/church/taxis/status-action', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({
-        itemId,
-        action,
-        restoreVersion: params?.restoreVersion,
-        notes: params?.notes
-      })
-    });
+    let endpoint = '';
+    let payload: any = {};
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.item) {
-        const local = getStoredTaxisItems().filter(i => i.id !== data.item.id);
-        saveStoredTaxisItems([data.item, ...local]);
-        return { success: true, item: data.item };
-      } else {
-        return { success: false, error: data.message || data.error };
+    if (action === 'SUBMIT_REVIEW') {
+      endpoint = `/api/church/taxis/${encodeURIComponent(itemId)}/submit-review`;
+    } else if (action === 'APPROVE') {
+      endpoint = `/api/church/taxis/${encodeURIComponent(itemId)}/review`;
+      payload = { action: 'APPROVE', notes: params?.notes };
+    } else if (action === 'PUBLISH') {
+      endpoint = `/api/church/taxis/${encodeURIComponent(itemId)}/publish`;
+    } else if (action === 'UNPUBLISH') {
+      endpoint = `/api/church/taxis/${encodeURIComponent(itemId)}/unpublish`;
+    } else if (action === 'RESTORE') {
+      endpoint = `/api/church/taxis/${encodeURIComponent(itemId)}/restore`;
+      payload = { targetVersion: params?.restoreVersion };
+    }
+
+    if (endpoint) {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.item) {
+          const local = getStoredTaxisItems().filter(i => i.id !== data.item.id);
+          saveStoredTaxisItems([data.item, ...local]);
+          return { success: true, item: data.item };
+        } else {
+          return { success: false, error: data.message || data.error };
+        }
       }
     }
   } catch (_) {}
@@ -448,8 +466,7 @@ export async function executeTaxisStatusAction(
     if (target) {
       item.titleAr = target.titleAr;
       item.titleEn = target.titleEn;
-      item.status = target.status;
-      item.version = item.version + 1;
+      item.version = (item.version || 1) + 1;
     }
   }
 

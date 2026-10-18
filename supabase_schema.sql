@@ -763,8 +763,97 @@ REVOKE ALL ON FUNCTION public.join_class_by_code(TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.enroll_student_in_class(UUID, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.remove_student_from_class(TEXT, TEXT) FROM PUBLIC;
 
-GRANT EXECUTE ON FUNCTION public.activate_new_church_year(TEXT, TEXT, DATE, DATE) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.join_class_by_code(TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.enroll_student_in_class(UUID, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.remove_student_from_class(TEXT, TEXT) TO authenticated;
+-- 11. Create Hymns School Roster Memberships Table
+CREATE TABLE IF NOT EXISTS public.hymns_memberships (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  student_id TEXT NOT NULL,
+  student_name TEXT NOT NULL,
+  level INTEGER NOT NULL CHECK (level IN (1, 2, 3)),
+  roster_group TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  notes TEXT,
+  reviewed_by TEXT,
+  reviewed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.hymns_memberships ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Students can view own hymns enrollment"
+  ON public.hymns_memberships FOR SELECT
+  TO authenticated
+  USING (student_id = auth.uid()::text);
+
+CREATE POLICY "Students can submit own hymns enrollment"
+  ON public.hymns_memberships FOR INSERT
+  TO authenticated
+  WITH CHECK (student_id = auth.uid()::text AND status = 'pending');
+
+CREATE POLICY "Servants and Admins can view all hymns enrollment requests"
+  ON public.hymns_memberships FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE id = auth.uid() AND role IN ('teacher', 'admin')
+    )
+  );
+
+CREATE POLICY "Servants and Admins can update hymns enrollment status"
+  ON public.hymns_memberships FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE id = auth.uid() AND role IN ('teacher', 'admin')
+    )
+  );
+
+-- 12. Create Coptic Rituals / Taxis Items Table
+CREATE TABLE IF NOT EXISTS public.coptic_taxis_items (
+  id TEXT PRIMARY KEY,
+  title_ar TEXT NOT NULL,
+  title_en TEXT NOT NULL,
+  title_coptic TEXT,
+  category TEXT NOT NULL CHECK (category IN ('LITURGY', 'SACRAMENT', 'FEAST', 'FASTING', 'DEACON_SERVICE', 'CLERICAL', 'PRAYER_CANON')),
+  season TEXT NOT NULL,
+  target_audience TEXT NOT NULL CHECK (target_audience IN ('ALL', 'DEACONS', 'SERVANTS', 'CONGREGATION')),
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'under_review', 'approved', 'published', 'unpublished', 'archived')),
+  sections JSONB NOT NULL DEFAULT '[]'::jsonb,
+  attachments JSONB NOT NULL DEFAULT '[]'::jsonb,
+  version INTEGER NOT NULL DEFAULT 1,
+  created_by TEXT,
+  reviewed_by TEXT,
+  published_by TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.coptic_taxis_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone authenticated can view published taxis rituals"
+  ON public.coptic_taxis_items FOR SELECT
+  TO authenticated
+  USING (status = 'published');
+
+CREATE POLICY "Servants and Admins can view draft and in-review taxis rituals"
+  ON public.coptic_taxis_items FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE id = auth.uid() AND role IN ('teacher', 'admin')
+    )
+  );
+
+CREATE POLICY "Servants and Admins can manage taxis items"
+  ON public.coptic_taxis_items FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE id = auth.uid() AND role IN ('teacher', 'admin')
+    )
+  );
 

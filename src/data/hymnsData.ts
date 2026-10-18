@@ -27,6 +27,20 @@ export interface CopticHymnItem {
   hazatExplanationAr: string;
   hazatExplanationEn: string;
   lines: HymnLyricLine[];
+  status?: 'draft' | 'published' | 'archived';
+  version?: number;
+  versions?: Array<{
+    version: number;
+    titleAr: string;
+    titleEn: string;
+    level: 1 | 2 | 3;
+    audioUrl: string;
+    lines: HymnLyricLine[];
+    savedAt: string;
+    savedBy?: string;
+  }>;
+  updatedAt?: string;
+  publishedAt?: string;
 }
 
 export const COPTIC_HYMNS_COLLECTION: CopticHymnItem[] = [

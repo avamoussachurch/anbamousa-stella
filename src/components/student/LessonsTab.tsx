@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { BookOpen, CheckCircle, Clock, Search, Plus, Sparkles, Edit3, Eye, Filter, Music, AlertCircle } from 'lucide-react';
+import { BookOpen, CheckCircle, Clock, Search, Plus, Sparkles, Edit3, Eye, Filter, Music, AlertCircle, Scroll } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLessons } from '../../context/LessonsContext';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +9,7 @@ import { ExpressLessonPublishModal } from '../teacher/ExpressLessonPublishModal'
 import { formatStudentClassDisplay } from '../../lib/classGroups';
 import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { HymnsSchoolTab } from '../hymns/HymnsSchoolTab';
+import { CopticTaxisTab } from '../taxis/CopticTaxisTab';
 
 interface LessonsTabProps {
   onStartLesson: (id: string) => void;
@@ -19,7 +20,7 @@ interface LessonsTabProps {
 export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: LessonsTabProps) {
   const { userData } = useAuth();
   const { lessons, updateLesson, refreshCurriculum } = useLessons();
-  const [selectedSchool, setSelectedSchool] = useState<'sunday_school' | 'hymns'>('sunday_school');
+  const [selectedSchool, setSelectedSchool] = useState<'sunday_school' | 'hymns' | 'taxis'>('sunday_school');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'published' | 'drafts'>('all');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -62,11 +63,11 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
       className="pb-24 pt-6 px-4 w-full max-w-7xl mx-auto space-y-6" 
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
     >
-      {/* 2-School Switcher: Sunday School (Coming Soon) & Hymns School */}
-      <div className="flex bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] rounded-2xl p-1.5 shadow-xs border-2 border-[var(--mousa-border-sand)] max-w-xl mx-auto gap-1">
+      {/* 3-Track Switcher: Sunday School, Hymns School, Coptic Rituals / Taxis */}
+      <div className="flex bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] rounded-2xl p-1.5 shadow-xs border-2 border-[var(--mousa-border-sand)] max-w-2xl mx-auto gap-1">
         <button
           onClick={() => setSelectedSchool('sunday_school')}
-          className={`flex-1 py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`flex-1 py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             selectedSchool === 'sunday_school'
               ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] shadow-xs'
               : 'text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal)]'
@@ -74,29 +75,37 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
         >
           <BookOpen size={16} />
           <span>{lang === 'ar' ? 'مدارس الأحد' : 'Sunday School'}</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--mousa-coral)] text-white font-extrabold shadow-2xs">
-            {lang === 'ar' ? 'قريباً' : 'Coming Soon'}
-          </span>
         </button>
 
         <button
           onClick={() => setSelectedSchool('hymns')}
-          className={`flex-1 py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`flex-1 py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             selectedSchool === 'hymns'
               ? 'bg-[var(--mousa-teal)] text-white shadow-xs'
               : 'text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal)]'
           }`}
         >
           <Music size={16} />
-          <span>{lang === 'ar' ? 'مدرسة الألحان' : 'Hymns School'}</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-900 dark:text-amber-200 border border-amber-400/40 font-bold">
-            {lang === 'ar' ? 'متاحة الآن' : 'Available'}
-          </span>
+          <span>{lang === 'ar' ? 'مدرسة الألحان' : 'Hymns'}</span>
+        </button>
+
+        <button
+          onClick={() => setSelectedSchool('taxis')}
+          className={`flex-1 py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            selectedSchool === 'taxis'
+              ? 'bg-[var(--mousa-coral)] text-white shadow-xs'
+              : 'text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal)]'
+          }`}
+        >
+          <Scroll size={16} />
+          <span>{lang === 'ar' ? 'طقوس الكنيسة' : 'Rituals / Taxis'}</span>
         </button>
       </div>
 
       {selectedSchool === 'hymns' ? (
         <HymnsSchoolTab lang={lang} />
+      ) : selectedSchool === 'taxis' ? (
+        <CopticTaxisTab lang={lang} />
       ) : (
         <>
           {/* Sunday School Coming Soon Announcement Banner */}

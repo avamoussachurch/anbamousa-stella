@@ -1,22 +1,13 @@
 {
-  "currentChurchYear": "2027–2028",
+  "currentChurchYear": "2026–2027",
   "churchYears": {
     "2026–2027": {
       "id": "year-2026-2027",
       "year": "2026–2027",
-      "status": "ARCHIVED",
-      "startDate": "2026-09-01",
-      "createdAt": "2026-10-17T08:35:33.883Z",
-      "createdBy": "system",
-      "endDate": "2026-10-17"
-    },
-    "2027–2028": {
-      "id": "year-2027-2028",
-      "year": "2027–2028",
       "status": "ACTIVE",
-      "startDate": "2026-10-17",
-      "createdAt": "2026-10-17T08:35:33.980Z",
-      "createdBy": "admin_bishop"
+      "startDate": "2026-09-01",
+      "createdAt": "2026-10-18T13:40:45.981Z",
+      "createdBy": "system"
     }
   },
   "classInstances": {
@@ -31,8 +22,8 @@
         "other",
         "user_teacher_other_404"
       ],
-      "status": "ARCHIVED",
-      "createdAt": "2026-10-17T08:35:33.883Z"
+      "status": "ACTIVE",
+      "createdAt": "2026-10-18T13:40:45.981Z"
     },
     "inst_2026-2027_primary_1": {
       "id": "inst_2026-2027_primary_1",
@@ -45,8 +36,8 @@
         "mina",
         "user_teacher_mina_101"
       ],
-      "status": "ARCHIVED",
-      "createdAt": "2026-10-17T08:35:33.883Z"
+      "status": "ACTIVE",
+      "createdAt": "2026-10-18T13:40:45.981Z"
     },
     "inst_2026-2027_primary_2": {
       "id": "inst_2026-2027_primary_2",
@@ -54,15 +45,13 @@
       "classGroupId": "primary_2",
       "nameEn": "Primary 4–6",
       "nameAr": "فصل ابتدائي 4–6",
-      "code": "MUSA-KJ46",
+      "code": "MUSA-P46B",
       "servantIds": [
         "mina",
-        "user_teacher_mina_101",
-        "other"
+        "user_teacher_mina_101"
       ],
-      "status": "ARCHIVED",
-      "createdAt": "2026-10-17T08:35:33.883Z",
-      "updatedAt": "2026-10-17T08:35:33.944Z"
+      "status": "ACTIVE",
+      "createdAt": "2026-10-18T13:40:45.981Z"
     },
     "inst_2026-2027_preparatory": {
       "id": "inst_2026-2027_preparatory",
@@ -75,8 +64,8 @@
         "other",
         "user_teacher_other_404"
       ],
-      "status": "ARCHIVED",
-      "createdAt": "2026-10-17T08:35:33.883Z"
+      "status": "ACTIVE",
+      "createdAt": "2026-10-18T13:40:45.981Z"
     },
     "inst_2026-2027_secondary": {
       "id": "inst_2026-2027_secondary",
@@ -89,8 +78,8 @@
         "other",
         "user_teacher_other_404"
       ],
-      "status": "ARCHIVED",
-      "createdAt": "2026-10-17T08:35:33.883Z"
+      "status": "ACTIVE",
+      "createdAt": "2026-10-18T13:40:45.981Z"
     },
     "inst_2026-2027_university": {
       "id": "inst_2026-2027_university",
@@ -103,93 +92,8 @@
         "mina",
         "user_teacher_mina_101"
       ],
-      "status": "ARCHIVED",
-      "createdAt": "2026-10-17T08:35:33.883Z"
-    },
-    "inst_2027-2028_angels": {
-      "id": "inst_2027-2028_angels",
-      "churchYear": "2027–2028",
-      "classGroupId": "angels",
-      "nameEn": "Angels",
-      "nameAr": "فصل الملايكة",
-      "code": "MUSA-H6Q5",
-      "servantIds": [
-        "other",
-        "user_teacher_other_404"
-      ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-17T08:35:33.980Z"
-    },
-    "inst_2027-2028_primary_1": {
-      "id": "inst_2027-2028_primary_1",
-      "churchYear": "2027–2028",
-      "classGroupId": "primary_1",
-      "nameEn": "Primary 1–3",
-      "nameAr": "فصل ابتدائي 1–3",
-      "code": "MUSA-VL2R",
-      "servantIds": [
-        "mina",
-        "user_teacher_mina_101"
-      ],
-      "status": "ACTIVE",
-      "createdAt": "2026-10-17T08:35:33.980Z"
-    },
-    "inst_2027-2028_primary_2": {
-      "id": "inst_2027-2028_primary_2",
-      "churchYear": "2027–2028",
-      "classGroupId": "primary_2",
-      "nameEn": "Primary 4–6",
-      "nameAr": "فصل ابتدائي 4–6",
-      "code": "MUSA-UTLG",
-      "servantIds": [
-        "mina",
-        "user_teacher_mina_101",
-        "other"
-      ],
-      "status": "ACTIVE",
-      "createdAt": "2026-10-17T08:35:33.980Z"
-    },
-    "inst_2027-2028_preparatory": {
-      "id": "inst_2027-2028_preparatory",
-      "churchYear": "2027–2028",
-      "classGroupId": "preparatory",
-      "nameEn": "Preparatory",
-      "nameAr": "فصل إعدادي",
-      "code": "MUSA-5E9Q",
-      "servantIds": [
-        "other",
-        "user_teacher_other_404"
-      ],
-      "status": "ACTIVE",
-      "createdAt": "2026-10-17T08:35:33.980Z"
-    },
-    "inst_2027-2028_secondary": {
-      "id": "inst_2027-2028_secondary",
-      "churchYear": "2027–2028",
-      "classGroupId": "secondary",
-      "nameEn": "Secondary",
-      "nameAr": "فصل ثانوي",
-      "code": "MUSA-2H56",
-      "servantIds": [
-        "other",
-        "user_teacher_other_404"
-      ],
-      "status": "ACTIVE",
-      "createdAt": "2026-10-17T08:35:33.980Z"
-    },
-    "inst_2027-2028_university": {
-      "id": "inst_2027-2028_university",
-      "churchYear": "2027–2028",
-      "classGroupId": "university",
-      "nameEn": "University",
-      "nameAr": "فصل جامعة",
-      "code": "MUSA-RBCG",
-      "servantIds": [
-        "mina",
-        "user_teacher_mina_101"
-      ],
-      "status": "ACTIVE",
-      "createdAt": "2026-10-17T08:35:33.980Z"
+      "createdAt": "2026-10-18T13:40:45.981Z"
     }
   },
   "classMemberships": {
@@ -202,8 +106,8 @@
       "studentName": "Mark Shenouda",
       "exactGrade": "Grade 4",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.940Z",
-      "enrolledBy": "join_code"
+      "enrolledAt": "2026-10-18T13:40:45.981Z",
+      "enrolledBy": "servant"
     },
     "mem_david_2026-2027": {
       "id": "mem_david_2026-2027",
@@ -214,7 +118,7 @@
       "studentName": "David Emad",
       "exactGrade": "Grade 5",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.883Z",
+      "enrolledAt": "2026-10-18T13:40:45.981Z",
       "enrolledBy": "servant"
     },
     "mem_other_2026-2027": {
@@ -226,215 +130,8 @@
       "studentName": "Peter Fadi",
       "exactGrade": "Prep 1",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.883Z",
+      "enrolledAt": "2026-10-18T13:40:45.981Z",
       "enrolledBy": "servant"
-    },
-    "mem_student_late_joiner_2026-2027": {
-      "id": "mem_student_late_joiner_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "primary_2",
-      "classInstanceId": "inst_2026-2027_primary_2",
-      "studentId": "student_late_joiner",
-      "studentName": "student_late_joiner",
-      "exactGrade": "Grade 4",
-      "status": "REMOVED",
-      "enrolledAt": "2026-10-17T08:35:33.947Z",
-      "enrolledBy": "join_code",
-      "removedAt": "2026-10-17T08:35:33.957Z",
-      "removedBy": "mina",
-      "removalReason": "Transferred to another congregation"
-    },
-    "mem_student_kg1_test_2026-2027": {
-      "id": "mem_student_kg1_test_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "angels",
-      "classInstanceId": "inst_2026-2027_angels",
-      "studentId": "student_kg1_test",
-      "studentName": "student_kg1_test",
-      "exactGrade": "KG1",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.966Z",
-      "enrolledBy": "admin_bishop"
-    },
-    "mem_student_p3_test_2026-2027": {
-      "id": "mem_student_p3_test_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "primary_1",
-      "classInstanceId": "inst_2026-2027_primary_1",
-      "studentId": "student_p3_test",
-      "studentName": "student_p3_test",
-      "exactGrade": "Primary 3",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.968Z",
-      "enrolledBy": "admin_bishop"
-    },
-    "mem_student_prep3_test_2026-2027": {
-      "id": "mem_student_prep3_test_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "preparatory",
-      "classInstanceId": "inst_2026-2027_preparatory",
-      "studentId": "student_prep3_test",
-      "studentName": "student_prep3_test",
-      "exactGrade": "Prep 3",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.970Z",
-      "enrolledBy": "admin_bishop"
-    },
-    "mem_student_sec3_test_2026-2027": {
-      "id": "mem_student_sec3_test_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "secondary",
-      "classInstanceId": "inst_2026-2027_secondary",
-      "studentId": "student_sec3_test",
-      "studentName": "student_sec3_test",
-      "exactGrade": "Secondary 3",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.973Z",
-      "enrolledBy": "admin_bishop"
-    },
-    "mem_student_repeat_test_2026-2027": {
-      "id": "mem_student_repeat_test_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "primary_2",
-      "classInstanceId": "inst_2026-2027_primary_2",
-      "studentId": "student_repeat_test",
-      "studentName": "student_repeat_test",
-      "exactGrade": "Grade 4",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.975Z",
-      "enrolledBy": "admin_bishop"
-    },
-    "mem_mark_2027-2028": {
-      "id": "mem_mark_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "primary_2",
-      "classInstanceId": "inst_2027-2028_primary_2",
-      "studentId": "mark",
-      "studentName": "Mark Shenouda",
-      "exactGrade": "Grade 5",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.980Z",
-      "enrolledBy": "promotion_engine"
-    },
-    "mem_user_student_mark_101_2027-2028": {
-      "id": "mem_user_student_mark_101_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "primary_2",
-      "classInstanceId": "inst_2027-2028_primary_2",
-      "studentId": "user_student_mark_101",
-      "studentName": "Mark Shenouda",
-      "exactGrade": "Grade 5",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.980Z",
-      "enrolledBy": "promotion_engine"
-    },
-    "mem_student-david_2027-2028": {
-      "id": "mem_student-david_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "primary_2",
-      "classInstanceId": "inst_2027-2028_primary_2",
-      "studentId": "student-david",
-      "studentName": "David Shenouda",
-      "exactGrade": "Grade 4",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:34.508Z",
-      "enrolledBy": "user_teacher_mina_101"
-    },
-    "mem_c1_2027-2028": {
-      "id": "mem_c1_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "primary_2",
-      "classInstanceId": "inst_2027-2028_primary_2",
-      "studentId": "c1",
-      "studentName": "Mina Emad",
-      "exactGrade": "Grade 4",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:34.517Z",
-      "enrolledBy": "user_teacher_mina_101"
-    },
-    "mem_other_2027-2028": {
-      "id": "mem_other_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "preparatory",
-      "classInstanceId": "inst_2027-2028_preparatory",
-      "studentId": "other",
-      "studentName": "Peter Fadi",
-      "exactGrade": "Prep 2",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.980Z",
-      "enrolledBy": "promotion_engine"
-    },
-    "mem_student_kg1_test_2027-2028": {
-      "id": "mem_student_kg1_test_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "angels",
-      "classInstanceId": "inst_2027-2028_angels",
-      "studentId": "student_kg1_test",
-      "studentName": "student_kg1_test",
-      "exactGrade": "KG2",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.980Z",
-      "enrolledBy": "promotion_engine"
-    },
-    "mem_student_p3_test_2027-2028": {
-      "id": "mem_student_p3_test_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "primary_2",
-      "classInstanceId": "inst_2027-2028_primary_2",
-      "studentId": "student_p3_test",
-      "studentName": "student_p3_test",
-      "exactGrade": "Grade 4",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.980Z",
-      "enrolledBy": "promotion_engine"
-    },
-    "mem_student_prep3_test_2027-2028": {
-      "id": "mem_student_prep3_test_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "secondary",
-      "classInstanceId": "inst_2027-2028_secondary",
-      "studentId": "student_prep3_test",
-      "studentName": "student_prep3_test",
-      "exactGrade": "Secondary 1",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.980Z",
-      "enrolledBy": "promotion_engine"
-    },
-    "mem_student_sec3_test_2027-2028": {
-      "id": "mem_student_sec3_test_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "university",
-      "classInstanceId": "inst_2027-2028_university",
-      "studentId": "student_sec3_test",
-      "studentName": "student_sec3_test",
-      "exactGrade": "University",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.980Z",
-      "enrolledBy": "promotion_engine"
-    },
-    "mem_student_repeat_test_2027-2028": {
-      "id": "mem_student_repeat_test_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "primary_2",
-      "classInstanceId": "inst_2027-2028_primary_2",
-      "studentId": "student_repeat_test",
-      "studentName": "student_repeat_test",
-      "exactGrade": "Grade 4",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:33.980Z",
-      "enrolledBy": "promotion_engine"
-    },
-    "mem_student_test_approval_1_2027-2028": {
-      "id": "mem_student_test_approval_1_2027-2028",
-      "churchYear": "2027–2028",
-      "classGroupId": "primary_2",
-      "classInstanceId": "inst_2027-2028_primary_2",
-      "studentId": "student_test_approval_1",
-      "studentName": "Approval Test Student",
-      "exactGrade": "Grade 4",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-17T08:35:34.491Z",
-      "enrolledBy": "user_teacher_mina_101"
     }
   },
   "teacherAssignments": {
@@ -446,8 +143,7 @@
     ],
     "other": [
       "preparatory",
-      "angels",
-      "primary_2"
+      "angels"
     ],
     "user_teacher_other_404": [
       "preparatory",
@@ -472,24 +168,25 @@
     "mark": {
       "studentId": "mark",
       "fullName": "Mark Shenouda",
-      "grade": "Grade 5",
+      "grade": "Grade 4",
       "classGroupId": "primary_2",
-      "churchYear": "2027–2028",
+      "churchYear": "2026–2027",
       "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=MarkShenouda"
     },
     "user_student_mark_101": {
       "studentId": "user_student_mark_101",
       "fullName": "Mark Shenouda",
-      "grade": "Grade 5",
+      "grade": "Grade 4",
       "classGroupId": "primary_2",
-      "churchYear": "2027–2028",
+      "churchYear": "2026–2027",
       "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=MarkShenouda"
     },
     "student-david": {
       "studentId": "student-david",
-      "fullName": "David Shenouda",
-      "grade": "Grade 4",
+      "fullName": "David Emad",
+      "grade": "Grade 5",
       "classGroupId": "primary_2",
+      "churchYear": "2026–2027",
       "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=David"
     },
     "c1": {
@@ -497,117 +194,49 @@
       "fullName": "Mina Emad",
       "grade": "Grade 4",
       "classGroupId": "primary_2",
+      "churchYear": "2026–2027",
       "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=MinaEmad"
     },
     "other": {
       "studentId": "other",
       "fullName": "Peter Fadi",
-      "grade": "Prep 2",
+      "grade": "Prep 1",
       "classGroupId": "preparatory",
-      "churchYear": "2027–2028",
+      "churchYear": "2026–2027",
       "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Peter"
-    },
-    "student_kg1_test": {
-      "studentId": "student_kg1_test",
-      "fullName": "student_kg1_test",
-      "grade": "KG2",
-      "classGroupId": "angels",
-      "churchYear": "2027–2028",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=student_kg1_test"
-    },
-    "student_p3_test": {
-      "studentId": "student_p3_test",
-      "fullName": "student_p3_test",
-      "grade": "Grade 4",
-      "classGroupId": "primary_2",
-      "churchYear": "2027–2028",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=student_p3_test"
-    },
-    "student_prep3_test": {
-      "studentId": "student_prep3_test",
-      "fullName": "student_prep3_test",
-      "grade": "Secondary 1",
-      "classGroupId": "secondary",
-      "churchYear": "2027–2028",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=student_prep3_test"
-    },
-    "student_sec3_test": {
-      "studentId": "student_sec3_test",
-      "fullName": "student_sec3_test",
-      "grade": "University",
-      "classGroupId": "university",
-      "churchYear": "2027–2028",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=student_sec3_test"
-    },
-    "student_repeat_test": {
-      "studentId": "student_repeat_test",
-      "fullName": "student_repeat_test",
-      "grade": "Grade 4",
-      "classGroupId": "primary_2",
-      "churchYear": "2027–2028",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=student_repeat_test"
-    },
-    "student_test_approval_1": {
-      "studentId": "student_test_approval_1",
-      "fullName": "Approval Test Student",
-      "grade": "Grade 4",
-      "classGroupId": "primary_2",
-      "churchYear": "2027–2028",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=student_test_approval_1",
-      "enrolledAt": "2026-10-17T08:35:34.491Z",
-      "isPending": false
     }
   },
-  "teacherStudentRelationships": [
-    {
-      "teacherId": "user_teacher_mina_101",
-      "studentId": "student_test_approval_1",
-      "relationshipType": "teacher_student",
-      "createdAt": "2026-10-17T08:35:34.491Z"
-    },
-    {
-      "teacherId": "user_teacher_mina_101",
-      "studentId": "student-david",
-      "relationshipType": "teacher_student",
-      "createdAt": "2026-10-17T08:35:34.508Z"
-    },
-    {
-      "teacherId": "user_teacher_mina_101",
-      "studentId": "c1",
-      "relationshipType": "teacher_student",
-      "createdAt": "2026-10-17T08:35:34.517Z"
-    }
-  ],
+  "teacherStudentRelationships": [],
   "parentChildRelationships": [
     {
       "parentId": "mary",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-17T08:35:33.883Z"
+      "createdAt": "2026-10-18T13:40:45.981Z"
     },
     {
       "parentId": "mary",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-17T08:35:33.883Z"
+      "createdAt": "2026-10-18T13:40:45.981Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-17T08:35:33.883Z"
+      "createdAt": "2026-10-18T13:40:45.981Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-17T08:35:33.883Z"
+      "createdAt": "2026-10-18T13:40:45.981Z"
     },
     {
       "parentId": "other_parent",
       "childId": "other",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-17T08:35:33.883Z"
+      "createdAt": "2026-10-18T13:40:45.981Z"
     }
   ],
   "activationRequests": {
@@ -621,38 +250,7 @@
       "requestedGrade": "Grade 4",
       "notes": "New student joining Sunday school with Servant Mina",
       "status": "PENDING_APPROVAL",
-      "requestedAt": "2026-10-17T07:35:33.883Z"
-    },
-    "req_1792226134477_mpvkf": {
-      "id": "req_1792226134477_mpvkf",
-      "studentId": "student_test_approval_1",
-      "studentName": "Approval Test Student",
-      "email": "",
-      "phone": "",
-      "requestedClassGroupId": "primary_2",
-      "requestedGrade": "Grade 4",
-      "notes": "",
-      "status": "APPROVED",
-      "requestedAt": "2026-10-17T08:35:34.477Z",
-      "assignedGrade": "Grade 4",
-      "reviewedBy": "user_teacher_mina_101",
-      "reviewedAt": "2026-10-17T08:35:34.491Z",
-      "reviewNotes": "Approved by servant"
-    },
-    "req_1792226134500_e8fsm": {
-      "id": "req_1792226134500_e8fsm",
-      "studentId": "student_test_deny_2",
-      "studentName": "Deny Test Student",
-      "email": "",
-      "phone": "",
-      "requestedClassGroupId": "primary_2",
-      "requestedGrade": "Grade 5",
-      "notes": "",
-      "status": "REJECTED",
-      "requestedAt": "2026-10-17T08:35:34.500Z",
-      "reviewedBy": "user_teacher_mina_101",
-      "reviewedAt": "2026-10-17T08:35:34.503Z",
-      "reviewNotes": "Request dismissed"
+      "requestedAt": "2026-10-18T12:40:45.981Z"
     }
   },
   "classServants": {
@@ -667,5 +265,399 @@
         "assignedAt": "2026-10-12T13:11:54.800Z"
       }
     ]
+  },
+  "hymnsMemberships": {
+    "mem_student_david": {
+      "id": "mem_student_david",
+      "studentId": "student-david",
+      "studentName": "David N.",
+      "level": 1,
+      "rosterGroup": "primary_choir",
+      "status": "approved",
+      "requestedAt": "2026-09-01T08:00:00.000Z",
+      "reviewedBy": "Servant Mina",
+      "reviewedAt": "2026-09-02T08:00:00.000Z"
+    },
+    "mem_student_mark": {
+      "id": "mem_student_mark",
+      "studentId": "student_mark",
+      "studentName": "Mark",
+      "level": 1,
+      "rosterGroup": "primary_choir",
+      "status": "approved",
+      "requestedAt": "2026-09-01T08:00:00.000Z",
+      "reviewedBy": "Servant Mina",
+      "reviewedAt": "2026-09-02T08:00:00.000Z"
+    },
+    "mem_george_1792330908912_lvl1_1792330908939": {
+      "id": "mem_george_1792330908912_lvl1_1792330908939",
+      "studentId": "george_1792330908912",
+      "studentName": "George The Deacon Candidate",
+      "level": 2,
+      "rosterGroup": "deacons_prep",
+      "status": "approved",
+      "requestedAt": "2026-10-18T13:41:48.939Z",
+      "notes": "Approved for Level 1 Novice Deacon Choir",
+      "reviewedBy": "mina",
+      "reviewedAt": "2026-10-18T13:41:48.967Z",
+      "transferredFromLevel": 1,
+      "transferReason": "Mastered Level 1, promoted to Preparatory Deacons"
+    }
+  },
+  "hymnsCollection": {
+    "ep_oro": {
+      "id": "ep_oro",
+      "titleAr": "لحن إبؤورو (يا ملك السلام)",
+      "titleEn": "Ep-Oro (O King of Peace)",
+      "titleCoptic": "Ⲉⲡⲟⲩⲣⲟ ⲛ̀ⲧⲉ ϯϩⲓⲣⲏⲛⲏ",
+      "seasonAr": "طقس سنوي وفرايحي وخاتمة الصلوات",
+      "seasonEn": "Annual & Festive / Conclusion of Praises",
+      "occasionTag": "annual",
+      "difficulty": "easy",
+      "level": 1,
+      "status": "published",
+      "audioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      "durationSec": 135,
+      "version": 1,
+      "createdBy": "user_teacher_mina_101",
+      "createdAt": "2026-09-01T08:00:00.000Z",
+      "updatedAt": "2026-09-01T08:00:00.000Z",
+      "hazatExplanationAr": "لحن شجي مريح بهزات ثلاثية هادئة لطلب السلام.",
+      "hazatExplanationEn": "A comforting melodic hymn with gentle 3-beat rhythm pauses.",
+      "lines": [
+        {
+          "id": 1,
+          "coptic": "Ⲉⲡⲟⲩⲣⲟ ⲛ̀ⲧⲉ ϯϩⲓⲣⲏⲛⲏ",
+          "arabized": "إبـؤورو إنتي تي هيريني",
+          "arabic": "يا ملك السلام، أعطنا سلامك",
+          "hazatNotes": "٣ هزات متدرجة",
+          "startTimeSec": 0
+        }
+      ],
+      "history": []
+    },
+    "khen_efran": {
+      "id": "khen_efran",
+      "titleAr": "لحن خين إفران (باسم الآب والابن والروح القدس)",
+      "titleEn": "Khen Efran (In the Name of the Father)",
+      "titleCoptic": "Ϧⲉⲛ ⲫ̀ⲣⲁⲛ ⲙ̀Ⲫⲓⲱⲧ",
+      "seasonAr": "مقدمة التبريك والصلوات الكنسية",
+      "seasonEn": "Opening of prayers and deacon initiation",
+      "occasionTag": "annual",
+      "difficulty": "easy",
+      "level": 1,
+      "status": "published",
+      "audioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+      "durationSec": 85,
+      "version": 1,
+      "createdBy": "user_teacher_mina_101",
+      "createdAt": "2026-09-01T08:00:00.000Z",
+      "updatedAt": "2026-09-01T08:00:00.000Z",
+      "hazatExplanationAr": "اللحن الأساسي الأول لكل شماس مبتدئ.",
+      "hazatExplanationEn": "The foundational liturgical initiation hymn for novice deacons.",
+      "lines": [
+        {
+          "id": 1,
+          "coptic": "Ϧⲉⲛ ⲫ̀ⲣⲁⲛ ⲙ̀Ⲫⲓⲱⲧ",
+          "arabized": "خين إفران إمفيوت",
+          "arabic": "باسم الآب والابن والروح القدس",
+          "startTimeSec": 0
+        }
+      ],
+      "history": []
+    },
+    "agios": {
+      "id": "agios",
+      "titleAr": "لحن أجيوس أوثيئوس (قدوس الله باللحن السنوي)",
+      "titleEn": "Agios O-Theos (Holy God)",
+      "titleCoptic": "Ⲁⲅⲓⲟⲥ ⲟ̀ Ⲑⲉⲟⲥ",
+      "seasonAr": "القداس الباسيلي وطقس سنوي",
+      "seasonEn": "Liturgy of the Faithful & Annual",
+      "occasionTag": "annual",
+      "difficulty": "medium",
+      "level": 2,
+      "status": "published",
+      "audioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+      "durationSec": 160,
+      "version": 1,
+      "createdBy": "user_teacher_mina_101",
+      "createdAt": "2026-09-01T08:00:00.000Z",
+      "updatedAt": "2026-09-01T08:00:00.000Z",
+      "hazatExplanationAr": "لحن متوسط الشهرة يرتل قبل قراءة الإنجيل المقدس.",
+      "hazatExplanationEn": "The Trisagion chanted before the Holy Gospel.",
+      "lines": [
+        {
+          "id": 1,
+          "coptic": "Ⲁⲅⲓⲟⲥ ⲟ̀ Ⲑⲉⲟⲥ: Ⲁⲅⲓⲟⲥ Ⲓⲥⲭⲩⲣⲟⲥ: Ⲁⲅⲓⲟⲥ Ⲁ̀ⲑⲁⲛⲁⲧⲟⲥ",
+          "arabized": "أجيوس أوثيئوس: أجيوس إسشيروس: أجيوس أثاناتوس",
+          "arabic": "قدوس الله، قدوس القوي، قدوس الحي الذي لا يموت",
+          "startTimeSec": 0
+        }
+      ],
+      "history": []
+    },
+    "pek_ethronos": {
+      "id": "pek_ethronos",
+      "titleAr": "لحن بيك إثرونوس (كرسيك يا الله إلى دهر الدهور)",
+      "titleEn": "Pek-Thronos (Your Throne, O God)",
+      "titleCoptic": "Ⲡⲉⲕⲑ̀ⲣⲟⲛⲟⲥ Ⲫ̀ⲛⲟⲩϯ",
+      "seasonAr": "ساعة الدفنة من يوم الجمعة العظيمة",
+      "seasonEn": "12th Hour of Holy Good Friday (Burial of Christ)",
+      "occasionTag": "pascha",
+      "difficulty": "advanced",
+      "level": 3,
+      "status": "published",
+      "audioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+      "durationSec": 240,
+      "version": 1,
+      "createdBy": "user_teacher_mina_101",
+      "createdAt": "2026-09-01T08:00:00.000Z",
+      "updatedAt": "2026-09-01T08:00:00.000Z",
+      "hazatExplanationAr": "قمة ألحان الجمعة العظيمة الحزايني بهزات خشوعية عميقة.",
+      "hazatExplanationEn": "The crowning masterpiece of Good Friday Burial liturgy.",
+      "lines": [
+        {
+          "id": 1,
+          "coptic": "Ⲡⲉⲕⲑ̀ⲣⲟⲛⲟⲥ Ⲫ̀ⲛⲟⲩϯ: ϣⲁ ⲉ̀ⲛⲉϩ ⲛ̀ⲧⲉ ⲡⲓⲉ̀ⲛⲉϩ",
+          "arabized": "بيك إثرونوس إفنوتي: شا إينيه إنتي بي إينيه",
+          "arabic": "كرسيك يا الله إلى دهر الدهور، قضيب الاستقامة هو قضيب ملكك",
+          "startTimeSec": 0
+        }
+      ],
+      "history": []
+    },
+    "draft_hymn_01": {
+      "id": "draft_hymn_01",
+      "titleAr": "مسودة لحن التوزيع الكيهكي",
+      "titleEn": "Draft Kiahk Psalmody Hymn",
+      "titleCoptic": "Ⲡⲓⲯⲁⲗⲙⲟⲥ ⲛ̀Ⲭⲟⲓⲁⲕ",
+      "seasonAr": "شهر كيهك المبارك",
+      "seasonEn": "Month of Kiahk",
+      "occasionTag": "kiahk",
+      "difficulty": "medium",
+      "level": 1,
+      "status": "draft",
+      "audioUrl": "/uploads/sample_cross_lesson_audio.mp3",
+      "durationSec": 90,
+      "version": 1,
+      "createdBy": "user_teacher_mina_101",
+      "createdAt": "2026-09-10T08:00:00.000Z",
+      "updatedAt": "2026-09-10T08:00:00.000Z",
+      "hazatExplanationAr": "مسودة قيد الإعداد",
+      "hazatExplanationEn": "Draft under preparation",
+      "lines": [],
+      "history": []
+    },
+    "test_hymn_1792330908973": {
+      "id": "test_hymn_1792330908973",
+      "titleAr": "لحن تين أوأوشت (فلنسجد للثالوث القدوس)",
+      "titleEn": "Ten-Oo-Osht (We Worship You)",
+      "titleCoptic": "Ⲧⲉⲛⲟⲩⲱϣⲧ ⲙ̀Ⲫⲓⲱⲧ",
+      "seasonAr": "طقس سنوي",
+      "seasonEn": "Annual",
+      "occasionTag": "annual",
+      "difficulty": "easy",
+      "level": 1,
+      "status": "draft",
+      "audioUrl": "/uploads/sample_cross_lesson_audio.mp3",
+      "durationSec": 120,
+      "hazatExplanationAr": "",
+      "hazatExplanationEn": "",
+      "sheetMusicUrl": "",
+      "pdfUrl": "",
+      "lines": [
+        {
+          "id": 1,
+          "coptic": "Ⲧⲉⲛⲟⲩⲱϣⲧ ⲙ̀Ⲫⲓⲱⲧ ⲛⲉⲙ Ⲡ̀ϣⲏⲣⲓ",
+          "arabized": "تين أوأوشت إمفيوت نيم بشيري",
+          "arabic": "نسجد للآب والابن"
+        }
+      ],
+      "version": 3,
+      "createdBy": "mina",
+      "createdAt": "2026-10-18T13:41:48.974Z",
+      "updatedAt": "2026-10-18T13:41:48.983Z",
+      "history": [
+        {
+          "version": 1,
+          "status": "draft",
+          "titleAr": "لحن تين أوأوشت (فلنسجد للثالوث القدوس)",
+          "titleEn": "Ten-Oo-Osht (We Worship You)",
+          "level": 1,
+          "audioUrl": "/uploads/sample_cross_lesson_audio.mp3",
+          "linesCount": 1,
+          "savedBy": "mina",
+          "savedAt": "2026-10-18T13:41:48.978Z"
+        }
+      ]
+    }
+  },
+  "taxisCollection": {
+    "taxis_incense_matins_vespers": {
+      "id": "taxis_incense_matins_vespers",
+      "titleAr": "طقس رفع بخور عشية وباكر",
+      "titleEn": "Offering of Incense (Matins & Vespers)",
+      "titleCopt": "Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ⲡⲓⲟⲩⲱϣⲧ ⲛ̀ϣⲱⲡ ⲛⲉⲙ ⲣⲟⲩϩⲓ",
+      "category": "incense",
+      "audience": "all",
+      "status": "published",
+      "summaryAr": "الترتيب الطقسي الكامل لصلوات رفع بخور عشية وباكر مع أدوار الكاهن، مردات الشماس، وألحان الخورس.",
+      "summaryEn": "Complete liturgical order for Matins & Vespers Incense service.",
+      "version": 1,
+      "createdBy": "user_teacher_mina_101",
+      "createdByName": "الخادم مينا",
+      "createdAt": "2026-09-01T08:00:00.000Z",
+      "updatedAt": "2026-09-01T08:00:00.000Z",
+      "publishedBy": "user_teacher_mina_101",
+      "publishedAt": "2026-09-01T08:00:00.000Z",
+      "references": [
+        "كتاب طقس الكنيسة القبطية الأرثوذكسية - الأنبا متاؤس",
+        "الخلاجي المقدس"
+      ],
+      "documents": [
+        {
+          "id": "doc_incense_guide",
+          "title": "دليل الشمامسة في رفع بخور عشية وباكر (PDF)",
+          "fileUrl": "/uploads/sample_cross_lesson_handout.pdf",
+          "fileType": "pdf",
+          "mimeType": "application/pdf"
+        }
+      ],
+      "sections": [
+        {
+          "id": "sec_1",
+          "order": 1,
+          "titleAr": "صلاة الشكر وفتح الستر",
+          "titleEn": "Thanksgiving Prayer & Unveiling of the Sanctuary",
+          "titleCopt": "Ⲡⲓϣⲗⲏⲗ ⲛ̀ϯϣⲉⲡϩ̀ⲙⲟⲧ",
+          "contentAr": "يقف الكاهن أمام الهيكل خاشعاً، ويفتح الستر قائلاً: \"إرحمنا يا الله الآب ضابط الكل...\" ثم يتلو صلاة الشكر.",
+          "contentEn": "The priest stands reverently before the sanctuary, opening the veil and praying the Thanksgiving Prayer.",
+          "priestAction": "يسجد الكاهن أمام باب الهيكل، ثم يفتح الستر ويرشم الشعب بالصليب.",
+          "deaconResponse": "مرد الشماس: \"صلوا من أجل صلاة الشكر المقدسة لكي ينعم الرب بإحسانه...\""
+        },
+        {
+          "id": "sec_2",
+          "order": 2,
+          "titleAr": "دورة البخور وأواشي الصغار والكبار",
+          "titleEn": "Circuits of Incense & Petitions",
+          "titleCopt": "Ⲡⲓⲕⲱϯ ⲛ̀ⲧⲉ ⲡⲓⲥ̀ⲑⲟⲓⲛⲟⲩϥⲓ",
+          "contentAr": "يضع الكاهن يد البخور في المجمرة ويرفع البخور أمام المذبح ۳ دفعات.",
+          "contentEn": "The priest places incense in the censer, offers 3 circuits before the altar.",
+          "rubricNotes": "في أيام الآحاد والأعياد السيدية لا تقال أوشية المسافرين وتستبدل بأوشية القرابين."
+        }
+      ],
+      "history": []
+    },
+    "taxis_liturgy_st_basil": {
+      "id": "taxis_liturgy_st_basil",
+      "titleAr": "طقس القداس الباسيلي المقدس",
+      "titleEn": "The Divine Liturgy of St. Basil",
+      "titleCopt": "Ϯⲁ̀ⲛⲁⲫⲟⲣⲁ ⲛ̀ⲧⲉ ⲡⲓⲁ̀ⲅⲓⲟⲥ Ⲃⲁⲥⲓⲗⲓⲟⲥ",
+      "category": "liturgy",
+      "audience": "all",
+      "status": "published",
+      "summaryAr": "طقس قداس المؤمنين من صلاة الصلح، والأنافورا، والاستدعاء، والتقديس، والمجمع، وقسمة الجسد والدم الطاهرين.",
+      "summaryEn": "The sacred order of the Liturgy of the Believers: Prayer of Reconciliation, Anaphora, Epiclesis, Commemoration, and Holy Fraction.",
+      "version": 1,
+      "createdBy": "user_teacher_mina_101",
+      "createdByName": "الخادم مينا",
+      "createdAt": "2026-09-05T09:00:00.000Z",
+      "updatedAt": "2026-09-05T09:00:00.000Z",
+      "publishedBy": "user_teacher_mina_101",
+      "publishedAt": "2026-09-05T09:00:00.000Z",
+      "references": [
+        "كتاب القداسات الثلاثة - دير السريان العامر",
+        "التقليد الليتورجي السكندري"
+      ],
+      "documents": [
+        {
+          "id": "doc_basil_anaphora",
+          "title": "نص الأنافورا الباسيلية بالقبطي والعربي (PDF)",
+          "fileUrl": "/uploads/sample_cross_lesson_handout.pdf",
+          "fileType": "pdf",
+          "mimeType": "application/pdf"
+        }
+      ],
+      "sections": [
+        {
+          "id": "sec_b1",
+          "order": 1,
+          "titleAr": "صلاة الصلح ومرد القبلة المقدسة",
+          "titleEn": "Prayer of Reconciliation & Holy Kiss",
+          "titleCopt": "Ⲡⲓϣⲗⲏⲗ ⲛ̀ⲧⲉ ϯϩⲓⲣⲏⲛⲏ",
+          "contentAr": "يصلي الكاهن صلاة الصلح طالباً السلام السمائي، وعند ختامها ينادي الشماس: \"قبلوا بعضكم بعضاً بقبلة مقدسة...\" ويرفع الإبروسفارين.",
+          "contentEn": "The priest petitions for heavenly peace, followed by the deacon proclamation to greet one another with a holy kiss while lifting the Prospherin.",
+          "deaconResponse": "مرد الشماس: \"قبلوا بعضكم بعضاً بقبلة مقدسة يا رب ارحم...\""
+        }
+      ],
+      "history": []
+    },
+    "taxis_draft_sacrament": {
+      "id": "taxis_draft_sacrament",
+      "titleAr": "مسودة طقس سر المعمودية والميرون المقدس",
+      "titleEn": "Draft Sacrament of Holy Baptism & Chrismation",
+      "titleCopt": "Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ⲡⲓⲱⲙⲥ ⲉⲑⲟⲩⲃ ⲛⲉⲙ ⲡⲓⲙⲩⲣⲟⲛ",
+      "category": "sacraments",
+      "audience": "all",
+      "status": "draft",
+      "summaryAr": "مسودة قيد المراجعة لطقس سر المعمودية وتغطيس المعمد في جرن المعمودية ورشمه بالميرون المقدس.",
+      "summaryEn": "Draft under review for Baptism & Holy Chrismation.",
+      "version": 1,
+      "createdBy": "user_teacher_mina_101",
+      "createdByName": "الخادم مينا",
+      "createdAt": "2026-09-08T10:00:00.000Z",
+      "updatedAt": "2026-09-08T10:00:00.000Z",
+      "references": [
+        "كتاب المعمودية والميرون - الكنيسة القبطية الأرثوذكسية"
+      ],
+      "documents": [],
+      "sections": [
+        {
+          "id": "sec_bap_1",
+          "order": 1,
+          "titleAr": "صلوات تحليل المرأة وصلاة تجنيد المعمد",
+          "titleEn": "Absolution of the Mother & Enlistment",
+          "contentAr": "يصلي الكاهن على المعمد صلوات الإيمان وجحد الشيطان متجهاً نحو الغرب.",
+          "priestAction": "ينفخ الكاهن في وجه المعمد ۳ مرات قائلاً: \"اخرج أيتها الروح النجسة...\"",
+          "deaconResponse": "مرد الشماس: \"أجحدك يا شيطان وكل أعمالك الشريرة...\""
+        }
+      ],
+      "history": []
+    },
+    "taxis_test_1792330908987": {
+      "id": "taxis_test_1792330908987",
+      "titleAr": "طقس سر مسحة المرضى (صلاة القنديل العام)",
+      "titleEn": "Sacrament of the Unction of the Sick",
+      "titleCopt": "Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ⲡⲓⲉⲩⲭⲉⲗⲉⲟⲛ",
+      "category": "sacraments",
+      "audience": "all",
+      "status": "unpublished",
+      "summaryAr": "",
+      "summaryEn": "",
+      "sections": [
+        {
+          "id": "sec_1",
+          "order": 1,
+          "titleAr": "إيقاد القناديل السبعة وصلوات الأواشي",
+          "titleEn": "Lighting the 7 Lamps & Prayers",
+          "priestAction": "يصنع الكاهن ٧ فتائل من القطن النقي في طبق الزيت",
+          "deaconResponse": "مرد الشماس: هللويا صلوا من أجل المرضى"
+        }
+      ],
+      "references": [],
+      "documents": [],
+      "version": 1,
+      "createdBy": "mina",
+      "createdByName": "الخادم المسؤول",
+      "createdAt": "2026-10-18T13:41:48.988Z",
+      "updatedAt": "2026-10-18T13:41:48.999Z",
+      "history": [],
+      "approvedBy": "mina",
+      "reviewedBy": "mina",
+      "publishedBy": "mina",
+      "publishedAt": "2026-10-18T13:41:48.996Z",
+      "unpublishedBy": "mina",
+      "unpublishedAt": "2026-10-18T13:41:48.999Z"
+    }
   }
 }

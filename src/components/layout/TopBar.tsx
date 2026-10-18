@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Globe, Cross, X, Sun, Moon, Calendar, BookOpen, Check, CheckCheck } from 'lucide-react';
+import { Bell, Globe, Cross, X, Sun, Moon, Calendar, BookOpen, Scroll, Check, CheckCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PWAInstallButton } from './PWAInstallButton';
 import { useTheme } from '../../context/ThemeContext';
@@ -125,6 +125,18 @@ export function TopBar({
             >
               <BookOpen size={15} />
               <span>{lang === 'ar' ? 'صلوات الأجبية' : 'Daily Agpeya'}</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('taxis')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'taxis'
+                  ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] shadow-xs font-black'
+                  : 'text-white/85 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Scroll size={15} />
+              <span>{lang === 'ar' ? 'طقوس الكنيسة' : 'Coptic Taxis'}</span>
             </button>
           </div>
         )}

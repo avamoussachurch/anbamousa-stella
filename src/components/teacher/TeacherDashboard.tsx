@@ -44,6 +44,7 @@ import { EvidenceCoverageModal } from '../sunday-school/evidence/EvidenceCoverag
 import { LessonEngagementSummary } from './LessonEngagementSummary';
 import { PdfDocumentViewer } from '../sunday-school/viewers/PdfDocumentViewer';
 import { SlideDeckViewer } from '../sunday-school/viewers/SlideDeckViewer';
+import { TeacherPublishingHub } from './publishing/TeacherPublishingHub';
 
 interface TeacherDashboardProps {
   onBackToApp?: () => void;
@@ -461,7 +462,7 @@ export function TeacherDashboard({
           }`}
         >
           <School size={16} />
-          <span>{lang === 'ar' ? 'استوديو مدارس الأحد' : 'Sunday School Studio'}</span>
+          <span>{lang === 'ar' ? 'منصة النشر (مدارس الأحد • الألحان • الطقس)' : 'Publishing Hub (Lessons • Hymns • Taxis)'}</span>
         </button>
         <button 
           onClick={() => setActiveTab('mastery')}
@@ -536,43 +537,49 @@ export function TeacherDashboard({
         </button>
       </div>
 
-      {/* Tab: Full-Screen Manual Sunday School Studio & Direct Session Publisher */}
+      {/* Tab: Multi-Mode Publishing Hub (Sunday School, Hymns School, Coptic Rituals / Taxis) */}
       {activeTab === 'sundaySchool' && (
-        <ManualLessonStudio
-          sessions={classSessions}
-          activeSessionId={selectedSessionId}
-          onSelectSession={(id) => setSelectedSessionId(id)}
-          onCreateSession={(data) => addClassSession(data as any)}
-          onUpdateSession={(id, data) => updateClassSession(id, data)}
-          lessons={lessons}
-          activeLessonId={activeLessonId}
-          onSaveLesson={(lessonData) => {
-            const existing = lessons.find(l => l.id === lessonData.id);
-            if (existing) {
-              updateLesson(lessonData.id, lessonData);
-            } else {
-              addLesson(lessonData);
-            }
-          }}
-          onPublishLesson={async (lessonData, assignToSessionId) => {
-            const existing = lessons.find(l => l.id === lessonData.id);
-            if (existing) {
-              updateLesson(lessonData.id, { ...lessonData, status: 'published' });
-            } else {
-              addLesson({ ...lessonData, status: 'published' });
-            }
-            if (assignToSessionId) {
-              updateClassSession(assignToSessionId, {
-                activeLessonId: lessonData.id,
-                title: lessonData.title,
-                topic: lessonData.titleAr ? `${lessonData.title} (${lessonData.titleAr})` : lessonData.title,
-                grade: lessonData.grade,
-                status: 'PUBLISHED'
-              });
-            }
-          }}
-          onPreviewStudentLesson={onPreviewLesson}
+        <TeacherPublishingHub
           lang={lang}
+          onPreviewLesson={onPreviewLesson}
+          sundaySchoolContent={
+            <ManualLessonStudio
+              sessions={classSessions}
+              activeSessionId={selectedSessionId}
+              onSelectSession={(id) => setSelectedSessionId(id)}
+              onCreateSession={(data) => addClassSession(data as any)}
+              onUpdateSession={(id, data) => updateClassSession(id, data)}
+              lessons={lessons}
+              activeLessonId={activeLessonId}
+              onSaveLesson={(lessonData) => {
+                const existing = lessons.find(l => l.id === lessonData.id);
+                if (existing) {
+                  updateLesson(lessonData.id, lessonData);
+                } else {
+                  addLesson(lessonData);
+                }
+              }}
+              onPublishLesson={async (lessonData, assignToSessionId) => {
+                const existing = lessons.find(l => l.id === lessonData.id);
+                if (existing) {
+                  updateLesson(lessonData.id, { ...lessonData, status: 'published' });
+                } else {
+                  addLesson({ ...lessonData, status: 'published' });
+                }
+                if (assignToSessionId) {
+                  updateClassSession(assignToSessionId, {
+                    activeLessonId: lessonData.id,
+                    title: lessonData.title,
+                    topic: lessonData.titleAr ? `${lessonData.title} (${lessonData.titleAr})` : lessonData.title,
+                    grade: lessonData.grade,
+                    status: 'PUBLISHED'
+                  });
+                }
+              }}
+              onPreviewStudentLesson={onPreviewLesson}
+              lang={lang}
+            />
+          }
         />
       )}
 
