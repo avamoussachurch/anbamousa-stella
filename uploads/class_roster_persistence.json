@@ -6,7 +6,7 @@
       "year": "2026–2027",
       "status": "ACTIVE",
       "startDate": "2026-09-01",
-      "createdAt": "2026-10-18T13:40:45.981Z",
+      "createdAt": "2026-10-20T13:12:39.983Z",
       "createdBy": "system"
     }
   },
@@ -23,7 +23,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     },
     "inst_2026-2027_primary_1": {
       "id": "inst_2026-2027_primary_1",
@@ -37,7 +37,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     },
     "inst_2026-2027_primary_2": {
       "id": "inst_2026-2027_primary_2",
@@ -51,7 +51,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     },
     "inst_2026-2027_preparatory": {
       "id": "inst_2026-2027_preparatory",
@@ -65,7 +65,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     },
     "inst_2026-2027_secondary": {
       "id": "inst_2026-2027_secondary",
@@ -79,7 +79,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     },
     "inst_2026-2027_university": {
       "id": "inst_2026-2027_university",
@@ -93,7 +93,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     }
   },
   "classMemberships": {
@@ -106,7 +106,7 @@
       "studentName": "Mark Shenouda",
       "exactGrade": "Grade 4",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-18T13:40:45.981Z",
+      "enrolledAt": "2026-10-20T13:12:39.983Z",
       "enrolledBy": "servant"
     },
     "mem_david_2026-2027": {
@@ -118,7 +118,7 @@
       "studentName": "David Emad",
       "exactGrade": "Grade 5",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-18T13:40:45.981Z",
+      "enrolledAt": "2026-10-20T13:12:39.983Z",
       "enrolledBy": "servant"
     },
     "mem_other_2026-2027": {
@@ -130,7 +130,7 @@
       "studentName": "Peter Fadi",
       "exactGrade": "Prep 1",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-18T13:40:45.981Z",
+      "enrolledAt": "2026-10-20T13:12:39.983Z",
       "enrolledBy": "servant"
     }
   },
@@ -204,6 +204,14 @@
       "classGroupId": "preparatory",
       "churchYear": "2026–2027",
       "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Peter"
+    },
+    "std_sec_karim_909": {
+      "studentId": "std_sec_karim_909",
+      "fullName": "Karim Nabil (First Secondary)",
+      "grade": "Secondary 1",
+      "classGroupId": "secondary",
+      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=std_sec_karim_909",
+      "isPending": true
     }
   },
   "teacherStudentRelationships": [],
@@ -212,31 +220,31 @@
       "parentId": "mary",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     },
     {
       "parentId": "mary",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     },
     {
       "parentId": "other_parent",
       "childId": "other",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-18T13:40:45.981Z"
+      "createdAt": "2026-10-20T13:12:39.983Z"
     }
   ],
   "activationRequests": {
@@ -250,7 +258,19 @@
       "requestedGrade": "Grade 4",
       "notes": "New student joining Sunday school with Servant Mina",
       "status": "PENDING_APPROVAL",
-      "requestedAt": "2026-10-18T12:40:45.981Z"
+      "requestedAt": "2026-10-20T12:12:39.983Z"
+    },
+    "req_1792501959988_qsueq": {
+      "id": "req_1792501959988_qsueq",
+      "studentId": "std_sec_karim_909",
+      "studentName": "Karim Nabil (First Secondary)",
+      "email": "karim.secondary@church.org",
+      "phone": "",
+      "requestedClassGroupId": "secondary",
+      "requestedGrade": "Secondary 1",
+      "notes": "Registered for First Secondary Sunday School.",
+      "status": "PENDING_APPROVAL",
+      "requestedAt": "2026-10-20T13:12:39.988Z"
     }
   },
   "classServants": {
@@ -289,17 +309,17 @@
       "reviewedBy": "Servant Mina",
       "reviewedAt": "2026-09-02T08:00:00.000Z"
     },
-    "mem_george_1792330908912_lvl1_1792330908939": {
-      "id": "mem_george_1792330908912_lvl1_1792330908939",
-      "studentId": "george_1792330908912",
+    "mem_george_1792501964979_lvl1_1792501964999": {
+      "id": "mem_george_1792501964979_lvl1_1792501964999",
+      "studentId": "george_1792501964979",
       "studentName": "George The Deacon Candidate",
       "level": 2,
       "rosterGroup": "deacons_prep",
       "status": "approved",
-      "requestedAt": "2026-10-18T13:41:48.939Z",
+      "requestedAt": "2026-10-20T13:12:44.999Z",
       "notes": "Approved for Level 1 Novice Deacon Choir",
       "reviewedBy": "mina",
-      "reviewedAt": "2026-10-18T13:41:48.967Z",
+      "reviewedAt": "2026-10-20T13:12:45.019Z",
       "transferredFromLevel": 1,
       "transferReason": "Mastered Level 1, promoted to Preparatory Deacons"
     }
@@ -448,8 +468,8 @@
       "lines": [],
       "history": []
     },
-    "test_hymn_1792330908973": {
-      "id": "test_hymn_1792330908973",
+    "test_hymn_1792501965024": {
+      "id": "test_hymn_1792501965024",
       "titleAr": "لحن تين أوأوشت (فلنسجد للثالوث القدوس)",
       "titleEn": "Ten-Oo-Osht (We Worship You)",
       "titleCoptic": "Ⲧⲉⲛⲟⲩⲱϣⲧ ⲙ̀Ⲫⲓⲱⲧ",
@@ -475,8 +495,8 @@
       ],
       "version": 3,
       "createdBy": "mina",
-      "createdAt": "2026-10-18T13:41:48.974Z",
-      "updatedAt": "2026-10-18T13:41:48.983Z",
+      "createdAt": "2026-10-20T13:12:45.025Z",
+      "updatedAt": "2026-10-20T13:12:45.033Z",
       "history": [
         {
           "version": 1,
@@ -487,7 +507,7 @@
           "audioUrl": "/uploads/sample_cross_lesson_audio.mp3",
           "linesCount": 1,
           "savedBy": "mina",
-          "savedAt": "2026-10-18T13:41:48.978Z"
+          "savedAt": "2026-10-20T13:12:45.029Z"
         }
       ]
     }
@@ -624,8 +644,8 @@
       ],
       "history": []
     },
-    "taxis_test_1792330908987": {
-      "id": "taxis_test_1792330908987",
+    "taxis_test_1792501965037": {
+      "id": "taxis_test_1792501965037",
       "titleAr": "طقس سر مسحة المرضى (صلاة القنديل العام)",
       "titleEn": "Sacrament of the Unction of the Sick",
       "titleCopt": "Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ⲡⲓⲉⲩⲭⲉⲗⲉⲟⲛ",
@@ -649,15 +669,76 @@
       "version": 1,
       "createdBy": "mina",
       "createdByName": "الخادم المسؤول",
-      "createdAt": "2026-10-18T13:41:48.988Z",
-      "updatedAt": "2026-10-18T13:41:48.999Z",
+      "createdAt": "2026-10-20T13:12:45.038Z",
+      "updatedAt": "2026-10-20T13:12:45.049Z",
       "history": [],
       "approvedBy": "mina",
       "reviewedBy": "mina",
       "publishedBy": "mina",
-      "publishedAt": "2026-10-18T13:41:48.996Z",
+      "publishedAt": "2026-10-20T13:12:45.046Z",
       "unpublishedBy": "mina",
-      "unpublishedAt": "2026-10-18T13:41:48.999Z"
+      "unpublishedAt": "2026-10-20T13:12:45.049Z"
     }
+  },
+  "progress": {
+    "std_sec_karim_909_l-sec-01": {
+      "studentId": "std_sec_karim_909",
+      "lessonId": "l-sec-01",
+      "versionId": "v-sec-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-sec-1",
+        "sec-sec-2"
+      ],
+      "totalSections": 2,
+      "completionPercent": 100,
+      "startedAt": "2026-10-20T13:12:39.998Z",
+      "completedAt": "2026-10-20T13:12:40.002Z",
+      "pointsAwarded": true
+    }
+  },
+  "attempts": {},
+  "mastery": {
+    "std_sec_karim_909_l-sec-01": {
+      "lessonId": "l-sec-01",
+      "studentId": "std_sec_karim_909",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-20T13:12:40.002Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    }
+  },
+  "userPoints": {
+    "std_sec_karim_909": 50
+  },
+  "userStreaks": {
+    "std_sec_karim_909": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-20",
+      "activeCairoDays": [
+        "2026-10-20"
+      ]
+    }
+  },
+  "completionHistory": {
+    "std_sec_karim_909": [
+      {
+        "id": "act_1792501960005_qjrdz",
+        "studentId": "std_sec_karim_909",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-sec-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-20T13:12:40.002Z",
+        "cairoDate": "2026-10-20",
+        "cairoTime": "16:12:40",
+        "isFirstCompletion": true
+      }
+    ]
   }
 }

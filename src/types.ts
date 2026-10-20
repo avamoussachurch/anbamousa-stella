@@ -599,6 +599,7 @@ export interface Lesson {
   date: string;
   ageGroup?: string;
   grade?: string;
+  classGroupId?: ClassGroupId;
   teacherId?: string;
   teacherName?: string;
   pointsAvailable: number;

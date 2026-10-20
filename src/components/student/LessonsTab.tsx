@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Lesson, Language } from '../../types';
 import { LessonEditModal } from '../teacher/LessonEditModal';
 import { ExpressLessonPublishModal } from '../teacher/ExpressLessonPublishModal';
-import { formatStudentClassDisplay } from '../../lib/classGroups';
+import { formatStudentClassDisplay, getClassGroupForGrade } from '../../lib/classGroups';
 import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { HymnsSchoolTab } from '../hymns/HymnsSchoolTab';
 import { CopticTaxisTab } from '../taxis/CopticTaxisTab';
@@ -40,8 +40,16 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
         result = result.filter(l => l.status === 'draft');
       }
     } else {
-      // Students only see published lessons
+      // Students only see published lessons assigned to their Sunday School class
       result = result.filter(l => l.status === 'published');
+      const studentGrade = userData?.requestedGrade || userData?.grade;
+      const studentGroupId = userData?.requestedClassGroupId || (studentGrade ? getClassGroupForGrade(studentGrade)?.id : null);
+      if (studentGroupId) {
+        result = result.filter(l => {
+          const lessonGroupId = l.classGroupId || (l.grade ? getClassGroupForGrade(l.grade)?.id : null);
+          return !lessonGroupId || lessonGroupId === studentGroupId;
+        });
+      }
     }
 
     if (!searchQuery.trim()) return result;

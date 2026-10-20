@@ -12,13 +12,13 @@ import {
 } from '../../types';
 import { SundaySchoolLessonView } from '../sunday-school/student/SundaySchoolLessonView';
 import { SundaySchoolQuizView } from '../sunday-school/student/SundaySchoolQuizView';
-import { startLessonProgress, completeSectionProgress, completeLessonProgress } from '../../lib/studentProgressService';
+import { startLessonProgress, completeSectionProgress, completeLessonProgress, diagnoseLessonCompletion } from '../../lib/studentProgressService';
 import { submitStudentQuizAttempt } from '../../lib/studentQuizService';
 import { getStudentMastery, evaluateStudentMastery } from '../../lib/studentMasteryService';
-import { getClassGroupForGrade, getClassGroupLabel } from '../../lib/classGroups';
+import { getClassGroupForGrade, getClassGroupLabel, getClassGroupById } from '../../lib/classGroups';
 
 export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string; onBack: () => void; lang?: Language }) {
-  const { userData, isGuest, addPoints } = useAuth();
+  const { userData, isGuest, addPoints, setUserDirectly } = useAuth();
   const { 
     lessons, 
     markCompleted,
@@ -29,7 +29,8 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
     studentMasteries,
     setStudentMastery,
     updateStudentContentProgress,
-    recordQuizAttempt
+    recordQuizAttempt,
+    refreshProgressSummary
   } = useLessons();
 
   const lesson = lessons.find(l => l.id === lessonId) || mockLessons.find(l => l.id === lessonId);
@@ -174,9 +175,13 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
 
   // Priority 1B: Class-based lesson access authorization
   const isStudent = userData?.role === 'student';
-  const studentGrade = userData?.grade;
-  const studentClass = studentGrade ? getClassGroupForGrade(studentGrade) : null;
-  const lessonClass = lesson?.grade ? getClassGroupForGrade(lesson.grade) : null;
+  const studentGrade = userData?.requestedGrade || userData?.grade;
+  const studentClass = userData?.requestedClassGroupId 
+    ? getClassGroupById(userData.requestedClassGroupId) 
+    : (studentGrade ? getClassGroupForGrade(studentGrade) : null);
+  const lessonClass = lesson?.classGroupId 
+    ? getClassGroupById(lesson.classGroupId) 
+    : (lesson?.grade ? getClassGroupForGrade(lesson.grade) : null);
 
   const isRestrictedForStudent = Boolean(
     isStudent && 
@@ -246,7 +251,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
   }, [lessonId, activePublishedVersion?.id, isGuest, userData?.id, currentStudentId]);
 
   const handleFinishLesson = async () => {
-    if (!activePublishedVersion) return;
+    if (isFinishing || !activePublishedVersion) return;
     setIsFinishing(true);
     setFinishError(null);
 
@@ -283,14 +288,36 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
         );
       }
 
-      // Idempotent point rewards: only award points if first-time completion
-      if (res.isFirstCompletion && res.pointsEarned && res.pointsEarned > 0 && userData) {
+      // Authoritative points and streak synchronization (Server-authoritative, idempotent)
+      if (typeof res.totalPoints === 'number' && userData) {
+        setUserDirectly({
+          ...userData,
+          points: res.totalPoints,
+          currentStreak: res.streak?.currentStreak ?? userData.currentStreak ?? 1
+        });
+      } else if (res.isFirstCompletion && res.pointsEarned && res.pointsEarned > 0 && userData) {
         try {
           await addPoints(res.pointsEarned);
         } catch (e) {
-          console.warn(e);
+          console.warn('Error applying first-time completion points:', e);
         }
       }
+
+      // Synchronize overall application state with authoritative server summary
+      if (refreshProgressSummary) {
+        try {
+          await refreshProgressSummary();
+        } catch (e) {
+          console.warn('Note on summary refresh after completion:', e);
+        }
+      }
+
+      // Diagnostic check: audit client/server synchronization in background
+      diagnoseLessonCompletion(lessonId, {
+        isCompleted: true,
+        points: res.totalPoints ?? userData?.points,
+        studentId: currentStudentId
+      }).catch(() => {});
 
       setIsFinishing(false);
       setFinishSuccess(true);

@@ -6,11 +6,10 @@ import { useAuth } from '../../context/AuthContext';
 import { registerWithSupabase, loginWithSupabase, signInWithGoogleSupabase } from '../../lib/supabaseAuth';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { CLASS_GROUPS } from '../../lib/classGroups';
-import { ClassGroupId } from '../../types';
+import { ClassGroupId, User as AppUser, Language } from '../../types';
 import { requestAccountActivation } from '../../lib/onboardingService';
 import { PrivacyPolicy } from '../legal/PrivacyPolicy';
 import { FAQ } from '../legal/FAQ';
-import { Language } from '../../types';
 
 export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: Language) => void }) {
   const { isDark, toggleTheme } = useTheme();
@@ -88,8 +87,41 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
         return;
       }
     } else {
-      // If Supabase credentials haven't been entered yet, log in directly in demo mode with this user's profile
-      loginAsGuest(role, fullName || (email.split('@')[0] || 'User'));
+      // If Supabase credentials haven't been entered yet, handle registration/login without leaking unrelated demo data
+      if (isRegister) {
+        const studentGrade = role === 'student' ? selectedGrade : undefined;
+        const studentGroupId = role === 'student' ? selectedClassGroupId : undefined;
+        const newUser: AppUser = {
+          id: 'user_' + Date.now(),
+          fullName: fullName.trim() || (email.split('@')[0] || 'User'),
+          role: role,
+          grade: studentGrade,
+          requestedGrade: studentGrade,
+          requestedClassGroupId: studentGroupId,
+          points: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          screenTimeSeconds: 0,
+          parentEmail: email,
+          phone: '',
+          avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName || 'User')}`,
+          activationStatus: role === 'student' ? 'PENDING_APPROVAL' : 'APPROVED'
+        };
+
+        if (role === 'student' && studentGroupId && studentGrade) {
+          requestAccountActivation({
+            studentId: newUser.id,
+            studentName: newUser.fullName,
+            email: email,
+            requestedClassGroupId: studentGroupId,
+            requestedGrade: studentGrade
+          }).catch(() => {});
+        }
+
+        setUserDirectly(newUser);
+      } else {
+        loginAsGuest(role, fullName || (email.split('@')[0] || 'User'));
+      }
       setLoading(false);
     }
   };

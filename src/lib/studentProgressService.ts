@@ -213,7 +213,15 @@ export async function completeSectionProgress(
  */
 export async function completeLessonProgress(
   input: CompleteLessonProgressInput
-): Promise<{ data: StudentContentProgress | null; error: Error | null; isFirstCompletion?: boolean; pointsEarned?: number }> {
+): Promise<{
+  data: StudentContentProgress | null;
+  error: Error | null;
+  isFirstCompletion?: boolean;
+  pointsEarned?: number;
+  totalPoints?: number;
+  streak?: any;
+  completionHistory?: any[];
+}> {
   const { lessonId, versionId, studentId } = input;
   if (!lessonId || !versionId) {
     return { data: null, error: new Error('lessonId and versionId are required') };
@@ -262,7 +270,10 @@ export async function completeLessonProgress(
       data: prog, 
       error: null,
       isFirstCompletion: json.isFirstCompletion ?? true,
-      pointsEarned: json.pointsEarned ?? (json.isFirstCompletion ? 50 : 0)
+      pointsEarned: json.pointsEarned ?? (json.isFirstCompletion ? 50 : 0),
+      totalPoints: json.totalPoints,
+      streak: json.streak,
+      completionHistory: json.completionHistory
     };
   } catch (err: any) {
     // Pure offline fallback
@@ -293,3 +304,292 @@ export async function completeLessonProgress(
     };
   }
 }
+
+/**
+ * 5. getStudentProgressSummary(studentId?)
+ * Fetches authoritative server summary of all completed lessons, total points, Cairo streak, and mastery.
+ * Essential for cross-device synchronization and refresh persistence.
+ */
+export async function getStudentProgressSummary(
+  studentId?: string
+): Promise<{
+  success: boolean;
+  completedLessonIds: string[];
+  completedCount: number;
+  totalAssignedLessons: number;
+  progressPercent: number;
+  allProgress: Record<string, StudentContentProgress>;
+  points: number;
+  streak: { currentStreak: number; longestStreak: number; lastActiveCairoDate: string };
+  completionHistory: any[];
+  serverCairoDate: string;
+  error?: string;
+}> {
+  const headers = await getAuthHeader();
+  try {
+    const query = new URLSearchParams();
+    if (studentId) query.set('studentId', studentId);
+
+    const res = await fetch(`/api/church/student-progress/summary?${query.toString()}`, {
+      method: 'GET',
+      headers
+    });
+
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.success) {
+      throw new Error(json?.message || `HTTP ${res.status}`);
+    }
+
+    return {
+      success: true,
+      completedLessonIds: json.completedLessonIds || [],
+      completedCount: json.completedCount || 0,
+      totalAssignedLessons: json.totalAssignedLessons || 0,
+      progressPercent: json.progressPercent || 0,
+      allProgress: json.allProgress || {},
+      points: json.points ?? 100,
+      streak: json.streak || { currentStreak: 1, longestStreak: 1, lastActiveCairoDate: '' },
+      completionHistory: json.completionHistory || [],
+      serverCairoDate: json.serverCairoDate || new Date().toISOString().split('T')[0]
+    };
+  } catch (err: any) {
+    // Offline / Local storage fallback
+    const completedIds: string[] = [];
+    const allProg: Record<string, StudentContentProgress> = {};
+    for (const [k, p] of Object.entries(LOCAL_PROGRESS_STORE)) {
+      if (!studentId || k.startsWith(`${studentId}_`)) {
+        const lId = k.split('_').slice(1).join('_');
+        allProg[lId] = p;
+        if (p.status === 'COMPLETED') {
+          completedIds.push(lId);
+        }
+      }
+    }
+    return {
+      success: false,
+      completedLessonIds: completedIds,
+      completedCount: completedIds.length,
+      totalAssignedLessons: Math.max(1, completedIds.length),
+      progressPercent: completedIds.length > 0 ? 100 : 0,
+      allProgress: allProg,
+      points: 100,
+      streak: { currentStreak: 1, longestStreak: 1, lastActiveCairoDate: '' },
+      completionHistory: [],
+      serverCairoDate: new Date().toISOString().split('T')[0],
+      error: err?.message
+    };
+  }
+}
+
+/**
+ * 6. getAuthoritativeCompletionHistory(studentId?, limit?)
+ * Fetches real persisted completion activity records for this student.
+ */
+export async function getAuthoritativeCompletionHistory(
+  studentId?: string,
+  limit = 20
+): Promise<{ success: boolean; activities: any[]; totalCount: number; error?: string }> {
+  const headers = await getAuthHeader();
+  try {
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (studentId) query.set('studentId', studentId);
+
+    const res = await fetch(`/api/church/completion-history?${query.toString()}`, {
+      method: 'GET',
+      headers
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.success) {
+      throw new Error(json?.message || `HTTP ${res.status}`);
+    }
+    return {
+      success: true,
+      activities: json.activities || [],
+      totalCount: json.totalCount || 0
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      activities: [],
+      totalCount: 0,
+      error: err?.message
+    };
+  }
+}
+
+/**
+ * 7. getAuthoritativeLeaderboard(options)
+ * Fetches church class-isolated leaderboard with weekly and all-time views.
+ */
+export async function getAuthoritativeLeaderboard(options?: {
+  classGroupId?: string;
+  timeframe?: 'weekly' | 'all_time';
+  studentId?: string;
+}): Promise<{
+  success: boolean;
+  classGroupId: string;
+  timeframe: string;
+  leaderboard: any[];
+  currentUserEntry: any | null;
+  totalParticipants: number;
+  cairoDate: string;
+  cairoWeekReset: string;
+  error?: string;
+}> {
+  const headers = await getAuthHeader();
+  try {
+    const query = new URLSearchParams();
+    if (options?.classGroupId) query.set('classGroupId', options.classGroupId);
+    if (options?.timeframe) query.set('timeframe', options.timeframe);
+
+    const res = await fetch(`/api/church/leaderboard?${query.toString()}`, {
+      method: 'GET',
+      headers
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.success) {
+      throw new Error(json?.message || `HTTP ${res.status}`);
+    }
+    return {
+      success: true,
+      classGroupId: json.classGroupId,
+      timeframe: json.timeframe,
+      leaderboard: json.leaderboard || [],
+      currentUserEntry: json.currentUserEntry || null,
+      totalParticipants: json.totalParticipants || 0,
+      cairoDate: json.cairoDate,
+      cairoWeekReset: json.cairoWeekReset
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      classGroupId: options?.classGroupId || 'primary_2',
+      timeframe: options?.timeframe || 'weekly',
+      leaderboard: [],
+      currentUserEntry: null,
+      totalParticipants: 0,
+      cairoDate: new Date().toISOString().split('T')[0],
+      cairoWeekReset: '',
+      error: err?.message
+    };
+  }
+}
+
+export interface LessonCompletionDiagnosticResult {
+  lessonId: string;
+  studentId: string;
+  clientCompleted?: boolean;
+  serverCompleted: boolean;
+  isSynchronized: boolean;
+  statusLabel: string;
+  serverState: {
+    found: boolean;
+    status: string;
+    completionPercent: number;
+    sectionsCompletedCount: number;
+    completedAt: string | null;
+    pointsAwarded: boolean;
+  } | null;
+  pointsTreasury: {
+    totalPoints: number;
+    pointsHistoryRecorded: boolean;
+  } | null;
+  streakState: {
+    currentStreak: number;
+    longestStreak: number;
+    lastActiveCairoDate: string;
+  } | null;
+  masteryRecord: {
+    status: string;
+    evaluatedAt: string;
+    evaluatedBy: string;
+  } | null;
+  supabaseStatus: {
+    configured: boolean;
+    foundInSupabase: boolean;
+    completedInSupabase: boolean | null;
+  };
+  completionHistoryCount: number;
+  issues: string[];
+}
+
+/**
+ * 8. diagnoseLessonCompletion(lessonId, clientState?)
+ * Dev & Test Diagnostic Utility: Audits authoritative lesson completion status
+ * across client memory, server-authoritative state, and Supabase persistence.
+ */
+export async function diagnoseLessonCompletion(
+  lessonId: string,
+  clientState?: { isCompleted?: boolean; points?: number; studentId?: string }
+): Promise<LessonCompletionDiagnosticResult> {
+  const headers = await getAuthHeader();
+  const query = new URLSearchParams();
+  if (clientState?.studentId) query.set('studentId', clientState.studentId);
+
+  try {
+    const res = await fetch(`/api/church/student-progress/diagnose/${encodeURIComponent(lessonId)}?${query.toString()}`, {
+      method: 'GET',
+      headers
+    });
+    const json = await res.json().catch(() => null);
+
+    if (!res.ok || !json?.success) {
+      throw new Error(json?.message || `HTTP ${res.status}: Diagnostic check failed`);
+    }
+
+    const issues: string[] = [...(json.diagnostics?.issues || [])];
+    const serverCompleted = Boolean(json.diagnostics?.isCompleteOnServer);
+
+    if (clientState?.isCompleted !== undefined && clientState.isCompleted !== serverCompleted) {
+      issues.push(`CLIENT_SERVER_COMPLETION_MISMATCH (client=${clientState.isCompleted}, server=${serverCompleted})`);
+    }
+
+    const isSynchronized = issues.length === 0;
+
+    // Structured logging for development & QA diagnostics (sanitized, no secrets or tokens)
+    if (typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+      console.groupCollapsed(`[Authoritative Lesson Diagnostic] ${lessonId} (${isSynchronized ? 'SYNC OK' : 'MISMATCH'})`);
+      console.info(`├── Student: ${json.studentId}`);
+      console.info(`├── Server Status: ${json.serverState?.status} (${json.serverState?.completionPercent}%)`);
+      console.info(`├── Points Awarded: ${json.serverState?.pointsAwarded ? 'YES' : 'NO'} (Total: ${json.pointsTreasury?.totalPoints ?? 0})`);
+      console.info(`├── Mastery: ${json.masteryRecord?.status || 'NOT_EVALUATED'}`);
+      console.info(`├── Supabase Persistence: ${json.supabaseStatus?.configured ? (json.supabaseStatus.completedInSupabase ? 'CONFIRMED' : 'PENDING') : 'N/A'}`);
+      console.info(`├── Issues Detected: ${issues.length > 0 ? issues.join(', ') : 'None'}`);
+      console.info(`└── Status: ${json.diagnostics?.statusLabel}`);
+      console.groupEnd();
+    }
+
+    return {
+      lessonId,
+      studentId: json.studentId,
+      clientCompleted: clientState?.isCompleted,
+      serverCompleted,
+      isSynchronized,
+      statusLabel: json.diagnostics?.statusLabel || 'UNKNOWN',
+      serverState: json.serverState,
+      pointsTreasury: json.pointsTreasury,
+      streakState: json.streakState,
+      masteryRecord: json.masteryRecord,
+      supabaseStatus: json.supabaseStatus,
+      completionHistoryCount: json.completionHistoryCount || 0,
+      issues
+    };
+  } catch (err: any) {
+    return {
+      lessonId,
+      studentId: clientState?.studentId || 'unknown',
+      clientCompleted: clientState?.isCompleted,
+      serverCompleted: false,
+      isSynchronized: false,
+      statusLabel: 'DIAGNOSTIC_FETCH_FAILED',
+      serverState: null,
+      pointsTreasury: null,
+      streakState: null,
+      masteryRecord: null,
+      supabaseStatus: { configured: false, foundInSupabase: false, completedInSupabase: null },
+      completionHistoryCount: 0,
+      issues: [err?.message || 'Failed to contact diagnostic endpoint']
+    };
+  }
+}
+

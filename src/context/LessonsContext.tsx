@@ -63,6 +63,7 @@ import {
   updateClaimVerification as updateClaimVerificationService,
   resolveSourceConflict as resolveSourceConflictService
 } from '../lib/evidenceMapService';
+import { getStudentProgressSummary } from '../lib/studentProgressService';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
 interface LessonsContextType {
@@ -151,6 +152,7 @@ interface LessonsContextType {
   curriculumLoading?: boolean;
   curriculumError?: string | null;
   refreshCurriculum?: () => Promise<void>;
+  refreshProgressSummary?: () => Promise<void>;
 
   // Global Reset
   resetToDefault: () => void;
@@ -306,7 +308,32 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const onlineLessons = result.data || [];
+      let onlineLessons = result.data || [];
+
+      // Authoritative Progress Synchronization:
+      // Fetch authoritative student progress summary from server to survive refreshes & cross-device sessions
+      try {
+        const summaryData = await getStudentProgressSummary(userData.id);
+        if (summaryData?.completedLessonIds) {
+          const completedSet = new Set(summaryData.completedLessonIds);
+          onlineLessons = onlineLessons.map(l => ({
+            ...l,
+            isCompleted: completedSet.has(l.id)
+          }));
+        }
+        if (summaryData?.allProgress) {
+          setContentProgress(prev => {
+            const next = { ...prev };
+            for (const [lessonId, p] of Object.entries(summaryData.allProgress)) {
+              next[`${userData.id}_${lessonId}`] = p as any;
+            }
+            return next;
+          });
+        }
+      } catch (sumErr) {
+        console.warn('Note on summary load in LessonsContext:', sumErr);
+      }
+
       setLessons(onlineLessons);
 
       // Hydrate version map and sources from normalized database
@@ -371,6 +398,32 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadOnlineCurriculum();
   }, [loadOnlineCurriculum]);
+
+  // Authoritative progress summary sync for student across reloads & sessions
+  useEffect(() => {
+    if (userData?.id) {
+      getStudentProgressSummary(userData.id).then(summaryData => {
+        if (summaryData?.completedLessonIds) {
+          const completedSet = new Set(summaryData.completedLessonIds);
+          setLessons(prev => prev.map(l => ({
+            ...l,
+            isCompleted: completedSet.has(l.id)
+          })));
+        }
+        if (summaryData?.allProgress) {
+          setContentProgress(prev => {
+            const next = { ...prev };
+            for (const [lessonId, p] of Object.entries(summaryData.allProgress)) {
+              next[`${userData.id}_${lessonId}`] = p as any;
+            }
+            return next;
+          });
+        }
+      }).catch(err => {
+        console.warn('Note on initial progress summary sync:', err);
+      });
+    }
+  }, [userData?.id]);
 
   // LocalStorage sync
   useEffect(() => {
@@ -1165,6 +1218,30 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       curriculumLoading,
       curriculumError,
       refreshCurriculum: loadOnlineCurriculum,
+      refreshProgressSummary: async () => {
+        if (!userData) return;
+        try {
+          const summaryData = await getStudentProgressSummary(userData.id);
+          if (summaryData?.completedLessonIds) {
+            const completedSet = new Set(summaryData.completedLessonIds);
+            setLessons(prev => prev.map(l => ({
+              ...l,
+              isCompleted: completedSet.has(l.id)
+            })));
+          }
+          if (summaryData?.allProgress) {
+            setContentProgress(prev => {
+              const next = { ...prev };
+              for (const [lessonId, p] of Object.entries(summaryData.allProgress)) {
+                next[`${userData.id}_${lessonId}`] = p as any;
+              }
+              return next;
+            });
+          }
+        } catch (e) {
+          console.warn('Could not refresh progress summary:', e);
+        }
+      },
       resetToDefault
     }}>
       {children}

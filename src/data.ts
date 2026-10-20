@@ -84,6 +84,7 @@ export const mockLessons: Lesson[] = [
     date: '2026-09-17',
     ageGroup: '9-11 Years (Grades 4-5)',
     grade: '4th Grade',
+    classGroupId: 'primary_2',
     teacherId: 't-mina-1',
     teacherName: 'Servant Mina (خادم رابعة ابتدائي)',
     pointsAvailable: 150,
@@ -131,6 +132,7 @@ export const mockLessons: Lesson[] = [
     sourcesCount: 2,
     versionsCount: 1,
     grade: '3rd & 4th Grade',
+    classGroupId: 'primary_2',
     category: 'history',
     scriptureVerseEn: 'Be faithful until death, and I will give you the crown of life.',
     scriptureVerseAr: 'كن أميناً إلى الموت فسأعطيك إكليل الحياة. (رؤيا ٢: ١٠)',
@@ -170,10 +172,11 @@ export const mockLessons: Lesson[] = [
     currentVersionId: 'ver-noah-v1',
     date: '2026-09-06',
     pointsAvailable: 150,
-    isCompleted: true,
+    isCompleted: false,
     sourcesCount: 3,
     versionsCount: 1,
     grade: '1st & 2nd Grade',
+    classGroupId: 'primary_1',
     category: 'bible',
     scriptureVerseEn: 'By faith Noah, being divinely warned of things not yet seen, prepared an ark for the saving of his household.',
     scriptureVerseAr: 'بالإيمان نوح لما أُوحي إليه عن أمور لم تُرى بعد خاف فبنى فلكاً لخلاص بيته. (عبرانيين ١١: ٧)',
@@ -197,6 +200,76 @@ export const mockLessons: Lesson[] = [
       {
         question: 'How did Noah respond when God asked him to build the ark?',
         options: ['He obeyed with faithful trust', 'He refused', 'He ignored God'],
+        correctIndex: 0,
+        type: 'multiple_choice'
+      }
+    ]
+  },
+  {
+    id: 'l-prep-01',
+    title: 'The Courage of Daniel in Babylon',
+    titleAr: 'شجاعة دانيال النبي في بابل',
+    titleCop: 'Ⲇⲁⲛⲓⲏⲗ ⲡⲓⲡ̀ⲣⲟⲫⲏⲧⲏⲥ',
+    summary: 'How Daniel and the Three Holy Youths remained faithful to God amidst worldly pressures and trials.',
+    summaryAr: 'كيف ثبت دانيال والفتية القديسون في الإيمان وثقة الصلاة وسط تحديات وضغوط العالم.',
+    status: 'published',
+    currentVersionId: 'v-prep-01',
+    date: '2026-09-20',
+    pointsAvailable: 150,
+    isCompleted: false,
+    sourcesCount: 2,
+    versionsCount: 1,
+    grade: 'Prep 1',
+    classGroupId: 'preparatory',
+    category: 'bible',
+    scriptureVerseEn: 'But Daniel purposed in his heart that he would not defile himself with the portion of the king’s delicacies.',
+    scriptureVerseAr: 'أما دانيال فوضع في قلبه أنه لا يتنجس بأطايب الملك. (دانيال ١: ٨)',
+    verseReference: 'Daniel 1:8 • دانيال ١: ٨',
+    quiz: [
+      {
+        question: 'What did Daniel resolve in his heart regarding the king’s food?',
+        options: ['Not to defile himself with it', 'To eat everything', 'To hide it'],
+        correctIndex: 0,
+        type: 'multiple_choice'
+      },
+      {
+        question: 'How many times each day did Daniel open his window toward Jerusalem to pray?',
+        options: ['Three times', 'Once', 'Seven times'],
+        correctIndex: 0,
+        type: 'multiple_choice'
+      }
+    ]
+  },
+  {
+    id: 'l-sec-01',
+    title: 'St. Stephen and the Power of Christian Witness',
+    titleAr: 'القديس استفانوس وقوة الشهادة المسيحية',
+    titleCop: 'Ⲁⲡⲁ Ⲥⲧⲉⲫⲁⲛⲟⲥ',
+    summary: 'Exploring the fearless apologetics, sacrificial love, and forgiveness of the Archdeacon and Protomartyr in Acts.',
+    summaryAr: 'دراسة الشهادة الشجاعة والمحبة والغفران في سيرة رئيس الشمامسة وأول الشهداء بسفر أعمال الرسل.',
+    status: 'published',
+    currentVersionId: 'v-sec-01',
+    date: '2026-09-21',
+    pointsAvailable: 150,
+    isCompleted: false,
+    sourcesCount: 3,
+    versionsCount: 1,
+    grade: 'Secondary 1',
+    classGroupId: 'secondary',
+    category: 'history',
+    scriptureVerseEn: 'Lord, do not charge them with this sin.',
+    scriptureVerseAr: 'يا رب، لا تقم لهم هذه الخطية. (أعمال الرسل ٧: ٦٠)',
+    verseReference: 'Acts 7:60 • أعمال ٧: ٦٠',
+    quiz: [
+      {
+        question: 'What office did St. Stephen hold in the early Apostolic Church?',
+        options: ['Archdeacon (One of the Seven Deacons)', 'Soldier', 'Centurion'],
+        correctIndex: 0,
+        type: 'multiple_choice'
+      },
+      {
+        question: 'What did St. Stephen say as he was being martyred, following the example of Christ?',
+        options: ['Lord, do not charge them with this sin', 'Depart from me', 'I am innocent'],
         correctIndex: 0,
         type: 'multiple_choice'
       }

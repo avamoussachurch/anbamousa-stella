@@ -9,6 +9,7 @@ import { useLessons } from '../../context/LessonsContext';
 import { useStage } from '../../context/StageContext';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { getUserRank } from '../../lib/pointsService';
+import { getClassGroupForGrade } from '../../lib/classGroups';
 import { Language, Lesson } from '../../types';
 import {
   MosesDuneHeroBanner,
@@ -38,29 +39,39 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
   // mockLessons are used as fallback ONLY for Demo, Guest, or Offline/local mode.
   // For an authenticated online user, a Supabase/curriculum failure must NOT silently replace real curriculum with mockLessons.
   // If the online query fails, preserve the existing curriculumError/loading behavior instead.
-  let nextLesson: Lesson | null = null;
-  if (!isOnlineAuth) {
-    const demoLessons = mockLessons;
-    nextLesson = demoLessons.find(l => !l.isCompleted) || demoLessons[0];
-  } else if (!curriculumLoading && !curriculumError) {
-    const onlineLessons = lessons || [];
-    nextLesson = onlineLessons.find(l => !l.isCompleted) || onlineLessons[0] || null;
-  }
+  const isLessonFinished = (l: Lesson) => {
+    if (l.isCompleted) return true;
+    if (userData && contentProgress) {
+      const p = contentProgress[`${userData.id}_${l.id}`];
+      if (p && (p.status === 'COMPLETED' || p.completionPercent === 100)) return true;
+    }
+    return false;
+  };
 
-  const activeLessonsList = (!isOnlineAuth ? mockLessons : (lessons || []));
-  const completedLessons = activeLessonsList.filter(l => 
-    l.isCompleted || (userData && contentProgress && contentProgress[`${userData.id}_${l.id}`]?.isCompleted)
-  );
+  const isCoptic = lang === 'copt' || lang === 'cop';
+  const isTeacher = userData?.role === 'teacher';
+  const isParent = userData?.role === 'parent';
+
+  // Resolve student class group from requested or saved grade/class
+  const studentGrade = userData?.requestedGrade || userData?.grade;
+  const studentGroupId = userData?.requestedClassGroupId || (studentGrade ? getClassGroupForGrade(studentGrade)?.id : null) || 'primary_2';
+
+  const rawLessons = (!isOnlineAuth ? mockLessons : (lessons || []));
+  const activeLessonsList = isTeacher 
+    ? rawLessons 
+    : rawLessons.filter(l => {
+        const lessonGroupId = l.classGroupId || (l.grade ? getClassGroupForGrade(l.grade)?.id : null);
+        return !lessonGroupId || lessonGroupId === studentGroupId;
+      });
+
+  const nextLesson = activeLessonsList.find(l => !isLessonFinished(l)) || activeLessonsList[0] || null;
+  const completedLessons = activeLessonsList.filter(isLessonFinished);
   const lastCompleted = completedLessons[completedLessons.length - 1];
   const hasCompletedMilestone = completedLessons.length > 0 || (userData?.points ?? 0) >= 100;
 
   const userRank = userData ? getUserRank(userData.id, userData) : null;
 
   if (!userData) return null;
-
-  const isCoptic = lang === 'copt' || lang === 'cop';
-  const isTeacher = userData.role === 'teacher';
-  const isParent = userData.role === 'parent';
 
   const totalLessonsCount = activeLessonsList.length;
   const completedCount = completedLessons.length;

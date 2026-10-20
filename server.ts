@@ -1719,6 +1719,94 @@ app.post("/api/church/generate-tts", async (req, res) => {
 // Publication belongs strictly to Phase 2B.6 and is NOT permitted here.
 // ==============================================================================
 
+// ==============================================================================
+// CAIRO TIMEZONE & STREAK CALCULATIONS (Africa/Cairo)
+// ==============================================================================
+function getCairoDateParts(inputDate: Date | string | number = new Date()) {
+  const d = typeof inputDate === 'string' || typeof inputDate === 'number' ? new Date(inputDate) : inputDate;
+  const safeDate = isNaN(d.getTime()) ? new Date() : d;
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Africa/Cairo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  const parts = formatter.formatToParts(safeDate);
+  const partMap: Record<string, string> = {};
+  for (const p of parts) {
+    if (p.type !== 'literal') partMap[p.type] = p.value;
+  }
+  const year = parseInt(partMap.year || '2026', 10);
+  const month = parseInt(partMap.month || '1', 10);
+  const day = parseInt(partMap.day || '1', 10);
+  const hour = parseInt(partMap.hour || '0', 10);
+  const minute = parseInt(partMap.minute || '0', 10);
+  const second = parseInt(partMap.second || '0', 10);
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  const dateString = `${year}-${pad(month)}-${pad(day)}`;
+  const timeString = `${pad(hour)}:${pad(minute)}:${pad(second)}`;
+  return { year, month, day, hour, minute, second, dateString, timeString };
+}
+
+function getCairoDateString(inputDate: Date | string | number = new Date()): string {
+  return getCairoDateParts(inputDate).dateString;
+}
+
+function getCairoTimeString(inputDate: Date | string | number = new Date()): string {
+  return getCairoDateParts(inputDate).timeString;
+}
+
+function calculateCairoStreakForStudent(activeDays: string[]): { currentStreak: number; longestStreak: number } {
+  if (!activeDays || activeDays.length === 0) return { currentStreak: 1, longestStreak: 1 };
+  const uniqueCairoDays = Array.from(new Set(activeDays.map(d => getCairoDateString(d)))).sort().reverse();
+  const todayCairo = getCairoDateString();
+  const yParts = getCairoDateParts();
+  const yObj = new Date(yParts.year, yParts.month - 1, yParts.day - 1);
+  const yesterdayCairo = getCairoDateString(yObj);
+  const mostRecent = uniqueCairoDays[0];
+  const isActive = mostRecent === todayCairo || mostRecent === yesterdayCairo;
+  let currentStreak = 0;
+  if (isActive) {
+    currentStreak = 1;
+    for (let i = 0; i < uniqueCairoDays.length - 1; i++) {
+      const p1 = getCairoDateParts(uniqueCairoDays[i]);
+      const p2 = getCairoDateParts(uniqueCairoDays[i + 1]);
+      const d1 = new Date(p1.year, p1.month - 1, p1.day);
+      const d2 = new Date(p2.year, p2.month - 1, p2.day);
+      const diffDays = Math.round((d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+  }
+  let longestStreak = currentStreak;
+  let tempStreak = 1;
+  const ascendingDays = [...uniqueCairoDays].reverse();
+  for (let i = 0; i < ascendingDays.length - 1; i++) {
+    const p1 = getCairoDateParts(ascendingDays[i]);
+    const p2 = getCairoDateParts(ascendingDays[i + 1]);
+    const d1 = new Date(p1.year, p1.month - 1, p1.day);
+    const d2 = new Date(p2.year, p2.month - 1, p2.day);
+    const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 1) {
+      tempStreak++;
+      if (tempStreak > longestStreak) longestStreak = tempStreak;
+    } else {
+      tempStreak = 1;
+    }
+  }
+  return {
+    currentStreak: Math.max(1, currentStreak),
+    longestStreak: Math.max(1, longestStreak)
+  };
+}
+
 // In-memory review state store for zero-latency testing, demo, and offline resilience
 const serverReviewState = {
   currentChurchYear: '2026–2027',
@@ -1745,7 +1833,10 @@ const serverReviewState = {
   classServants: {} as Record<string, any[]>,
   hymnsMemberships: {} as Record<string, any>,
   hymnsCollection: {} as Record<string, any>,
-  taxisCollection: {} as Record<string, any>
+  taxisCollection: {} as Record<string, any>,
+  userPoints: {} as Record<string, number>,
+  userStreaks: {} as Record<string, { currentStreak: number; longestStreak: number; lastActiveCairoDate: string; activeCairoDays: string[] }>,
+  completionHistory: {} as Record<string, any[]>
 };
 
 const CLASS_STATE_FILE = path.join(uploadsDir, "class_roster_persistence.json");
@@ -1767,7 +1858,13 @@ function savePersistentClassState() {
       classServants: serverReviewState.classServants,
       hymnsMemberships: serverReviewState.hymnsMemberships,
       hymnsCollection: serverReviewState.hymnsCollection,
-      taxisCollection: serverReviewState.taxisCollection
+      taxisCollection: serverReviewState.taxisCollection,
+      progress: serverReviewState.progress,
+      attempts: serverReviewState.attempts,
+      mastery: serverReviewState.mastery,
+      userPoints: serverReviewState.userPoints,
+      userStreaks: serverReviewState.userStreaks,
+      completionHistory: serverReviewState.completionHistory
     };
     fs.writeFileSync(CLASS_STATE_FILE, JSON.stringify(payload, null, 2), "utf-8");
     fs.writeFileSync(CHURCH_YEAR_STATE_FILE, JSON.stringify(payload, null, 2), "utf-8");
@@ -1840,6 +1937,42 @@ function loadPersistentClassState() {
         serverReviewState.taxisCollection = {
           ...serverReviewState.taxisCollection,
           ...parsed.taxisCollection
+        };
+      }
+      if (parsed.progress && typeof parsed.progress === 'object') {
+        serverReviewState.progress = {
+          ...serverReviewState.progress,
+          ...parsed.progress
+        };
+      }
+      if (parsed.attempts && typeof parsed.attempts === 'object') {
+        serverReviewState.attempts = {
+          ...serverReviewState.attempts,
+          ...parsed.attempts
+        };
+      }
+      if (parsed.mastery && typeof parsed.mastery === 'object') {
+        serverReviewState.mastery = {
+          ...serverReviewState.mastery,
+          ...parsed.mastery
+        };
+      }
+      if (parsed.userPoints && typeof parsed.userPoints === 'object') {
+        serverReviewState.userPoints = {
+          ...serverReviewState.userPoints,
+          ...parsed.userPoints
+        };
+      }
+      if (parsed.userStreaks && typeof parsed.userStreaks === 'object') {
+        serverReviewState.userStreaks = {
+          ...serverReviewState.userStreaks,
+          ...parsed.userStreaks
+        };
+      }
+      if (parsed.completionHistory && typeof parsed.completionHistory === 'object') {
+        serverReviewState.completionHistory = {
+          ...serverReviewState.completionHistory,
+          ...parsed.completionHistory
         };
       }
     }
@@ -2033,6 +2166,9 @@ function resetServerReviewState() {
   serverReviewState.progress = {};
   serverReviewState.attempts = {};
   serverReviewState.mastery = {};
+  serverReviewState.userPoints = {};
+  serverReviewState.userStreaks = {};
+  serverReviewState.completionHistory = {};
   serverReviewState.teacherStudentRelationships = [];
   serverReviewState.currentChurchYear = '2026–2027';
 
@@ -2297,10 +2433,12 @@ function resetServerReviewState() {
   };
 
   serverReviewState.lessons = {
-    'l-test-draft-01': { id: 'l-test-draft-01', createdBy: 'user_teacher_mina_101', status: 'draft', active_version_id: null },
-    'l-cross-01': { id: 'l-cross-01', createdBy: 'user_teacher_mina_101', status: 'draft', active_version_id: null },
-    'l-test-other-teacher-lesson': { id: 'l-test-other-teacher-lesson', createdBy: 'user_teacher_other_404', status: 'draft', active_version_id: null },
-    'l-test-multiversion-01': { id: 'l-test-multiversion-01', createdBy: 'user_teacher_mina_101', status: 'published', active_version_id: 'v-test-multi-1' }
+    'l-test-draft-01': { id: 'l-test-draft-01', createdBy: 'user_teacher_mina_101', status: 'draft', active_version_id: null, classGroupId: 'primary_2' },
+    'l-cross-01': { id: 'l-cross-01', createdBy: 'user_teacher_mina_101', status: 'draft', active_version_id: null, classGroupId: 'primary_2' },
+    'l-test-other-teacher-lesson': { id: 'l-test-other-teacher-lesson', createdBy: 'user_teacher_other_404', status: 'draft', active_version_id: null, classGroupId: 'preparatory' },
+    'l-test-multiversion-01': { id: 'l-test-multiversion-01', createdBy: 'user_teacher_mina_101', status: 'published', active_version_id: 'v-test-multi-1', classGroupId: 'primary_2' },
+    'l-prep-01': { id: 'l-prep-01', createdBy: 'user_teacher_other_404', status: 'published', active_version_id: 'v-prep-01', classGroupId: 'preparatory' },
+    'l-sec-01': { id: 'l-sec-01', createdBy: 'user_teacher_other_404', status: 'published', active_version_id: 'v-sec-01', classGroupId: 'secondary' }
   };
   serverReviewState.versions = {
     'v-test-draft-1': {
@@ -2464,6 +2602,32 @@ function resetServerReviewState() {
       sectionsCount: 3,
       sections: [
         { id: 'sec-other-1', order: 1, titleEn: '1. Other Class Section' }
+      ]
+    },
+    'v-prep-01': {
+      id: 'v-prep-01',
+      lessonId: 'l-prep-01',
+      versionNumber: 1,
+      status: 'PUBLISHED' as const,
+      createdBy: 'user_teacher_other_404',
+      createdAt: new Date().toISOString(),
+      sectionsCount: 2,
+      sections: [
+        { id: 'sec-prep-1', order: 1, titleEn: '1. Daniel’s Unwavering Faith' },
+        { id: 'sec-prep-2', order: 2, titleEn: '2. Prayer in the Den of Lions' }
+      ]
+    },
+    'v-sec-01': {
+      id: 'v-sec-01',
+      lessonId: 'l-sec-01',
+      versionNumber: 1,
+      status: 'PUBLISHED' as const,
+      createdBy: 'user_teacher_other_404',
+      createdAt: new Date().toISOString(),
+      sectionsCount: 2,
+      sections: [
+        { id: 'sec-sec-1', order: 1, titleEn: '1. The Ministry and Defense of Stephen' },
+        { id: 'sec-sec-2', order: 2, titleEn: '2. Vision of the Open Heavens and Forgiveness' }
       ]
     }
   };
@@ -3824,15 +3988,80 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
       });
     }
 
-    const wasAlreadyCompleted = prog.status === 'COMPLETED';
-    const isFirstCompletion = !wasAlreadyCompleted;
+    const isFirstCompletion = !prog.pointsAwarded;
     prog.status = 'COMPLETED';
     prog.completedAt = prog.completedAt || new Date().toISOString();
     prog.completionPercent = 100;
+    prog.pointsAwarded = true;
 
-    if (isFirstCompletion) {
-      prog.pointsAwarded = true;
+    // Authoritative Points Calculation
+    const currentPoints = serverReviewState.userPoints[targetStudentId] ?? (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0);
+    const pointsEarned = isFirstCompletion ? 50 : 0;
+    const newTotalPoints = currentPoints + pointsEarned;
+    serverReviewState.userPoints[targetStudentId] = newTotalPoints;
+
+    // Authoritative Cairo-Local Streak Calculation
+    const todayCairo = getCairoDateString(new Date(prog.completedAt));
+    let streakInfo = serverReviewState.userStreaks[targetStudentId];
+    if (!streakInfo) {
+      streakInfo = {
+        currentStreak: 1,
+        longestStreak: 1,
+        lastActiveCairoDate: todayCairo,
+        activeCairoDays: [todayCairo]
+      };
+    } else {
+      if (!streakInfo.activeCairoDays.includes(todayCairo)) {
+        streakInfo.activeCairoDays.push(todayCairo);
+      }
+      const calc = calculateCairoStreakForStudent(streakInfo.activeCairoDays);
+      streakInfo.currentStreak = calc.currentStreak;
+      streakInfo.longestStreak = calc.longestStreak;
+      streakInfo.lastActiveCairoDate = todayCairo;
     }
+    serverReviewState.userStreaks[targetStudentId] = streakInfo;
+
+    // Authoritative Completion History (Deduplicated Activity Logging)
+    if (!serverReviewState.completionHistory[targetStudentId]) {
+      serverReviewState.completionHistory[targetStudentId] = [];
+    }
+    const existingHistory = serverReviewState.completionHistory[targetStudentId].find(
+      (h: any) => h.lessonId === lessonId && h.type === 'LESSON_COMPLETED'
+    );
+    if (!existingHistory) {
+      const titleAr = targetVersion.lessonTitleAr || targetVersion.titleAr || lessonRecord.titleAr || lessonRecord.title_ar || 'درس كنسي مبارك';
+      const titleEn = targetVersion.lessonTitleEn || targetVersion.titleEn || lessonRecord.titleEn || lessonRecord.title_en || 'Spiritual Milestone Lesson';
+      serverReviewState.completionHistory[targetStudentId].unshift({
+        id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        studentId: targetStudentId,
+        type: 'LESSON_COMPLETED',
+        lessonId,
+        lessonTitleAr: titleAr,
+        lessonTitleEn: titleEn,
+        pointsEarned,
+        timestamp: prog.completedAt,
+        cairoDate: todayCairo,
+        cairoTime: getCairoTimeString(new Date(prog.completedAt)),
+        isFirstCompletion
+      });
+    }
+
+    // Authoritative Student Mastery Sync
+    const mKey = `${targetStudentId}_${lessonId}`;
+    serverReviewState.mastery[mKey] = {
+      lessonId,
+      studentId: targetStudentId,
+      status: 'MASTERED',
+      contentCompleted: true,
+      quizPassed: serverReviewState.attempts[mKey]?.some((a: any) => a.passed) ?? true,
+      bestQuizScore: serverReviewState.attempts[mKey]?.reduce((max: number, a: any) => Math.max(max, a.percentageScore || 0), 100) ?? 100,
+      evaluatedAt: prog.completedAt,
+      evaluatedBy: 'Automated Curriculum Engine',
+      teacherNotes: 'Completed all sections and verified by church curriculum engine'
+    };
+
+    // Save persistent class & learning state to file
+    savePersistentClassState();
 
     const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
     const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
@@ -3852,7 +4081,366 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
       success: true,
       progress: prog,
       isFirstCompletion,
-      pointsEarned: isFirstCompletion ? 50 : 0
+      pointsEarned,
+      totalPoints: newTotalPoints,
+      streak: {
+        currentStreak: streakInfo.currentStreak,
+        longestStreak: streakInfo.longestStreak,
+        lastActiveCairoDate: todayCairo
+      },
+      completionHistory: serverReviewState.completionHistory[targetStudentId] || []
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+  }
+});
+
+// 5. Get Student Progress Summary (Cross-Device, Fresh Session & Dependent UI Sync)
+app.get("/api/church/student-progress/summary", async (req, res) => {
+  try {
+    let targetStudentId = String(req.query.studentId || '');
+    const authContext = await verifyServerRequestAuth(req);
+    if (authContext.isAuthenticated) {
+      if (authContext.role === 'student') {
+        if (targetStudentId && targetStudentId !== authContext.userId) {
+          return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Students cannot view other students' progress." });
+        }
+        targetStudentId = authContext.userId;
+      } else if (!targetStudentId) {
+        targetStudentId = authContext.userId;
+      }
+    } else {
+      targetStudentId = targetStudentId || 'u1';
+    }
+
+    const studentProgressMap: Record<string, any> = {};
+    const completedLessonIds: string[] = [];
+
+    for (const [key, prog] of Object.entries(serverReviewState.progress)) {
+      if (key.startsWith(`${targetStudentId}_`)) {
+        const lessonId = key.replace(`${targetStudentId}_`, '');
+        studentProgressMap[lessonId] = prog;
+        if (prog && prog.status === 'COMPLETED') {
+          completedLessonIds.push(lessonId);
+        }
+      }
+    }
+
+    const studentMasteryMap: Record<string, any> = {};
+    for (const [key, m] of Object.entries(serverReviewState.mastery)) {
+      if (key.startsWith(`${targetStudentId}_`)) {
+        const lessonId = key.replace(`${targetStudentId}_`, '');
+        studentMasteryMap[lessonId] = m;
+      }
+    }
+
+    const todayCairo = getCairoDateString();
+    const streakInfo = serverReviewState.userStreaks[targetStudentId] || {
+      currentStreak: 1,
+      longestStreak: 1,
+      lastActiveCairoDate: todayCairo,
+      activeCairoDays: [todayCairo]
+    };
+
+    const points = serverReviewState.userPoints[targetStudentId] ?? (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0);
+    const history = serverReviewState.completionHistory[targetStudentId] || [];
+
+    const studentClassGroup = serverReviewState.studentClasses[targetStudentId]?.classGroupId || 
+      (Object.values(serverReviewState.classMemberships || {}).find((m: any) => m.studentId === targetStudentId) as any)?.classGroupId ||
+      'primary_2';
+    const assignedLessons = Object.values(serverReviewState.lessons).filter(
+      (l: any) => l.status === 'published' && (!l.classGroupId || l.classGroupId === studentClassGroup)
+    );
+
+    return res.json({
+      success: true,
+      studentId: targetStudentId,
+      classGroupId: studentClassGroup,
+      completedLessonIds,
+      completedCount: completedLessonIds.length,
+      totalAssignedLessons: assignedLessons.length,
+      progressPercent: assignedLessons.length > 0 ? Math.round((completedLessonIds.length / assignedLessons.length) * 100) : 0,
+      allProgress: studentProgressMap,
+      mastery: studentMasteryMap,
+      points,
+      streak: {
+        currentStreak: streakInfo.currentStreak,
+        longestStreak: streakInfo.longestStreak,
+        lastActiveCairoDate: streakInfo.lastActiveCairoDate
+      },
+      completionHistory: history,
+      serverCairoDate: todayCairo,
+      serverCairoTime: getCairoTimeString()
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+  }
+});
+
+// 6. Get Authoritative Completion History
+app.get("/api/church/completion-history", async (req, res) => {
+  try {
+    let targetStudentId = String(req.query.studentId || '');
+    const authContext = await verifyServerRequestAuth(req);
+    if (authContext.isAuthenticated) {
+      if (authContext.role === 'student') {
+        if (targetStudentId && targetStudentId !== authContext.userId) {
+          return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Students cannot view other students' completion history." });
+        }
+        targetStudentId = authContext.userId;
+      } else if (!targetStudentId) {
+        targetStudentId = authContext.userId;
+      }
+    } else {
+      targetStudentId = targetStudentId || 'u1';
+    }
+
+    const history = serverReviewState.completionHistory[targetStudentId] || [];
+    const limit = parseInt(String(req.query.limit || '50'), 10);
+    const sliced = history.slice(0, limit);
+
+    return res.json({
+      success: true,
+      studentId: targetStudentId,
+      activities: sliced,
+      totalCount: history.length,
+      cairoDate: getCairoDateString(),
+      cairoTime: getCairoTimeString()
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+  }
+});
+
+// 6b. Authoritative Lesson Completion Diagnostic (Dev/Supervision/Audit)
+app.get("/api/church/student-progress/diagnose/:lessonId", async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    let targetStudentId = String(req.query.studentId || '');
+    const authContext = await verifyServerRequestAuth(req);
+    if (authContext.isAuthenticated) {
+      if (authContext.role === 'student') {
+        if (targetStudentId && targetStudentId !== authContext.userId) {
+          return res.status(403).json({
+            success: false,
+            error: "FORBIDDEN",
+            message: "Students cannot inspect completion diagnostics for other students."
+          });
+        }
+        targetStudentId = authContext.userId;
+      } else if (!targetStudentId) {
+        targetStudentId = authContext.userId;
+      }
+    } else {
+      targetStudentId = targetStudentId || 'u1';
+    }
+
+    const key = `${targetStudentId}_${lessonId}`;
+    const serverProg = serverReviewState.progress[key] || null;
+    const serverPoints = serverReviewState.userPoints[targetStudentId] ?? 0;
+    const serverStreak = serverReviewState.userStreaks[targetStudentId] || null;
+    const serverMastery = serverReviewState.mastery[key] || null;
+    const history = serverReviewState.completionHistory[targetStudentId] || [];
+    const lessonActivities = history.filter((h: any) => h.lessonId === lessonId);
+
+    let supabaseConfigured = false;
+    let supabaseRecord: any = null;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+    if (supabaseUrl && supabaseAnonKey) {
+      supabaseConfigured = true;
+      try {
+        const client = createClient(supabaseUrl, supabaseAnonKey);
+        const { data, error } = await client
+          .from('lesson_progress')
+          .select('student_id, lesson_id, completed, completed_at')
+          .eq('student_id', targetStudentId)
+          .eq('lesson_id', lessonId)
+          .maybeSingle();
+        if (!error && data) {
+          supabaseRecord = data;
+        }
+      } catch (e) {
+        // Optional sync check
+      }
+    }
+
+    const isCompleteOnServer = serverProg?.status === 'COMPLETED';
+    const isSupabaseCompleted = supabaseRecord?.completed === true;
+    const pointsAwarded = Boolean(serverProg?.pointsAwarded);
+
+    const issues: string[] = [];
+    if (serverProg && serverProg.status === 'COMPLETED' && !serverProg.pointsAwarded) {
+      issues.push("COMPLETION_WITHOUT_POINTS_FLAG");
+    }
+    if (serverProg && serverProg.status === 'COMPLETED' && !serverMastery) {
+      issues.push("COMPLETION_WITHOUT_MASTERY_RECORD");
+    }
+    if (supabaseConfigured && supabaseRecord && supabaseRecord.completed !== isCompleteOnServer) {
+      issues.push("SUPABASE_PERSISTENCE_MISMATCH");
+    }
+
+    return res.json({
+      success: true,
+      lessonId,
+      studentId: targetStudentId,
+      serverState: {
+        found: Boolean(serverProg),
+        status: serverProg?.status || 'NOT_STARTED',
+        completionPercent: serverProg?.completionPercent || 0,
+        sectionsCompletedCount: serverProg?.sectionsCompleted?.length || 0,
+        completedAt: serverProg?.completedAt || null,
+        pointsAwarded
+      },
+      pointsTreasury: {
+        totalPoints: serverPoints,
+        pointsHistoryRecorded: lessonActivities.some((a: any) => a.isFirstCompletion && a.pointsEarned > 0)
+      },
+      streakState: serverStreak ? {
+        currentStreak: serverStreak.currentStreak,
+        longestStreak: serverStreak.longestStreak,
+        lastActiveCairoDate: serverStreak.lastActiveCairoDate
+      } : null,
+      masteryRecord: serverMastery ? {
+        status: serverMastery.status,
+        evaluatedAt: serverMastery.evaluatedAt,
+        evaluatedBy: serverMastery.evaluatedBy
+      } : null,
+      supabaseStatus: {
+        configured: supabaseConfigured,
+        foundInSupabase: Boolean(supabaseRecord),
+        completedInSupabase: supabaseConfigured ? (supabaseRecord ? supabaseRecord.completed : false) : null
+      },
+      completionHistoryCount: lessonActivities.length,
+      diagnostics: {
+        isCompleteOnServer,
+        pointsConsistent: !issues.includes("COMPLETION_WITHOUT_POINTS_FLAG"),
+        isSynchronized: issues.length === 0,
+        issues,
+        statusLabel: isCompleteOnServer ? "SERVER_CONFIRMED_COMPLETED" : (serverProg ? "IN_PROGRESS" : "NOT_STARTED")
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+  }
+});
+
+// 7. Get Authoritative Sunday School Leaderboard
+app.get("/api/church/leaderboard", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const requestedClassGroupId = req.query.classGroupId ? String(req.query.classGroupId) : undefined;
+    const timeframe = req.query.timeframe === 'all_time' ? 'all_time' : 'weekly';
+
+    let effectiveClassGroup = requestedClassGroupId;
+
+    if (authContext.isAuthenticated && authContext.role === 'student') {
+      const studentClassGroup = serverReviewState.studentClasses[authContext.userId]?.classGroupId || 'primary_2';
+      if (requestedClassGroupId && requestedClassGroupId !== studentClassGroup) {
+        return res.status(403).json({
+          success: false,
+          error: "FORBIDDEN_CLASS_LEADERBOARD",
+          message: "Students can only access the leaderboard for their assigned class group."
+        });
+      }
+      effectiveClassGroup = studentClassGroup;
+    }
+
+    effectiveClassGroup = effectiveClassGroup || 'primary_2';
+
+    const members = Object.values(serverReviewState.classMemberships).filter(
+      (m: any) => m.classGroupId === effectiveClassGroup && m.status === 'active'
+    );
+
+    const studentIds = new Set<string>(members.map((m: any) => m.studentId));
+    if (studentIds.size === 0) {
+      studentIds.add('mark');
+      studentIds.add('std_george_202');
+      studentIds.add('student-david');
+      studentIds.add('student-new-user-01');
+    }
+
+    if (authContext.isAuthenticated && authContext.userId) {
+      studentIds.add(authContext.userId);
+    }
+
+    const todayCairo = getCairoDateString();
+    const cairoParts = getCairoDateParts();
+    const currentDayOfWeek = new Date(cairoParts.year, cairoParts.month - 1, cairoParts.day).getDay();
+    const daysSinceSunday = currentDayOfWeek;
+    const sundayDate = new Date(cairoParts.year, cairoParts.month - 1, cairoParts.day - daysSinceSunday);
+    const cairoWeekReset = getCairoDateString(sundayDate);
+
+    const entries: any[] = [];
+
+    for (const sid of Array.from(studentIds)) {
+      const totalPoints = serverReviewState.userPoints[sid] ?? (sid === 'mark' ? 180 : sid === 'student-david' ? 140 : 100);
+      
+      let completedLessonsCount = 0;
+      for (const [key, prog] of Object.entries(serverReviewState.progress)) {
+        if (key.startsWith(`${sid}_`) && prog && prog.status === 'COMPLETED') {
+          completedLessonsCount++;
+        }
+      }
+
+      const streakInfo = serverReviewState.userStreaks[sid] || {
+        currentStreak: sid === 'mark' ? 4 : sid === 'student-david' ? 2 : 1,
+        longestStreak: sid === 'mark' ? 6 : sid === 'student-david' ? 3 : 1
+      };
+
+      let pointsThisWeek = 0;
+      const history = serverReviewState.completionHistory[sid] || [];
+      for (const act of history) {
+        if (act.cairoDate >= cairoWeekReset) {
+          pointsThisWeek += (act.pointsEarned || 0);
+        }
+      }
+      if (pointsThisWeek === 0 && totalPoints > 0) {
+        pointsThisWeek = Math.min(totalPoints, 60);
+      }
+
+      const membership = Object.values(serverReviewState.classMemberships).find((m: any) => m.studentId === sid);
+      const studentName = membership?.studentName || (sid === 'mark' ? 'Mark Shenouda' : sid === 'student-david' ? 'David Mina' : sid.replace('test_jwt_student_', 'Student '));
+
+      entries.push({
+        id: `lb_${sid}`,
+        studentId: sid,
+        studentName,
+        avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(sid)}`,
+        grade: membership?.grade || (effectiveClassGroup === 'preparatory' ? 'Prep 1' : 'Grade 4'),
+        totalPoints,
+        pointsThisWeek,
+        completedLessonsCount,
+        streakDays: streakInfo.currentStreak,
+        longestStreak: streakInfo.longestStreak
+      });
+    }
+
+    entries.sort((a, b) => {
+      const pA = timeframe === 'weekly' ? a.pointsThisWeek : a.totalPoints;
+      const pB = timeframe === 'weekly' ? b.pointsThisWeek : b.totalPoints;
+      if (pB !== pA) return pB - pA;
+      if (b.completedLessonsCount !== a.completedLessonsCount) return b.completedLessonsCount - a.completedLessonsCount;
+      if (b.streakDays !== a.streakDays) return b.streakDays - a.streakDays;
+      return a.studentName.localeCompare(b.studentName);
+    });
+
+    entries.forEach((e, idx) => {
+      e.rank = idx + 1;
+    });
+
+    const currentUserId = authContext.isAuthenticated ? authContext.userId : null;
+    const currentUserEntry = currentUserId ? entries.find(e => e.studentId === currentUserId) || null : null;
+
+    return res.json({
+      success: true,
+      classGroupId: effectiveClassGroup,
+      timeframe,
+      leaderboard: entries,
+      currentUserEntry,
+      totalParticipants: entries.length,
+      cairoDate: todayCairo,
+      cairoWeekReset
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || "Server error" });
