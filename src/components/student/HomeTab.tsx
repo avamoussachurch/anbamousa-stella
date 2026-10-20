@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Flame, Medal, ChevronRight, Play, Cross, Sparkles, BookOpen, Compass, MapPin, Award, Trophy } from 'lucide-react';
 import { motion } from 'motion/react';
 import { mockLessons } from '../../data';
@@ -29,9 +29,15 @@ interface HomeTabProps {
 
 export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, lang }: HomeTabProps) {
   const { userData, isGuest } = useAuth();
-  const { lessons, curriculumLoading, curriculumError, refreshCurriculum, contentProgress } = useLessons();
+  const { lessons, curriculumLoading, curriculumError, refreshCurriculum, contentProgress, refreshProgressSummary } = useLessons();
   const { currentStage } = useStage();
   const [badgeDismissed, setBadgeDismissed] = useState(false);
+
+  useEffect(() => {
+    if (refreshProgressSummary && userData?.id) {
+      refreshProgressSummary().catch(() => {});
+    }
+  }, [userData?.id]);
 
   const isOnlineAuth = Boolean(!isGuest && userData && isSupabaseConfigured);
 

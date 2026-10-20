@@ -27,11 +27,12 @@ import { useAuth } from '../../context/AuthContext';
 import { awardPoints } from '../../lib/pointsService';
 import { Language, HymnsRosterMembership } from '../../types';
 import { getMyHymnsEnrollment, submitHymnsEnrollment, getHymns } from '../../lib/hymnsService';
+import { recordStudentSchoolActivity } from '../../lib/studentProgressService';
 import { HYMNS_LEVEL_DEFINITIONS } from '../../lib/hymnsEnrollmentService';
 
 export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isAr = lang === 'ar';
-  const { userData, updateUserData } = useAuth();
+  const { userData, setUserDirectly } = useAuth();
   const isTeacherOrAdmin = userData?.role === 'teacher' || userData?.role === 'admin';
 
   // Live Hymns & Enrollment State
@@ -216,15 +217,33 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     }
   };
 
-  const markAsMastered = (hymnId: string) => {
+  const markAsMastered = async (hymnId: string) => {
     const updated = { ...masteredHymns, [hymnId]: true };
     setMasteredHymns(updated);
     if (typeof window !== 'undefined') {
       localStorage.setItem('church_mastered_hymns', JSON.stringify(updated));
     }
     if (userData) {
-      const u = awardPoints(userData.id, 75, `حفظ لحن شماسي (${selectedHymn.titleAr})`);
-      updateUserData(u);
+      try {
+        const res = await recordStudentSchoolActivity({
+          school: 'hymns',
+          activityId: hymnId,
+          activityType: 'HYMN_MASTERED',
+          titleAr: selectedHymn?.titleAr || 'لحن شماسي معتمد',
+          titleEn: selectedHymn?.titleEn || 'Mastered Deacon Hymn',
+          studentId: userData.id
+        });
+        if (res.success && setUserDirectly) {
+          setUserDirectly({
+            ...userData,
+            points: res.totalPoints ?? (userData.points + (res.pointsEarned || 75)),
+            currentStreak: res.streak?.currentStreak ?? userData.currentStreak ?? 1,
+            longestStreak: res.streak?.longestStreak ?? userData.longestStreak
+          });
+        }
+      } catch (e) {
+        console.warn('Note on hymn activity record:', e);
+      }
     }
   };
 

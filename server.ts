@@ -1760,50 +1760,80 @@ function getCairoTimeString(inputDate: Date | string | number = new Date()): str
   return getCairoDateParts(inputDate).timeString;
 }
 
-function calculateCairoStreakForStudent(activeDays: string[]): { currentStreak: number; longestStreak: number } {
-  if (!activeDays || activeDays.length === 0) return { currentStreak: 1, longestStreak: 1 };
-  const uniqueCairoDays = Array.from(new Set(activeDays.map(d => getCairoDateString(d)))).sort().reverse();
+function getPreviousCairoDay(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const prevMs = Date.UTC(y, m - 1, d) - 86400000;
+  const prev = new Date(prevMs);
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  return `${prev.getUTCFullYear()}-${pad(prev.getUTCMonth() + 1)}-${pad(prev.getUTCDate())}`;
+}
+
+function getNextCairoDay(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const nextMs = Date.UTC(y, m - 1, d) + 86400000;
+  const next = new Date(nextMs);
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}`;
+}
+
+function calculateCairoStreakForStudent(activeDays: string[]): { 
+  currentStreak: number; 
+  longestStreak: number;
+  isActiveToday: boolean;
+  lastActiveCairoDate: string;
+} {
+  if (!activeDays || activeDays.length === 0) {
+    return { currentStreak: 0, longestStreak: 0, isActiveToday: false, lastActiveCairoDate: '' };
+  }
+  const uniqueCairoDays = Array.from(
+    new Set(activeDays.map(d => (typeof d === 'string' && d.includes('T') ? getCairoDateString(d) : d)))
+  ).filter(Boolean).sort().reverse();
+
+  if (uniqueCairoDays.length === 0) {
+    return { currentStreak: 0, longestStreak: 0, isActiveToday: false, lastActiveCairoDate: '' };
+  }
+
   const todayCairo = getCairoDateString();
-  const yParts = getCairoDateParts();
-  const yObj = new Date(yParts.year, yParts.month - 1, yParts.day - 1);
-  const yesterdayCairo = getCairoDateString(yObj);
+  const yesterdayCairo = getPreviousCairoDay(todayCairo);
   const mostRecent = uniqueCairoDays[0];
-  const isActive = mostRecent === todayCairo || mostRecent === yesterdayCairo;
+  const isActiveToday = (mostRecent === todayCairo);
+  const isAlive = (mostRecent === todayCairo || mostRecent === yesterdayCairo);
+
   let currentStreak = 0;
-  if (isActive) {
+  if (isAlive) {
     currentStreak = 1;
-    for (let i = 0; i < uniqueCairoDays.length - 1; i++) {
-      const p1 = getCairoDateParts(uniqueCairoDays[i]);
-      const p2 = getCairoDateParts(uniqueCairoDays[i + 1]);
-      const d1 = new Date(p1.year, p1.month - 1, p1.day);
-      const d2 = new Date(p2.year, p2.month - 1, p2.day);
-      const diffDays = Math.round((d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
-      if (diffDays === 1) {
+    let expectedPrev = getPreviousCairoDay(mostRecent);
+    for (let i = 1; i < uniqueCairoDays.length; i++) {
+      if (uniqueCairoDays[i] === expectedPrev) {
         currentStreak++;
+        expectedPrev = getPreviousCairoDay(expectedPrev);
       } else {
         break;
       }
     }
   }
+
   let longestStreak = currentStreak;
   let tempStreak = 1;
   const ascendingDays = [...uniqueCairoDays].reverse();
   for (let i = 0; i < ascendingDays.length - 1; i++) {
-    const p1 = getCairoDateParts(ascendingDays[i]);
-    const p2 = getCairoDateParts(ascendingDays[i + 1]);
-    const d1 = new Date(p1.year, p1.month - 1, p1.day);
-    const d2 = new Date(p2.year, p2.month - 1, p2.day);
-    const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 1) {
+    const nextExpected = getNextCairoDay(ascendingDays[i]);
+    if (ascendingDays[i + 1] === nextExpected) {
       tempStreak++;
       if (tempStreak > longestStreak) longestStreak = tempStreak;
     } else {
       tempStreak = 1;
     }
   }
+  if (longestStreak < currentStreak) {
+    longestStreak = currentStreak;
+  }
+
   return {
-    currentStreak: Math.max(1, currentStreak),
-    longestStreak: Math.max(1, longestStreak)
+    currentStreak,
+    longestStreak,
+    isActiveToday,
+    lastActiveCairoDate: mostRecent
   };
 }
 
@@ -4074,6 +4104,12 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
           completed: true,
           completed_at: prog.completedAt
         });
+        await client.from('profiles').update({
+          current_streak: streakInfo.currentStreak,
+          longest_streak: streakInfo.longestStreak,
+          points: newTotalPoints,
+          last_active: prog.completedAt
+        }).eq('id', targetStudentId);
       } catch (e) {}
     }
 
@@ -4086,9 +4122,163 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
       streak: {
         currentStreak: streakInfo.currentStreak,
         longestStreak: streakInfo.longestStreak,
-        lastActiveCairoDate: todayCairo
+        lastActiveCairoDate: todayCairo,
+        isActiveToday: true
       },
       completionHistory: serverReviewState.completionHistory[targetStudentId] || []
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+  }
+});
+
+// 4b. Record School Learning Activity (Shared Daily Streak across Sunday School, Hymns & Taxis)
+app.post("/api/church/student-progress/record-activity", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    let targetStudentId = req.body?.studentId;
+
+    if (authContext.isAuthenticated) {
+      if (authContext.role === 'student') {
+        if (targetStudentId && targetStudentId !== authContext.userId) {
+          return res.status(403).json({
+            success: false,
+            error: "FORBIDDEN",
+            message: "Students cannot record activity on behalf of other students."
+          });
+        }
+        targetStudentId = authContext.userId;
+      } else if (!targetStudentId) {
+        targetStudentId = authContext.userId;
+      }
+    } else {
+      targetStudentId = targetStudentId || 'u1';
+    }
+
+    const { school, activityId, activityType, titleAr, titleEn } = req.body || {};
+    if (!school || !activityId) {
+      return res.status(400).json({
+        success: false,
+        error: "MISSING_PARAMS",
+        message: "school and activityId are required."
+      });
+    }
+
+    // School-specific validation
+    if (school === 'hymns') {
+      const cleanHymnId = String(activityId).replace(/^hymn-/, '').replace(/-/g, '_');
+      const hymn = serverReviewState.hymnsCollection[activityId] || 
+        serverReviewState.hymnsCollection[cleanHymnId] ||
+        Object.values(serverReviewState.hymnsCollection).find((h: any) => h.id === activityId || h.id === cleanHymnId) ||
+        (cleanHymnId === 'ep_oro' ? { id: 'ep_oro', level: 1 } : (cleanHymnId === 'agios' ? { id: 'agios', level: 2 } : null));
+      if (hymn && hymn.level > 1 && authContext.role === 'student') {
+        const studentEnrollment = getStudentHymnsMembership(targetStudentId);
+        if (!studentEnrollment || studentEnrollment.status !== 'approved' || studentEnrollment.level < hymn.level) {
+          return res.status(403).json({
+            success: false,
+            error: "HYMN_LEVEL_ACCESS_DENIED",
+            message: `Hymn requires Deacon Level ${hymn.level}. Student not authorized.`
+          });
+        }
+      }
+    } else if (school === 'taxis') {
+      const ritual = serverReviewState.taxisCollection[activityId];
+      if (ritual && ritual.status === 'draft' && authContext.role === 'student') {
+        return res.status(403).json({
+          success: false,
+          error: "FORBIDDEN_DRAFT",
+          message: "Students cannot access draft liturgical rituals."
+        });
+      }
+    }
+
+    const todayCairo = getCairoDateString();
+    const nowIso = new Date().toISOString();
+
+    // Check if this specific activity was already completed
+    if (!serverReviewState.completionHistory[targetStudentId]) {
+      serverReviewState.completionHistory[targetStudentId] = [];
+    }
+    const existingHistory = serverReviewState.completionHistory[targetStudentId].find(
+      (h: any) => h.school === school && h.activityId === activityId
+    );
+    const isFirstCompletion = !existingHistory;
+
+    // Point Awards: 75 for Hymn, 50 for Taxis or Sunday School
+    const pointsConfig = school === 'hymns' ? 75 : 50;
+    const pointsEarned = isFirstCompletion ? pointsConfig : 0;
+    const currentPoints = serverReviewState.userPoints[targetStudentId] ?? (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0);
+    const newTotalPoints = currentPoints + pointsEarned;
+    serverReviewState.userPoints[targetStudentId] = newTotalPoints;
+
+    // Cairo Streak Update
+    let streakRecord = serverReviewState.userStreaks[targetStudentId];
+    if (!streakRecord) {
+      streakRecord = {
+        currentStreak: 1,
+        longestStreak: 1,
+        lastActiveCairoDate: todayCairo,
+        activeCairoDays: [todayCairo]
+      };
+    } else {
+      if (!streakRecord.activeCairoDays.includes(todayCairo)) {
+        streakRecord.activeCairoDays.push(todayCairo);
+      }
+      const calc = calculateCairoStreakForStudent(streakRecord.activeCairoDays);
+      streakRecord.currentStreak = calc.currentStreak;
+      streakRecord.longestStreak = calc.longestStreak;
+      streakRecord.lastActiveCairoDate = todayCairo;
+    }
+    serverReviewState.userStreaks[targetStudentId] = streakRecord;
+
+    // Deduplicated History Logging
+    if (isFirstCompletion) {
+      serverReviewState.completionHistory[targetStudentId].unshift({
+        id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        studentId: targetStudentId,
+        school,
+        activityId,
+        activityType: activityType || (school === 'hymns' ? 'HYMN_MASTERED' : 'TAXIS_COMPLETED'),
+        lessonTitleAr: titleAr || (school === 'hymns' ? 'لحن كنسي مبارك' : 'ترتيب طقسي معتمد'),
+        lessonTitleEn: titleEn || (school === 'hymns' ? 'Mastered Church Hymn' : 'Liturgical Order Completed'),
+        pointsEarned,
+        timestamp: nowIso,
+        cairoDate: todayCairo,
+        cairoTime: getCairoTimeString(),
+        isFirstCompletion: true
+      });
+    }
+
+    savePersistentClassState();
+
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+    if (supabaseUrl && supabaseAnonKey) {
+      try {
+        const client = createClient(supabaseUrl, supabaseAnonKey);
+        await client.from('profiles').update({
+          current_streak: streakRecord.currentStreak,
+          longest_streak: streakRecord.longestStreak,
+          points: newTotalPoints,
+          last_active: nowIso
+        }).eq('id', targetStudentId);
+      } catch (e) {}
+    }
+
+    return res.json({
+      success: true,
+      school,
+      activityId,
+      isFirstCompletion,
+      pointsEarned,
+      totalPoints: newTotalPoints,
+      streak: {
+        currentStreak: streakRecord.currentStreak,
+        longestStreak: streakRecord.longestStreak,
+        lastActiveCairoDate: todayCairo,
+        isActiveToday: true
+      },
+      completionHistory: serverReviewState.completionHistory[targetStudentId]
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || "Server error" });
@@ -4135,12 +4325,42 @@ app.get("/api/church/student-progress/summary", async (req, res) => {
     }
 
     const todayCairo = getCairoDateString();
-    const streakInfo = serverReviewState.userStreaks[targetStudentId] || {
-      currentStreak: 1,
-      longestStreak: 1,
-      lastActiveCairoDate: todayCairo,
-      activeCairoDays: [todayCairo]
+    const streakRecord = serverReviewState.userStreaks[targetStudentId];
+    let streakInfo = {
+      currentStreak: 0,
+      longestStreak: 0,
+      lastActiveCairoDate: '',
+      isActiveToday: false
     };
+
+    if (streakRecord && Array.isArray(streakRecord.activeCairoDays) && streakRecord.activeCairoDays.length > 0) {
+      const calc = calculateCairoStreakForStudent(streakRecord.activeCairoDays);
+      streakInfo = {
+        currentStreak: calc.currentStreak,
+        longestStreak: calc.longestStreak,
+        lastActiveCairoDate: streakRecord.lastActiveCairoDate || calc.lastActiveCairoDate,
+        isActiveToday: calc.isActiveToday
+      };
+    } else if (completedLessonIds.length > 0) {
+      // Non-destructive backfill for existing completed lessons
+      const completedDates = completedLessonIds.map(lId => {
+        const p = studentProgressMap[lId];
+        return p?.completedAt ? getCairoDateString(new Date(p.completedAt)) : todayCairo;
+      });
+      const calc = calculateCairoStreakForStudent(completedDates);
+      streakInfo = {
+        currentStreak: calc.currentStreak,
+        longestStreak: calc.longestStreak,
+        lastActiveCairoDate: calc.lastActiveCairoDate,
+        isActiveToday: calc.isActiveToday
+      };
+      serverReviewState.userStreaks[targetStudentId] = {
+        currentStreak: calc.currentStreak,
+        longestStreak: calc.longestStreak,
+        lastActiveCairoDate: calc.lastActiveCairoDate,
+        activeCairoDays: Array.from(new Set(completedDates))
+      };
+    }
 
     const points = serverReviewState.userPoints[targetStudentId] ?? (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0);
     const history = serverReviewState.completionHistory[targetStudentId] || [];
@@ -4166,7 +4386,8 @@ app.get("/api/church/student-progress/summary", async (req, res) => {
       streak: {
         currentStreak: streakInfo.currentStreak,
         longestStreak: streakInfo.longestStreak,
-        lastActiveCairoDate: streakInfo.lastActiveCairoDate
+        lastActiveCairoDate: streakInfo.lastActiveCairoDate,
+        isActiveToday: streakInfo.isActiveToday
       },
       completionHistory: history,
       serverCairoDate: todayCairo,

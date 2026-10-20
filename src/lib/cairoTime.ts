@@ -86,60 +86,99 @@ export function isConsecutiveCairoDay(earlierDate: Date | string, laterDate: Dat
 }
 
 /**
- * Authoritative streak calculation evaluated using Cairo local days
+ * Return previous calendar day in "YYYY-MM-DD" format using pure UTC date arithmetic
+ */
+export function getPreviousCairoDay(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const prevMs = Date.UTC(y, m - 1, d) - 86400000;
+  const prev = new Date(prevMs);
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  return `${prev.getUTCFullYear()}-${pad(prev.getUTCMonth() + 1)}-${pad(prev.getUTCDate())}`;
+}
+
+/**
+ * Return next calendar day in "YYYY-MM-DD" format using pure UTC date arithmetic
+ */
+export function getNextCairoDay(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const nextMs = Date.UTC(y, m - 1, d) + 86400000;
+  const next = new Date(nextMs);
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}`;
+}
+
+/**
+ * Authoritative streak calculation evaluated using Cairo local days.
+ * 
+ * Rules:
+ * - 0 if no qualifying activity has ever occurred.
+ * - If last activity is older than yesterday, the active streak has lapsed (returns 0).
+ * - If last activity was yesterday, returns current streak (pending today's completion).
+ * - If active today, returns streak count ending today.
+ * - Increments by 1 on consecutive Cairo-local days.
+ * - Multiple activities on the same Cairo day count as 1 day.
  */
 export function calculateCairoStreak(historyDateStrings: string[]): {
   currentStreak: number;
   longestStreak: number;
+  isActiveToday: boolean;
+  lastActiveCairoDate: string;
 } {
   if (!historyDateStrings || historyDateStrings.length === 0) {
-    return { currentStreak: 1, longestStreak: 1 };
+    return { currentStreak: 0, longestStreak: 0, isActiveToday: false, lastActiveCairoDate: '' };
   }
 
   // Deduplicate and sort descending by Cairo calendar date string
   const uniqueCairoDays = Array.from(
-    new Set(historyDateStrings.map(d => getCairoDateString(d)))
-  ).sort().reverse();
+    new Set(historyDateStrings.map(d => (typeof d === 'string' && d.includes('T') ? getCairoDateString(d) : d)))
+  ).filter(Boolean).sort().reverse();
 
   if (uniqueCairoDays.length === 0) {
-    return { currentStreak: 1, longestStreak: 1 };
+    return { currentStreak: 0, longestStreak: 0, isActiveToday: false, lastActiveCairoDate: '' };
   }
 
   const todayCairo = getCairoDateString();
-  const yesterdayParts = getCairoDateParts();
-  const yesterdayObj = new Date(yesterdayParts.year, yesterdayParts.month - 1, yesterdayParts.day - 1);
-  const yesterdayCairo = getCairoDateString(yesterdayObj);
-
+  const yesterdayCairo = getPreviousCairoDay(todayCairo);
   const mostRecent = uniqueCairoDays[0];
-  const isActive = mostRecent === todayCairo || mostRecent === yesterdayCairo;
+  const isActiveToday = (mostRecent === todayCairo);
+  const isAlive = (mostRecent === todayCairo || mostRecent === yesterdayCairo);
 
   let currentStreak = 0;
-  if (isActive) {
+  if (isAlive) {
     currentStreak = 1;
-    for (let i = 0; i < uniqueCairoDays.length - 1; i++) {
-      if (isConsecutiveCairoDay(uniqueCairoDays[i + 1], uniqueCairoDays[i])) {
+    let expectedPrev = getPreviousCairoDay(mostRecent);
+    for (let i = 1; i < uniqueCairoDays.length; i++) {
+      if (uniqueCairoDays[i] === expectedPrev) {
         currentStreak++;
+        expectedPrev = getPreviousCairoDay(expectedPrev);
       } else {
         break;
       }
     }
   }
 
-  // Calculate longest streak across entire history
+  // Calculate longest streak across entire student history
   let longestStreak = currentStreak;
   let tempStreak = 1;
   const ascendingDays = [...uniqueCairoDays].reverse();
   for (let i = 0; i < ascendingDays.length - 1; i++) {
-    if (isConsecutiveCairoDay(ascendingDays[i], ascendingDays[i + 1])) {
+    const nextExpected = getNextCairoDay(ascendingDays[i]);
+    if (ascendingDays[i + 1] === nextExpected) {
       tempStreak++;
       if (tempStreak > longestStreak) longestStreak = tempStreak;
     } else {
       tempStreak = 1;
     }
   }
+  if (longestStreak < currentStreak) {
+    longestStreak = currentStreak;
+  }
 
   return {
-    currentStreak: Math.max(1, currentStreak),
-    longestStreak: Math.max(1, longestStreak)
+    currentStreak,
+    longestStreak,
+    isActiveToday,
+    lastActiveCairoDate: mostRecent
   };
 }
+

@@ -281,7 +281,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
   const [searchAuditLogs, setSearchAuditLogs] = useState<SearchAuditLog[]>([]);
 
   // 12. Online Normalized Curriculum State
-  const { userData, isGuest } = useAuth();
+  const { userData, isGuest, setUserDirectly } = useAuth();
   const [curriculumLoading, setCurriculumLoading] = useState<boolean>(false);
   const [curriculumError, setCurriculumError] = useState<string | null>(null);
 
@@ -418,6 +418,18 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
             }
             return next;
           });
+        }
+        if (summaryData?.streak && setUserDirectly) {
+          const serverStreak = summaryData.streak.currentStreak ?? 0;
+          const serverPoints = summaryData.points ?? userData.points;
+          if (userData.currentStreak !== serverStreak || userData.points !== serverPoints) {
+            setUserDirectly({
+              ...userData,
+              currentStreak: serverStreak,
+              longestStreak: summaryData.streak.longestStreak ?? userData.longestStreak,
+              points: serverPoints
+            });
+          }
         }
       }).catch(err => {
         console.warn('Note on initial progress summary sync:', err);
@@ -1237,6 +1249,18 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
               }
               return next;
             });
+          }
+          if (summaryData?.streak && setUserDirectly) {
+            const serverStreak = summaryData.streak.currentStreak ?? 0;
+            const serverPoints = summaryData.points ?? userData.points;
+            if (userData.currentStreak !== serverStreak || userData.points !== serverPoints) {
+              setUserDirectly({
+                ...userData,
+                currentStreak: serverStreak,
+                longestStreak: summaryData.streak.longestStreak ?? userData.longestStreak,
+                points: serverPoints
+              });
+            }
           }
         } catch (e) {
           console.warn('Could not refresh progress summary:', e);

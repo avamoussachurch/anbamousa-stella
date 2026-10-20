@@ -8,11 +8,14 @@ import {
   ChevronRight,
   ShieldCheck,
   Sparkles,
-  Layers
+  Layers,
+  CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TaxisItem, TaxisSection, TaxisCategory, Language } from '../../types';
 import { getTaxisItems } from '../../lib/taxisService';
+import { useAuth } from '../../context/AuthContext';
+import { recordStudentSchoolActivity } from '../../lib/studentProgressService';
 
 interface CopticTaxisTabProps {
   lang?: Language;
@@ -20,11 +23,14 @@ interface CopticTaxisTabProps {
 
 export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const isAr = lang === 'ar';
+  const { userData, setUserDirectly } = useAuth();
   const [items, setItems] = useState<TaxisItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<TaxisItem | null>(null);
+  const [completedRituals, setCompletedRituals] = useState<Record<string, boolean>>({});
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -40,6 +46,54 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
     });
     return () => { isMounted = false; };
   }, [selectedCategory]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored: Record<string, boolean> = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('church_taxis_completed_')) {
+            stored[key.replace('church_taxis_completed_', '')] = true;
+          }
+        }
+        setCompletedRituals(stored);
+      } catch (e) {}
+    }
+  }, []);
+
+  const handleCompleteRitual = async (ritualId: string) => {
+    if (isMarkingComplete || !selectedItem) return;
+    setIsMarkingComplete(true);
+    setCompletedRituals(prev => ({ ...prev, [ritualId]: true }));
+    try {
+      localStorage.setItem(`church_taxis_completed_${ritualId}`, 'true');
+    } catch (e) {}
+
+    if (userData) {
+      try {
+        const res = await recordStudentSchoolActivity({
+          school: 'taxis',
+          activityId: ritualId,
+          activityType: 'TAXIS_COMPLETED',
+          titleAr: selectedItem.titleAr || 'ترتيب طقسي معتمد',
+          titleEn: selectedItem.titleEn || 'Liturgical Order',
+          studentId: userData.id
+        });
+        if (res.success && setUserDirectly) {
+          setUserDirectly({
+            ...userData,
+            points: res.totalPoints ?? (userData.points + (res.pointsEarned || 50)),
+            currentStreak: res.streak?.currentStreak ?? userData.currentStreak ?? 1,
+            longestStreak: res.streak?.longestStreak ?? userData.longestStreak
+          });
+        }
+      } catch (err) {
+        console.warn('Note on taxis activity record:', err);
+      }
+    }
+    setIsMarkingComplete(false);
+  };
 
   const filteredItems = items.filter(item => {
     if (!searchQuery.trim()) return true;
@@ -230,6 +284,32 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                     ))}
                   </div>
                 )}
+
+                {/* Completion Action & Streak Badge */}
+                <div className="pt-3 flex items-center justify-between gap-3 flex-wrap border-t border-stone-200/60 dark:border-stone-800">
+                  <button
+                    type="button"
+                    onClick={() => handleCompleteRitual(selectedItem.id)}
+                    disabled={Boolean(completedRituals[selectedItem.id]) || isMarkingComplete}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                      completedRituals[selectedItem.id]
+                        ? 'bg-emerald-600 text-white font-black cursor-default'
+                        : 'bg-gradient-to-r from-[var(--mousa-teal)] to-teal-700 hover:brightness-105 text-white'
+                    }`}
+                  >
+                    <CheckCircle2 size={16} />
+                    <span>
+                      {completedRituals[selectedItem.id]
+                        ? (isAr ? '✓ تم إتمام دراسة الطقس وحساب الستريك' : '✓ Completed Ritual & Streak Active')
+                        : (isAr ? 'إتمام دراسة الترتيب الطقسي (+٥٠ نقطة)' : 'Complete Ritual Study (+50 Pts)')}
+                    </span>
+                  </button>
+                  {completedRituals[selectedItem.id] && (
+                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                      🔥 {isAr ? 'تم تسجيل اليوم في سلسلتك الروحية' : 'Daily streak recorded!'}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Ordered Sections */}

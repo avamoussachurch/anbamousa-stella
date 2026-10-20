@@ -305,6 +305,70 @@ export async function completeLessonProgress(
   }
 }
 
+export interface RecordSchoolActivityInput {
+  school: 'sunday_school' | 'hymns' | 'taxis';
+  activityId: string;
+  activityType?: 'LESSON_COMPLETED' | 'HYMN_MASTERED' | 'TAXIS_COMPLETED';
+  titleAr?: string;
+  titleEn?: string;
+  studentId?: string;
+}
+
+/**
+ * 4b. recordStudentSchoolActivity(input)
+ * Unified activity logging for Cairo streak tracking across Sunday School, Hymns School, and Taxis.
+ */
+export async function recordStudentSchoolActivity(
+  input: RecordSchoolActivityInput
+): Promise<{
+  success: boolean;
+  school: string;
+  activityId: string;
+  isFirstCompletion: boolean;
+  pointsEarned: number;
+  totalPoints: number;
+  streak: {
+    currentStreak: number;
+    longestStreak: number;
+    lastActiveCairoDate: string;
+    isActiveToday: boolean;
+  };
+  error?: string;
+}> {
+  const headers = await getAuthHeader();
+  try {
+    const res = await fetch('/api/church/student-progress/record-activity', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(input)
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.success) {
+      throw new Error(json?.message || `HTTP ${res.status}: Failed to record school activity`);
+    }
+    return {
+      success: true,
+      school: json.school,
+      activityId: json.activityId,
+      isFirstCompletion: Boolean(json.isFirstCompletion),
+      pointsEarned: json.pointsEarned ?? 0,
+      totalPoints: json.totalPoints ?? 0,
+      streak: json.streak || { currentStreak: 1, longestStreak: 1, lastActiveCairoDate: '', isActiveToday: true }
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      school: input.school,
+      activityId: input.activityId,
+      isFirstCompletion: false,
+      pointsEarned: 0,
+      totalPoints: 0,
+      streak: { currentStreak: 1, longestStreak: 1, lastActiveCairoDate: '', isActiveToday: true },
+      error: err?.message
+    };
+  }
+}
+
 /**
  * 5. getStudentProgressSummary(studentId?)
  * Fetches authoritative server summary of all completed lessons, total points, Cairo streak, and mastery.
@@ -320,7 +384,7 @@ export async function getStudentProgressSummary(
   progressPercent: number;
   allProgress: Record<string, StudentContentProgress>;
   points: number;
-  streak: { currentStreak: number; longestStreak: number; lastActiveCairoDate: string };
+  streak: { currentStreak: number; longestStreak: number; lastActiveCairoDate: string; isActiveToday?: boolean };
   completionHistory: any[];
   serverCairoDate: string;
   error?: string;
@@ -348,7 +412,7 @@ export async function getStudentProgressSummary(
       progressPercent: json.progressPercent || 0,
       allProgress: json.allProgress || {},
       points: json.points ?? 100,
-      streak: json.streak || { currentStreak: 1, longestStreak: 1, lastActiveCairoDate: '' },
+      streak: json.streak || { currentStreak: 0, longestStreak: 0, lastActiveCairoDate: '', isActiveToday: false },
       completionHistory: json.completionHistory || [],
       serverCairoDate: json.serverCairoDate || new Date().toISOString().split('T')[0]
     };
