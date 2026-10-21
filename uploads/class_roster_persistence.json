@@ -601,10 +601,46 @@
     }
   },
   "userPoints": {
-    "mark": 150
+    "mark": 150,
+    "b1_student_1792590860912": 225,
+    "b1_race_1792590861355": 500,
+    "b1_student_1792592948834": 225,
+    "b1_race_1792592949186": 500
   },
   "userStreaks": {
     "mark": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-21",
+      "activeCairoDays": [
+        "2026-10-21"
+      ]
+    },
+    "b1_student_1792590860912": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-21",
+      "activeCairoDays": [
+        "2026-10-21"
+      ]
+    },
+    "b1_race_1792590861355": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-21",
+      "activeCairoDays": [
+        "2026-10-21"
+      ]
+    },
+    "b1_student_1792592948834": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-21",
+      "activeCairoDays": [
+        "2026-10-21"
+      ]
+    },
+    "b1_race_1792592949186": {
       "currentStreak": 1,
       "longestStreak": 1,
       "lastActiveCairoDate": "2026-10-21",
@@ -626,6 +662,406 @@
         "timestamp": "2026-10-21T13:24:49.842Z",
         "cairoDate": "2026-10-21",
         "cairoTime": "16:24:49",
+        "isFirstCompletion": true
+      }
+    ],
+    "b1_student_1792590860912": [
+      {
+        "id": "act_1792590861293_bsxih",
+        "studentId": "b1_student_1792590860912",
+        "school": "taxis",
+        "activityId": "taxis_liturgy_st_basil",
+        "activityType": "TAXIS_COMPLETED",
+        "lessonTitleAr": "قداس القديس باسيليوس",
+        "lessonTitleEn": "Liturgy of St. Basil",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.293Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861223_zhnii",
+        "studentId": "b1_student_1792590860912",
+        "school": "hymns",
+        "activityId": "hymn-ep-oro",
+        "activityType": "HYMN_MASTERED",
+        "lessonTitleAr": "لحن إب أورو",
+        "lessonTitleEn": "Ep-Oro",
+        "pointsEarned": 75,
+        "timestamp": "2026-10-21T13:54:21.223Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861098_fkneo",
+        "studentId": "b1_student_1792590860912",
+        "school": "sunday_school",
+        "activityId": "l2",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس الأحد الثاني",
+        "lessonTitleEn": "Sunday School Lesson 2",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.098Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590860947_58dzs",
+        "studentId": "b1_student_1792590860912",
+        "school": "sunday_school",
+        "activityId": "l1",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس الأحد الأول",
+        "lessonTitleEn": "Sunday School Lesson 1",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:20.946Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:20",
+        "isFirstCompletion": true
+      }
+    ],
+    "b1_race_1792590861355": [
+      {
+        "id": "act_1792590861408_0lnx9",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_9",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 9",
+        "lessonTitleEn": "Parallel Lesson 9",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.408Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861402_qvwnc",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_8",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 8",
+        "lessonTitleEn": "Parallel Lesson 8",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.402Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861395_qk5ta",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_7",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 7",
+        "lessonTitleEn": "Parallel Lesson 7",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.395Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861389_p424a",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_6",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 6",
+        "lessonTitleEn": "Parallel Lesson 6",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.389Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861385_9yury",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_4",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 4",
+        "lessonTitleEn": "Parallel Lesson 4",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.385Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861381_xwgtp",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_5",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 5",
+        "lessonTitleEn": "Parallel Lesson 5",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.380Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861375_mkgbn",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_3",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 3",
+        "lessonTitleEn": "Parallel Lesson 3",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.375Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861371_ysnvq",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_2",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 2",
+        "lessonTitleEn": "Parallel Lesson 2",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.371Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861367_7mz54",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_1",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 1",
+        "lessonTitleEn": "Parallel Lesson 1",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.367Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792590861360_mh1wu",
+        "studentId": "b1_race_1792590861355",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_0",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 0",
+        "lessonTitleEn": "Parallel Lesson 0",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T13:54:21.360Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:54:21",
+        "isFirstCompletion": true
+      }
+    ],
+    "b1_student_1792592948834": [
+      {
+        "id": "act_1792592949138_8mohs",
+        "studentId": "b1_student_1792592948834",
+        "school": "taxis",
+        "activityId": "taxis_liturgy_st_basil",
+        "activityType": "TAXIS_COMPLETED",
+        "lessonTitleAr": "قداس القديس باسيليوس",
+        "lessonTitleEn": "Liturgy of St. Basil",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.138Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949084_vys2j",
+        "studentId": "b1_student_1792592948834",
+        "school": "hymns",
+        "activityId": "hymn-ep-oro",
+        "activityType": "HYMN_MASTERED",
+        "lessonTitleAr": "لحن إب أورو",
+        "lessonTitleEn": "Ep-Oro",
+        "pointsEarned": 75,
+        "timestamp": "2026-10-21T14:29:09.084Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949026_k8pyh",
+        "studentId": "b1_student_1792592948834",
+        "school": "sunday_school",
+        "activityId": "l2",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس الأحد الثاني",
+        "lessonTitleEn": "Sunday School Lesson 2",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.025Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592948887_hnlyp",
+        "studentId": "b1_student_1792592948834",
+        "school": "sunday_school",
+        "activityId": "l1",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس الأحد الأول",
+        "lessonTitleEn": "Sunday School Lesson 1",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:08.887Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:08",
+        "isFirstCompletion": true
+      }
+    ],
+    "b1_race_1792592949186": [
+      {
+        "id": "act_1792592949240_7bybn",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_9",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 9",
+        "lessonTitleEn": "Parallel Lesson 9",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.240Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949230_kskz9",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_8",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 8",
+        "lessonTitleEn": "Parallel Lesson 8",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.230Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949226_qjxp5",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_7",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 7",
+        "lessonTitleEn": "Parallel Lesson 7",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.226Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949220_021di",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_6",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 6",
+        "lessonTitleEn": "Parallel Lesson 6",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.220Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949215_kb3jj",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_5",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 5",
+        "lessonTitleEn": "Parallel Lesson 5",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.215Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949209_8f78c",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_3",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 3",
+        "lessonTitleEn": "Parallel Lesson 3",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.209Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949205_zlts7",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_2",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 2",
+        "lessonTitleEn": "Parallel Lesson 2",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.205Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949201_1ilzz",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_1",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 1",
+        "lessonTitleEn": "Parallel Lesson 1",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.201Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949197_csaqt",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_4",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 4",
+        "lessonTitleEn": "Parallel Lesson 4",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.197Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
+        "isFirstCompletion": true
+      },
+      {
+        "id": "act_1792592949192_krvnn",
+        "studentId": "b1_race_1792592949186",
+        "school": "sunday_school",
+        "activityId": "lesson_parallel_0",
+        "activityType": "LESSON_COMPLETED",
+        "lessonTitleAr": "درس متزامن 0",
+        "lessonTitleEn": "Parallel Lesson 0",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-21T14:29:09.192Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "17:29:09",
         "isFirstCompletion": true
       }
     ]
