@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { BookOpen, CheckCircle, Clock, Search, Plus, Sparkles, Edit3, Eye, Filter, Music, AlertCircle, Scroll } from 'lucide-react';
+import { BookOpen, CheckCircle, Clock, Search, Plus, Sparkles, Edit3, Eye, Filter, Music, AlertCircle, Scroll, Compass, LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLessons } from '../../context/LessonsContext';
 import { useAuth } from '../../context/AuthContext';
@@ -10,6 +10,7 @@ import { formatStudentClassDisplay, getClassGroupForGrade } from '../../lib/clas
 import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { HymnsSchoolTab } from '../hymns/HymnsSchoolTab';
 import { CopticTaxisTab } from '../taxis/CopticTaxisTab';
+import { StudentRoadmapView } from './StudentRoadmapView';
 
 interface LessonsTabProps {
   onStartLesson: (id: string) => void;
@@ -21,6 +22,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
   const { userData } = useAuth();
   const { lessons, updateLesson, refreshCurriculum } = useLessons();
   const [selectedSchool, setSelectedSchool] = useState<'sunday_school' | 'hymns' | 'taxis'>('sunday_school');
+  const [displayMode, setDisplayMode] = useState<'roadmap' | 'cards'>('roadmap');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'published' | 'drafts'>('all');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -189,7 +191,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
         )}
       </div>
 
-      {/* Search & Filter Bar */}
+      {/* Search & Filter Bar & View Toggle */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
           <div className={`absolute inset-y-0 ${lang === 'ar' ? 'right-0 pr-3' : 'left-0 pl-3'} flex items-center pointer-events-none`}>
@@ -204,33 +206,73 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
           />
         </div>
 
-        {/* Teacher status filter tabs */}
-        {isTeacher && (
-          <div className="flex bg-[var(--mousa-sand-100)] dark:bg-stone-900 p-1 rounded-2xl text-xs font-bold text-[var(--mousa-sand-600)] self-start sm:self-auto border border-[var(--mousa-border-sand)]">
+        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+          {/* View Mode Switcher: Winding Roadmap (Candy Crush) vs Card Grid */}
+          <div className="flex bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] p-1 rounded-2xl border border-[var(--mousa-border-sand)] text-xs font-bold gap-1 shadow-2xs">
             <button
-              onClick={() => setFilterMode('all')}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${filterMode === 'all' ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-black shadow-2xs' : 'hover:text-[var(--mousa-teal-deep)]'}`}
+              onClick={() => setDisplayMode('roadmap')}
+              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                displayMode === 'roadmap'
+                  ? 'bg-[var(--mousa-teal)] text-white font-black shadow-xs'
+                  : 'text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal)]'
+              }`}
             >
-              {lang === 'copt' ? 'Ⲡⲧⲏⲣϥ' : lang === 'ar' ? 'الكل' : 'All'}
+              <Compass size={14} />
+              <span>{lang === 'ar' ? '🗺️ خريطة المسيرة' : '🗺️ Roadmap'}</span>
             </button>
             <button
-              onClick={() => setFilterMode('published')}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${filterMode === 'published' ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-black shadow-2xs' : 'hover:text-[var(--mousa-teal-deep)]'}`}
+              onClick={() => setDisplayMode('cards')}
+              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                displayMode === 'cards'
+                  ? 'bg-[var(--mousa-teal)] text-white font-black shadow-xs'
+                  : 'text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal)]'
+              }`}
             >
-              {lang === 'copt' ? 'Ⲉⲧϩⲓⲱⲓϣ' : lang === 'ar' ? 'المنشورة' : 'Published'}
-            </button>
-            <button
-              onClick={() => setFilterMode('drafts')}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${filterMode === 'drafts' ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-black shadow-2xs' : 'hover:text-[var(--mousa-teal-deep)]'}`}
-            >
-              {lang === 'copt' ? 'Ϩⲁⲛⲥϧⲁⲓ' : lang === 'ar' ? 'المسودات' : 'Drafts'}
+              <LayoutGrid size={14} />
+              <span>{lang === 'ar' ? '📋 البطاقات' : '📋 Cards'}</span>
             </button>
           </div>
-        )}
+
+          {/* Teacher status filter tabs */}
+          {isTeacher && (
+            <div className="flex bg-[var(--mousa-sand-100)] dark:bg-stone-900 p-1 rounded-2xl text-xs font-bold text-[var(--mousa-sand-600)] border border-[var(--mousa-border-sand)]">
+              <button
+                onClick={() => setFilterMode('all')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${filterMode === 'all' ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-black shadow-2xs' : 'hover:text-[var(--mousa-teal-deep)]'}`}
+              >
+                {lang === 'copt' ? 'Ⲡⲧⲏⲣϥ' : lang === 'ar' ? 'الكل' : 'All'}
+              </button>
+              <button
+                onClick={() => setFilterMode('published')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${filterMode === 'published' ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-black shadow-2xs' : 'hover:text-[var(--mousa-teal-deep)]'}`}
+              >
+                {lang === 'copt' ? 'Ⲉⲧϩⲓⲱⲓϣ' : lang === 'ar' ? 'المنشورة' : 'Published'}
+              </button>
+              <button
+                onClick={() => setFilterMode('drafts')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${filterMode === 'drafts' ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-black shadow-2xs' : 'hover:text-[var(--mousa-teal-deep)]'}`}
+              >
+                {lang === 'copt' ? 'Ϩⲁⲛⲥϧⲁⲓ' : lang === 'ar' ? 'المسودات' : 'Drafts'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Lesson Cards Grid */}
-      <div className="space-y-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 md:space-y-0">
+      {/* Main Content: Either Candy Crush Roadmap or Cards Grid */}
+      {displayMode === 'roadmap' ? (
+        <StudentRoadmapView
+          lessons={filteredLessons}
+          onStartLesson={onStartLesson}
+          lang={lang}
+          isTeacher={isTeacher}
+          studentName={userData?.fullName}
+          studentAvatar={userData?.avatarUrl}
+          studentGrade={userData?.grade || userData?.requestedGrade}
+        />
+      ) : (
+        /* Lesson Cards Grid */
+        <div className="space-y-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 md:space-y-0">
         <AnimatePresence mode="popLayout">
           {filteredLessons.length > 0 ? (
             filteredLessons.map((lesson, index) => (
@@ -356,6 +398,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
           )}
         </AnimatePresence>
       </div>
+      )}
 
       {/* Teacher Lesson Edit Modal */}
       {editingLesson && (

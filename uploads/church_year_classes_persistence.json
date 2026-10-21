@@ -6,7 +6,7 @@
       "year": "2026–2027",
       "status": "ACTIVE",
       "startDate": "2026-09-01",
-      "createdAt": "2026-10-20T14:19:02.225Z",
+      "createdAt": "2026-10-21T13:24:49.821Z",
       "createdBy": "system"
     }
   },
@@ -23,7 +23,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     },
     "inst_2026-2027_primary_1": {
       "id": "inst_2026-2027_primary_1",
@@ -37,7 +37,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     },
     "inst_2026-2027_primary_2": {
       "id": "inst_2026-2027_primary_2",
@@ -51,7 +51,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     },
     "inst_2026-2027_preparatory": {
       "id": "inst_2026-2027_preparatory",
@@ -65,7 +65,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     },
     "inst_2026-2027_secondary": {
       "id": "inst_2026-2027_secondary",
@@ -79,7 +79,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     },
     "inst_2026-2027_university": {
       "id": "inst_2026-2027_university",
@@ -93,7 +93,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     }
   },
   "classMemberships": {
@@ -106,7 +106,7 @@
       "studentName": "Mark Shenouda",
       "exactGrade": "Grade 4",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-20T14:19:02.225Z",
+      "enrolledAt": "2026-10-21T13:24:49.821Z",
       "enrolledBy": "servant"
     },
     "mem_david_2026-2027": {
@@ -118,7 +118,7 @@
       "studentName": "David Emad",
       "exactGrade": "Grade 5",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-20T14:19:02.225Z",
+      "enrolledAt": "2026-10-21T13:24:49.821Z",
       "enrolledBy": "servant"
     },
     "mem_other_2026-2027": {
@@ -130,7 +130,7 @@
       "studentName": "Peter Fadi",
       "exactGrade": "Prep 1",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-20T14:19:02.225Z",
+      "enrolledAt": "2026-10-21T13:24:49.821Z",
       "enrolledBy": "servant"
     }
   },
@@ -204,14 +204,6 @@
       "classGroupId": "preparatory",
       "churchYear": "2026–2027",
       "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Peter"
-    },
-    "std_sec_karim_909": {
-      "studentId": "std_sec_karim_909",
-      "fullName": "Karim Nabil (First Secondary)",
-      "grade": "Secondary 1",
-      "classGroupId": "secondary",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=std_sec_karim_909",
-      "isPending": true
     }
   },
   "teacherStudentRelationships": [],
@@ -220,31 +212,31 @@
       "parentId": "mary",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     },
     {
       "parentId": "mary",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     },
     {
       "parentId": "other_parent",
       "childId": "other",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-20T14:19:02.225Z"
+      "createdAt": "2026-10-21T13:24:49.821Z"
     }
   ],
   "activationRequests": {
@@ -258,19 +250,7 @@
       "requestedGrade": "Grade 4",
       "notes": "New student joining Sunday school with Servant Mina",
       "status": "PENDING_APPROVAL",
-      "requestedAt": "2026-10-20T13:19:02.225Z"
-    },
-    "req_1792505942231_3mabs": {
-      "id": "req_1792505942231_3mabs",
-      "studentId": "std_sec_karim_909",
-      "studentName": "Karim Nabil (First Secondary)",
-      "email": "karim.secondary@church.org",
-      "phone": "",
-      "requestedClassGroupId": "secondary",
-      "requestedGrade": "Secondary 1",
-      "notes": "Registered for First Secondary Sunday School.",
-      "status": "PENDING_APPROVAL",
-      "requestedAt": "2026-10-20T14:19:02.231Z"
+      "requestedAt": "2026-10-21T12:24:49.821Z"
     }
   },
   "classServants": {
@@ -308,20 +288,6 @@
       "requestedAt": "2026-09-01T08:00:00.000Z",
       "reviewedBy": "Servant Mina",
       "reviewedAt": "2026-09-02T08:00:00.000Z"
-    },
-    "mem_george_1792505942544_lvl1_1792505942569": {
-      "id": "mem_george_1792505942544_lvl1_1792505942569",
-      "studentId": "george_1792505942544",
-      "studentName": "George The Deacon Candidate",
-      "level": 2,
-      "rosterGroup": "deacons_prep",
-      "status": "approved",
-      "requestedAt": "2026-10-20T14:19:02.569Z",
-      "notes": "Approved for Level 1 Novice Deacon Choir",
-      "reviewedBy": "mina",
-      "reviewedAt": "2026-10-20T14:19:02.589Z",
-      "transferredFromLevel": 1,
-      "transferReason": "Mastered Level 1, promoted to Preparatory Deacons"
     }
   },
   "hymnsCollection": {
@@ -467,49 +433,6 @@
       "hazatExplanationEn": "Draft under preparation",
       "lines": [],
       "history": []
-    },
-    "test_hymn_1792505942595": {
-      "id": "test_hymn_1792505942595",
-      "titleAr": "لحن تين أوأوشت (فلنسجد للثالوث القدوس)",
-      "titleEn": "Ten-Oo-Osht (We Worship You)",
-      "titleCoptic": "Ⲧⲉⲛⲟⲩⲱϣⲧ ⲙ̀Ⲫⲓⲱⲧ",
-      "seasonAr": "طقس سنوي",
-      "seasonEn": "Annual",
-      "occasionTag": "annual",
-      "difficulty": "easy",
-      "level": 1,
-      "status": "draft",
-      "audioUrl": "/uploads/sample_cross_lesson_audio.mp3",
-      "durationSec": 120,
-      "hazatExplanationAr": "",
-      "hazatExplanationEn": "",
-      "sheetMusicUrl": "",
-      "pdfUrl": "",
-      "lines": [
-        {
-          "id": 1,
-          "coptic": "Ⲧⲉⲛⲟⲩⲱϣⲧ ⲙ̀Ⲫⲓⲱⲧ ⲛⲉⲙ Ⲡ̀ϣⲏⲣⲓ",
-          "arabized": "تين أوأوشت إمفيوت نيم بشيري",
-          "arabic": "نسجد للآب والابن"
-        }
-      ],
-      "version": 3,
-      "createdBy": "mina",
-      "createdAt": "2026-10-20T14:19:02.596Z",
-      "updatedAt": "2026-10-20T14:19:02.605Z",
-      "history": [
-        {
-          "version": 1,
-          "status": "draft",
-          "titleAr": "لحن تين أوأوشت (فلنسجد للثالوث القدوس)",
-          "titleEn": "Ten-Oo-Osht (We Worship You)",
-          "level": 1,
-          "audioUrl": "/uploads/sample_cross_lesson_audio.mp3",
-          "linesCount": 1,
-          "savedBy": "mina",
-          "savedAt": "2026-10-20T14:19:02.600Z"
-        }
-      ]
     }
   },
   "taxisCollection": {
@@ -643,318 +566,66 @@
         }
       ],
       "history": []
-    },
-    "taxis_test_1792505942612": {
-      "id": "taxis_test_1792505942612",
-      "titleAr": "طقس سر مسحة المرضى (صلاة القنديل العام)",
-      "titleEn": "Sacrament of the Unction of the Sick",
-      "titleCopt": "Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ⲡⲓⲉⲩⲭⲉⲗⲉⲟⲛ",
-      "category": "sacraments",
-      "audience": "all",
-      "status": "unpublished",
-      "summaryAr": "",
-      "summaryEn": "",
-      "sections": [
-        {
-          "id": "sec_1",
-          "order": 1,
-          "titleAr": "إيقاد القناديل السبعة وصلوات الأواشي",
-          "titleEn": "Lighting the 7 Lamps & Prayers",
-          "priestAction": "يصنع الكاهن ٧ فتائل من القطن النقي في طبق الزيت",
-          "deaconResponse": "مرد الشماس: هللويا صلوا من أجل المرضى"
-        }
-      ],
-      "references": [],
-      "documents": [],
-      "version": 1,
-      "createdBy": "mina",
-      "createdByName": "الخادم المسؤول",
-      "createdAt": "2026-10-20T14:19:02.613Z",
-      "updatedAt": "2026-10-20T14:19:02.625Z",
-      "history": [],
-      "approvedBy": "mina",
-      "reviewedBy": "mina",
-      "publishedBy": "mina",
-      "publishedAt": "2026-10-20T14:19:02.621Z",
-      "unpublishedBy": "mina",
-      "unpublishedAt": "2026-10-20T14:19:02.625Z"
     }
   },
   "progress": {
-    "std_sec_karim_909_l-sec-01": {
-      "studentId": "std_sec_karim_909",
-      "lessonId": "l-sec-01",
-      "versionId": "v-sec-01",
+    "mark_l-test-multiversion-01": {
+      "studentId": "mark",
+      "lessonId": "l-test-multiversion-01",
+      "versionId": "v-test-multi-1",
       "status": "COMPLETED",
       "sectionsCompleted": [
-        "sec-sec-1",
-        "sec-sec-2"
+        "sec-multi-1",
+        "sec-multi-2",
+        "sec-multi-3"
       ],
-      "totalSections": 2,
+      "totalSections": 3,
       "completionPercent": 100,
-      "startedAt": "2026-10-20T14:19:02.243Z",
-      "completedAt": "2026-10-20T14:19:02.247Z",
+      "startedAt": "2026-10-21T13:24:49.834Z",
+      "completedAt": "2026-10-21T13:24:49.842Z",
       "pointsAwarded": true
     }
   },
   "attempts": {},
   "mastery": {
-    "std_sec_karim_909_l-sec-01": {
-      "lessonId": "l-sec-01",
-      "studentId": "std_sec_karim_909",
+    "mark_l-test-multiversion-01": {
+      "lessonId": "l-test-multiversion-01",
+      "studentId": "mark",
       "status": "MASTERED",
       "contentCompleted": true,
       "quizPassed": true,
       "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-20T14:19:02.247Z",
+      "evaluatedAt": "2026-10-21T13:24:49.842Z",
       "evaluatedBy": "Automated Curriculum Engine",
       "teacherNotes": "Completed all sections and verified by church curriculum engine"
     }
   },
   "userPoints": {
-    "std_sec_karim_909": 50,
-    "b1_student_1792506216864": 225,
-    "b1_race_1792506217222": 500
+    "mark": 150
   },
   "userStreaks": {
-    "std_sec_karim_909": {
+    "mark": {
       "currentStreak": 1,
       "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-20",
+      "lastActiveCairoDate": "2026-10-21",
       "activeCairoDays": [
-        "2026-10-20"
-      ]
-    },
-    "b1_student_1792506216864": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-20",
-      "activeCairoDays": [
-        "2026-10-20"
-      ]
-    },
-    "b1_race_1792506217222": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-20",
-      "activeCairoDays": [
-        "2026-10-20"
+        "2026-10-21"
       ]
     }
   },
   "completionHistory": {
-    "std_sec_karim_909": [
+    "mark": [
       {
-        "id": "act_1792505942250_cp1n1",
-        "studentId": "std_sec_karim_909",
+        "id": "act_1792589089845_zuu0l",
+        "studentId": "mark",
         "type": "LESSON_COMPLETED",
-        "lessonId": "l-sec-01",
+        "lessonId": "l-test-multiversion-01",
         "lessonTitleAr": "درس كنسي مبارك",
         "lessonTitleEn": "Spiritual Milestone Lesson",
         "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:19:02.247Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:19:02",
-        "isFirstCompletion": true
-      }
-    ],
-    "b1_student_1792506216864": [
-      {
-        "id": "act_1792506217164_hty1o",
-        "studentId": "b1_student_1792506216864",
-        "school": "taxis",
-        "activityId": "taxis_liturgy_st_basil",
-        "activityType": "TAXIS_COMPLETED",
-        "lessonTitleAr": "قداس القديس باسيليوس",
-        "lessonTitleEn": "Liturgy of St. Basil",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.164Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217116_3i27d",
-        "studentId": "b1_student_1792506216864",
-        "school": "hymns",
-        "activityId": "hymn-ep-oro",
-        "activityType": "HYMN_MASTERED",
-        "lessonTitleAr": "لحن إب أورو",
-        "lessonTitleEn": "Ep-Oro",
-        "pointsEarned": 75,
-        "timestamp": "2026-10-20T14:23:37.116Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217065_s77gr",
-        "studentId": "b1_student_1792506216864",
-        "school": "sunday_school",
-        "activityId": "l2",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس الأحد الثاني",
-        "lessonTitleEn": "Sunday School Lesson 2",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.064Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506216906_cp4w1",
-        "studentId": "b1_student_1792506216864",
-        "school": "sunday_school",
-        "activityId": "l1",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس الأحد الأول",
-        "lessonTitleEn": "Sunday School Lesson 1",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:36.906Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:36",
-        "isFirstCompletion": true
-      }
-    ],
-    "b1_race_1792506217222": [
-      {
-        "id": "act_1792506217282_kqqsc",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_8",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 8",
-        "lessonTitleEn": "Parallel Lesson 8",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.282Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217277_wyjne",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_9",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 9",
-        "lessonTitleEn": "Parallel Lesson 9",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.276Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217271_gcs17",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_7",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 7",
-        "lessonTitleEn": "Parallel Lesson 7",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.271Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217260_ee0pq",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_6",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 6",
-        "lessonTitleEn": "Parallel Lesson 6",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.260Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217254_y4jlp",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_5",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 5",
-        "lessonTitleEn": "Parallel Lesson 5",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.254Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217247_6ggtk",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_4",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 4",
-        "lessonTitleEn": "Parallel Lesson 4",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.247Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217242_mzgvg",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_3",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 3",
-        "lessonTitleEn": "Parallel Lesson 3",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.242Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217238_ajq5a",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_2",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 2",
-        "lessonTitleEn": "Parallel Lesson 2",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.238Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217234_ht2oo",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_1",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 1",
-        "lessonTitleEn": "Parallel Lesson 1",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.234Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
-        "isFirstCompletion": true
-      },
-      {
-        "id": "act_1792506217229_0aqq6",
-        "studentId": "b1_race_1792506217222",
-        "school": "sunday_school",
-        "activityId": "lesson_parallel_0",
-        "activityType": "LESSON_COMPLETED",
-        "lessonTitleAr": "درس متزامن 0",
-        "lessonTitleEn": "Parallel Lesson 0",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-20T14:23:37.229Z",
-        "cairoDate": "2026-10-20",
-        "cairoTime": "17:23:37",
+        "timestamp": "2026-10-21T13:24:49.842Z",
+        "cairoDate": "2026-10-21",
+        "cairoTime": "16:24:49",
         "isFirstCompletion": true
       }
     ]

@@ -14,6 +14,7 @@ import {
   saveRewardPurchaseLocal 
 } from '../../lib/pointsService';
 import { LeaderboardEntry, Language } from '../../types';
+import { LeaderboardPodium, PodiumItem } from './LeaderboardPodium';
 
 const REWARD_PRODUCTS = [
   { id: '1', title: 'Small Saint Picture', titleAr: 'صورة قديس صغيرة', cost: 50, icon: '🖼️' },
@@ -204,24 +205,6 @@ export function PointsTab({ lang }: { lang: Language }) {
         </button>
       </div>
 
-      {/* Header Stats with High-Contrast Text */}
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", bounce: 0.4 }}
-        className="text-center space-y-2 bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] p-6 rounded-3xl border-2 border-[var(--mousa-border-sand)] max-w-md mx-auto shadow-sm"
-      >
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-[var(--mousa-gold)] to-[var(--mousa-coral)] rounded-2xl text-white shadow-md mb-2">
-          <Star size={34} fill="currentColor" className="text-white drop-shadow-xs" />
-        </div>
-        <div className="text-4xl md:text-5xl font-black text-stone-900 dark:text-stone-50 tracking-tight">
-          {userData.points}
-        </div>
-        <p className="text-stone-800 dark:text-stone-200 font-extrabold uppercase tracking-wider text-xs sm:text-sm">
-          {lang === 'ar' ? 'إجمالي نقاط البركة في مسيرة الأنبا موسى' : 'Total Blessing Points'}
-        </p>
-      </motion.div>
-
       <AnimatePresence mode="wait">
         {/* =========================================================================
             SECTION 1: STREAK STARS (نجوم الستريك) — DEFAULT VISIBLE
@@ -234,6 +217,27 @@ export function PointsTab({ lang }: { lang: Language }) {
             exit={{ opacity: 0, y: -15 }}
             className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] rounded-3xl p-6 md:p-8 shadow-sm border-2 border-[var(--mousa-border-sand)] space-y-6 md:max-w-4xl md:mx-auto"
           >
+            {/* Personal Streak Status Banner */}
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", bounce: 0.4 }}
+              className="text-center space-y-2 bg-gradient-to-b from-amber-50 to-orange-50/40 dark:from-amber-950/40 dark:to-[#1E1914] p-6 rounded-3xl border-2 border-amber-300 dark:border-amber-800/60 max-w-md mx-auto shadow-sm"
+            >
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-amber-500 to-amber-600 rounded-2xl text-white shadow-md mb-2">
+                <Flame size={36} fill="currentColor" className="text-white drop-shadow-xs" />
+              </div>
+              <div className="text-4xl md:text-5xl font-black text-amber-700 dark:text-amber-400 tracking-tight">
+                {userData.currentStreak || 1} {lang === 'ar' ? 'أيام' : 'Days'}
+              </div>
+              <p className="text-stone-800 dark:text-stone-200 font-extrabold uppercase tracking-wider text-xs sm:text-sm">
+                {lang === 'ar' ? 'سلسلة المواظبة الحالية في مسيرة الأنبا موسى' : 'Current Daily Learning Streak'}
+              </p>
+              <div className="flex items-center justify-center gap-3 pt-2 text-xs font-bold text-stone-600 dark:text-stone-400">
+                <span>{lang === 'ar' ? `🏆 أطول مواظبة: ${userData.longestStreak || userData.currentStreak || 1} يوم` : `🏆 Longest: ${userData.longestStreak || userData.currentStreak || 1} days`}</span>
+              </div>
+            </motion.div>
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-[var(--mousa-border-sand)]">
               <div>
                 <h2 className="text-xl md:text-2xl font-black text-stone-900 dark:text-stone-50 flex items-center gap-2">
@@ -250,8 +254,28 @@ export function PointsTab({ lang }: { lang: Language }) {
               </div>
             </div>
 
-            <div className="space-y-3">
-              {streakList.map((entry) => {
+            {/* Visual Top 3 Podium for Streaks */}
+            <LeaderboardPodium 
+              items={streakList.slice(0, 3).map(e => ({
+                id: e.id,
+                studentId: e.studentId,
+                studentName: e.studentName,
+                studentNameAr: e.studentNameAr,
+                avatarUrl: e.avatarUrl,
+                score: e.streakDays,
+                rank: e.rank
+              }))}
+              type="streak"
+              lang={lang}
+              currentUserId={userData.id}
+            />
+
+            {/* Ranks 4+ List */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-500 dark:text-stone-400 px-1">
+                {lang === 'ar' ? 'باقي رفقاء المسيرة' : 'Caravan Runners (Ranks 4+)'}
+              </h3>
+              {streakList.slice(3).map((entry) => {
                 const isCurrentUser = entry.studentId === userData.id || (userData.id.startsWith('guest_') && entry.studentId === 'u1');
                 return (
                   <motion.div 
@@ -260,17 +284,17 @@ export function PointsTab({ lang }: { lang: Language }) {
                     animate={{ opacity: 1, x: 0 }}
                     className={`flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-2xl border-2 transition-all ${
                       isCurrentUser 
-                        ? 'bg-amber-50/80 dark:bg-amber-950/40 border-[var(--mousa-gold)] shadow-sm' 
+                        ? 'bg-amber-50/80 dark:bg-amber-950/40 border-[var(--mousa-gold)] shadow-sm ring-2 ring-[var(--mousa-gold)]/40' 
                         : 'bg-white/60 dark:bg-stone-900/60 border-[var(--mousa-border-sand)] hover:border-stone-300'
                     }`}
                   >
-                    <div className="font-black text-lg sm:text-xl text-stone-700 dark:text-stone-300 w-8 text-center shrink-0">
-                      {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`}
+                    <div className="font-black text-base sm:text-lg text-stone-600 dark:text-stone-400 w-8 text-center shrink-0">
+                      #{entry.rank}
                     </div>
                     <img 
                       src={entry.avatarUrl} 
                       alt={entry.studentName} 
-                      className="w-12 h-12 rounded-full border-2 border-[var(--mousa-gold)] shadow-xs object-cover bg-white shrink-0" 
+                      className="w-11 h-11 rounded-full border-2 border-[var(--mousa-gold)] shadow-xs object-cover bg-white shrink-0" 
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -391,6 +415,24 @@ export function PointsTab({ lang }: { lang: Language }) {
             exit={{ opacity: 0, y: -15 }}
             className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] rounded-3xl p-6 md:p-8 shadow-sm border-2 border-[var(--mousa-border-sand)] space-y-6 md:max-w-4xl md:mx-auto"
           >
+            {/* Header Stats: Total Blessing Points Summary (Exclusively on Points Leaderboard) */}
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", bounce: 0.4 }}
+              className="text-center space-y-2 bg-gradient-to-b from-amber-50 to-orange-50/40 dark:from-stone-900 dark:to-[#1E1914] p-6 rounded-3xl border-2 border-[var(--mousa-border-sand)] max-w-md mx-auto shadow-sm"
+            >
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-[var(--mousa-gold)] to-[var(--mousa-coral)] rounded-2xl text-white shadow-md mb-2">
+                <Star size={34} fill="currentColor" className="text-white drop-shadow-xs" />
+              </div>
+              <div className="text-4xl md:text-5xl font-black text-stone-900 dark:text-stone-50 tracking-tight">
+                {userData.points}
+              </div>
+              <p className="text-stone-800 dark:text-stone-200 font-extrabold uppercase tracking-wider text-xs sm:text-sm">
+                {lang === 'ar' ? 'إجمالي نقاط البركة في مسيرة الأنبا موسى' : 'Total Blessing Points'}
+              </p>
+            </motion.div>
+
              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-[var(--mousa-border-sand)]">
                <div>
                  <h2 className="text-xl md:text-2xl font-black text-stone-900 dark:text-stone-50 flex items-center gap-2">
@@ -405,26 +447,45 @@ export function PointsTab({ lang }: { lang: Language }) {
                  {userData?.grade || (lang === 'ar' ? 'مرحلة ابتدائي' : 'Elementary')}
                </span>
              </div>
+
+             {/* Visual Top 3 Podium for Points */}
+             <LeaderboardPodium 
+               items={leaderboardList.slice(0, 3).map(e => ({
+                 id: e.id,
+                 studentId: e.studentId,
+                 studentName: e.studentName,
+                 avatarUrl: e.avatarUrl,
+                 score: e.pointsThisWeek,
+                 rank: e.rank
+               }))}
+               type="points"
+               lang={lang}
+               currentUserId={userData.id}
+             />
              
-             <div className="space-y-3">
-                {leaderboardList.map((entry) => {
+             {/* Ranks 4+ List */}
+             <div className="space-y-3 pt-2">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-500 dark:text-stone-400 px-1">
+                  {lang === 'ar' ? 'باقي رفقاء المسيرة' : 'Caravan Runners (Ranks 4+)'}
+                </h3>
+                {leaderboardList.slice(3).map((entry) => {
                   const isCurrentUser = entry.studentId === userData.id;
                   return (
                     <motion.div 
                       key={entry.id || entry.studentId}
                       className={`flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-2xl border-2 transition-all ${
                         isCurrentUser 
-                          ? 'bg-[#FAF3E5] dark:bg-[#2F241A] border-[var(--mousa-gold)] shadow-sm' 
+                          ? 'bg-[#FAF3E5] dark:bg-[#2F241A] border-[var(--mousa-gold)] shadow-sm ring-2 ring-[var(--mousa-gold)]/40' 
                           : 'bg-white/60 dark:bg-stone-900/60 border-[var(--mousa-border-sand)]'
                       }`}
                     >
-                      <div className="font-black text-lg sm:text-xl text-stone-700 dark:text-stone-300 w-8 text-center shrink-0">
-                        {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`}
+                      <div className="font-black text-base sm:text-lg text-stone-600 dark:text-stone-400 w-8 text-center shrink-0">
+                        #{entry.rank}
                       </div>
                       <img 
                         src={entry.avatarUrl} 
                         alt={entry.studentName} 
-                        className="w-12 h-12 rounded-full border-2 border-[var(--mousa-gold)] shadow-xs object-cover bg-white shrink-0" 
+                        className="w-11 h-11 rounded-full border-2 border-[var(--mousa-gold)] shadow-xs object-cover bg-white shrink-0" 
                       />
                       <div className="flex-1 min-w-0">
                          <div className="flex items-center gap-2">

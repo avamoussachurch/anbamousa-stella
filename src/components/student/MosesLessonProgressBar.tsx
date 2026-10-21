@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Trophy, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Sparkles, Trophy, CheckCircle2, AlertCircle, Loader2, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Language } from '../../types';
 
@@ -145,6 +145,19 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
             <span>{isCop ? 'Ϫⲱⲕ' : isAr ? 'القمة (دير القديسين)' : 'Summit (Monastery)'}</span>
           </div>
         </div>
+
+        {onExploreLessons && (
+          <div className="pt-2 flex justify-end border-t border-[var(--mousa-border-sand)]/60">
+            <button
+              onClick={onExploreLessons}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[var(--mousa-gold)]/20 to-[var(--mousa-teal)]/20 hover:from-[var(--mousa-gold)]/30 hover:to-[var(--mousa-teal)]/30 text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-light)] font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--mousa-border-sand)] shadow-2xs active:scale-95"
+            >
+              <span>🗺️</span>
+              <span>{isAr ? 'عرض خريطة مسيرة الأنبا موسى' : 'View Journey Roadmap'}</span>
+              <ChevronRight size={13} className={isAr ? 'rotate-180' : ''} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
