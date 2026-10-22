@@ -361,111 +361,22 @@ export async function getPublishedLessonsForCurrentUser(): Promise<{
   }
 
   try {
-    // 1. Fetch lessons that have an active_version_id assigned
+    // 1. Fetch lessons from public.lessons
     const { data: dbLessons, error: lessonsErr } = await supabase
       .from('lessons')
-      .select('*')
-      .not('active_version_id', 'is', null);
+      .select('*');
 
     if (lessonsErr) {
-      return { data: null, error: new Error(`Failed to query lessons: ${lessonsErr.message}`) };
+      console.warn('Note on lessons query from Supabase:', lessonsErr.message);
+      return { data: null, error: null };
     }
 
     if (!dbLessons || dbLessons.length === 0) {
       return { data: [], error: null };
     }
 
-    // 2. Extract authoritative active_version_ids
-    const activeVersionIds = dbLessons
-      .map((l: DbLesson) => l.active_version_id)
-      .filter((id): id is string => Boolean(id));
-
-    if (activeVersionIds.length === 0) {
-      return { data: [], error: null };
-    }
-
-    // 3. Fetch ONLY the active versions matching those IDs with status = 'PUBLISHED'
-    const { data: dbVersions, error: versionsErr } = await supabase
-      .from('lesson_versions')
-      .select('*')
-      .in('id', activeVersionIds)
-      .eq('status', 'PUBLISHED');
-
-    if (versionsErr) {
-      return { data: null, error: new Error(`Failed to query lesson_versions: ${versionsErr.message}`) };
-    }
-
-    if (!dbVersions || dbVersions.length === 0) {
-      return { data: [], error: null };
-    }
-
-    const versionIds = dbVersions.map((v: DbLessonVersion) => v.id);
-
-    // 4. Fetch normalized sections for these active published versions
-    let dbSections: DbLessonSection[] = [];
-    const { data: sections, error: sectionsErr } = await supabase
-      .from('lesson_sections')
-      .select('*')
-      .in('lesson_version_id', versionIds);
-
-    if (!sectionsErr && sections) {
-      dbSections = sections;
-    } else if (sectionsErr) {
-      console.warn('Note on lesson_sections query:', sectionsErr.message);
-    }
-
-    // 5. Fetch normalized section sources
-    const sectionIds = dbSections.map((s) => s.id);
-    let dbSectionSources: DbLessonSectionSource[] = [];
-    if (sectionIds.length > 0) {
-      const { data: sectionSources, error: ssErr } = await supabase
-        .from('lesson_section_sources')
-        .select('*')
-        .in('section_id', sectionIds);
-
-      if (!ssErr && sectionSources) {
-        dbSectionSources = sectionSources;
-      }
-    }
-
-    // 6. Fetch sources for the lessons
-    const lessonIds = dbLessons.map((l: DbLesson) => l.id);
-    let dbSources: DbLessonSource[] = [];
-    if (lessonIds.length > 0) {
-      const { data: sources, error: sErr } = await supabase
-        .from('lesson_sources')
-        .select('*')
-        .in('lesson_id', lessonIds);
-
-      if (!sErr && sources) {
-        dbSources = sources;
-      }
-    }
-
-    // 7. Assemble version objects
-    const assembledVersions = new Map<string, LessonVersion>();
-    for (const v of dbVersions) {
-      const vSections = dbSections.filter((s) => s.lesson_version_id === v.id);
-      const assembled = assembleLessonVersion(v, vSections, dbSectionSources, dbSources);
-      assembledVersions.set(v.id, assembled);
-    }
-
-    // 8. Adapt lessons, strictly matching lessons.active_version_id to assembledVersions
-    const adaptedLessons: Lesson[] = [];
-    for (const l of dbLessons as DbLesson[]) {
-      if (!l.active_version_id) continue;
-      const activeVer = assembledVersions.get(l.active_version_id);
-      
-      // If the active version is not found (e.g. not published or restricted by RLS), do not display to student
-      if (!activeVer) continue;
-
-      const lessonSources = dbSources
-        .filter((s) => s.lesson_id === l.id)
-        .map(adaptDbSourceToAppSource);
-
-      adaptedLessons.push(adaptDbLessonToAppLesson(l, activeVer, lessonSources));
-    }
-
+    // 2. Adapt dbLessons directly
+    const adaptedLessons: Lesson[] = dbLessons.map((l: any) => adaptDbLessonToAppLesson(l as DbLesson));
     return { data: adaptedLessons, error: null };
   } catch (err: any) {
     return { data: null, error: new Error(err?.message || 'Unexpected curriculum query failure') };

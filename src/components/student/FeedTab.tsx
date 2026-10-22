@@ -10,13 +10,18 @@ import { mockPosts } from '../../data';
 import { Post, Comment, Reply, Language } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { uploadFeedMediaToSupabase, extractEmbedMedia, checkStorageBackendStatus } from '../../lib/supabaseDatabase';
+import {
+  fetchFeedPostsFromSupabase,
+  createFeedPostInSupabase,
+  deleteFeedPostFromSupabase,
+  toggleFeedPostPinInSupabase,
+  toggleFeedReactionInSupabase,
+  addFeedCommentInSupabase,
+  syncUserLocalPostsToSupabase,
+  ExtendedPost
+} from '../../lib/feedService';
 
 type SortOption = 'latest' | 'popular' | 'discussed' | 'announcements';
-
-interface ExtendedPost extends Post {
-  isPinned?: boolean;
-  isAnnouncement?: boolean;
-}
 
 const FEED_STORAGE_KEY = 'orthodox_church_feed_posts_v5';
 
@@ -113,14 +118,59 @@ export function FeedTab({ lang }: { lang: Language }) {
     ];
   });
 
-  // Save to localStorage whenever posts change
+  // Save to localStorage whenever posts change (as an offline cache)
   useEffect(() => {
     try {
       localStorage.setItem(FEED_STORAGE_KEY, JSON.stringify(posts));
     } catch (e) {
-      console.error('Failed to persist feed posts', e);
+      console.error('Failed to cache feed posts locally', e);
     }
   }, [posts]);
+
+  // Server state & notifications
+  const [syncStatusText, setSyncStatusText] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isLoadingServerPosts, setIsLoadingServerPosts] = useState(false);
+
+  // Load authoritative posts from Supabase on mount & run safe idempotent migration
+  useEffect(() => {
+    let isMounted = true;
+    async function loadFeed() {
+      setIsLoadingServerPosts(true);
+      const res = await fetchFeedPostsFromSupabase();
+      if (!isMounted) return;
+      setIsLoadingServerPosts(false);
+
+      if (res.data && res.data.length > 0) {
+        setPosts(res.data);
+      }
+
+      // If user is authenticated, check for any unmigrated authentic local posts
+      if (userData?.id) {
+        try {
+          const migRes = await syncUserLocalPostsToSupabase(userData);
+          if (migRes.migratedCount > 0 && isMounted) {
+            setSyncStatusText(
+              lang === 'ar'
+                ? `✨ تمت مزامنة ${migRes.migratedCount} منشور خاص بك مع سحابة الكنيسة بنجاح`
+                : `✨ Successfully synced ${migRes.migratedCount} of your posts to church cloud`
+            );
+            setTimeout(() => setSyncStatusText(null), 6000);
+            // Re-fetch authoritative posts
+            const fresh = await fetchFeedPostsFromSupabase();
+            if (fresh.data && isMounted) {
+              setPosts(fresh.data);
+            }
+          }
+        } catch (migErr) {
+          console.warn('Note on local feed migration:', migErr);
+        }
+      }
+    }
+
+    loadFeed();
+    return () => { isMounted = false; };
+  }, [userData?.id]);
 
   // 2. State controls
   const [sortBy, setSortBy] = useState<SortOption>('latest');
@@ -204,8 +254,9 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   }, [posts, sortBy]);
 
-  // 4. Post Reactions
-  const handleReactPost = (postId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+  // 4. Post Reactions (Optimistic update with Supabase persistence & rollback)
+  const handleReactPost = async (postId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+    setActionError(null);
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         return {
@@ -218,10 +269,29 @@ export function FeedTab({ lang }: { lang: Language }) {
       }
       return p;
     }));
+
+    const res = await toggleFeedReactionInSupabase(reactionType, { postId });
+    if (res.error) {
+      console.warn('Reaction write note:', res.error.message);
+      setActionError(lang === 'ar' ? `تعذر تسجيل التفاعل على السحابة: ${res.error.message}` : `Reaction failed: ${res.error.message}`);
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            reactions: {
+              ...p.reactions,
+              [reactionType]: Math.max(0, (p.reactions[reactionType] || 1) - 1)
+            }
+          };
+        }
+        return p;
+      }));
+    }
   };
 
-  // 5. Comment Reactions
-  const handleReactComment = (postId: string, commentId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+  // 5. Comment Reactions (Optimistic update with Supabase persistence & rollback)
+  const handleReactComment = async (postId: string, commentId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+    setActionError(null);
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         return {
@@ -243,6 +313,33 @@ export function FeedTab({ lang }: { lang: Language }) {
       }
       return p;
     }));
+
+    const res = await toggleFeedReactionInSupabase(reactionType, { commentId });
+    if (res.error) {
+      console.warn('Comment reaction write note:', res.error.message);
+      setActionError(lang === 'ar' ? `تعذر تسجيل التفاعل: ${res.error.message}` : `Comment reaction failed: ${res.error.message}`);
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            comments: p.comments.map(c => {
+              if (c.id === commentId) {
+                const currentReactions = c.reactions || { heart: 0, candle: 0, cross: 0 };
+                return {
+                  ...c,
+                  reactions: {
+                    ...currentReactions,
+                    [reactionType]: Math.max(0, (currentReactions[reactionType] || 1) - 1)
+                  }
+                };
+              }
+              return c;
+            })
+          };
+        }
+        return p;
+      }));
+    }
   };
 
   // 6. Reply Reactions
@@ -278,28 +375,35 @@ export function FeedTab({ lang }: { lang: Language }) {
     }));
   };
 
-  // 7. Add Comment or Reply
-  const handleAddCommentOrReply = (postId: string) => {
+  // 7. Add Comment or Reply (Optimistic update with Supabase persistence & rollback)
+  const handleAddCommentOrReply = async (postId: string) => {
     if (!replyText.trim() || !userData) return;
+    setActionError(null);
+
+    const tempId = (replyTarget ? 'rep-' : 'cmt-') + Date.now().toString();
+    const content = replyTarget?.replyToAuthor 
+      ? `@${replyTarget.replyToAuthor} ${replyText.trim()}` 
+      : replyText.trim();
+    const authorName = userData.fullName + (isTeacher ? ` (${lang === 'ar' ? 'خادم' : 'Servant'})` : '');
+    const authorAvatar = userData.avatarUrl;
+
+    const previousPosts = posts;
 
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         if (replyTarget) {
-          // Add a reply to the specified comment
+          const newReply: Reply = {
+            id: tempId,
+            authorName,
+            authorAvatar,
+            content,
+            createdAt: new Date().toISOString(),
+            reactions: { heart: 0, candle: 0, cross: 0 }
+          };
           return {
             ...p,
             comments: p.comments.map(c => {
               if (c.id === replyTarget.commentId) {
-                const newReply: Reply = {
-                  id: 'rep-' + Date.now().toString(),
-                  authorName: userData.fullName + (isTeacher ? ` (${lang === 'ar' ? 'خادم' : 'Servant'})` : ''),
-                  authorAvatar: userData.avatarUrl,
-                  content: replyTarget.replyToAuthor 
-                    ? `@${replyTarget.replyToAuthor} ${replyText.trim()}` 
-                    : replyText.trim(),
-                  createdAt: new Date().toISOString(),
-                  reactions: { heart: 0, candle: 0, cross: 0 }
-                };
                 return {
                   ...c,
                   replies: [...(c.replies || []), newReply]
@@ -309,12 +413,11 @@ export function FeedTab({ lang }: { lang: Language }) {
             })
           };
         } else {
-          // Add top-level comment to the post
           const newComment: Comment = {
-            id: 'cmt-' + Date.now().toString(),
-            authorName: userData.fullName + (isTeacher ? ` (${lang === 'ar' ? 'خادم' : 'Servant'})` : ''),
-            authorAvatar: userData.avatarUrl,
-            content: replyText.trim(),
+            id: tempId,
+            authorName,
+            authorAvatar,
+            content,
             createdAt: new Date().toISOString(),
             reactions: { heart: 0, candle: 0, cross: 0 },
             replies: []
@@ -329,7 +432,48 @@ export function FeedTab({ lang }: { lang: Language }) {
     }));
 
     setReplyText("");
+    const targetParentId = replyTarget?.commentId;
     setReplyTarget(null);
+
+    const res = await addFeedCommentInSupabase({
+      postId,
+      parentId: targetParentId,
+      authorId: userData.id,
+      authorName,
+      authorAvatar,
+      content
+    });
+
+    if (res.error) {
+      console.warn('Comment write error:', res.error);
+      setActionError(lang === 'ar' ? `تعذر حفظ التعليق على السحابة: ${res.error.message}` : `Failed to save comment to cloud: ${res.error.message}`);
+      setPosts(previousPosts);
+    } else if (res.data?.id) {
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          if (targetParentId) {
+            return {
+              ...p,
+              comments: p.comments.map(c => {
+                if (c.id === targetParentId) {
+                  return {
+                    ...c,
+                    replies: (c.replies || []).map(r => r.id === tempId ? { ...r, id: res.data!.id } : r)
+                  };
+                }
+                return c;
+              })
+            };
+          } else {
+            return {
+              ...p,
+              comments: p.comments.map(c => c.id === tempId ? { ...c, id: res.data!.id } : c)
+            };
+          }
+        }
+        return p;
+      }));
+    }
   };
 
   // Media file upload handler (handles photos, videos, and audio recordings up to 150MB with zero cap)
@@ -392,11 +536,14 @@ export function FeedTab({ lang }: { lang: Language }) {
     setShowLinkInput(false);
   };
 
-  // 8. Create New Post
-  const handleCreatePost = () => {
+  // 8. Create New Post (Optimistic update with Supabase persistence & rollback)
+  const handleCreatePost = async () => {
     if (!newPostText.trim() || !userData) return;
+    setActionError(null);
+
+    const tempId = 'post-' + Date.now().toString();
     const newPost: ExtendedPost = {
-      id: 'post-' + Date.now().toString(),
+      id: tempId,
       authorId: userData.id,
       authorName: userData.fullName + (isTeacher ? ` (${lang === 'ar' ? 'خادم' : 'Servant'})` : ''),
       authorAvatar: userData.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + userData.fullName,
@@ -411,7 +558,15 @@ export function FeedTab({ lang }: { lang: Language }) {
       mediaProvider: mediaProvider || undefined,
     };
 
+    const previousPosts = posts;
     setPosts(prev => [newPost, ...prev]);
+
+    const postContent = newPostText.trim();
+    const postMediaType = selectedMediaType;
+    const postMediaUrl = selectedMediaUrl;
+    const postMediaProvider = mediaProvider;
+    const postPinned = isTeacher && isOfficialAnnouncement;
+
     setNewPostText("");
     setSelectedMediaType(null);
     setSelectedMediaUrl(null);
@@ -422,21 +577,59 @@ export function FeedTab({ lang }: { lang: Language }) {
     setMediaError(null);
     setIsOfficialAnnouncement(false);
     setIsComposeModalOpen(false);
-  };
 
-  const handleDeletePost = (postId: string) => {
-    if (confirm(lang === 'ar' ? 'هل أنت متأكد من حذف هذا المنشور؟' : 'Are you sure you want to delete this post?')) {
-      setPosts(prev => prev.filter(p => p.id !== postId));
+    const res = await createFeedPostInSupabase({
+      authorId: userData.id,
+      authorName: newPost.authorName,
+      authorAvatar: newPost.authorAvatar,
+      content: postContent,
+      mediaType: postMediaType || undefined,
+      mediaUrl: postMediaUrl || undefined,
+      mediaProvider: postMediaProvider || undefined,
+      isPinned: postPinned,
+      isAnnouncement: postPinned
+    });
+
+    if (res.error) {
+      console.warn('Post creation error:', res.error);
+      setActionError(lang === 'ar' ? `تعذر حفظ المشاركة على السحابة: ${res.error.message}` : `Failed to save post to cloud: ${res.error.message}`);
+      setPosts(previousPosts);
+    } else if (res.data?.id) {
+      setPosts(prev => prev.map(p => p.id === tempId ? { ...p, id: res.data!.id } : p));
     }
   };
 
-  const handleTogglePin = (postId: string) => {
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return { ...p, isPinned: !p.isPinned };
-      }
-      return p;
-    }));
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm(lang === 'ar' ? 'هل أنت متأكد من حذف هذا المنشور؟' : 'Are you sure you want to delete this post?')) {
+      return;
+    }
+    setActionError(null);
+    const previousPosts = posts;
+    setPosts(prev => prev.filter(p => p.id !== postId));
+
+    const res = await deleteFeedPostFromSupabase(postId);
+    if (res.error) {
+      console.warn('Post deletion error:', res.error);
+      setActionError(lang === 'ar' ? `تعذر حذف المنشور: ${res.error.message}` : `Failed to delete post: ${res.error.message}`);
+      setPosts(previousPosts);
+    }
+  };
+
+  const handleTogglePin = async (postId: string) => {
+    const targetPost = posts.find(p => p.id === postId);
+    if (!targetPost) return;
+    const nextPinned = !targetPost.isPinned;
+    setActionError(null);
+
+    const previousPosts = posts;
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, isPinned: nextPinned } : p));
+
+    const res = await toggleFeedPostPinInSupabase(postId, nextPinned);
+    if (res.error) {
+      console.warn('Pin toggle error:', res.error);
+      setActionError(lang === 'ar' ? `تعذر تعديل التثبيت: ${res.error.message}` : `Pin toggle failed: ${res.error.message}`);
+      setPosts(previousPosts);
+    }
   };
 
   return (
@@ -470,6 +663,48 @@ export function FeedTab({ lang }: { lang: Language }) {
           </div>
         </div>
       </div>
+
+      {/* Sync Status Banner */}
+      {syncStatusText && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-300 dark:border-emerald-800 rounded-2xl p-3 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-200 shadow-2xs"
+        >
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>{syncStatusText}</span>
+          </div>
+          <button 
+            onClick={() => setSyncStatusText(null)}
+            className="text-emerald-600 hover:text-emerald-800 text-xs font-black cursor-pointer px-2"
+          >
+            ✕
+          </button>
+        </motion.div>
+      )}
+
+      {/* Action Error Banner */}
+      {actionError && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-300 dark:border-rose-800 rounded-2xl p-3 flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-200 shadow-2xs"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+            <span>{actionError}</span>
+          </div>
+          <button 
+            onClick={() => setActionError(null)}
+            className="text-rose-600 hover:text-rose-800 text-xs font-black cursor-pointer px-2"
+          >
+            ✕
+          </button>
+        </motion.div>
+      )}
 
       {/* Compose trigger banner */}
       <motion.div 

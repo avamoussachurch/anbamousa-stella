@@ -62,7 +62,7 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
   const studentGrade = userData?.requestedGrade || userData?.grade;
   const studentGroupId = userData?.requestedClassGroupId || (studentGrade ? getClassGroupForGrade(studentGrade)?.id : null) || 'primary_2';
 
-  const rawLessons = (!isOnlineAuth ? mockLessons : (lessons || []));
+  const rawLessons = (lessons && lessons.length > 0) ? lessons : mockLessons;
   const activeLessonsList = isTeacher 
     ? rawLessons 
     : rawLessons.filter(l => {

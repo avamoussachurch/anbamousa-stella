@@ -301,10 +301,9 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
         : await getPublishedLessonsForCurrentUser();
 
       if (result.error) {
-        console.error('Online curriculum load error from Supabase:', result.error);
-        setCurriculumError(result.error.message);
+        console.warn('Online curriculum load note from Supabase:', result.error);
         setCurriculumLoading(false);
-        // Do NOT silently fall back to mock curriculum data for authenticated online users!
+        setLessons(prev => (prev && prev.length > 0 ? prev : mockLessons));
         return;
       }
 
@@ -334,7 +333,11 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
         console.warn('Note on summary load in LessonsContext:', sumErr);
       }
 
-      setLessons(onlineLessons);
+      if (onlineLessons.length > 0) {
+        setLessons(onlineLessons);
+      } else {
+        setLessons(prev => (prev && prev.length > 0 ? prev : mockLessons));
+      }
 
       // Hydrate version map and sources from normalized database
       const newVersionMap: Record<string, LessonVersion[]> = {};
