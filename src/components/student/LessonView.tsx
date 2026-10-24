@@ -225,7 +225,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
   const [finishSuccess, setFinishSuccess] = useState<boolean>(false);
 
   useEffect(() => {
-    if (activePublishedVersion && !isGuest && userData) {
+    if (activePublishedVersion && userData) {
       startLessonProgress({
         lessonId,
         versionId: activePublishedVersion.id,
@@ -248,7 +248,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
         }
       });
     }
-  }, [lessonId, activePublishedVersion?.id, isGuest, userData?.id, currentStudentId]);
+  }, [lessonId, activePublishedVersion?.id, userData?.id, currentStudentId]);
 
   const handleFinishLesson = async () => {
     if (isFinishing || !activePublishedVersion) return;
@@ -256,6 +256,22 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
     setFinishError(null);
 
     try {
+      // 1. Verify all sections are genuinely completed by the student (no silent auto-completion)
+      const allSections = activePublishedVersion.sections || [];
+      const currentSections = currentProgress?.sectionsCompleted || [];
+      const remainingSections = allSections.filter(s => !currentSections.includes(s.id));
+
+      if (allSections.length > 0 && remainingSections.length > 0) {
+        setFinishError(
+          lang === 'ar'
+            ? `يرجى قراءة جميع الأقسام (${currentSections.length} من ${allSections.length} مقروء) قبل إنهاء محطة الدرس.`
+            : `Please read all sections (${currentSections.length} of ${allSections.length} read) before finishing the lesson.`
+        );
+        setIsFinishing(false);
+        return;
+      }
+
+      // 2. Authoritatively finalize lesson completion on backend
       const res = await completeLessonProgress({
         lessonId,
         versionId: activePublishedVersion.id,
@@ -268,7 +284,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
         return;
       }
 
-      const allSecIds = (activePublishedVersion.sections || []).map(s => s.id);
+      const allSecIds = allSections.map(s => s.id);
       updateStudentContentProgress(currentStudentId, lessonId, allSecIds, 100);
       markCompleted(lessonId);
 

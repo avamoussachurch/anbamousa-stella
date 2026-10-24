@@ -420,14 +420,37 @@ export async function getStudentProgressSummary(
     // Offline / Local storage fallback
     const completedIds: string[] = [];
     const allProg: Record<string, StudentContentProgress> = {};
+
+    // Check in-memory store
     for (const [k, p] of Object.entries(LOCAL_PROGRESS_STORE)) {
       if (!studentId || k.startsWith(`${studentId}_`)) {
         const lId = k.split('_').slice(1).join('_');
         allProg[lId] = p;
-        if (p.status === 'COMPLETED') {
+        if (p.status === 'COMPLETED' && !completedIds.includes(lId)) {
           completedIds.push(lId);
         }
       }
+    }
+
+    // Also check localStorage items for robust reload persistence
+    if (typeof window !== 'undefined') {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('church_progress_')) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const p = JSON.parse(raw);
+              if (p && (!studentId || p.studentId === studentId)) {
+                allProg[p.lessonId] = p;
+                if (p.status === 'COMPLETED' && !completedIds.includes(p.lessonId)) {
+                  completedIds.push(p.lessonId);
+                }
+              }
+            }
+          }
+        }
+      } catch (_) {}
     }
     return {
       success: false,

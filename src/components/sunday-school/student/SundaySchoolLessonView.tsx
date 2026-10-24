@@ -172,6 +172,11 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>{isAr ? 'الدرس مكتمل ✅' : 'Lesson Completed ✅'}</span>
               </>
+            ) : !isAllSectionsRead && sections.length > 0 ? (
+              <>
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>{isAr ? `قراءة الأقسام (${completedSections.length}/${sections.length})` : `Read Sections (${completedSections.length}/${sections.length})`}</span>
+              </>
             ) : (
               <>
                 <Check className="w-4 h-4" />
@@ -197,6 +202,23 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* Top Finish Error Alert Banner */}
+      {finishError && (
+        <div className="bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 rounded-2xl p-4 flex items-center justify-between gap-3 text-xs text-rose-900 dark:text-rose-200 shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <span className="font-bold">{finishError}</span>
+          </div>
+          <button
+            onClick={handleFinish}
+            disabled={isFinishing}
+            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shrink-0 cursor-pointer shadow-xs min-h-[36px]"
+          >
+            {isAr ? 'إعادة المحاولة' : 'Retry'}
+          </button>
+        </div>
+      )}
 
       {/* Hero Banner with Title & Coptic Details */}
       <div className="relative rounded-3xl overflow-hidden border-2 border-[var(--mousa-border-sand)] bg-gradient-to-br from-[#FFFDF9] via-[#FAF5EB] to-[#F5ECE0] dark:from-[#211B15] dark:via-[#292219] dark:to-[#32271E] p-6 sm:p-10 shadow-md">
@@ -652,6 +674,11 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               <>
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>{isAr ? 'تم إتمام الدرس بالكامل (١٠٠٪) ✅' : 'Lesson Completed (100%) ✅'}</span>
+              </>
+            ) : !isAllSectionsRead && sections.length > 0 ? (
+              <>
+                <BookOpen className="w-4 h-4" />
+                <span>{isAr ? `إتمام قراءة الأقسام أولاً (${completedSections.length}/${sections.length})` : `Read All Sections First (${completedSections.length}/${sections.length})`}</span>
               </>
             ) : (
               <>

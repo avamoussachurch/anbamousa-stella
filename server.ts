@@ -3746,12 +3746,9 @@ function checkStudentLessonAccess(studentId: string, lessonRecord: any): { allow
     enrolledClassGroups.add('primary_2');
   }
 
-  // If student has no enrollment at all, block access
+  // 4. Default fallback: allow access to primary_2 for any student without an explicit assigned class yet
   if (enrolledClassGroups.size === 0) {
-    return {
-      allowed: false,
-      reason: "Student is not enrolled in any Sunday School class."
-    };
+    enrolledClassGroups.add('primary_2');
   }
 
   const lessonClassGroupId = lessonRecord.classGroupId || (lessonRecord.id?.includes('prep') ? 'preparatory' : lessonRecord.id?.includes('angels') ? 'angels' : (lessonRecord.id === 'l3' ? 'primary_1' : 'primary_2'));
@@ -3950,6 +3947,9 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
     } else {
       prog.status = 'IN_PROGRESS';
     }
+
+    // Persist progress to server disk
+    savePersistentClassState();
 
     return res.json({
       success: true,
@@ -4511,7 +4511,8 @@ app.get("/api/church/student-progress/diagnose/:lessonId", async (req, res) => {
         completionPercent: serverProg?.completionPercent || 0,
         sectionsCompletedCount: serverProg?.sectionsCompleted?.length || 0,
         completedAt: serverProg?.completedAt || null,
-        pointsAwarded
+        pointsAwarded,
+        isCompleteOnServer
       },
       pointsTreasury: {
         totalPoints: serverPoints,

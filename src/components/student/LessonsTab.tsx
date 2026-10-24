@@ -20,7 +20,7 @@ interface LessonsTabProps {
 
 export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: LessonsTabProps) {
   const { userData } = useAuth();
-  const { lessons, updateLesson, refreshCurriculum } = useLessons();
+  const { lessons, updateLesson, refreshCurriculum, contentProgress } = useLessons();
   const [selectedSchool, setSelectedSchool] = useState<'sunday_school' | 'hymns' | 'taxis'>('sunday_school');
   const [displayMode, setDisplayMode] = useState<'roadmap' | 'cards'>('roadmap');
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +30,15 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
   const [showExpressPublishModal, setShowExpressPublishModal] = useState<boolean>(false);
 
   const isTeacher = userData?.role === 'teacher';
+
+  const isLessonFinished = (l: Lesson) => {
+    if (l.isCompleted) return true;
+    if (userData?.id && contentProgress) {
+      const p = contentProgress[`${userData.id}_${l.id}`];
+      if (p && (p.status === 'COMPLETED' || p.completionPercent === 100)) return true;
+    }
+    return false;
+  };
 
   const filteredLessons = useMemo(() => {
     let result = lessons;
@@ -62,7 +71,14 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
       (lesson.summary && lesson.summary.toLowerCase().includes(query)) ||
       (lesson.summaryAr && lesson.summaryAr.toLowerCase().includes(query))
     );
-  }, [lessons, searchQuery, filterMode, isTeacher]);
+  }, [lessons, searchQuery, filterMode, isTeacher, userData?.requestedGrade, userData?.grade, userData?.requestedClassGroupId]);
+
+  const decoratedLessons = useMemo(() => {
+    return filteredLessons.map(l => ({
+      ...l,
+      isCompleted: isLessonFinished(l)
+    }));
+  }, [filteredLessons, contentProgress, userData?.id]);
 
   return (
     <motion.div 
@@ -262,7 +278,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
       {/* Main Content: Either Candy Crush Roadmap or Cards Grid */}
       {displayMode === 'roadmap' ? (
         <StudentRoadmapView
-          lessons={filteredLessons}
+          lessons={decoratedLessons}
           onStartLesson={onStartLesson}
           lang={lang}
           isTeacher={isTeacher}
@@ -274,8 +290,8 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
         /* Lesson Cards Grid */
         <div className="space-y-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 md:space-y-0">
         <AnimatePresence mode="popLayout">
-          {filteredLessons.length > 0 ? (
-            filteredLessons.map((lesson, index) => (
+          {decoratedLessons.length > 0 ? (
+            decoratedLessons.map((lesson, index) => (
               <motion.div 
                 key={lesson.id} 
                 layout

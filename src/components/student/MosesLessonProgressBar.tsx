@@ -139,10 +139,10 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
           </div>
 
           {/* Bottom Trail Guide Marks */}
-          <div className="flex justify-between items-center text-[10px] text-[var(--mousa-sand-500)] dark:text-[#A89885] font-bold px-1">
-            <span>{isCop ? 'Ϩⲏⲧⲥ' : isAr ? 'البداية (بئر البرية)' : 'Start (Wilderness Well)'}</span>
-            <span>{isCop ? 'Ⲫⲁϣⲓ' : isAr ? 'منتصف الطريق (الينبوع)' : 'Halfway (Fountain)'}</span>
-            <span>{isCop ? 'Ϫⲱⲕ' : isAr ? 'القمة (دير القديسين)' : 'Summit (Monastery)'}</span>
+          <div className="flex justify-between items-center text-[9px] sm:text-[10px] text-[var(--mousa-sand-500)] dark:text-[#A89885] font-bold px-1 gap-1">
+            <span className="truncate">{isCop ? 'Ϩⲏⲧⲥ' : isAr ? 'البداية' : 'Start'} <span className="hidden sm:inline">{isAr ? '(بئر البرية)' : '(Well)'}</span></span>
+            <span className="truncate text-center">{isCop ? 'Ⲫⲁϣⲓ' : isAr ? 'المنتصف' : 'Halfway'} <span className="hidden sm:inline">{isAr ? '(الينبوع)' : '(Fountain)'}</span></span>
+            <span className="truncate text-end">{isCop ? 'Ϫⲱⲕ' : isAr ? 'القمة' : 'Summit'} <span className="hidden sm:inline">{isAr ? '(الدير)' : '(Monastery)'}</span></span>
           </div>
         </div>
 

@@ -308,17 +308,14 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       }
 
       let onlineLessons = result.data || [];
+      let completedSet = new Set<string>();
 
       // Authoritative Progress Synchronization:
       // Fetch authoritative student progress summary from server to survive refreshes & cross-device sessions
       try {
         const summaryData = await getStudentProgressSummary(userData.id);
         if (summaryData?.completedLessonIds) {
-          const completedSet = new Set(summaryData.completedLessonIds);
-          onlineLessons = onlineLessons.map(l => ({
-            ...l,
-            isCompleted: completedSet.has(l.id)
-          }));
+          completedSet = new Set(summaryData.completedLessonIds);
         }
         if (summaryData?.allProgress) {
           setContentProgress(prev => {
@@ -334,9 +331,18 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (onlineLessons.length > 0) {
-        setLessons(onlineLessons);
+        setLessons(onlineLessons.map(l => ({
+          ...l,
+          isCompleted: completedSet.has(l.id) || Boolean(l.isCompleted)
+        })));
       } else {
-        setLessons(prev => (prev && prev.length > 0 ? prev : mockLessons));
+        setLessons(prev => {
+          const base = (prev && prev.length > 0) ? prev : mockLessons;
+          return base.map(l => ({
+            ...l,
+            isCompleted: completedSet.has(l.id) || Boolean(l.isCompleted)
+          }));
+        });
       }
 
       // Hydrate version map and sources from normalized database
@@ -528,6 +534,24 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
   const markCompleted = (id: string) => {
     setLessons(prev => prev.map(l => l.id === id ? { ...l, isCompleted: true } : l));
+    if (userData?.id) {
+      const pKey = `${userData.id}_${id}`;
+      setContentProgress(prev => ({
+        ...prev,
+        [pKey]: {
+          ...(prev[pKey] || {
+            studentId: userData.id,
+            lessonId: id,
+            versionId: `ver-auto-${id}`,
+            startedAt: new Date().toISOString(),
+            totalSections: 1
+          }),
+          status: 'COMPLETED',
+          completionPercent: 100,
+          completedAt: new Date().toISOString()
+        }
+      }));
+    }
   };
 
   // Source Helpers
