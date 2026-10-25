@@ -140,41 +140,10 @@ export async function submitStudentQuizAttempt(
 
     return { data: attempt, error: null };
   } catch (err: any) {
-    // Pure offline demo fallback
-    const sId = studentId || 'u1';
-    const key = `${sId}_${lessonId}`;
-    let cached: StudentQuizAttempt[] = [];
-    try {
-      const raw = localStorage.getItem(`church_quiz_attempts_${key}`);
-      if (raw) cached = JSON.parse(raw);
-    } catch (e) {}
-
-    const totalScore = answers.length || 1;
-    const fallbackAttempt: StudentQuizAttempt = {
-      id: `att-local-${Date.now()}`,
-      studentId: sId,
-      lessonId,
-      quizId,
-      score: answers.length,
-      totalScore,
-      percentage: 100,
-      passed: true,
-      answers: answers.map(a => ({
-        questionId: a.questionId,
-        selectedOptionIndex: a.selectedOptionIndex,
-        isCorrect: true,
-        feedbackEn: 'Good job.'
-      })),
-      submittedAt: new Date().toISOString()
+    return {
+      data: null,
+      error: new Error(err?.message || 'Network error submitting quiz attempt')
     };
-    if (!LOCAL_QUIZ_ATTEMPTS[key]) LOCAL_QUIZ_ATTEMPTS[key] = cached.length > 0 ? cached : [];
-    LOCAL_QUIZ_ATTEMPTS[key].push(fallbackAttempt);
-    try {
-      localStorage.setItem(`church_quiz_attempts_${key}`, JSON.stringify(LOCAL_QUIZ_ATTEMPTS[key]));
-      localStorage.setItem(`church_quiz_score_${key}`, String(fallbackAttempt.percentage));
-    } catch (e) {}
-
-    return { data: fallbackAttempt, error: null };
   }
 }
 

@@ -1,0 +1,326 @@
+{
+  "test_idem_student_1792834220343_l-cross-01": [
+    {
+      "id": "att-1792834220475-tgpsa",
+      "studentId": "test_idem_student_1792834220343",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-24T09:30:20.475Z"
+    }
+  ],
+  "test_quiz_student_1792834236185_l-cross-01": [
+    {
+      "id": "att-1792834236280-sv9md",
+      "studentId": "test_quiz_student_1792834236185",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-24T09:30:36.280Z"
+    }
+  ],
+  "stu_pers_1792928348996_1_l-cross-01": [
+    {
+      "id": "att-1792928349419-b7beh",
+      "studentId": "stu_pers_1792928348996_1",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": "idem-1792928349417-g3p8",
+      "submittedAt": "2026-10-25T11:39:09.419Z"
+    }
+  ],
+  "stu_pers_1792928506786_1_l-cross-01": [
+    {
+      "id": "att-1792928506972-spqbs",
+      "studentId": "stu_pers_1792928506786_1",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": "idem-1792928506969-eyfu",
+      "submittedAt": "2026-10-25T11:41:46.972Z"
+    }
+  ],
+  "stu_pers_1792928524908_1_l-cross-01": [
+    {
+      "id": "att-1792928525045-ubj1b",
+      "studentId": "stu_pers_1792928524908_1",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": "idem-1792928525043-bcv4",
+      "submittedAt": "2026-10-25T11:42:05.045Z"
+    }
+  ],
+  "test_quiz_student_1792928533246_l-cross-01": [
+    {
+      "id": "att-1792928533418-u7d18",
+      "studentId": "test_quiz_student_1792928533246",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-25T11:42:13.418Z"
+    }
+  ],
+  "test_idem_student_1792928538784_l-cross-01": [
+    {
+      "id": "att-1792928538935-nhcu2",
+      "studentId": "test_idem_student_1792928538784",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-25T11:42:18.935Z"
+    }
+  ],
+  "stu_pers_1792929452025_1_l-cross-01": [
+    {
+      "id": "att-1792929452202-78rw7",
+      "studentId": "stu_pers_1792929452025_1",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": "idem-1792929452199-21w9",
+      "submittedAt": "2026-10-25T11:57:32.202Z"
+    }
+  ],
+  "test_quiz_student_1792929466388_l-cross-01": [
+    {
+      "id": "att-1792929466505-tsd6a",
+      "studentId": "test_quiz_student_1792929466388",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-25T11:57:46.505Z"
+    }
+  ]
+}

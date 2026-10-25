@@ -1871,6 +1871,7 @@ const serverReviewState = {
 
 const CLASS_STATE_FILE = path.join(uploadsDir, "class_roster_persistence.json");
 const CHURCH_YEAR_STATE_FILE = path.join(uploadsDir, "church_year_classes_persistence.json");
+const QUIZ_ATTEMPTS_BACKUP_FILE = path.join(uploadsDir, "quiz_attempts_backup.json");
 
 function savePersistentClassState() {
   try {
@@ -1898,6 +1899,9 @@ function savePersistentClassState() {
     };
     fs.writeFileSync(CLASS_STATE_FILE, JSON.stringify(payload, null, 2), "utf-8");
     fs.writeFileSync(CHURCH_YEAR_STATE_FILE, JSON.stringify(payload, null, 2), "utf-8");
+    if (serverReviewState.attempts && Object.keys(serverReviewState.attempts).length > 0) {
+      fs.writeFileSync(QUIZ_ATTEMPTS_BACKUP_FILE, JSON.stringify(serverReviewState.attempts, null, 2), "utf-8");
+    }
   } catch (err) {
     console.warn("Could not save persistent class state:", err);
   }
@@ -2005,6 +2009,20 @@ function loadPersistentClassState() {
           ...parsed.completionHistory
         };
       }
+    }
+
+    // Always restore quiz attempts backup if primary file was removed (redeployment/restart resilience)
+    if (fs.existsSync(QUIZ_ATTEMPTS_BACKUP_FILE)) {
+      try {
+        const rawBackup = fs.readFileSync(QUIZ_ATTEMPTS_BACKUP_FILE, "utf-8");
+        const parsedBackup = JSON.parse(rawBackup);
+        if (parsedBackup && typeof parsedBackup === 'object') {
+          serverReviewState.attempts = {
+            ...parsedBackup,
+            ...serverReviewState.attempts
+          };
+        }
+      } catch (_) {}
     }
   } catch (err) {
     console.warn("Could not load persistent class state:", err);
@@ -4769,6 +4787,163 @@ app.get("/api/church/student-quiz", async (req, res) => {
   }
 });
 
+// Helper: Convert Database Row to Domain StudentQuizAttempt
+function mapDbToAttempt(row: any) {
+  let answersList: any[] = [];
+  if (Array.isArray(row.answers)) {
+    answersList = row.answers;
+  } else if (typeof row.answers === 'string') {
+    try { answersList = JSON.parse(row.answers); } catch (_) {}
+  }
+
+  return {
+    id: row.id,
+    studentId: row.student_id,
+    lessonId: row.lesson_id,
+    versionId: row.version_id,
+    quizId: row.quiz_id,
+    score: Number(row.score ?? 0),
+    totalScore: Number(row.total_score ?? 0),
+    percentage: Number(row.percentage ?? 0),
+    passed: Boolean(row.passed),
+    answers: answersList,
+    answerFingerprint: row.answer_fingerprint,
+    idempotencyKey: row.idempotency_key || null,
+    submittedAt: row.submitted_at || row.created_at || new Date().toISOString()
+  };
+}
+
+// Helper: Convert Domain StudentQuizAttempt to Database Row
+function mapAttemptToDb(attempt: any) {
+  return {
+    id: attempt.id,
+    student_id: attempt.studentId,
+    lesson_id: attempt.lessonId,
+    quiz_id: attempt.quizId,
+    version_id: attempt.versionId,
+    score: Number(attempt.score ?? 0),
+    total_score: Number(attempt.totalScore ?? 0),
+    percentage: Number(attempt.percentage ?? 0),
+    passed: Boolean(attempt.passed),
+    answers: attempt.answers || [],
+    answer_fingerprint: attempt.answerFingerprint || '',
+    idempotency_key: attempt.idempotencyKey || null,
+    submitted_at: attempt.submittedAt || new Date().toISOString()
+  };
+}
+
+// Helper: Verify if Teacher/Servant is Authorized for Student via Class Assignments
+async function isTeacherAuthorizedForStudent(teacherId: string, studentId: string): Promise<boolean> {
+  if (!teacherId || !studentId) return false;
+
+  // Sync latest persisted roster state if file exists
+  if (fs.existsSync(CLASS_STATE_FILE)) {
+    try {
+      const raw = fs.readFileSync(CLASS_STATE_FILE, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (parsed.classMemberships) {
+        serverReviewState.classMemberships = { ...serverReviewState.classMemberships, ...parsed.classMemberships };
+      }
+      if (parsed.teacherAssignments) {
+        serverReviewState.teacherAssignments = { ...serverReviewState.teacherAssignments, ...parsed.teacherAssignments };
+      }
+      if (parsed.classInstances) {
+        serverReviewState.classInstances = { ...serverReviewState.classInstances, ...parsed.classInstances };
+      }
+    } catch (_) {}
+  }
+
+  // Teacher candidate IDs to check (handles 'mina' vs 'user_teacher_mina_101')
+  const teacherCandidates = [
+    teacherId,
+    `user_teacher_${teacherId}`,
+    teacherId.replace(/^user_teacher_/, '').replace(/_\d+$/, '')
+  ];
+
+  // Student candidate IDs to check
+  const studentCandidates = [
+    studentId,
+    `user_student_${studentId}`,
+    studentId.replace(/^user_student_/, '').replace(/_\d+$/, '')
+  ];
+
+  // 1. Direct relationship
+  if (Array.isArray(serverReviewState.teacherStudentRelationships)) {
+    const directRel = serverReviewState.teacherStudentRelationships.some(
+      r => teacherCandidates.includes(r.teacherId) && studentCandidates.includes(r.studentId)
+    );
+    if (directRel) return true;
+  }
+
+  // 2. Class instance membership match in server state
+  const memberships = Object.values(serverReviewState.classMemberships || {}).filter(
+    (m: any) => (studentCandidates.includes(m.studentId) || studentCandidates.includes(m.userId)) && m.status !== 'inactive'
+  );
+
+  for (const m of memberships) {
+    const instId = m.classInstanceId || m.instanceId;
+    const inst = serverReviewState.classInstances?.[instId];
+    if (inst) {
+      if (Array.isArray(inst.servantIds)) {
+        if (inst.servantIds.some((sId: string) => teacherCandidates.includes(sId))) {
+          return true;
+        }
+      }
+      const grp = inst.classGroupId;
+      if (grp) {
+        for (const tId of teacherCandidates) {
+          if (serverReviewState.teacherAssignments?.[tId]?.includes(grp)) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  // 3. studentClasses record match in server state
+  for (const sId of studentCandidates) {
+    const studentGroup = serverReviewState.studentClasses?.[sId];
+    if (studentGroup) {
+      for (const tId of teacherCandidates) {
+        if (serverReviewState.teacherAssignments?.[tId]?.includes(studentGroup)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  // 4. Supabase DB check if live database is reachable
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const client = createClient(supabaseUrl, supabaseAnonKey);
+      const { data: memberRows } = await client
+        .from('class_memberships')
+        .select('class_instance_id')
+        .in('student_id', studentCandidates)
+        .eq('status', 'active');
+
+      if (memberRows && memberRows.length > 0) {
+        const instIds = memberRows.map((r: any) => r.class_instance_id);
+        const { data: assignRows } = await client
+          .from('servant_class_assignments')
+          .select('id')
+          .in('class_instance_id', instIds)
+          .in('servant_id', teacherCandidates)
+          .eq('is_active', true)
+          .limit(1);
+
+        if (assignRows && assignRows.length > 0) {
+          return true;
+        }
+      }
+    } catch (_) {}
+  }
+
+  return false;
+}
+
 // 2. Submit Student Quiz Attempt
 app.post("/api/church/student-quiz/submit", async (req, res) => {
   try {
@@ -4781,30 +4956,34 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       });
     }
 
-    let targetStudentId = studentId;
+    // Authoritative session verification: anonymous users strictly rejected
     const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      // Parents and teachers cannot write student quiz attempts
-      if (authContext.role === 'parent' || authContext.role === 'teacher') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Parents and servants cannot submit student quiz attempts."
-        });
-      }
-      // Student can only submit for their own account
-      if (studentId && studentId !== authContext.userId) {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students cannot submit quiz attempts for another student."
-        });
-      }
-      targetStudentId = authContext.userId;
-    } else {
-      // Demo / Guest / Offline mode
-      targetStudentId = targetStudentId || 'u1';
+    if (!authContext.isAuthenticated || !authContext.userId) {
+      return res.status(401).json({
+        success: false,
+        error: "UNAUTHORIZED",
+        message: "Authentication required to submit quiz attempts."
+      });
     }
+
+    // Role check: Only students may submit attempts. Teachers and parents strictly forbidden.
+    if (authContext.role === 'parent' || authContext.role === 'teacher') {
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Teachers and parents cannot submit student quiz attempts."
+      });
+    }
+
+    // Client studentId is NEVER trusted: enforce verified authenticated user id
+    if (studentId && studentId !== authContext.userId) {
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Students cannot submit quiz attempts for another student."
+      });
+    }
+    const targetStudentId = authContext.userId;
 
     // Version safety check
     let lessonRecord = serverReviewState.lessons[lessonId];
@@ -4942,6 +5121,42 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       submittedAt: new Date().toISOString()
     };
 
+    // Supabase Durable Write & Unique Constraint Conflict Recovery
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+    if (supabaseUrl && supabaseAnonKey) {
+      try {
+        const client = createClient(supabaseUrl, supabaseAnonKey);
+        const dbPayload = mapAttemptToDb(newAttempt);
+        const { error: insErr } = await client.from('quiz_attempts').insert(dbPayload);
+
+        if (insErr) {
+          // If code is 23505 (unique_violation) or duplicate key conflict, recover original attempt
+          if (insErr.code === '23505' || insErr.message?.includes('duplicate key') || insErr.message?.includes('unique constraint')) {
+            let conflictQuery = client.from('quiz_attempts').select('*').eq('student_id', targetStudentId).eq('lesson_id', lessonId).eq('quiz_id', quizId);
+            if (idempotencyKey) {
+              conflictQuery = client.from('quiz_attempts').select('*').eq('idempotency_key', idempotencyKey);
+            } else {
+              conflictQuery = conflictQuery.eq('answer_fingerprint', incomingFingerprint);
+            }
+            const { data: conflictRows } = await conflictQuery.limit(1);
+            if (conflictRows && conflictRows[0]) {
+              const recovered = mapDbToAttempt(conflictRows[0]);
+              return res.json({
+                success: true,
+                attempt: recovered,
+                isDuplicate: true,
+                message: "Duplicate submission safely handled via database unique constraint; existing attempt preserved."
+              });
+            }
+          }
+        }
+      } catch (sbErr) {
+        // Fallback to local persistent state without failing request
+        console.warn("Supabase quiz attempt write note:", sbErr);
+      }
+    }
+
     serverReviewState.attempts[key].push(newAttempt);
 
     // Progress Integration: Sync quiz score without corrupting section completion
@@ -4971,28 +5186,99 @@ app.get("/api/church/student-quiz/attempts", async (req, res) => {
       return res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "lessonId is required" });
     }
 
+    // Authoritative session verification: anonymous users strictly rejected
     const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
-        // Authenticated student can ONLY view their own attempts
-        if (targetStudentId && targetStudentId !== authContext.userId) {
-          return res.status(403).json({
-            success: false,
-            error: "FORBIDDEN",
-            message: "Students cannot view other students' quiz attempts."
-          });
-        }
-        targetStudentId = authContext.userId;
-      } else if (!targetStudentId) {
+    if (!authContext.isAuthenticated || !authContext.userId) {
+      return res.status(401).json({
+        success: false,
+        error: "UNAUTHORIZED",
+        message: "Authentication required to view quiz attempts."
+      });
+    }
+
+    if (authContext.role === 'student') {
+      // Authenticated student can ONLY view their own attempts
+      if (targetStudentId && targetStudentId !== authContext.userId) {
+        return res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Students cannot view other students' quiz attempts."
+        });
+      }
+      targetStudentId = authContext.userId;
+    } else if (authContext.role === 'teacher') {
+      if (!targetStudentId) {
+        return res.status(400).json({
+          success: false,
+          error: "MISSING_PARAMS",
+          message: "studentId is required for teacher queries."
+        });
+      }
+      // Strictly enforce teacher class scoping: teacher can only access students in their assigned classes
+      const authorized = await isTeacherAuthorizedForStudent(authContext.userId, targetStudentId);
+      if (!authorized) {
+        return res.status(403).json({
+          success: false,
+          error: "FORBIDDEN_TEACHER_SCOPE",
+          message: "Teachers can only access quiz attempts for students in their assigned classes."
+        });
+      }
+    } else if (authContext.role === 'parent') {
+      // Parents can only view their own children
+      const isChild = serverReviewState.parentChildRelationships?.some(
+        r => r.parentId === authContext.userId && r.childId === targetStudentId
+      );
+      if (!isChild) {
+        return res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Parents cannot view quiz attempts for students other than their children."
+        });
+      }
+    } else if (authContext.role === 'admin') {
+      if (!targetStudentId) {
         targetStudentId = authContext.userId;
       }
-    } else {
-      // Demo / Guest / Offline fallback
-      targetStudentId = targetStudentId || 'u1';
     }
 
     const key = `${targetStudentId}_${lessonId}`;
-    const attempts = serverReviewState.attempts[key] || [];
+    let attempts = serverReviewState.attempts[key] || [];
+
+    // If local memory is empty, restore from persistent backup or Supabase
+    if (attempts.length === 0) {
+      if (fs.existsSync(QUIZ_ATTEMPTS_BACKUP_FILE)) {
+        try {
+          const raw = fs.readFileSync(QUIZ_ATTEMPTS_BACKUP_FILE, "utf-8");
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed[key])) {
+            serverReviewState.attempts[key] = parsed[key];
+            attempts = parsed[key];
+          }
+        } catch (_) {}
+      }
+
+      if (attempts.length === 0) {
+        const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+        const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+        if (supabaseUrl && supabaseAnonKey) {
+          try {
+            const client = createClient(supabaseUrl, supabaseAnonKey);
+            const { data: dbRows, error: dbErr } = await client
+              .from('quiz_attempts')
+              .select('*')
+              .eq('student_id', targetStudentId)
+              .eq('lesson_id', lessonId)
+              .order('submitted_at', { ascending: true });
+
+            if (!dbErr && Array.isArray(dbRows) && dbRows.length > 0) {
+              const mapped = dbRows.map(mapDbToAttempt);
+              serverReviewState.attempts[key] = mapped;
+              attempts = mapped;
+            }
+          } catch (_) {}
+        }
+      }
+    }
 
     return res.json({
       success: true,

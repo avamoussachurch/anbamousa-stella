@@ -132,6 +132,54 @@
       "status": "ACTIVE",
       "enrolledAt": "2026-10-24T09:21:10.195Z",
       "enrolledBy": "servant"
+    },
+    "mem_student_test_99_2026-2027": {
+      "id": "mem_student_test_99_2026-2027",
+      "churchYear": "2026–2027",
+      "classGroupId": "primary_1",
+      "classInstanceId": "inst_2026-2027_primary_1",
+      "studentId": "student_test_99",
+      "studentName": "student_test_99",
+      "exactGrade": "Primary 2",
+      "status": "ACTIVE",
+      "enrolledAt": "2026-10-25T11:40:47.870Z",
+      "enrolledBy": "join_code"
+    },
+    "mem_stu_pers_1792928506786_1_2026-2027": {
+      "id": "mem_stu_pers_1792928506786_1_2026-2027",
+      "churchYear": "2026–2027",
+      "classGroupId": "primary_1",
+      "classInstanceId": "inst_2026-2027_primary_1",
+      "studentId": "stu_pers_1792928506786_1",
+      "studentName": "stu_pers_1792928506786_1",
+      "exactGrade": "Primary 2",
+      "status": "ACTIVE",
+      "enrolledAt": "2026-10-25T11:41:47.032Z",
+      "enrolledBy": "join_code"
+    },
+    "mem_stu_pers_1792928524908_1_2026-2027": {
+      "id": "mem_stu_pers_1792928524908_1_2026-2027",
+      "churchYear": "2026–2027",
+      "classGroupId": "primary_1",
+      "classInstanceId": "inst_2026-2027_primary_1",
+      "studentId": "stu_pers_1792928524908_1",
+      "studentName": "stu_pers_1792928524908_1",
+      "exactGrade": "Primary 2",
+      "status": "ACTIVE",
+      "enrolledAt": "2026-10-25T11:42:05.086Z",
+      "enrolledBy": "join_code"
+    },
+    "mem_stu_pers_1792929452025_1_2026-2027": {
+      "id": "mem_stu_pers_1792929452025_1_2026-2027",
+      "churchYear": "2026–2027",
+      "classGroupId": "primary_1",
+      "classInstanceId": "inst_2026-2027_primary_1",
+      "studentId": "stu_pers_1792929452025_1",
+      "studentName": "stu_pers_1792929452025_1",
+      "exactGrade": "Primary 2",
+      "status": "ACTIVE",
+      "enrolledAt": "2026-10-25T11:57:32.252Z",
+      "enrolledBy": "join_code"
     }
   },
   "teacherAssignments": {
@@ -204,6 +252,38 @@
       "classGroupId": "preparatory",
       "churchYear": "2026–2027",
       "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Peter"
+    },
+    "student_test_99": {
+      "studentId": "student_test_99",
+      "fullName": "student_test_99",
+      "grade": "Primary 2",
+      "classGroupId": "primary_1",
+      "churchYear": "2026–2027",
+      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=student_test_99"
+    },
+    "stu_pers_1792928506786_1": {
+      "studentId": "stu_pers_1792928506786_1",
+      "fullName": "stu_pers_1792928506786_1",
+      "grade": "Primary 2",
+      "classGroupId": "primary_1",
+      "churchYear": "2026–2027",
+      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=stu_pers_1792928506786_1"
+    },
+    "stu_pers_1792928524908_1": {
+      "studentId": "stu_pers_1792928524908_1",
+      "fullName": "stu_pers_1792928524908_1",
+      "grade": "Primary 2",
+      "classGroupId": "primary_1",
+      "churchYear": "2026–2027",
+      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=stu_pers_1792928524908_1"
+    },
+    "stu_pers_1792929452025_1": {
+      "studentId": "stu_pers_1792929452025_1",
+      "fullName": "stu_pers_1792929452025_1",
+      "grade": "Primary 2",
+      "classGroupId": "primary_1",
+      "churchYear": "2026–2027",
+      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=stu_pers_1792929452025_1"
     }
   },
   "teacherStudentRelationships": [],
@@ -618,6 +698,173 @@
       "completedAt": "2026-10-24T09:30:36.220Z",
       "pointsAwarded": true,
       "quizScore": 100
+    },
+    "stu_pers_1792928348996_1_l-cross-01": {
+      "studentId": "stu_pers_1792928348996_1",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:39:09.045Z",
+      "completedAt": "2026-10-25T11:39:09.054Z",
+      "pointsAwarded": true,
+      "quizScore": 100
+    },
+    "stu_pers_1792928506786_1_l-cross-01": {
+      "studentId": "stu_pers_1792928506786_1",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:41:46.817Z",
+      "completedAt": "2026-10-25T11:41:46.824Z",
+      "pointsAwarded": true,
+      "quizScore": 100
+    },
+    "stu_pers_1792928524908_1_l-cross-01": {
+      "studentId": "stu_pers_1792928524908_1",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:42:04.936Z",
+      "completedAt": "2026-10-25T11:42:04.945Z",
+      "pointsAwarded": true,
+      "quizScore": 100
+    },
+    "test_quiz_student_1792928533246_l-cross-01": {
+      "studentId": "test_quiz_student_1792928533246",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:42:13.270Z",
+      "completedAt": "2026-10-25T11:42:13.278Z",
+      "pointsAwarded": true,
+      "quizScore": 100
+    },
+    "test_idem_student_1792928538784_l-cross-01": {
+      "studentId": "test_idem_student_1792928538784",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:42:18.799Z",
+      "completedAt": "2026-10-25T11:42:18.810Z",
+      "pointsAwarded": true,
+      "quizScore": 100
+    },
+    "test_student_step2_1792928561245_l-cross-01": {
+      "studentId": "test_student_step2_1792928561245",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:42:41.267Z",
+      "completedAt": "2026-10-25T11:42:41.277Z",
+      "pointsAwarded": true
+    },
+    "std_mark_1792928568145_l-cross-01": {
+      "studentId": "std_mark_1792928568145",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:42:48.166Z",
+      "completedAt": "2026-10-25T11:42:48.176Z",
+      "pointsAwarded": true
+    },
+    "stu_pers_1792929452025_1_l-cross-01": {
+      "studentId": "stu_pers_1792929452025_1",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:57:32.070Z",
+      "completedAt": "2026-10-25T11:57:32.079Z",
+      "pointsAwarded": true,
+      "quizScore": 100
+    },
+    "test_quiz_student_1792929466388_l-cross-01": {
+      "studentId": "test_quiz_student_1792929466388",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:57:46.409Z",
+      "completedAt": "2026-10-25T11:57:46.417Z",
+      "pointsAwarded": true,
+      "quizScore": 100
+    },
+    "test_student_step2_1792929466627_l-cross-01": {
+      "studentId": "test_student_step2_1792929466627",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "status": "COMPLETED",
+      "sectionsCompleted": [
+        "sec-1",
+        "sec-2",
+        "sec-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-25T11:57:46.652Z",
+      "completedAt": "2026-10-25T11:57:46.661Z",
+      "pointsAwarded": true
     }
   },
   "attempts": {
@@ -692,6 +939,258 @@
         "idempotencyKey": null,
         "submittedAt": "2026-10-24T09:30:36.280Z"
       }
+    ],
+    "stu_pers_1792928348996_1_l-cross-01": [
+      {
+        "id": "att-1792928349419-b7beh",
+        "studentId": "stu_pers_1792928348996_1",
+        "lessonId": "l-cross-01",
+        "versionId": "ver-pub-l-cross-01",
+        "quizId": "quiz-ver-pub-l-cross-01",
+        "score": 2,
+        "totalScore": 2,
+        "percentage": 100,
+        "passed": true,
+        "answers": [
+          {
+            "questionId": "q-l-cross-01-1",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+            "recommendedSectionId": "sec-1",
+            "recommendedSectionTitle": "Section 1"
+          },
+          {
+            "questionId": "q-l-cross-01-2",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+            "recommendedSectionId": "sec-2",
+            "recommendedSectionTitle": "Section 2"
+          }
+        ],
+        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+        "idempotencyKey": "idem-1792928349417-g3p8",
+        "submittedAt": "2026-10-25T11:39:09.419Z"
+      }
+    ],
+    "stu_pers_1792928506786_1_l-cross-01": [
+      {
+        "id": "att-1792928506972-spqbs",
+        "studentId": "stu_pers_1792928506786_1",
+        "lessonId": "l-cross-01",
+        "versionId": "ver-pub-l-cross-01",
+        "quizId": "quiz-ver-pub-l-cross-01",
+        "score": 2,
+        "totalScore": 2,
+        "percentage": 100,
+        "passed": true,
+        "answers": [
+          {
+            "questionId": "q-l-cross-01-1",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+            "recommendedSectionId": "sec-1",
+            "recommendedSectionTitle": "Section 1"
+          },
+          {
+            "questionId": "q-l-cross-01-2",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+            "recommendedSectionId": "sec-2",
+            "recommendedSectionTitle": "Section 2"
+          }
+        ],
+        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+        "idempotencyKey": "idem-1792928506969-eyfu",
+        "submittedAt": "2026-10-25T11:41:46.972Z"
+      }
+    ],
+    "stu_pers_1792928524908_1_l-cross-01": [
+      {
+        "id": "att-1792928525045-ubj1b",
+        "studentId": "stu_pers_1792928524908_1",
+        "lessonId": "l-cross-01",
+        "versionId": "ver-pub-l-cross-01",
+        "quizId": "quiz-ver-pub-l-cross-01",
+        "score": 2,
+        "totalScore": 2,
+        "percentage": 100,
+        "passed": true,
+        "answers": [
+          {
+            "questionId": "q-l-cross-01-1",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+            "recommendedSectionId": "sec-1",
+            "recommendedSectionTitle": "Section 1"
+          },
+          {
+            "questionId": "q-l-cross-01-2",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+            "recommendedSectionId": "sec-2",
+            "recommendedSectionTitle": "Section 2"
+          }
+        ],
+        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+        "idempotencyKey": "idem-1792928525043-bcv4",
+        "submittedAt": "2026-10-25T11:42:05.045Z"
+      }
+    ],
+    "test_quiz_student_1792928533246_l-cross-01": [
+      {
+        "id": "att-1792928533418-u7d18",
+        "studentId": "test_quiz_student_1792928533246",
+        "lessonId": "l-cross-01",
+        "versionId": "ver-pub-l-cross-01",
+        "quizId": "quiz-ver-pub-l-cross-01",
+        "score": 2,
+        "totalScore": 2,
+        "percentage": 100,
+        "passed": true,
+        "answers": [
+          {
+            "questionId": "q-l-cross-01-1",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+            "recommendedSectionId": "sec-1",
+            "recommendedSectionTitle": "Section 1"
+          },
+          {
+            "questionId": "q-l-cross-01-2",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+            "recommendedSectionId": "sec-2",
+            "recommendedSectionTitle": "Section 2"
+          }
+        ],
+        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+        "idempotencyKey": null,
+        "submittedAt": "2026-10-25T11:42:13.418Z"
+      }
+    ],
+    "test_idem_student_1792928538784_l-cross-01": [
+      {
+        "id": "att-1792928538935-nhcu2",
+        "studentId": "test_idem_student_1792928538784",
+        "lessonId": "l-cross-01",
+        "versionId": "ver-pub-l-cross-01",
+        "quizId": "quiz-l-cross-01",
+        "score": 2,
+        "totalScore": 2,
+        "percentage": 100,
+        "passed": true,
+        "answers": [
+          {
+            "questionId": "q-l-cross-01-1",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+            "recommendedSectionId": "sec-1",
+            "recommendedSectionTitle": "Section 1"
+          },
+          {
+            "questionId": "q-l-cross-01-2",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+            "recommendedSectionId": "sec-2",
+            "recommendedSectionTitle": "Section 2"
+          }
+        ],
+        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+        "idempotencyKey": null,
+        "submittedAt": "2026-10-25T11:42:18.935Z"
+      }
+    ],
+    "stu_pers_1792929452025_1_l-cross-01": [
+      {
+        "id": "att-1792929452202-78rw7",
+        "studentId": "stu_pers_1792929452025_1",
+        "lessonId": "l-cross-01",
+        "versionId": "ver-pub-l-cross-01",
+        "quizId": "quiz-ver-pub-l-cross-01",
+        "score": 2,
+        "totalScore": 2,
+        "percentage": 100,
+        "passed": true,
+        "answers": [
+          {
+            "questionId": "q-l-cross-01-1",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+            "recommendedSectionId": "sec-1",
+            "recommendedSectionTitle": "Section 1"
+          },
+          {
+            "questionId": "q-l-cross-01-2",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+            "recommendedSectionId": "sec-2",
+            "recommendedSectionTitle": "Section 2"
+          }
+        ],
+        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+        "idempotencyKey": "idem-1792929452199-21w9",
+        "submittedAt": "2026-10-25T11:57:32.202Z"
+      }
+    ],
+    "test_quiz_student_1792929466388_l-cross-01": [
+      {
+        "id": "att-1792929466505-tsd6a",
+        "studentId": "test_quiz_student_1792929466388",
+        "lessonId": "l-cross-01",
+        "versionId": "ver-pub-l-cross-01",
+        "quizId": "quiz-ver-pub-l-cross-01",
+        "score": 2,
+        "totalScore": 2,
+        "percentage": 100,
+        "passed": true,
+        "answers": [
+          {
+            "questionId": "q-l-cross-01-1",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+            "recommendedSectionId": "sec-1",
+            "recommendedSectionTitle": "Section 1"
+          },
+          {
+            "questionId": "q-l-cross-01-2",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+            "recommendedSectionId": "sec-2",
+            "recommendedSectionTitle": "Section 2"
+          }
+        ],
+        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+        "idempotencyKey": null,
+        "submittedAt": "2026-10-25T11:57:46.505Z"
+      }
     ]
   },
   "mastery": {
@@ -727,12 +1226,132 @@
       "evaluatedAt": "2026-10-24T09:30:36.220Z",
       "evaluatedBy": "Automated Curriculum Engine",
       "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "stu_pers_1792928348996_1_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "stu_pers_1792928348996_1",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:39:09.054Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "stu_pers_1792928506786_1_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "stu_pers_1792928506786_1",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:41:46.824Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "stu_pers_1792928524908_1_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "stu_pers_1792928524908_1",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:42:04.945Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "test_quiz_student_1792928533246_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "test_quiz_student_1792928533246",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:42:13.278Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "test_idem_student_1792928538784_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "test_idem_student_1792928538784",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:42:18.810Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "test_student_step2_1792928561245_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "test_student_step2_1792928561245",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:42:41.277Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "std_mark_1792928568145_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "std_mark_1792928568145",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:42:48.176Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "stu_pers_1792929452025_1_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "stu_pers_1792929452025_1",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:57:32.079Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "test_quiz_student_1792929466388_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "test_quiz_student_1792929466388",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:57:46.417Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
+    },
+    "test_student_step2_1792929466627_l-cross-01": {
+      "lessonId": "l-cross-01",
+      "studentId": "test_student_step2_1792929466627",
+      "status": "MASTERED",
+      "contentCompleted": true,
+      "quizPassed": true,
+      "bestQuizScore": 100,
+      "evaluatedAt": "2026-10-25T11:57:46.661Z",
+      "evaluatedBy": "Automated Curriculum Engine",
+      "teacherNotes": "Completed all sections and verified by church curriculum engine"
     }
   },
   "userPoints": {
     "mark": 150,
     "test_idem_student_1792834220343": 50,
-    "test_quiz_student_1792834236185": 50
+    "test_quiz_student_1792834236185": 50,
+    "stu_pers_1792928348996_1": 50,
+    "stu_pers_1792928506786_1": 50,
+    "stu_pers_1792928524908_1": 50,
+    "test_quiz_student_1792928533246": 50,
+    "test_idem_student_1792928538784": 50,
+    "test_student_step2_1792928561245": 50,
+    "std_mark_1792928568145": 50,
+    "stu_pers_1792929452025_1": 50,
+    "test_quiz_student_1792929466388": 50,
+    "test_student_step2_1792929466627": 50
   },
   "userStreaks": {
     "mark": {
@@ -757,6 +1376,86 @@
       "lastActiveCairoDate": "2026-10-24",
       "activeCairoDays": [
         "2026-10-24"
+      ]
+    },
+    "stu_pers_1792928348996_1": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
+      ]
+    },
+    "stu_pers_1792928506786_1": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
+      ]
+    },
+    "stu_pers_1792928524908_1": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
+      ]
+    },
+    "test_quiz_student_1792928533246": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
+      ]
+    },
+    "test_idem_student_1792928538784": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
+      ]
+    },
+    "test_student_step2_1792928561245": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
+      ]
+    },
+    "std_mark_1792928568145": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
+      ]
+    },
+    "stu_pers_1792929452025_1": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
+      ]
+    },
+    "test_quiz_student_1792929466388": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
+      ]
+    },
+    "test_student_step2_1792929466627": {
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastActiveCairoDate": "2026-10-25",
+      "activeCairoDays": [
+        "2026-10-25"
       ]
     }
   },
@@ -803,6 +1502,156 @@
         "timestamp": "2026-10-24T09:30:36.220Z",
         "cairoDate": "2026-10-24",
         "cairoTime": "12:30:36",
+        "isFirstCompletion": true
+      }
+    ],
+    "stu_pers_1792928348996_1": [
+      {
+        "id": "act_1792928349057_abo9j",
+        "studentId": "stu_pers_1792928348996_1",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:39:09.054Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:39:09",
+        "isFirstCompletion": true
+      }
+    ],
+    "stu_pers_1792928506786_1": [
+      {
+        "id": "act_1792928506827_bdfkq",
+        "studentId": "stu_pers_1792928506786_1",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:41:46.824Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:41:46",
+        "isFirstCompletion": true
+      }
+    ],
+    "stu_pers_1792928524908_1": [
+      {
+        "id": "act_1792928524949_4c7s1",
+        "studentId": "stu_pers_1792928524908_1",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:42:04.945Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:42:04",
+        "isFirstCompletion": true
+      }
+    ],
+    "test_quiz_student_1792928533246": [
+      {
+        "id": "act_1792928533281_z93ni",
+        "studentId": "test_quiz_student_1792928533246",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:42:13.278Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:42:13",
+        "isFirstCompletion": true
+      }
+    ],
+    "test_idem_student_1792928538784": [
+      {
+        "id": "act_1792928538813_k7i8j",
+        "studentId": "test_idem_student_1792928538784",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:42:18.810Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:42:18",
+        "isFirstCompletion": true
+      }
+    ],
+    "test_student_step2_1792928561245": [
+      {
+        "id": "act_1792928561280_349aj",
+        "studentId": "test_student_step2_1792928561245",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:42:41.277Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:42:41",
+        "isFirstCompletion": true
+      }
+    ],
+    "std_mark_1792928568145": [
+      {
+        "id": "act_1792928568178_yejoh",
+        "studentId": "std_mark_1792928568145",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:42:48.176Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:42:48",
+        "isFirstCompletion": true
+      }
+    ],
+    "stu_pers_1792929452025_1": [
+      {
+        "id": "act_1792929452083_qnn1b",
+        "studentId": "stu_pers_1792929452025_1",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:57:32.079Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:57:32",
+        "isFirstCompletion": true
+      }
+    ],
+    "test_quiz_student_1792929466388": [
+      {
+        "id": "act_1792929466420_8g1ky",
+        "studentId": "test_quiz_student_1792929466388",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:57:46.417Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:57:46",
+        "isFirstCompletion": true
+      }
+    ],
+    "test_student_step2_1792929466627": [
+      {
+        "id": "act_1792929466664_9zogh",
+        "studentId": "test_student_step2_1792929466627",
+        "type": "LESSON_COMPLETED",
+        "lessonId": "l-cross-01",
+        "lessonTitleAr": "درس كنسي مبارك",
+        "lessonTitleEn": "Spiritual Milestone Lesson",
+        "pointsEarned": 50,
+        "timestamp": "2026-10-25T11:57:46.661Z",
+        "cairoDate": "2026-10-25",
+        "cairoTime": "14:57:46",
         "isFirstCompletion": true
       }
     ]
