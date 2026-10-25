@@ -6,7 +6,7 @@
       "year": "2026–2027",
       "status": "ACTIVE",
       "startDate": "2026-09-01",
-      "createdAt": "2026-10-24T08:59:29.756Z",
+      "createdAt": "2026-10-24T09:21:10.195Z",
       "createdBy": "system"
     }
   },
@@ -23,7 +23,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     },
     "inst_2026-2027_primary_1": {
       "id": "inst_2026-2027_primary_1",
@@ -37,7 +37,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     },
     "inst_2026-2027_primary_2": {
       "id": "inst_2026-2027_primary_2",
@@ -51,7 +51,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     },
     "inst_2026-2027_preparatory": {
       "id": "inst_2026-2027_preparatory",
@@ -65,7 +65,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     },
     "inst_2026-2027_secondary": {
       "id": "inst_2026-2027_secondary",
@@ -79,7 +79,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     },
     "inst_2026-2027_university": {
       "id": "inst_2026-2027_university",
@@ -93,7 +93,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     }
   },
   "classMemberships": {
@@ -106,7 +106,7 @@
       "studentName": "Mark Shenouda",
       "exactGrade": "Grade 4",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-24T08:59:29.756Z",
+      "enrolledAt": "2026-10-24T09:21:10.195Z",
       "enrolledBy": "servant"
     },
     "mem_david_2026-2027": {
@@ -118,7 +118,7 @@
       "studentName": "David Emad",
       "exactGrade": "Grade 5",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-24T08:59:29.756Z",
+      "enrolledAt": "2026-10-24T09:21:10.195Z",
       "enrolledBy": "servant"
     },
     "mem_other_2026-2027": {
@@ -130,7 +130,7 @@
       "studentName": "Peter Fadi",
       "exactGrade": "Prep 1",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-24T08:59:29.756Z",
+      "enrolledAt": "2026-10-24T09:21:10.195Z",
       "enrolledBy": "servant"
     }
   },
@@ -212,31 +212,31 @@
       "parentId": "mary",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     },
     {
       "parentId": "mary",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     },
     {
       "parentId": "other_parent",
       "childId": "other",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T08:59:29.756Z"
+      "createdAt": "2026-10-24T09:21:10.195Z"
     }
   ],
   "activationRequests": {
@@ -250,7 +250,7 @@
       "requestedGrade": "Grade 4",
       "notes": "New student joining Sunday school with Servant Mina",
       "status": "PENDING_APPROVAL",
-      "requestedAt": "2026-10-24T07:59:29.756Z"
+      "requestedAt": "2026-10-24T08:21:10.195Z"
     }
   },
   "classServants": {
@@ -581,12 +581,12 @@
       ],
       "totalSections": 3,
       "completionPercent": 100,
-      "startedAt": "2026-10-24T08:59:29.769Z",
-      "completedAt": "2026-10-24T08:59:29.781Z",
+      "startedAt": "2026-10-24T09:21:10.223Z",
+      "completedAt": "2026-10-24T09:21:10.234Z",
       "pointsAwarded": true
     },
-    "u1_l-cross-01": {
-      "studentId": "u1",
+    "test_idem_student_1792834220343_l-cross-01": {
+      "studentId": "test_idem_student_1792834220343",
       "lessonId": "l-cross-01",
       "versionId": "ver-pub-l-cross-01",
       "status": "COMPLETED",
@@ -597,12 +597,13 @@
       ],
       "totalSections": 3,
       "completionPercent": 100,
-      "startedAt": "2026-10-24T09:07:46.099Z",
-      "completedAt": "2026-10-24T09:07:46.244Z",
-      "pointsAwarded": true
+      "startedAt": "2026-10-24T09:30:20.376Z",
+      "completedAt": "2026-10-24T09:30:20.388Z",
+      "pointsAwarded": true,
+      "quizScore": 100
     },
-    "test_student_step2_1792832872620_l-cross-01": {
-      "studentId": "test_student_step2_1792832872620",
+    "test_quiz_student_1792834236185_l-cross-01": {
+      "studentId": "test_quiz_student_1792834236185",
       "lessonId": "l-cross-01",
       "versionId": "ver-pub-l-cross-01",
       "status": "COMPLETED",
@@ -613,12 +614,86 @@
       ],
       "totalSections": 3,
       "completionPercent": 100,
-      "startedAt": "2026-10-24T09:07:52.642Z",
-      "completedAt": "2026-10-24T09:07:52.651Z",
-      "pointsAwarded": true
+      "startedAt": "2026-10-24T09:30:36.210Z",
+      "completedAt": "2026-10-24T09:30:36.220Z",
+      "pointsAwarded": true,
+      "quizScore": 100
     }
   },
-  "attempts": {},
+  "attempts": {
+    "test_idem_student_1792834220343_l-cross-01": [
+      {
+        "id": "att-1792834220475-tgpsa",
+        "studentId": "test_idem_student_1792834220343",
+        "lessonId": "l-cross-01",
+        "versionId": "ver-pub-l-cross-01",
+        "quizId": "quiz-l-cross-01",
+        "score": 2,
+        "totalScore": 2,
+        "percentage": 100,
+        "passed": true,
+        "answers": [
+          {
+            "questionId": "q-l-cross-01-1",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+            "recommendedSectionId": "sec-1",
+            "recommendedSectionTitle": "Section 1"
+          },
+          {
+            "questionId": "q-l-cross-01-2",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+            "recommendedSectionId": "sec-2",
+            "recommendedSectionTitle": "Section 2"
+          }
+        ],
+        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+        "idempotencyKey": null,
+        "submittedAt": "2026-10-24T09:30:20.475Z"
+      }
+    ],
+    "test_quiz_student_1792834236185_l-cross-01": [
+      {
+        "id": "att-1792834236280-sv9md",
+        "studentId": "test_quiz_student_1792834236185",
+        "lessonId": "l-cross-01",
+        "versionId": "ver-pub-l-cross-01",
+        "quizId": "quiz-ver-pub-l-cross-01",
+        "score": 2,
+        "totalScore": 2,
+        "percentage": 100,
+        "passed": true,
+        "answers": [
+          {
+            "questionId": "q-l-cross-01-1",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+            "recommendedSectionId": "sec-1",
+            "recommendedSectionTitle": "Section 1"
+          },
+          {
+            "questionId": "q-l-cross-01-2",
+            "selectedOptionIndex": 0,
+            "isCorrect": true,
+            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+            "recommendedSectionId": "sec-2",
+            "recommendedSectionTitle": "Section 2"
+          }
+        ],
+        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+        "idempotencyKey": null,
+        "submittedAt": "2026-10-24T09:30:36.280Z"
+      }
+    ]
+  },
   "mastery": {
     "mark_l-test-multiversion-01": {
       "lessonId": "l-test-multiversion-01",
@@ -627,37 +702,37 @@
       "contentCompleted": true,
       "quizPassed": true,
       "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-24T08:59:29.781Z",
+      "evaluatedAt": "2026-10-24T09:21:10.234Z",
       "evaluatedBy": "Automated Curriculum Engine",
       "teacherNotes": "Completed all sections and verified by church curriculum engine"
     },
-    "u1_l-cross-01": {
+    "test_idem_student_1792834220343_l-cross-01": {
       "lessonId": "l-cross-01",
-      "studentId": "u1",
+      "studentId": "test_idem_student_1792834220343",
       "status": "MASTERED",
       "contentCompleted": true,
       "quizPassed": true,
       "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-24T09:07:46.244Z",
+      "evaluatedAt": "2026-10-24T09:30:20.388Z",
       "evaluatedBy": "Automated Curriculum Engine",
       "teacherNotes": "Completed all sections and verified by church curriculum engine"
     },
-    "test_student_step2_1792832872620_l-cross-01": {
+    "test_quiz_student_1792834236185_l-cross-01": {
       "lessonId": "l-cross-01",
-      "studentId": "test_student_step2_1792832872620",
+      "studentId": "test_quiz_student_1792834236185",
       "status": "MASTERED",
       "contentCompleted": true,
       "quizPassed": true,
       "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-24T09:07:52.651Z",
+      "evaluatedAt": "2026-10-24T09:30:36.220Z",
       "evaluatedBy": "Automated Curriculum Engine",
       "teacherNotes": "Completed all sections and verified by church curriculum engine"
     }
   },
   "userPoints": {
     "mark": 150,
-    "u1": 150,
-    "test_student_step2_1792832872620": 50
+    "test_idem_student_1792834220343": 50,
+    "test_quiz_student_1792834236185": 50
   },
   "userStreaks": {
     "mark": {
@@ -668,7 +743,7 @@
         "2026-10-24"
       ]
     },
-    "u1": {
+    "test_idem_student_1792834220343": {
       "currentStreak": 1,
       "longestStreak": 1,
       "lastActiveCairoDate": "2026-10-24",
@@ -676,7 +751,7 @@
         "2026-10-24"
       ]
     },
-    "test_student_step2_1792832872620": {
+    "test_quiz_student_1792834236185": {
       "currentStreak": 1,
       "longestStreak": 1,
       "lastActiveCairoDate": "2026-10-24",
@@ -688,46 +763,46 @@
   "completionHistory": {
     "mark": [
       {
-        "id": "act_1792832369784_brk05",
+        "id": "act_1792833670238_rhnlv",
         "studentId": "mark",
         "type": "LESSON_COMPLETED",
         "lessonId": "l-test-multiversion-01",
         "lessonTitleAr": "درس كنسي مبارك",
         "lessonTitleEn": "Spiritual Milestone Lesson",
         "pointsEarned": 50,
-        "timestamp": "2026-10-24T08:59:29.781Z",
+        "timestamp": "2026-10-24T09:21:10.234Z",
         "cairoDate": "2026-10-24",
-        "cairoTime": "11:59:29",
+        "cairoTime": "12:21:10",
         "isFirstCompletion": true
       }
     ],
-    "u1": [
+    "test_idem_student_1792834220343": [
       {
-        "id": "act_1792832866274_p6vi1",
-        "studentId": "u1",
+        "id": "act_1792834220406_1tnd8",
+        "studentId": "test_idem_student_1792834220343",
         "type": "LESSON_COMPLETED",
         "lessonId": "l-cross-01",
         "lessonTitleAr": "درس كنسي مبارك",
         "lessonTitleEn": "Spiritual Milestone Lesson",
         "pointsEarned": 50,
-        "timestamp": "2026-10-24T09:07:46.244Z",
+        "timestamp": "2026-10-24T09:30:20.388Z",
         "cairoDate": "2026-10-24",
-        "cairoTime": "12:07:46",
+        "cairoTime": "12:30:20",
         "isFirstCompletion": true
       }
     ],
-    "test_student_step2_1792832872620": [
+    "test_quiz_student_1792834236185": [
       {
-        "id": "act_1792832872654_3l2jn",
-        "studentId": "test_student_step2_1792832872620",
+        "id": "act_1792834236223_c6761",
+        "studentId": "test_quiz_student_1792834236185",
         "type": "LESSON_COMPLETED",
         "lessonId": "l-cross-01",
         "lessonTitleAr": "درس كنسي مبارك",
         "lessonTitleEn": "Spiritual Milestone Lesson",
         "pointsEarned": 50,
-        "timestamp": "2026-10-24T09:07:52.651Z",
+        "timestamp": "2026-10-24T09:30:36.220Z",
         "cairoDate": "2026-10-24",
-        "cairoTime": "12:07:52",
+        "cairoTime": "12:30:36",
         "isFirstCompletion": true
       }
     ]

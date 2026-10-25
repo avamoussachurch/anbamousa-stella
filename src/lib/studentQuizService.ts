@@ -17,6 +17,8 @@ export interface SubmitQuizAttemptInput {
   percentage?: number;
   earnedPoints?: number;
   totalPointsPossible?: number;
+  idempotencyKey?: string;
+  attemptId?: string;
 }
 
 // In-memory fallback for guest/offline resilience
@@ -79,7 +81,7 @@ export async function getActiveLessonQuiz(
 export async function submitStudentQuizAttempt(
   input: SubmitQuizAttemptInput
 ): Promise<{ data: StudentQuizAttempt | null; error: Error | null }> {
-  const { lessonId, versionId, quizId, answers, studentId } = input;
+  const { lessonId, versionId, quizId, answers, studentId, idempotencyKey, attemptId } = input;
   if (!lessonId || !versionId || !quizId) {
     return { data: null, error: new Error('lessonId, versionId, and quizId are required') };
   }
@@ -94,7 +96,9 @@ export async function submitStudentQuizAttempt(
         versionId,
         quizId,
         answers,
-        studentId
+        studentId,
+        idempotencyKey,
+        attemptId
       })
     });
 
@@ -111,7 +115,14 @@ export async function submitStudentQuizAttempt(
     if (!LOCAL_QUIZ_ATTEMPTS[key]) {
       LOCAL_QUIZ_ATTEMPTS[key] = [];
     }
-    LOCAL_QUIZ_ATTEMPTS[key].push(attempt);
+    const exists = LOCAL_QUIZ_ATTEMPTS[key].some(a => a.id === attempt.id);
+    if (!exists) {
+      LOCAL_QUIZ_ATTEMPTS[key].push(attempt);
+    }
+    try {
+      localStorage.setItem(`church_quiz_attempts_${key}`, JSON.stringify(LOCAL_QUIZ_ATTEMPTS[key]));
+      localStorage.setItem(`church_quiz_score_${key}`, String(attempt.percentage));
+    } catch (e) {}
 
     // If Supabase is connected, sync quiz score to lesson_progress table without overriding section completion
     if (supabase && isSupabaseConfigured) {
@@ -131,6 +142,13 @@ export async function submitStudentQuizAttempt(
   } catch (err: any) {
     // Pure offline demo fallback
     const sId = studentId || 'u1';
+    const key = `${sId}_${lessonId}`;
+    let cached: StudentQuizAttempt[] = [];
+    try {
+      const raw = localStorage.getItem(`church_quiz_attempts_${key}`);
+      if (raw) cached = JSON.parse(raw);
+    } catch (e) {}
+
     const totalScore = answers.length || 1;
     const fallbackAttempt: StudentQuizAttempt = {
       id: `att-local-${Date.now()}`,
@@ -149,9 +167,13 @@ export async function submitStudentQuizAttempt(
       })),
       submittedAt: new Date().toISOString()
     };
-    const key = `${sId}_${lessonId}`;
-    if (!LOCAL_QUIZ_ATTEMPTS[key]) LOCAL_QUIZ_ATTEMPTS[key] = [];
+    if (!LOCAL_QUIZ_ATTEMPTS[key]) LOCAL_QUIZ_ATTEMPTS[key] = cached.length > 0 ? cached : [];
     LOCAL_QUIZ_ATTEMPTS[key].push(fallbackAttempt);
+    try {
+      localStorage.setItem(`church_quiz_attempts_${key}`, JSON.stringify(LOCAL_QUIZ_ATTEMPTS[key]));
+      localStorage.setItem(`church_quiz_score_${key}`, String(fallbackAttempt.percentage));
+    } catch (e) {}
+
     return { data: fallbackAttempt, error: null };
   }
 }
@@ -168,6 +190,9 @@ export async function getStudentQuizAttempts(
     return { data: [], error: new Error('lessonId is required') };
   }
 
+  const sId = studentId || 'u1';
+  const key = `${sId}_${lessonId}`;
+
   const headers = await getAuthHeader();
   try {
     const query = new URLSearchParams({ lessonId });
@@ -180,16 +205,27 @@ export async function getStudentQuizAttempts(
 
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.success) {
-      return {
-        data: [],
-        error: new Error(json?.message || json?.error || `HTTP ${res.status}: Failed to get quiz attempts`)
-      };
+      throw new Error(json?.message || json?.error || `HTTP ${res.status}: Failed to get quiz attempts`);
     }
 
-    return { data: json.attempts || [], error: null };
+    const attempts: StudentQuizAttempt[] = json.attempts || [];
+    LOCAL_QUIZ_ATTEMPTS[key] = attempts;
+    try {
+      localStorage.setItem(`church_quiz_attempts_${key}`, JSON.stringify(attempts));
+      if (attempts.length > 0) {
+        const latest = attempts[attempts.length - 1];
+        localStorage.setItem(`church_quiz_score_${key}`, String(latest.percentage));
+      }
+    } catch (e) {}
+
+    return { data: attempts, error: null };
   } catch (err: any) {
-    const sId = studentId || 'u1';
-    const key = `${sId}_${lessonId}`;
-    return { data: LOCAL_QUIZ_ATTEMPTS[key] || [], error: null };
+    let cached: StudentQuizAttempt[] = [];
+    try {
+      const raw = localStorage.getItem(`church_quiz_attempts_${key}`);
+      if (raw) cached = JSON.parse(raw);
+    } catch (e) {}
+    const attempts = cached.length > 0 ? cached : (LOCAL_QUIZ_ATTEMPTS[key] || []);
+    return { data: attempts, error: null };
   }
 }

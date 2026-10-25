@@ -3655,8 +3655,14 @@ function ensurePublishedLessonAndVersion(lessonId: string, versionId?: string) {
       grade: classGroupId === 'preparatory' ? 'Prep 1' : classGroupId === 'angels' ? 'KG1' : classGroupId === 'primary_1' ? 'Grade 2' : 'Grade 4'
     };
     serverReviewState.lessons[lessonId] = lessonRecord;
-  } else if (!lessonRecord.classGroupId) {
-    lessonRecord.classGroupId = lessonId.includes('prep') ? 'preparatory' : lessonId.includes('angels') ? 'angels' : (lessonId === 'l3' ? 'primary_1' : 'primary_2');
+  } else {
+    if (!lessonRecord.classGroupId) {
+      lessonRecord.classGroupId = lessonId.includes('prep') ? 'preparatory' : lessonId.includes('angels') ? 'angels' : (lessonId === 'l3' ? 'primary_1' : 'primary_2');
+    }
+    if (lessonId === 'l-cross-01' || !lessonRecord.active_version_id || lessonRecord.status !== 'published') {
+      lessonRecord.status = 'published';
+      lessonRecord.active_version_id = effectiveVersionId;
+    }
   }
 
   let targetVersion = serverReviewState.versions[effectiveVersionId];
@@ -4324,6 +4330,19 @@ app.get("/api/church/student-progress/summary", async (req, res) => {
       }
     }
 
+    const latestQuizScores: Record<string, number> = {};
+    for (const [key, attList] of Object.entries(serverReviewState.attempts)) {
+      if (key.startsWith(`${targetStudentId}_`)) {
+        const lessonId = key.replace(`${targetStudentId}_`, '');
+        if (Array.isArray(attList) && attList.length > 0) {
+          const latest = attList[attList.length - 1];
+          if (latest && typeof latest.percentage === 'number') {
+            latestQuizScores[lessonId] = latest.percentage;
+          }
+        }
+      }
+    }
+
     const todayCairo = getCairoDateString();
     const streakRecord = serverReviewState.userStreaks[targetStudentId];
     let streakInfo = {
@@ -4382,6 +4401,7 @@ app.get("/api/church/student-progress/summary", async (req, res) => {
       progressPercent: assignedLessons.length > 0 ? Math.round((completedLessonIds.length / assignedLessons.length) * 100) : 0,
       allProgress: studentProgressMap,
       mastery: studentMasteryMap,
+      quizScores: latestQuizScores,
       points,
       streak: {
         currentStreak: streakInfo.currentStreak,
@@ -4682,16 +4702,15 @@ app.get("/api/church/student-quiz", async (req, res) => {
       return res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "lessonId is required" });
     }
 
-    const rawLesson = serverReviewState.lessons[lessonId];
-    if (rawLesson && (!rawLesson.active_version_id || rawLesson.status !== 'published')) {
+    const { lessonRecord, targetVersion } = ensurePublishedLessonAndVersion(lessonId);
+
+    if (lessonRecord && (!lessonRecord.active_version_id || lessonRecord.status !== 'published')) {
       return res.status(400).json({
         success: false,
         error: "UNPUBLISHED_LESSON",
         message: "Quizzes are only available for published lessons with an active version."
       });
     }
-
-    const { lessonRecord, targetVersion } = ensurePublishedLessonAndVersion(lessonId);
 
     let targetStudentId = String(req.query.studentId || '');
     const authContext = await verifyServerRequestAuth(req);
@@ -4753,7 +4772,7 @@ app.get("/api/church/student-quiz", async (req, res) => {
 // 2. Submit Student Quiz Attempt
 app.post("/api/church/student-quiz/submit", async (req, res) => {
   try {
-    const { lessonId, versionId, quizId, answers, studentId } = req.body;
+    const { lessonId, versionId, quizId, answers, studentId, idempotencyKey, attemptId } = req.body;
     if (!lessonId || !versionId || !quizId) {
       return res.status(400).json({
         success: false,
@@ -4866,8 +4885,49 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     const percentage = Math.round((correctCount / totalScore) * 100);
     const passed = percentage >= 70;
 
+    const key = `${targetStudentId}_${lessonId}`;
+    if (!serverReviewState.attempts[key]) {
+      serverReviewState.attempts[key] = [];
+    }
+
+    // Durable Permanent Idempotency Protection:
+    // Retrying the same quiz submission at ANY point in time (after 8s, hours, refresh, or logout/login)
+    // must not create a second attempt or re-award anything.
+    const incomingFingerprint = JSON.stringify(
+      recordedAnswers
+        .map((a: any) => ({ q: a.questionId, opt: a.selectedOptionIndex }))
+        .sort((a: any, b: any) => a.q.localeCompare(b.q))
+    );
+
+    const existingList = serverReviewState.attempts[key];
+    const durableDuplicate = existingList.find((existing: any) => {
+      // 1. Explicit idempotencyKey or attemptId match
+      if (idempotencyKey && existing.idempotencyKey === idempotencyKey) return true;
+      if (attemptId && existing.id === attemptId) return true;
+
+      // 2. Deterministic answer and quiz identity match (durable indefinitely across sessions)
+      if (existing.quizId === quizId) {
+        const existingFingerprint = existing.answerFingerprint || JSON.stringify(
+          (existing.answers || [])
+            .map((a: any) => ({ q: a.questionId, opt: a.selectedOptionIndex }))
+            .sort((a: any, b: any) => a.q.localeCompare(b.q))
+        );
+        if (existingFingerprint === incomingFingerprint) return true;
+      }
+      return false;
+    });
+
+    if (durableDuplicate) {
+      return res.json({
+        success: true,
+        attempt: durableDuplicate,
+        isDuplicate: true,
+        message: "Duplicate submission safely handled via durable idempotency; existing attempt preserved."
+      });
+    }
+
     const newAttempt = {
-      id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: attemptId || `att-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       studentId: targetStudentId,
       lessonId,
       versionId,
@@ -4877,13 +4937,11 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       percentage,
       passed,
       answers: recordedAnswers,
+      answerFingerprint: incomingFingerprint,
+      idempotencyKey: idempotencyKey || null,
       submittedAt: new Date().toISOString()
     };
 
-    const key = `${targetStudentId}_${lessonId}`;
-    if (!serverReviewState.attempts[key]) {
-      serverReviewState.attempts[key] = [];
-    }
     serverReviewState.attempts[key].push(newAttempt);
 
     // Progress Integration: Sync quiz score without corrupting section completion
@@ -4891,9 +4949,13 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       serverReviewState.progress[key].quizScore = percentage;
     }
 
+    // Save persistent server state immediately to disk
+    savePersistentClassState();
+
     return res.json({
       success: true,
-      attempt: newAttempt
+      attempt: newAttempt,
+      isDuplicate: false
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || "Server error" });

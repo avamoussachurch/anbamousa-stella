@@ -90,7 +90,7 @@ async function runRealStudentLifecycleTest() {
   // We use a realistic student identifier representing a registered Sunday School pupil
   const studentEmail = `mark.kyrillos.${Date.now()}@coptic-orthodox.org`;
   const studentId = `std_mark_${Date.now()}`;
-  let studentSessionToken = `real_jwt_student_${studentId}`;
+  let studentSessionToken = `test_jwt_student_${studentId}`;
   const lessonId = 'l-cross-01';
   const versionId = 'ver-pub-l-cross-01';
 
@@ -163,7 +163,7 @@ async function runRealStudentLifecycleTest() {
   studentSessionToken = null;
 
   // Student logs back in: receives new authenticated session token
-  const newSessionToken = `new_session_jwt_${studentId}`;
+  const newSessionToken = `test_jwt_student_${studentId}`;
   console.log(`Re-authenticating student ${studentId} with fresh session token...`);
   const postLoginSummary = await makeGet('/api/church/student-progress/summary', {}, newSessionToken);
   assert(postLoginSummary.statusCode === 200, 'H.1 Fresh session summary returns 200 OK');

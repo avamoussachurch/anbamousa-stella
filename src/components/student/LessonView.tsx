@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Sparkles } from 'lucide-react';
 import { mockLessons } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { useLessons } from '../../context/LessonsContext';
@@ -13,7 +13,7 @@ import {
 import { SundaySchoolLessonView } from '../sunday-school/student/SundaySchoolLessonView';
 import { SundaySchoolQuizView } from '../sunday-school/student/SundaySchoolQuizView';
 import { startLessonProgress, completeSectionProgress, completeLessonProgress, diagnoseLessonCompletion } from '../../lib/studentProgressService';
-import { submitStudentQuizAttempt } from '../../lib/studentQuizService';
+import { submitStudentQuizAttempt, getStudentQuizAttempts } from '../../lib/studentQuizService';
 import { getStudentMastery, evaluateStudentMastery } from '../../lib/studentMasteryService';
 import { getClassGroupForGrade, getClassGroupLabel, getClassGroupById } from '../../lib/classGroups';
 
@@ -37,6 +37,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
   
   // Sunday School Vertical Slice States
   const [isTakingQuiz, setIsTakingQuiz] = useState<boolean>(false);
+  const [isTransitioningToQuiz, setIsTransitioningToQuiz] = useState<boolean>(false);
   const [targetSectionId, setTargetSectionId] = useState<string | undefined>(undefined);
 
   const currentStudentId = userData?.id || 'u1';
@@ -247,6 +248,13 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
           );
         }
       });
+
+      // Load persisted quiz attempts and scores for this student
+      getStudentQuizAttempts(lessonId, currentStudentId).then(({ data }) => {
+        if (data && data.length > 0) {
+          data.forEach(att => recordQuizAttempt(att));
+        }
+      });
     }
   }, [lessonId, activePublishedVersion?.id, userData?.id, currentStudentId]);
 
@@ -337,6 +345,21 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
 
       setIsFinishing(false);
       setFinishSuccess(true);
+
+      // Automatically transition to the quiz if questions exist on the active published version
+      const hasQuiz = Boolean(
+        activePublishedVersion.quizDraft &&
+        activePublishedVersion.quizDraft.questions &&
+        activePublishedVersion.quizDraft.questions.length > 0
+      );
+
+      if (hasQuiz) {
+        setIsTransitioningToQuiz(true);
+        setTimeout(() => {
+          setIsTransitioningToQuiz(false);
+          setIsTakingQuiz(true);
+        }, 1100);
+      }
     } catch (err: any) {
       console.error(err);
       setFinishError(err?.message || (lang === 'ar' ? 'فشل حفظ الإتمام' : 'Error saving completion'));
@@ -345,17 +368,19 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
   };
 
   // Quiz View Mode: Render Tiered Sunday School Quiz View
-  if (isTakingQuiz && activePublishedVersion.quizDraft) {
+  if (isTakingQuiz && activePublishedVersion?.quizDraft) {
     return (
       <div className="px-4 pt-4 pb-20">
         <SundaySchoolQuizView
           quiz={activePublishedVersion.quizDraft}
           lessonId={lessonId}
           studentId={currentStudentId}
+          lang={lang}
+          previousAttempts={userQuizAttempts}
           onBackToLesson={() => setIsTakingQuiz(false)}
           onSubmitAttempt={async (attempt) => {
             if (activePublishedVersion) {
-              const { data } = await submitStudentQuizAttempt({
+              const res = await submitStudentQuizAttempt({
                 lessonId,
                 versionId: activePublishedVersion.id,
                 quizId: attempt.quizId,
@@ -368,8 +393,8 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
                 earnedPoints: attempt.earnedPoints,
                 totalPointsPossible: attempt.totalPointsPossible
               });
-              if (data) {
-                recordQuizAttempt(data);
+              if (res.data) {
+                recordQuizAttempt(res.data);
               }
 
               // Evaluate student mastery after quiz attempt
@@ -387,17 +412,15 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
                   masteryRes.data.teacherNotes
                 );
               }
-            } else {
-              recordQuizAttempt(attempt);
-            }
 
-            const pointsToAdd = attempt.earnedPoints || (attempt.score * 20);
-            if (userData && pointsToAdd > 0) {
-              try {
-                await addPoints(pointsToAdd);
-              } catch (e) {
-                console.warn(e);
-              }
+              return {
+                success: !res.error,
+                data: res.data,
+                error: res.error?.message
+              };
+            } else {
+              recordQuizAttempt(attempt as any);
+              return { success: true, data: attempt as any };
             }
           }}
           onReviewSection={(secId) => {
@@ -411,7 +434,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
 
   // Playful Rich Student Lesson Story Reader Mode
   return (
-    <div className="px-4 pt-4 pb-20">
+    <div className="px-4 pt-4 pb-20 relative">
       <SundaySchoolLessonView
         lesson={lesson}
         version={activePublishedVersion}
@@ -458,6 +481,46 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
           setIsTakingQuiz(true);
         }}
       />
+
+      {/* Clear Transition Animation Between Lesson Reading and Quiz */}
+      {isTransitioningToQuiz && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-gold)] rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-4 shadow-2xl animate-in zoom-in-95">
+            <div className="w-16 h-16 rounded-3xl bg-[var(--mousa-gold-soft)] border-2 border-[var(--mousa-gold)]/40 flex items-center justify-center text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)] mx-auto shadow-inner">
+              <Sparkles className="w-8 h-8 animate-pulse text-[var(--mousa-gold)]" />
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-xs px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">
+                {lang === 'ar' ? 'اكتملت القراءة بنجاح! 📖✨' : 'Reading Completed! 📖✨'}
+              </span>
+              <h3 className="text-xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] font-sans pt-2">
+                {lang === 'ar' ? 'جاري الانتقال لاختبار المراجعة...' : 'Transitioning to Review Quiz...'}
+              </h3>
+              <p className="text-xs text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] leading-relaxed">
+                {lang === 'ar' 
+                  ? 'حان وقت تثبيت المفاهيم الإيمانية والروحية التي تعلمتها في الدرس.' 
+                  : 'Time to test what you learned in this spiritual milestone!'}
+              </p>
+            </div>
+
+            {/* Smooth Animated Loading Bar */}
+            <div className="w-full bg-[var(--mousa-sand-200)] dark:bg-stone-800 h-2.5 rounded-full overflow-hidden">
+              <div className="bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] h-full w-full rounded-full animate-pulse" />
+            </div>
+
+            <button
+              onClick={() => {
+                setIsTransitioningToQuiz(false);
+                setIsTakingQuiz(true);
+              }}
+              className="text-xs text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)] font-bold hover:underline cursor-pointer block mx-auto pt-2"
+            >
+              {lang === 'ar' ? 'بدء الاختبار فوراً ←' : 'Start Quiz Immediately →'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
