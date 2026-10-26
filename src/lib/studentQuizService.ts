@@ -73,6 +73,21 @@ export async function getActiveLessonQuiz(
   }
 }
 
+export interface SubmitQuizAttemptResult {
+  data: StudentQuizAttempt | null;
+  error: Error | null;
+  isDuplicate?: boolean;
+  isFirstCompletion?: boolean;
+  pointsEarned?: number;
+  totalPoints?: number;
+  streak?: {
+    currentStreak: number;
+    longestStreak: number;
+    streakGained: boolean;
+    lastActiveCairoDate?: string;
+  };
+}
+
 /**
  * 2. submitStudentQuizAttempt(input)
  * Submits student answers to the server.
@@ -80,7 +95,7 @@ export async function getActiveLessonQuiz(
  */
 export async function submitStudentQuizAttempt(
   input: SubmitQuizAttemptInput
-): Promise<{ data: StudentQuizAttempt | null; error: Error | null }> {
+): Promise<SubmitQuizAttemptResult> {
   const { lessonId, versionId, quizId, answers, studentId, idempotencyKey, attemptId } = input;
   if (!lessonId || !versionId || !quizId) {
     return { data: null, error: new Error('lessonId, versionId, and quizId are required') };
@@ -138,7 +153,19 @@ export async function submitStudentQuizAttempt(
       }
     }
 
-    return { data: attempt, error: null };
+    return {
+      data: attempt,
+      error: null,
+      isDuplicate: Boolean(json.isDuplicate),
+      isFirstCompletion: Boolean(json.isFirstCompletion),
+      pointsEarned: Number(json.pointsEarned ?? 0),
+      totalPoints: Number(json.totalPoints ?? 0),
+      streak: json.streak || {
+        currentStreak: 0,
+        longestStreak: 0,
+        streakGained: false
+      }
+    };
   } catch (err: any) {
     return {
       data: null,

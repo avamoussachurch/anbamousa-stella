@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen, Sparkles } from 'lucide-react';
+import { BookOpen, Sparkles, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { mockLessons } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { useLessons } from '../../context/LessonsContext';
@@ -16,6 +16,8 @@ import { startLessonProgress, completeSectionProgress, completeLessonProgress, d
 import { submitStudentQuizAttempt, getStudentQuizAttempts } from '../../lib/studentQuizService';
 import { getStudentMastery, evaluateStudentMastery } from '../../lib/studentMasteryService';
 import { getClassGroupForGrade, getClassGroupLabel, getClassGroupById } from '../../lib/classGroups';
+import { updateLeaderboardUser } from '../../lib/pointsService';
+import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 
 export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string; onBack: () => void; lang?: Language }) {
   const { userData, isGuest, addPoints, setUserDirectly } = useAuth();
@@ -355,10 +357,6 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
 
       if (hasQuiz) {
         setIsTransitioningToQuiz(true);
-        setTimeout(() => {
-          setIsTransitioningToQuiz(false);
-          setIsTakingQuiz(true);
-        }, 1100);
       }
     } catch (err: any) {
       console.error(err);
@@ -413,9 +411,38 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
                 );
               }
 
+              // Authoritative streak and points synchronization across all screens
+              if (userData) {
+                const nextPoints = typeof res.totalPoints === 'number' ? res.totalPoints : userData.points;
+                const nextStreak = res.streak?.currentStreak ?? userData.currentStreak ?? 1;
+                const nextLongest = res.streak?.longestStreak ?? Math.max(userData.longestStreak ?? 1, nextStreak);
+                const updatedUser = {
+                  ...userData,
+                  points: nextPoints,
+                  currentStreak: nextStreak,
+                  longestStreak: nextLongest
+                };
+                setUserDirectly(updatedUser);
+                updateLeaderboardUser(updatedUser, res.pointsEarned ?? 0);
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('church_user_updated', { detail: updatedUser }));
+                }
+              }
+
+              if (refreshProgressSummary) {
+                try {
+                  await refreshProgressSummary();
+                } catch (_) {}
+              }
+
               return {
                 success: !res.error,
                 data: res.data,
+                isDuplicate: res.isDuplicate,
+                isFirstCompletion: res.isFirstCompletion,
+                pointsEarned: res.pointsEarned,
+                totalPoints: res.totalPoints,
+                streak: res.streak,
                 error: res.error?.message
               };
             } else {
@@ -482,42 +509,65 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
         }}
       />
 
-      {/* Clear Transition Animation Between Lesson Reading and Quiz */}
+      {/* Prominent Reading-Complete Transition Dialog with Large Attractive Start Quiz Button */}
       {isTransitioningToQuiz && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-gold)] rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-4 shadow-2xl animate-in zoom-in-95">
-            <div className="w-16 h-16 rounded-3xl bg-[var(--mousa-gold-soft)] border-2 border-[var(--mousa-gold)]/40 flex items-center justify-center text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)] mx-auto shadow-inner">
-              <Sparkles className="w-8 h-8 animate-pulse text-[var(--mousa-gold)]" />
-            </div>
+        <div 
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 animate-in fade-in"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-gold)] rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center space-y-5 shadow-2xl animate-in zoom-in-95 my-auto">
+            {/* Reusable RewardCelebration with Star pulse */}
+            <RewardCelebration
+              type="star"
+              pulse={true}
+              lang={lang}
+              badgeText={lang === 'ar' ? 'اكتملت القراءة بنجاح! 📖✨' : 'Reading Completed! 📖✨'}
+              titleAr="حان وقت اختبار مراجعة الدرس!"
+              title="Time for Your Review Quiz!"
+              subtitleAr="أحسنت إتمام القراءة! اختبر استيعابك الآن وأكمل الاختبار لكسب النقاط وتثبيت حضورك اليومي."
+              subtitle="Great job completing the reading! Test your knowledge now — complete the quiz to earn points and advance your streak!"
+            />
 
-            <div className="space-y-1">
-              <span className="text-xs px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">
-                {lang === 'ar' ? 'اكتملت القراءة بنجاح! 📖✨' : 'Reading Completed! 📖✨'}
-              </span>
-              <h3 className="text-xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] font-sans pt-2">
-                {lang === 'ar' ? 'جاري الانتقال لاختبار المراجعة...' : 'Transitioning to Review Quiz...'}
-              </h3>
-              <p className="text-xs text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] leading-relaxed">
-                {lang === 'ar' 
-                  ? 'حان وقت تثبيت المفاهيم الإيمانية والروحية التي تعلمتها في الدرس.' 
-                  : 'Time to test what you learned in this spiritual milestone!'}
-              </p>
-            </div>
+            {/* VERY LARGE, OBVIOUS, ATTRACTIVE, AND EASY TO TAP START QUIZ BUTTON */}
+            <div className="pt-2 space-y-3">
+              <button
+                onClick={() => {
+                  setIsTransitioningToQuiz(false);
+                  setIsTakingQuiz(true);
+                }}
+                data-testid="start-quiz-button"
+                className="w-full min-h-[58px] sm:min-h-[66px] py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-110 active:scale-98 text-white font-black shadow-xl ring-4 ring-amber-400/40 flex items-center justify-between gap-3 transition-all cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-6 h-6 text-yellow-200 group-hover:rotate-12 transition-transform" />
+                </div>
 
-            {/* Smooth Animated Loading Bar */}
-            <div className="w-full bg-[var(--mousa-sand-200)] dark:bg-stone-800 h-2.5 rounded-full overflow-hidden">
-              <div className="bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] h-full w-full rounded-full animate-pulse" />
-            </div>
+                <div className="flex flex-col items-center justify-center leading-tight flex-1">
+                  <span className="text-base sm:text-xl font-black font-sans tracking-wide">
+                    {lang === 'ar' ? 'ابدأ اختبار المراجعة الآن ⚡' : 'Start Review Quiz'}
+                  </span>
+                  <span className="text-[11px] sm:text-xs font-bold text-amber-100 opacity-95">
+                    {lang === 'ar' ? 'أكمل الاختبار لكسب النقاط • Complete the quiz to earn points.' : 'Complete the quiz to earn points.'}
+                  </span>
+                </div>
 
-            <button
-              onClick={() => {
-                setIsTransitioningToQuiz(false);
-                setIsTakingQuiz(true);
-              }}
-              className="text-xs text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)] font-bold hover:underline cursor-pointer block mx-auto pt-2"
-            >
-              {lang === 'ar' ? 'بدء الاختبار فوراً ←' : 'Start Quiz Immediately →'}
-            </button>
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  {lang === 'ar' ? (
+                    <ChevronLeft className="w-6 h-6 text-white group-hover:-translate-x-0.5 transition-transform" />
+                  ) : (
+                    <ChevronRight className="w-6 h-6 text-white group-hover:translate-x-0.5 transition-transform" />
+                  )}
+                </div>
+              </button>
+
+              <button
+                onClick={() => setIsTransitioningToQuiz(false)}
+                className="w-full py-2 px-4 text-xs font-bold text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal-deep)] dark:hover:text-white transition-colors cursor-pointer rounded-xl hover:bg-black/5 dark:hover:bg-white/5"
+              >
+                {lang === 'ar' ? 'العودة لمراجعة نص الدرس' : 'Stay on lesson reading text'}
+              </button>
+            </div>
           </div>
         </div>
       )}

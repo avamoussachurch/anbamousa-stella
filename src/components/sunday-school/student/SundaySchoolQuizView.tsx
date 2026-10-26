@@ -12,9 +12,17 @@ import {
   Sparkles,
   AlertCircle,
   RefreshCw,
-  BookOpen
+  BookOpen,
+  Trophy,
+  Flame,
+  PartyPopper,
+  Crown,
+  Star,
+  Heart
 } from 'lucide-react';
 import { QuizDraft, StudentQuizAttempt, QuizAnswer, Language } from '../../../types';
+import { ConfettiCanvas } from './ConfettiCanvas';
+import { RewardCelebration } from './RewardCelebration';
 
 interface SundaySchoolQuizViewProps {
   quiz: QuizDraft;
@@ -27,6 +35,15 @@ interface SundaySchoolQuizViewProps {
     success: boolean;
     data?: StudentQuizAttempt | null;
     isDuplicate?: boolean;
+    isFirstCompletion?: boolean;
+    pointsEarned?: number;
+    totalPoints?: number;
+    streak?: {
+      currentStreak: number;
+      longestStreak: number;
+      streakGained: boolean;
+      lastActiveCairoDate?: string;
+    };
     error?: string;
   }>;
   onReviewSection: (sectionId: string) => void;
@@ -53,6 +70,19 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationWarning, setValidationWarning] = useState<string | null>(null);
   const [submittedAttempt, setSubmittedAttempt] = useState<StudentQuizAttempt | null>(null);
+  const [submissionResult, setSubmissionResult] = useState<{
+    attempt: StudentQuizAttempt | null;
+    isDuplicate: boolean;
+    isFirstCompletion: boolean;
+    pointsEarned: number;
+    totalPoints: number;
+    streak: {
+      currentStreak: number;
+      longestStreak: number;
+      streakGained: boolean;
+      lastActiveCairoDate?: string;
+    };
+  } | null>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -124,20 +154,13 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
     setSubmitError(null);
     setValidationWarning(null);
 
-    let earnedPoints = 0;
-    let totalPossiblePoints = 0;
     let correctCount = 0;
 
     const recordedAnswers: QuizAnswer[] = questions.map(q => {
-      const qDiff = q.difficulty || 'EASY';
-      const qPts = q.points || (qDiff === 'HARD' ? 30 : qDiff === 'MEDIUM' ? 20 : 10);
-      totalPossiblePoints += qPts;
-
       const selected = selectedAnswers[q.id];
       const isCorrect = selected === q.correctIndex;
       if (isCorrect) {
         correctCount += 1;
-        earnedPoints += qPts;
       }
 
       return {
@@ -145,7 +168,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
         selectedOptionIndex: selected ?? -1,
         isCorrect,
         feedbackEn: isCorrect 
-          ? (q.explanationEn || `Correct! +${qPts} points earned.`) 
+          ? (q.explanationEn || `Correct! Answer verified.`) 
           : `Review needed: ${q.explanationEn || 'See lesson text.'}`,
         feedbackAr: q.explanationAr,
         recommendedSectionId: q.sourceRef?.sectionId,
@@ -153,19 +176,19 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
       };
     });
 
-    const percentage = totalPossiblePoints > 0 
-      ? Math.round((earnedPoints / totalPossiblePoints) * 100) 
-      : Math.round((correctCount / questions.length) * 100);
+    const percentage = questions.length > 0 
+      ? Math.round((correctCount / questions.length) * 100) 
+      : 0;
 
     try {
       const result = await onSubmitAttempt({
         studentId,
         lessonId,
         quizId: quiz.id,
-        score: earnedPoints,
-        totalScore: totalPossiblePoints || questions.length,
+        score: correctCount,
+        totalScore: questions.length,
         percentage,
-        passed: percentage >= 70,
+        passed: percentage >= 50,
         answers: recordedAnswers
       });
 
@@ -176,6 +199,18 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
       if (result.data) {
         setSubmittedAttempt(result.data);
       }
+      setSubmissionResult({
+        attempt: result.data || null,
+        isDuplicate: Boolean(result.isDuplicate),
+        isFirstCompletion: Boolean(result.isFirstCompletion),
+        pointsEarned: Number(result.pointsEarned ?? 0),
+        totalPoints: Number(result.totalPoints ?? 0),
+        streak: result.streak || {
+          currentStreak: 0,
+          longestStreak: 0,
+          streakGained: false
+        }
+      });
       setIsSubmitted(true);
       setIsSubmitting(false);
     } catch (err: any) {
@@ -193,26 +228,23 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
     setSubmitError(null);
     setValidationWarning(null);
     setSubmittedAttempt(null);
+    setSubmissionResult(null);
   };
 
-  // Result Calculation for submitted view
-  let finalPoints = 0;
-  let finalMaxPoints = 0;
-  let finalCorrectCount = 0;
+  // Result Calculation for submitted view (Authoritative & Raw Question Count)
+  let calculatedCorrectCount = 0;
   questions.forEach(q => {
-    const qDiff = q.difficulty || 'EASY';
-    const qPts = q.points || (qDiff === 'HARD' ? 30 : qDiff === 'MEDIUM' ? 20 : 10);
-    finalMaxPoints += qPts;
     if (selectedAnswers[q.id] === q.correctIndex) {
-      finalCorrectCount += 1;
-      finalPoints += qPts;
+      calculatedCorrectCount += 1;
     }
   });
-  const calculatedPercentage = finalMaxPoints > 0 
-    ? Math.round((finalPoints / finalMaxPoints) * 100) 
-    : Math.round((finalCorrectCount / questions.length) * 100);
+  const calculatedPercentage = questions.length > 0 
+    ? Math.round((calculatedCorrectCount / questions.length) * 100) 
+    : 0;
 
   const displayPercentage = submittedAttempt?.percentage ?? calculatedPercentage;
+  const displayCorrectCount = submittedAttempt?.score ?? calculatedCorrectCount;
+  const displayTotalQuestions = submittedAttempt?.totalScore ?? questions.length;
 
   if (questions.length === 0) {
     return (
@@ -488,44 +520,216 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
           </div>
         </div>
       ) : (
-        /* Results Screen */
-        <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-border-sand)] rounded-3xl p-6 sm:p-10 space-y-6 shadow-md text-center animate-in fade-in">
-          <div className="w-16 h-16 rounded-3xl bg-[var(--mousa-gold-soft)] border-2 border-[var(--mousa-gold)]/40 flex items-center justify-center text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)] mx-auto shadow-inner">
-            <Award className="w-8 h-8" />
-          </div>
+        /* Results Screen with Celebrations, Points & Streak */
+        <div className="relative bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-border-sand)] rounded-3xl p-6 sm:p-10 space-y-7 shadow-md text-center animate-in fade-in overflow-hidden">
+          {/* Confetti & Particle Celebration Styles (Always plays without reduced-motion suppression) */}
+          <style>{`
+            @keyframes celebrationFall {
+              0% { transform: translateY(-24px) rotate(0deg) scale(0.8); opacity: 0; }
+              15% { opacity: 1; transform: translateY(10px) rotate(45deg) scale(1.1); }
+              85% { opacity: 0.9; }
+              100% { transform: translateY(380px) rotate(360deg) scale(0.9); opacity: 0; }
+            }
+          `}</style>
 
-          <div className="space-y-1.5">
-            <h2 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] font-sans">
-              {isAr ? 'اكتمل الاختبار وحُفظت النتيجة بنجاح!' : 'Assessment Completed!'}
-            </h2>
-            <p className="text-xs text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)]">
-              {isAr
-                ? 'تم تسجيل نتيجتك وإجاباتك على الخادم وربطها بسجلك الكنسي.'
-                : 'Your answers and score have been saved to the server.'}
-            </p>
-          </div>
+          {/* Lightweight Canvas Confetti Component: triggers only after server confirms 100% */}
+          {displayPercentage === 100 && <ConfettiCanvas />}
 
-          {/* Big Score Box */}
-          <div className="p-6 bg-[var(--mousa-cream)] dark:bg-stone-900/80 rounded-2xl border-2 border-[var(--mousa-border-sand)] max-w-sm mx-auto space-y-2">
-            <div className="text-5xl font-black font-mono text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold)]">
-              {displayPercentage}%
+          {/* 100% Tier Party Particles Animation */}
+          {displayPercentage === 100 && (
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl" aria-hidden="true">
+              {[...Array(24)].map((_, i) => (
+                <span
+                  key={i}
+                  className="celebration-particle absolute select-none pointer-events-none"
+                  style={{
+                    left: `${(i * 4.1 + 3) % 94}%`,
+                    animation: `celebrationFall ${2.3 + (i % 4) * 0.35}s ease-in-out infinite`,
+                    animationDelay: `${(i * 0.16) % 2.4}s`,
+                    fontSize: `${16 + (i % 3) * 6}px`
+                  }}
+                >
+                  {['✨', '🎉', '🌟', '👑', '☩', '⭐', '🎊', '💛', '🕊️'][i % 9]}
+                </span>
+              ))}
             </div>
-            <p className="text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-              {isAr
-                ? `${finalCorrectCount} من ${questions.length} إجابات صحيحة`
-                : `${finalCorrectCount} of ${questions.length} Questions Correct`}
-            </p>
-            <p className="text-[11px] text-[var(--mousa-sand-500)] font-bold">
-              {displayPercentage >= 70
-                ? (isAr ? '✨ إتقان ممتاز للمفاهيم الإيمانية' : '✨ High Milestone Mastery')
-                : (isAr ? '📖 يوصى بمراجعة أقسام القراءة لترسيخ المفاهيم' : '📖 Review Recommended')}
-            </p>
+          )}
+
+          {/* Duplicate Submission Recovery Notice */}
+          {submissionResult?.isDuplicate && (
+            <div className="p-3 bg-amber-50/90 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700/80 rounded-2xl text-xs text-amber-900 dark:text-amber-200 flex items-center justify-center gap-2 shadow-xs">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span className="font-bold">
+                {isAr
+                  ? 'تم استرجاع النتيجة المعتمدة مسبقاً بنجاح وفقاً لنظام حماية التكرار الدائم.'
+                  : 'Your previously recorded attempt was safely returned via durable duplicate protection.'}
+              </span>
+            </div>
+          )}
+
+          {/* Reusable RewardCelebration with gentle pulsing trophy or star */}
+          <RewardCelebration
+            type={displayPercentage === 100 ? 'trophy' : 'star'}
+            pulse={true}
+            lang={lang}
+            streakGained={submissionResult?.streak?.streakGained}
+            badgeText={
+              displayPercentage === 100 
+                ? 'Ⲁⲝⲓⲟⲥ • Ⲡⲓⲙⲁⲑⲏⲧⲏⲥ ⲛ̀ⲧⲉ Ⲡⲭ̅ⲥ̅'
+                : displayPercentage >= 80
+                ? 'Ⲧⲁϫⲣⲟ ϧⲉⲛ ⲡⲓⲛⲁϩϯ • Ϣⲉⲡϩⲙⲟⲧ'
+                : displayPercentage >= 50
+                ? 'Ⲕⲁⲗⲱⲥ • Ⲙⲁⲣⲉⲛⲧⲁϫⲣⲟ'
+                : 'Ⲙⲡⲉⲣⲉⲣϩⲟϯ • Ⲧⲁϫⲣⲟ'
+            }
+            titleAr={
+              displayPercentage === 100
+                ? 'مبارك يا بطل! علامة كاملة ١٠٠٪ وإتقان كنسي فائق! 🌟👑'
+                : displayPercentage >= 80
+                ? 'عمل رائع ومبارك! استيعاب متميز لمفاهيم الدرس! 🎉✨'
+                : displayPercentage >= 50
+                ? 'اكتمل الدرس بنجاح! أحسنت وبإمكانك تحقيق الأفضل بمزيد من المراجعة 👍📖'
+                : 'محاولة طيبة يا بطل! لا تستسلم، راجع أقسام القراءة وحاول مرة أخرى! 💪✝️'
+            }
+            title={
+              displayPercentage === 100
+                ? 'Outstanding! 100% Perfect Score & Exemplary Church Mastery! 🌟👑'
+                : displayPercentage >= 80
+                ? 'Great Job! Impressive Mastery and Faithful Understanding! 🎉✨'
+                : displayPercentage >= 50
+                ? 'Lesson Completed! Well done, with room to grow through review! 👍📖'
+                : 'Good Effort! Keep going — review the lesson and try once more! 💪✝️'
+            }
+            subtitleAr={
+              displayPercentage === 100
+                ? '«كُنْتَ أَمِينًا فِي الْقَلِيلِ فَأُقِيمُكَ عَلَى الْكَثِيرِ، ادْخُلْ إِلَى فَرَحِ سَيِّدِكَ» (متى ٢٥: ٢١)'
+                : displayPercentage >= 80
+                ? '«اِنْمُوا فِي النِّعْمَةِ وَفِي مَعْرِفَةِ رَبِّنَا وَمُخَلِّصِنَا يَسُوعَ الْمَسِيحِ» (٢ بطرس ٣: ١٨)'
+                : displayPercentage >= 50
+                ? 'لقد اجتزت متطلبات الاختبار بنجاح. راجع الأسئلة الموصى بها بالأسفل لتثبيت المفاهيم.'
+                : `الدرجة الحالية (${displayPercentage}٪) أقل من الحد المطلوب للاجتياز (٥٠٪). أعد قراءة الأقسام بالأسفل ثم أعد الاختبار لكسب +٥٠ نقطة وتحديث حماسك!`
+            }
+            subtitle={
+              displayPercentage === 100
+                ? '“You have been faithful over a little; I will set you over much. Enter into the joy of your master.” (Matthew 25:21)'
+                : displayPercentage >= 80
+                ? '“Grow in the grace and knowledge of our Lord and Savior Jesus Christ.” (2 Peter 3:18)'
+                : displayPercentage >= 50
+                ? 'You successfully completed the review. Check the recommended sections below to deepen your knowledge.'
+                : `Score (${displayPercentage}%) is below the passing completion threshold (50%). Review the recommended reading sections below, then retake the quiz to earn your 50 points and build your streak!`
+            }
+          />
+
+          {/* High-Contrast 'card-church' Breakdown: Score, Total Points, and Streak Status */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 max-w-3xl mx-auto pt-2 text-start">
+            {/* 1. Score Card (card-church) */}
+            <div className="card-church p-4 sm:p-5 bg-white dark:bg-[#28211C] border-2 border-[var(--border-stone)] dark:border-[#4A3C2E] shadow-sm space-y-2 flex flex-col justify-between min-h-[140px]">
+              <div className="text-xs font-black uppercase tracking-wider text-stone-600 dark:text-stone-400 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-[var(--brand-gold-dark)] dark:text-[var(--mousa-gold)]" />
+                  <span>{isAr ? 'الدرجة المحققة' : 'Final Score'}</span>
+                </span>
+                <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md ${
+                  displayPercentage >= 80
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                    : displayPercentage >= 50
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                    : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                }`}>
+                  {displayPercentage === 100 
+                    ? (isAr ? 'كاملة 🌟' : 'Perfect 🌟')
+                    : displayPercentage >= 50
+                    ? (isAr ? 'اجتياز ✓' : 'Passed ✓')
+                    : (isAr ? 'مراجعة 📖' : 'Review 📖')}
+                </span>
+              </div>
+              
+              <div className="space-y-0.5 my-auto">
+                <div className="text-3xl sm:text-4xl font-black font-mono tabular-nums text-stone-900 dark:text-stone-50 tracking-tight">
+                  {displayPercentage}%
+                </div>
+                <div className="text-xs font-bold text-stone-600 dark:text-stone-300">
+                  {displayCorrectCount} / {displayTotalQuestions} {isAr ? 'إجابات صحيحة' : 'correct answers'}
+                </div>
+              </div>
+
+              <div className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 pt-1 border-t border-[var(--border-stone)]/40 dark:border-stone-800">
+                {displayPercentage >= 50
+                  ? (isAr ? 'تم إتمام الاختبار بنجاح' : 'Requirement met successfully')
+                  : (isAr ? 'أعد المحاولة لبلوغ ٥٠٪' : 'Retake to reach 50%')}
+              </div>
+            </div>
+
+            {/* 2. Total Points Card (card-church) */}
+            <div className="card-church p-4 sm:p-5 bg-white dark:bg-[#28211C] border-2 border-[var(--border-stone)] dark:border-[#4A3C2E] shadow-sm space-y-2 flex flex-col justify-between min-h-[140px]">
+              <div className="text-xs font-black uppercase tracking-wider text-stone-600 dark:text-stone-400 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Trophy className="w-4 h-4 text-[var(--brand-gold-dark)] dark:text-[var(--mousa-gold)]" />
+                  <span>{isAr ? 'رصيد نقاط البركة' : 'Total Points'}</span>
+                </span>
+                {(submissionResult?.pointsEarned ?? 0) > 0 && (
+                  <span className="text-[11px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                    +{(submissionResult?.pointsEarned ?? 0)}
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-0.5 my-auto">
+                <div className="text-3xl sm:text-4xl font-black font-mono tabular-nums text-[var(--brand-gold-dark)] dark:text-[var(--mousa-gold)] tracking-tight">
+                  {submissionResult?.totalPoints ?? 0}
+                </div>
+                <div className="text-xs font-bold text-stone-600 dark:text-stone-300">
+                  {(submissionResult?.pointsEarned ?? 0) > 0
+                    ? (isAr ? `+${submissionResult?.pointsEarned} نقطة مكتسبة للرصيد` : `+${submissionResult?.pointsEarned} points added`)
+                    : displayPercentage >= 50
+                    ? (isAr ? 'مكافأة أول إتمام معتمدة مسبقاً' : 'First-time points previously claimed')
+                    : (isAr ? 'أعد الاختبار لكسب +٥٠ نقطة' : 'Retake to earn +50 points')}
+                </div>
+              </div>
+
+              <div className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 pt-1 border-t border-[var(--border-stone)]/40 dark:border-stone-800">
+                {isAr ? 'رصيد التلميذ الكلي المعتمد' : 'Official student balance'}
+              </div>
+            </div>
+
+            {/* 3. Streak Status Card (card-church) */}
+            <div className="card-church p-4 sm:p-5 bg-white dark:bg-[#28211C] border-2 border-[var(--border-stone)] dark:border-[#4A3C2E] shadow-sm space-y-2 flex flex-col justify-between min-h-[140px]">
+              <div className="text-xs font-black uppercase tracking-wider text-stone-600 dark:text-stone-400 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  <span>{isAr ? 'الحماس والمواظبة' : 'Daily Streak'}</span>
+                </span>
+                <span className="text-[11px] font-black px-2 py-0.5 rounded-md bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-200">
+                  {submissionResult?.streak?.streakGained 
+                    ? (isAr ? '🔥 امتداد اليوم' : '🔥 Extended')
+                    : (isAr ? '✓ نشط اليوم' : '✓ Active')}
+                </span>
+              </div>
+
+              <div className="space-y-0.5 my-auto">
+                <div className="text-3xl sm:text-4xl font-black font-mono tabular-nums text-amber-600 dark:text-amber-400 tracking-tight">
+                  {submissionResult?.streak?.currentStreak ?? 0} {isAr ? 'أيام' : 'Days'}
+                </div>
+                <div className="text-xs font-bold text-stone-600 dark:text-stone-300">
+                  {submissionResult?.streak?.streakGained
+                    ? (isAr ? 'تم تمديد سلسلة حماسك بنجاح اليوم! 🔥' : 'Streak extended today! 🔥')
+                    : (isAr ? 'حضورك الكنسي ونشاطك مسجل لليوم' : 'Daily activity confirmed today')}
+                </div>
+              </div>
+
+              <div className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 pt-1 border-t border-[var(--border-stone)]/40 dark:border-stone-800">
+                {isAr 
+                  ? `أطول مواظبة مسجلة: ${submissionResult?.streak?.longestStreak ?? submissionResult?.streak?.currentStreak ?? 0} يوم` 
+                  : `Longest streak: ${submissionResult?.streak?.longestStreak ?? submissionResult?.streak?.currentStreak ?? 0} days`}
+              </div>
+            </div>
           </div>
 
           {/* Question Review & Targeted Section Jump Links */}
-          <div className="space-y-3 text-start pt-4">
-            <h3 className="text-xs font-black uppercase tracking-wider text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-              {isAr ? 'مراجعة الأسئلة والأقسام المستهدفة' : 'Targeted Review & Diagnostics'}
+          <div className="space-y-3 text-start pt-2">
+            <h3 className="text-xs font-black uppercase tracking-wider text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-[var(--mousa-gold)]" />
+              <span>{isAr ? 'مراجعة الأسئلة والأقسام المستهدفة' : 'Targeted Review & Diagnostics'}</span>
             </h3>
 
             {questions.map((q, idx) => {
@@ -578,7 +782,11 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
           <div className="pt-4 border-t border-[var(--mousa-border-sand)] flex items-center justify-center gap-3 flex-wrap">
             <button
               onClick={handleRetake}
-              className="px-4 py-2.5 bg-[var(--mousa-sand-100)] dark:bg-stone-800 hover:bg-[var(--mousa-sand-200)] text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer min-h-[44px]"
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] ${
+                displayPercentage < 50
+                  ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-md ring-2 ring-amber-400/40'
+                  : 'bg-[var(--mousa-sand-100)] dark:bg-stone-800 hover:bg-[var(--mousa-sand-200)] text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]'
+              }`}
             >
               <RotateCcw className="w-4 h-4" />
               <span>{isAr ? 'إعادة الاختبار' : 'Retake Quiz'}</span>

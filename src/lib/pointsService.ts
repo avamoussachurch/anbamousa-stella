@@ -33,7 +33,7 @@ export function getLeaderboard(currentUser?: User | null): LeaderboardEntry[] {
         studentId: currentUser.id,
         studentName: currentUser.fullName.split(' ')[0] + ' ' + (currentUser.fullName.split(' ')[1]?.[0] || '') + '.',
         avatarUrl: currentUser.avatarUrl || list[existingIndex].avatarUrl,
-        pointsThisWeek: Math.max(list[existingIndex].pointsThisWeek, Math.min(currentUser.points, 250)),
+        pointsThisWeek: currentUser.points, // Synchronized with true user points
       };
     } else {
       list.push({
@@ -41,7 +41,7 @@ export function getLeaderboard(currentUser?: User | null): LeaderboardEntry[] {
         studentId: currentUser.id,
         studentName: currentUser.fullName.split(' ')[0] + ' ' + (currentUser.fullName.split(' ')[1]?.[0] || '') + '.',
         avatarUrl: currentUser.avatarUrl,
-        pointsThisWeek: Math.min(currentUser.points, 120),
+        pointsThisWeek: currentUser.points, // Synchronized with true user points
         rank: list.length + 1,
       });
     }
@@ -69,10 +69,12 @@ export function updateLeaderboardUser(
 ): LeaderboardEntry[] {
   let list = getLeaderboard(currentUser);
 
-  const userIndex = list.findIndex((e) => e.studentId === currentUser.id);
+  const userIndex = list.findIndex(
+    (e) => e.studentId === currentUser.id || (currentUser.id.startsWith('guest_') && e.studentId === 'u1')
+  );
   if (userIndex >= 0) {
-    list[userIndex].pointsThisWeek = Math.max(0, (list[userIndex].pointsThisWeek || 0) + pointsDelta);
-    list[userIndex].avatarUrl = currentUser.avatarUrl;
+    list[userIndex].pointsThisWeek = currentUser.points;
+    list[userIndex].avatarUrl = currentUser.avatarUrl || list[userIndex].avatarUrl;
     list[userIndex].studentName = currentUser.fullName.split(' ')[0] + ' ' + (currentUser.fullName.split(' ')[1]?.[0] || '') + '.';
   } else {
     list.push({
@@ -80,7 +82,7 @@ export function updateLeaderboardUser(
       studentId: currentUser.id,
       studentName: currentUser.fullName.split(' ')[0] + ' ' + (currentUser.fullName.split(' ')[1]?.[0] || '') + '.',
       avatarUrl: currentUser.avatarUrl,
-      pointsThisWeek: Math.max(0, pointsDelta),
+      pointsThisWeek: currentUser.points,
       rank: list.length + 1,
     });
   }
@@ -183,15 +185,31 @@ const DEFAULT_STREAK_LEADERBOARD: StreakLeaderboardEntry[] = [
   { id: 'st-7', studentId: 's-mark', studentName: 'Mark Fady', studentNameAr: 'مارك فادي', avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mark', streakDays: 2, longestStreak: 4, rank: 7 },
 ];
 
+const STREAK_LEADERBOARD_STORAGE_KEY = 'church_streak_leaderboard_data';
+
 export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboardEntry[] {
-  let list = [...DEFAULT_STREAK_LEADERBOARD];
+  let list: StreakLeaderboardEntry[] = [];
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(STREAK_LEADERBOARD_STORAGE_KEY);
+      if (saved) {
+        list = JSON.parse(saved);
+      }
+    } catch (_) {}
+  }
+
+  if (!list || list.length === 0) {
+    list = [...DEFAULT_STREAK_LEADERBOARD];
+  }
 
   if (currentUser) {
     const userStreak = currentUser.currentStreak ?? 1;
     const userLongest = currentUser.longestStreak ?? userStreak;
 
     const existingIdx = list.findIndex(
-      (e) => e.studentId === currentUser.id || (currentUser.id.startsWith('guest_') && e.studentId === 'u1')
+      (e) => e.studentId === currentUser.id || 
+             (currentUser.id.startsWith('guest_') && e.studentId === 'u1') ||
+             (currentUser.role === 'student' && !currentUser.id.startsWith('s-') && e.studentId === 'u1')
     );
 
     if (existingIdx >= 0) {
@@ -223,6 +241,12 @@ export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboa
       ...item,
       rank: index + 1
     }));
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STREAK_LEADERBOARD_STORAGE_KEY, JSON.stringify(list));
+      } catch (_) {}
+    }
   }
 
   return list;

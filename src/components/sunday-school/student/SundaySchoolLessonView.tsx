@@ -16,7 +16,8 @@ import {
   FileText,
   Image as ImageIcon,
   Presentation,
-  Compass
+  Compass,
+  Sparkles
 } from 'lucide-react';
 import {
   Lesson,
@@ -702,10 +703,11 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           {hasQuiz && (
             <button
               onClick={onStartQuiz}
-              className="px-5 py-2.5 bg-[var(--mousa-cream-surface)] hover:bg-[var(--mousa-sand-100)] text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] border-2 border-[var(--mousa-gold)] rounded-xl text-xs sm:text-sm font-black shadow-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              data-testid="lesson-footer-start-quiz-button"
+              className="px-6 py-3 bg-gradient-to-r from-amber-500 via-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-110 text-white border-2 border-amber-300/40 rounded-2xl text-xs sm:text-sm font-black shadow-md ring-2 ring-amber-400/30 flex items-center gap-2 transition-all active:scale-95 cursor-pointer min-h-[48px]"
             >
-              <HelpCircle className="w-4 h-4 text-[var(--mousa-gold)]" />
-              <span>{isAr ? 'اختبار المراجعة' : 'Review Quiz'}</span>
+              <Sparkles className="w-4 h-4 text-yellow-200" />
+              <span>{isAr ? 'ابدأ اختبار المراجعة ⚡' : 'Start Review Quiz'}</span>
               {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
           )}
