@@ -41,10 +41,11 @@ export function LeaderboardPodium({ items, type, lang, currentUserId }: Leaderbo
   ) => {
     if (!item) return <div className="flex-1 opacity-20" />;
 
-    const isCurrent = currentUserId && (
+    const isCurrent = Boolean(currentUserId && (
       item.studentId === currentUserId || 
-      (currentUserId.startsWith('guest_') && item.studentId === 'u1')
-    );
+      (currentUserId.startsWith('guest_') && (item.studentId === 'u1' || item.studentId.startsWith('guest_'))) ||
+      (!item.studentId.startsWith('s-') && item.studentId === 'u1')
+    ));
 
     const displayName = isAr 
       ? (item.studentNameAr || item.studentName)

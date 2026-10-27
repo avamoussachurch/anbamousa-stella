@@ -23,8 +23,11 @@ const REWARD_PRODUCTS = [
   { id: '4', title: 'Cross Necklace', titleAr: 'صليب الكنيسة', cost: 200, icon: '✝️' },
 ];
 
+import { usePoints } from '../../context/PointsContext';
+
 export function PointsTab({ lang }: { lang: Language }) {
-  const { userData, addPoints } = useAuth();
+  const { userData } = useAuth();
+  const { points, currentStreak, longestStreak, leaderboard: displayLeaderboard, streakLeaderboard: displayStreaks, addPoints } = usePoints();
   
   // Section order:
   // 1. Streak Stars (نجوم الستريك) — DEFAULT
@@ -33,8 +36,6 @@ export function PointsTab({ lang }: { lang: Language }) {
   // 4. Points Bazaar (بازار النقط)
   const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar'>('streak');
   const [showStore, setShowStore] = useState(false);
-  const [leaderboardList, setLeaderboardList] = useState<LeaderboardEntry[]>(() => getLeaderboard(userData));
-  const [streakList, setStreakList] = useState<StreakLeaderboardEntry[]>(() => getStreakLeaderboard(userData));
   const [purchases, setPurchases] = useState<any[]>(() => userData ? getSavedPurchases(userData.id) : []);
   const [confirmPurchaseItem, setConfirmPurchaseItem] = useState<{ id: string; name: string; cost: number } | null>(null);
   const [feedbackToast, setFeedbackToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -45,21 +46,6 @@ export function PointsTab({ lang }: { lang: Language }) {
       setFeedbackToast(null);
     }, 4000);
   };
-
-  useEffect(() => {
-    setLeaderboardList(getLeaderboard(userData));
-    setStreakList(getStreakLeaderboard(userData));
-    const handleUpdate = () => {
-      setLeaderboardList(getLeaderboard(userData));
-      setStreakList(getStreakLeaderboard(userData));
-    };
-    window.addEventListener('church_leaderboard_updated', handleUpdate);
-    window.addEventListener('church_user_updated', handleUpdate);
-    return () => {
-      window.removeEventListener('church_leaderboard_updated', handleUpdate);
-      window.removeEventListener('church_user_updated', handleUpdate);
-    };
-  }, [userData]);
 
   useEffect(() => {
     if (!userData) return;
@@ -256,7 +242,7 @@ export function PointsTab({ lang }: { lang: Language }) {
 
             {/* Visual Top 3 Podium for Streaks */}
             <LeaderboardPodium 
-              items={streakList.slice(0, 3).map(e => ({
+              items={displayStreaks.slice(0, 3).map(e => ({
                 id: e.id,
                 studentId: e.studentId,
                 studentName: e.studentName,
@@ -275,7 +261,7 @@ export function PointsTab({ lang }: { lang: Language }) {
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-500 dark:text-stone-400 px-1">
                 {lang === 'ar' ? 'باقي رفقاء المسيرة' : 'Caravan Runners (Ranks 4+)'}
               </h3>
-              {streakList.slice(3).map((entry) => {
+              {displayStreaks.slice(3).map((entry) => {
                 const isCurrentUser = entry.studentId === userData.id || (userData.id.startsWith('guest_') && entry.studentId === 'u1');
                 return (
                   <motion.div 
@@ -450,7 +436,7 @@ export function PointsTab({ lang }: { lang: Language }) {
 
              {/* Visual Top 3 Podium for Points */}
              <LeaderboardPodium 
-               items={leaderboardList.slice(0, 3).map(e => ({
+               items={displayLeaderboard.slice(0, 3).map(e => ({
                  id: e.id,
                  studentId: e.studentId,
                  studentName: e.studentName,
@@ -468,8 +454,8 @@ export function PointsTab({ lang }: { lang: Language }) {
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-500 dark:text-stone-400 px-1">
                   {lang === 'ar' ? 'باقي رفقاء المسيرة' : 'Caravan Runners (Ranks 4+)'}
                 </h3>
-                {leaderboardList.slice(3).map((entry) => {
-                  const isCurrentUser = entry.studentId === userData.id;
+                {displayLeaderboard.slice(3).map((entry) => {
+                  const isCurrentUser = entry.studentId === userData.id || (userData.id.startsWith('guest_') && entry.studentId === 'u1');
                   return (
                     <motion.div 
                       key={entry.id || entry.studentId}

@@ -17,6 +17,9 @@ export interface SubmitQuizAttemptInput {
   percentage?: number;
   earnedPoints?: number;
   totalPointsPossible?: number;
+  currentPoints?: number;
+  currentStreak?: number;
+  quizQuestions?: any[];
   idempotencyKey?: string;
   attemptId?: string;
 }
@@ -112,6 +115,9 @@ export async function submitStudentQuizAttempt(
         quizId,
         answers,
         studentId,
+        currentPoints: input.currentPoints,
+        currentStreak: input.currentStreak,
+        quizQuestions: input.quizQuestions,
         idempotencyKey,
         attemptId
       })

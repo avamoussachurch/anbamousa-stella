@@ -767,6 +767,17 @@ export interface LeaderboardEntry {
   rank: number;
 }
 
+export interface StreakLeaderboardEntry {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentNameAr: string;
+  avatarUrl: string;
+  streakDays: number;
+  longestStreak: number;
+  rank: number;
+}
+
 // ==============================================================================
 // HYMNS SCHOOL ROSTER & ENROLLMENT TYPES
 // ==============================================================================

@@ -19,6 +19,7 @@ import { OfflineIndicator } from './components/layout/OfflineIndicator';
 import { GlobalMusicPlayer } from './components/layout/GlobalMusicPlayer';
 import { useAuth } from './context/AuthContext';
 import { LessonsProvider } from './context/LessonsContext';
+import { PointsProvider } from './context/PointsContext';
 import { Language } from './types';
 
 function AppContent() {
@@ -313,7 +314,9 @@ function AppContent() {
 export default function App() {
   return (
     <LessonsProvider>
-      <AppContent />
+      <PointsProvider>
+        <AppContent />
+      </PointsProvider>
     </LessonsProvider>
   );
 }

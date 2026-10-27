@@ -21,28 +21,43 @@ export function getLeaderboard(currentUser?: User | null): LeaderboardEntry[] {
     list = [...mockLeaderboard];
   }
 
-  // Ensure current user is in leaderboard if logged in
+  // Ensure current user is accurately and uniquely represented in leaderboard
   if (currentUser) {
+    const isGuest = currentUser.id.startsWith('guest_');
+    const userPoints = Math.max(0, currentUser.points ?? 0);
+    const displayName = currentUser.fullName.split(' ')[0] + ' ' + (currentUser.fullName.split(' ')[1]?.[0] || '') + '.';
+
+    // Match existing user entry or standard guest baseline ('u1' / any previous guest)
     const existingIndex = list.findIndex(
-      (e) => e.studentId === currentUser.id || (currentUser.id.startsWith('guest_') && e.studentId === 'u1')
+      (e) => e.studentId === currentUser.id ||
+             (isGuest && (e.studentId === 'u1' || e.studentId.startsWith('guest_'))) ||
+             (currentUser.role === 'student' && !currentUser.id.startsWith('s-') && e.studentId === 'u1')
     );
 
     if (existingIndex >= 0) {
       list[existingIndex] = {
         ...list[existingIndex],
         studentId: currentUser.id,
-        studentName: currentUser.fullName.split(' ')[0] + ' ' + (currentUser.fullName.split(' ')[1]?.[0] || '') + '.',
+        studentName: displayName,
         avatarUrl: currentUser.avatarUrl || list[existingIndex].avatarUrl,
-        pointsThisWeek: currentUser.points, // Synchronized with true user points
+        pointsThisWeek: userPoints, // Guaranteed synchronization with true user points
       };
     } else {
       list.push({
         id: 'lb_' + currentUser.id,
         studentId: currentUser.id,
-        studentName: currentUser.fullName.split(' ')[0] + ' ' + (currentUser.fullName.split(' ')[1]?.[0] || '') + '.',
+        studentName: displayName,
         avatarUrl: currentUser.avatarUrl,
-        pointsThisWeek: currentUser.points, // Synchronized with true user points
+        pointsThisWeek: userPoints,
         rank: list.length + 1,
+      });
+    }
+
+    // Clean up any stale duplicate guest entries
+    if (isGuest) {
+      list = list.filter((e, idx) => {
+        if (e.studentId.startsWith('guest_') && e.studentId !== currentUser.id) return false;
+        return true;
       });
     }
 
@@ -203,12 +218,13 @@ export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboa
   }
 
   if (currentUser) {
-    const userStreak = currentUser.currentStreak ?? 1;
-    const userLongest = currentUser.longestStreak ?? userStreak;
+    const isGuest = currentUser.id.startsWith('guest_');
+    const userStreak = Math.max(1, currentUser.currentStreak ?? 1);
+    const userLongest = Math.max(userStreak, currentUser.longestStreak ?? userStreak);
 
     const existingIdx = list.findIndex(
       (e) => e.studentId === currentUser.id || 
-             (currentUser.id.startsWith('guest_') && e.studentId === 'u1') ||
+             (isGuest && (e.studentId === 'u1' || e.studentId.startsWith('guest_'))) ||
              (currentUser.role === 'student' && !currentUser.id.startsWith('s-') && e.studentId === 'u1')
     );
 
@@ -220,7 +236,7 @@ export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboa
         studentNameAr: currentUser.fullName,
         avatarUrl: currentUser.avatarUrl || list[existingIdx].avatarUrl,
         streakDays: userStreak,
-        longestStreak: Math.max(userLongest, userStreak)
+        longestStreak: userLongest
       };
     } else {
       list.push({
@@ -232,6 +248,14 @@ export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboa
         streakDays: userStreak,
         longestStreak: userLongest,
         rank: list.length + 1
+      });
+    }
+
+    // Clean up any stale duplicate guest entries
+    if (isGuest) {
+      list = list.filter((e) => {
+        if (e.studentId.startsWith('guest_') && e.studentId !== currentUser.id) return false;
+        return true;
       });
     }
 
@@ -249,6 +273,17 @@ export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboa
     }
   }
 
+  return list;
+}
+
+export function updateStreakLeaderboardUser(currentUser: User): StreakLeaderboardEntry[] {
+  const list = getStreakLeaderboard(currentUser);
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(STREAK_LEADERBOARD_STORAGE_KEY, JSON.stringify(list));
+      window.dispatchEvent(new CustomEvent('church_streak_updated', { detail: list }));
+    } catch (_) {}
+  }
   return list;
 }
 

@@ -16,7 +16,7 @@ import { startLessonProgress, completeSectionProgress, completeLessonProgress, d
 import { submitStudentQuizAttempt, getStudentQuizAttempts } from '../../lib/studentQuizService';
 import { getStudentMastery, evaluateStudentMastery } from '../../lib/studentMasteryService';
 import { getClassGroupForGrade, getClassGroupLabel, getClassGroupById } from '../../lib/classGroups';
-import { updateLeaderboardUser } from '../../lib/pointsService';
+import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../../lib/pointsService';
 import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 
 export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string; onBack: () => void; lang?: Language }) {
@@ -389,7 +389,10 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
                 score: attempt.score,
                 percentage: attempt.percentage,
                 earnedPoints: attempt.earnedPoints,
-                totalPointsPossible: attempt.totalPointsPossible
+                totalPointsPossible: attempt.totalPointsPossible,
+                currentPoints: userData?.points,
+                currentStreak: userData?.currentStreak,
+                quizQuestions: activePublishedVersion.quizDraft?.questions
               });
               if (res.data) {
                 recordQuizAttempt(res.data);
@@ -413,9 +416,12 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
 
               // Authoritative streak and points synchronization across all screens
               if (userData) {
-                const nextPoints = typeof res.totalPoints === 'number' ? res.totalPoints : userData.points;
-                const nextStreak = res.streak?.currentStreak ?? userData.currentStreak ?? 1;
-                const nextLongest = res.streak?.longestStreak ?? Math.max(userData.longestStreak ?? 1, nextStreak);
+                const nextPoints = typeof res.totalPoints === 'number' && res.totalPoints > 0 ? res.totalPoints : userData.points;
+                const nextStreak = res.streak?.currentStreak && res.streak.currentStreak > 0 ? res.streak.currentStreak : (userData.currentStreak ?? 1);
+                const nextLongest = res.streak?.longestStreak && res.streak.longestStreak > 0 
+                  ? res.streak.longestStreak 
+                  : Math.max(userData.longestStreak ?? 1, nextStreak);
+
                 const updatedUser = {
                   ...userData,
                   points: nextPoints,
@@ -424,6 +430,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
                 };
                 setUserDirectly(updatedUser);
                 updateLeaderboardUser(updatedUser, res.pointsEarned ?? 0);
+                updateStreakLeaderboardUser(updatedUser);
                 if (typeof window !== 'undefined') {
                   window.dispatchEvent(new CustomEvent('church_user_updated', { detail: updatedUser }));
                 }

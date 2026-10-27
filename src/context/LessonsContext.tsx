@@ -428,15 +428,19 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
             return next;
           });
         }
-        if (summaryData?.streak && setUserDirectly) {
+        if (summaryData?.streak && setUserDirectly && userData) {
           const serverStreak = summaryData.streak.currentStreak ?? 0;
           const serverPoints = summaryData.points ?? userData.points;
-          if (userData.currentStreak !== serverStreak || userData.points !== serverPoints) {
+          const targetStreak = Math.max(serverStreak, userData.currentStreak || 1);
+          const targetLongest = Math.max(summaryData.streak.longestStreak ?? 0, userData.longestStreak || targetStreak, targetStreak);
+          const targetPoints = Math.max(serverPoints, userData.points || 0);
+
+          if (userData.currentStreak !== targetStreak || userData.points !== targetPoints || (userData.longestStreak && userData.longestStreak < targetLongest)) {
             setUserDirectly({
               ...userData,
-              currentStreak: serverStreak,
-              longestStreak: summaryData.streak.longestStreak ?? userData.longestStreak,
-              points: serverPoints
+              currentStreak: targetStreak,
+              longestStreak: targetLongest,
+              points: targetPoints
             });
           }
         }
@@ -1277,15 +1281,19 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
               return next;
             });
           }
-          if (summaryData?.streak && setUserDirectly) {
+          if (summaryData?.streak && setUserDirectly && userData) {
             const serverStreak = summaryData.streak.currentStreak ?? 0;
             const serverPoints = summaryData.points ?? userData.points;
-            if (userData.currentStreak !== serverStreak || userData.points !== serverPoints) {
+            const targetStreak = Math.max(serverStreak, userData.currentStreak || 1);
+            const targetLongest = Math.max(summaryData.streak.longestStreak ?? 0, userData.longestStreak || targetStreak, targetStreak);
+            const targetPoints = Math.max(serverPoints, userData.points || 0);
+
+            if (userData.currentStreak !== targetStreak || userData.points !== targetPoints || (userData.longestStreak && userData.longestStreak < targetLongest)) {
               setUserDirectly({
                 ...userData,
-                currentStreak: serverStreak,
-                longestStreak: summaryData.streak.longestStreak ?? userData.longestStreak,
-                points: serverPoints
+                currentStreak: targetStreak,
+                longestStreak: targetLongest,
+                points: targetPoints
               });
             }
           }
