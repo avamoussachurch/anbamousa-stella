@@ -11,14 +11,12 @@ export interface SubmitQuizAttemptInput {
     selectedIndex?: number;
   }>;
   studentId?: string;
-  // Optional client fields (server will compute authoritative deterministic scores)
+  // Client score fields are ignored by the server.
   score?: number;
   totalScore?: number;
   percentage?: number;
   earnedPoints?: number;
   totalPointsPossible?: number;
-  currentPoints?: number;
-  currentStreak?: number;
   quizQuestions?: any[];
   idempotencyKey?: string;
   attemptId?: string;
@@ -115,8 +113,6 @@ export async function submitStudentQuizAttempt(
         quizId,
         answers,
         studentId,
-        currentPoints: input.currentPoints,
-        currentStreak: input.currentStreak,
         quizQuestions: input.quizQuestions,
         idempotencyKey,
         attemptId
@@ -144,20 +140,6 @@ export async function submitStudentQuizAttempt(
       localStorage.setItem(`church_quiz_attempts_${key}`, JSON.stringify(LOCAL_QUIZ_ATTEMPTS[key]));
       localStorage.setItem(`church_quiz_score_${key}`, String(attempt.percentage));
     } catch (e) {}
-
-    // If Supabase is connected, sync quiz score to lesson_progress table without overriding section completion
-    if (supabase && isSupabaseConfigured) {
-      try {
-        await supabase.from('lesson_progress').upsert({
-          student_id: attempt.studentId,
-          lesson_id: attempt.lessonId,
-          quiz_score: attempt.percentage,
-          completed_at: new Date().toISOString()
-        });
-      } catch (dbErr) {
-        console.warn('Note on Supabase lesson_progress quiz score sync:', dbErr);
-      }
-    }
 
     return {
       data: attempt,

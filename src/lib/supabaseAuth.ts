@@ -24,6 +24,13 @@ export async function registerWithSupabase(
     };
   }
 
+  if (role !== 'student') {
+    return {
+      success: false,
+      error: 'Teacher and parent accounts must be provisioned by a church administrator.',
+    };
+  }
+
   try {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: email.trim(),
@@ -31,7 +38,6 @@ export async function registerWithSupabase(
       options: {
         data: {
           full_name: fullName,
-          role: role,
           grade: grade || undefined,
         },
       },
@@ -49,7 +55,7 @@ export async function registerWithSupabase(
     const profile: User = {
       id: userId,
       fullName: fullName,
-      role: role,
+      role: 'student',
       grade: grade,
       avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
       points: 0,
@@ -61,29 +67,6 @@ export async function registerWithSupabase(
       notifyLessonCompletion: true,
       notifyEventReminders: true,
     };
-
-    // Insert or update profile row in public.profiles table
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .upsert({
-        id: userId,
-        name: fullName,
-        email: email.trim(),
-        role: role,
-        grade: grade || null,
-        avatar: profile.avatarUrl,
-        points: 0,
-        current_streak: 0,
-        longest_streak: 0,
-        require_reward_approval: true,
-        push_notifications_enabled: true,
-        notify_lesson_completion: true,
-        notify_event_reminders: true,
-      });
-
-    if (profileError) {
-      console.warn('Profile insertion warning:', profileError);
-    }
 
     return { success: true, user: profile };
   } catch (err: any) {
@@ -128,52 +111,26 @@ export async function loginWithSupabase(
       .eq('id', userId)
       .single();
 
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.warn('Could not fetch user profile from Supabase:', profileError);
-    }
-
-    let activeProfile = profileData;
-    if (!activeProfile) {
-      const meta = authData.user.user_metadata || {};
-      const fallbackName = meta.full_name || meta.name || authData.user.email?.split('@')[0] || 'User';
-      const fallbackRole = (authData.user.email === 'avamoussachurch@gmail.com' || authData.user.email === 'abram.amir2010@gmail.com') ? 'teacher' : (meta.role || 'student');
-      const fallbackGrade = meta.grade || (fallbackRole === 'teacher' ? 'Servant' : 'Primary');
-      const fallbackAvatar = meta.avatar_url || meta.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
-
-      const { data: createdProfile } = await supabase
-        .from('profiles')
-        .upsert({
-          id: userId,
-          name: fallbackName,
-          email: authData.user.email || '',
-          role: fallbackRole,
-          grade: fallbackGrade,
-          avatar: fallbackAvatar,
-          points: 100,
-          current_streak: 1,
-          longest_streak: 1
-        })
-        .select('*')
-        .maybeSingle();
-
-      if (createdProfile) {
-        activeProfile = createdProfile;
-      }
+    if (profileError || !profileData) {
+      return {
+        success: false,
+        error: 'The account profile is not available. Contact a church administrator to provision it.',
+      };
     }
 
     const user: User = {
       id: userId,
-      fullName: activeProfile?.name || authData.user.user_metadata?.full_name || 'User',
-      role: (activeProfile?.role as any) || (authData.user.user_metadata?.role as any) || 'student',
-      avatarUrl: activeProfile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-      points: activeProfile?.points ?? 0,
-      currentStreak: activeProfile?.current_streak ?? 0,
-      longestStreak: activeProfile?.longest_streak ?? 0,
-      requireRewardApproval: activeProfile?.require_reward_approval ?? true,
-      pushNotificationsEnabled: activeProfile?.push_notifications_enabled ?? true,
-      notifyLessonCompletion: activeProfile?.notify_lesson_completion ?? true,
-      notifyEventReminders: activeProfile?.notify_event_reminders ?? true,
-      screenTimeSeconds: activeProfile?.screen_time_seconds ?? 0,
+      fullName: profileData.name || authData.user.user_metadata?.full_name || 'User',
+      role: profileData.role,
+      avatarUrl: profileData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+      points: profileData.points ?? 0,
+      currentStreak: profileData.current_streak ?? 0,
+      longestStreak: profileData.longest_streak ?? 0,
+      requireRewardApproval: profileData.require_reward_approval ?? true,
+      pushNotificationsEnabled: profileData.push_notifications_enabled ?? true,
+      notifyLessonCompletion: profileData.notify_lesson_completion ?? true,
+      notifyEventReminders: profileData.notify_event_reminders ?? true,
+      screenTimeSeconds: profileData.screen_time_seconds ?? 0,
     };
 
     return { success: true, user };

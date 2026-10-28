@@ -14,13 +14,7 @@ export async function updateSupabaseProfile(
   updates: Partial<{
     name: string;
     avatar: string;
-    role: 'student' | 'teacher' | 'parent' | 'admin';
-    grade: string;
-    points: number;
-    current_streak: number;
-    longest_streak: number;
     screen_time_seconds: number;
-    parent_id: string | null;
     require_reward_approval: boolean;
     push_notifications_enabled: boolean;
     notify_lesson_completion: boolean;
@@ -43,13 +37,7 @@ export async function updateSupabaseProfile(
 
     if (updates.name !== undefined) dbPayload.name = updates.name;
     if (updates.avatar !== undefined) dbPayload.avatar = updates.avatar;
-    if (updates.role !== undefined) dbPayload.role = updates.role;
-    if (updates.grade !== undefined) dbPayload.grade = updates.grade;
-    if (updates.points !== undefined) dbPayload.points = updates.points;
-    if (updates.current_streak !== undefined) dbPayload.current_streak = updates.current_streak;
-    if (updates.longest_streak !== undefined) dbPayload.longest_streak = updates.longest_streak;
     if (updates.screen_time_seconds !== undefined) dbPayload.screen_time_seconds = updates.screen_time_seconds;
-    if (updates.parent_id !== undefined) dbPayload.parent_id = updates.parent_id;
     if (updates.require_reward_approval !== undefined) dbPayload.require_reward_approval = updates.require_reward_approval;
     if (updates.push_notifications_enabled !== undefined) dbPayload.push_notifications_enabled = updates.push_notifications_enabled;
     if (updates.notify_lesson_completion !== undefined) dbPayload.notify_lesson_completion = updates.notify_lesson_completion;
@@ -162,33 +150,13 @@ export async function linkParentAndChildInSupabase(
 ): Promise<{ success: boolean; error?: string }> {
   if (!supabase) return { success: true }; // offline fallback handled by localStorage
 
-  try {
-    // 1. Upsert into user_relationships table
-    const { error: relError } = await supabase
-      .from('user_relationships')
-      .upsert({
-        parent_id: parentId,
-        child_id: childId,
-        child_code: childCode,
-        relationship_type: 'parent_child',
-        created_at: new Date().toISOString()
-      }, { onConflict: 'parent_id,child_id' });
-
-    if (relError) {
-      console.warn('Note on user_relationships upsert:', relError.message);
-    }
-
-    // 2. Also update child's profiles table parent_id
-    await supabase
-      .from('profiles')
-      .update({ parent_id: parentId })
-      .eq('id', childId);
-
-    return { success: true };
-  } catch (err: any) {
-    console.warn('Supabase link relationship caught:', err);
-    return { success: false, error: err.message };
-  }
+  void parentId;
+  void childId;
+  void childCode;
+  return {
+    success: false,
+    error: 'Family links must be verified by the trusted server before they can be saved to Supabase.',
+  };
 }
 
 /**
@@ -290,35 +258,7 @@ export async function findStudentByLinkCodeInSupabase(cleanCode: string) {
 }
 
 /**
- * Increment student points atomically in Supabase
- */
-export async function addStudentPoints(userId: string, pointsDelta: number) {
-  if (!supabase) return;
-
-  try {
-    // Read current points
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('points')
-      .eq('id', userId)
-      .single();
-
-    const currentPoints = profile?.points ?? 0;
-    const newPoints = Math.max(0, currentPoints + pointsDelta);
-
-    await supabase
-      .from('profiles')
-      .update({ points: newPoints, last_active: new Date().toISOString() })
-      .eq('id', userId);
-
-    return newPoints;
-  } catch (err) {
-    console.warn('Error adding student points:', err);
-  }
-}
-
-/**
- * Record lesson progress in Supabase
+ * Direct browser writes to progress and points are disabled.
  */
 export async function recordLessonProgress(
   studentId: string,
@@ -327,27 +267,12 @@ export async function recordLessonProgress(
   pointsEarned: number,
   verseMemorized: boolean = true
 ) {
-  if (!supabase) return;
-
-  try {
-    const { error } = await supabase
-      .from('lesson_progress')
-      .upsert({
-        student_id: studentId,
-        lesson_id: lessonId,
-        completed: true,
-        quiz_score: quizScore,
-        verse_memorized: verseMemorized,
-        points_earned: pointsEarned,
-        completed_at: new Date().toISOString(),
-      });
-
-    if (!error) {
-      await addStudentPoints(studentId, pointsEarned);
-    }
-  } catch (err) {
-    console.warn('Error recording lesson progress:', err);
-  }
+  void studentId;
+  void lessonId;
+  void quizScore;
+  void pointsEarned;
+  void verseMemorized;
+  throw new Error('Progress and points must be recorded by the authenticated lesson-completion server flow.');
 }
 
 /**

@@ -112,21 +112,7 @@ export async function startLessonProgress(
 
     return { data: json.progress, error: null };
   } catch (err: any) {
-    // Pure offline demo fallback
-    const sId = studentId || 'u1';
-    const key = `${sId}_${lessonId}`;
-    const fallback: StudentContentProgress = LOCAL_PROGRESS_STORE[key] || {
-      studentId: sId,
-      lessonId,
-      versionId,
-      status: 'IN_PROGRESS',
-      sectionsCompleted: [],
-      totalSections: 3,
-      completionPercent: 0,
-      startedAt: new Date().toISOString()
-    };
-    LOCAL_PROGRESS_STORE[key] = fallback;
-    return { data: fallback, error: null };
+    return { data: null, error: new Error(err?.message || 'Could not start lesson progress.') };
   }
 }
 
@@ -163,47 +149,9 @@ export async function completeSectionProgress(
     const key = `${prog.studentId}_${lessonId}`;
     LOCAL_PROGRESS_STORE[key] = prog;
 
-    // If Supabase is connected and lesson reached completion, sync to public.lesson_progress
-    if (supabase && isSupabaseConfigured && prog.status === 'COMPLETED') {
-      try {
-        await supabase.from('lesson_progress').upsert({
-          student_id: prog.studentId,
-          lesson_id: prog.lessonId,
-          completed: true,
-          completed_at: prog.completedAt || new Date().toISOString()
-        });
-      } catch (dbErr) {
-        console.warn('Note on Supabase lesson_progress sync:', dbErr);
-      }
-    }
-
     return { data: prog, error: null };
   } catch (err: any) {
-    // Pure offline demo fallback
-    const sId = studentId || 'u1';
-    const key = `${sId}_${lessonId}`;
-    const existing = LOCAL_PROGRESS_STORE[key] || {
-      studentId: sId,
-      lessonId,
-      versionId,
-      status: 'IN_PROGRESS',
-      sectionsCompleted: [],
-      totalSections: 3,
-      completionPercent: 0,
-      startedAt: new Date().toISOString()
-    };
-
-    if (!existing.sectionsCompleted.includes(sectionId)) {
-      existing.sectionsCompleted.push(sectionId);
-    }
-    const total = existing.totalSections || 3;
-    existing.completionPercent = Math.min(100, Math.round((existing.sectionsCompleted.length / total) * 100));
-    if (existing.sectionsCompleted.length >= total) {
-      existing.status = 'COMPLETED';
-      existing.completedAt = existing.completedAt || new Date().toISOString();
-    }
-    LOCAL_PROGRESS_STORE[key] = existing;
-    return { data: existing, error: null };
+    return { data: null, error: new Error(err?.message || 'Could not save lesson section progress.') };
   }
 }
 
@@ -227,9 +175,6 @@ export async function completeLessonProgress(
     return { data: null, error: new Error('lessonId and versionId are required') };
   }
 
-  const sId = studentId || 'u1';
-  const key = `${sId}_${lessonId}`;
-
   const headers = await getAuthHeader();
   try {
     const res = await fetch('/api/church/student-progress/complete-lesson', {
@@ -246,25 +191,19 @@ export async function completeLessonProgress(
         error: new Error(errorMsg)
       };
     }
+    if (isSupabaseConfigured && typeof json.totalPoints !== 'number') {
+      return {
+        data: null,
+        error: new Error('The server did not confirm persisted points for this lesson completion.')
+      };
+    }
 
     const prog: StudentContentProgress = json.progress;
+    const key = `${prog.studentId}_${lessonId}`;
     LOCAL_PROGRESS_STORE[key] = prog;
     try {
       localStorage.setItem(`church_progress_${key}`, JSON.stringify(prog));
     } catch (e) {}
-
-    if (supabase && isSupabaseConfigured) {
-      try {
-        await supabase.from('lesson_progress').upsert({
-          student_id: prog.studentId,
-          lesson_id: prog.lessonId,
-          completed: true,
-          completed_at: prog.completedAt || new Date().toISOString()
-        });
-      } catch (dbErr) {
-        console.warn('Note on Supabase lesson_progress sync:', dbErr);
-      }
-    }
 
     return { 
       data: prog, 
@@ -276,32 +215,7 @@ export async function completeLessonProgress(
       completionHistory: json.completionHistory
     };
   } catch (err: any) {
-    // Pure offline fallback
-    const existing = LOCAL_PROGRESS_STORE[key] || {
-      studentId: sId,
-      lessonId,
-      versionId,
-      status: 'IN_PROGRESS',
-      sectionsCompleted: ['sec-1'],
-      totalSections: 1,
-      completionPercent: 0,
-      startedAt: new Date().toISOString()
-    };
-    const wasAlreadyCompleted = existing.status === 'COMPLETED';
-    existing.status = 'COMPLETED';
-    existing.completionPercent = 100;
-    existing.completedAt = existing.completedAt || new Date().toISOString();
-    LOCAL_PROGRESS_STORE[key] = existing;
-    try {
-      localStorage.setItem(`church_progress_${key}`, JSON.stringify(existing));
-    } catch (e) {}
-
-    return { 
-      data: existing, 
-      error: null,
-      isFirstCompletion: !wasAlreadyCompleted,
-      pointsEarned: !wasAlreadyCompleted ? 50 : 0
-    };
+    return { data: null, error: new Error(err?.message || 'Could not persist lesson completion.') };
   }
 }
 
@@ -679,4 +593,3 @@ export async function diagnoseLessonCompletion(
     };
   }
 }
-

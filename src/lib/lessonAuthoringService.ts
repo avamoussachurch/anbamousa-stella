@@ -133,24 +133,12 @@ async function getAuthenticatedServant(): Promise<{
     return { user: null, error: new Error('Authentication required for online lesson authoring') };
   }
 
-  // Retrieve user role from profiles, falling back to auth user metadata if table RLS denies direct select
-  let role = (user.user_metadata?.role || user.app_metadata?.role) as string | undefined;
-
-  try {
-    const { data: profile, error: profErr } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!profErr && profile?.role) {
-      role = profile.role;
-    }
-  } catch (e) {
-    // Silently continue if profiles table is restricted by RLS
-  }
-
-  const finalRole = role || 'student';
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+  const finalRole = profile?.role || 'student';
   if (finalRole !== 'teacher' && finalRole !== 'admin') {
     return { user: null, error: new Error('Only servants, teachers, and administrators may author curriculum lessons') };
   }

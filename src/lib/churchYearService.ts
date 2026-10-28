@@ -823,9 +823,11 @@ export async function enrollStudentInClass(
             };
           }
 
-          // Update student profile grade if needed so RPC grade compatibility passes
           if (grade && studentProfile.grade !== grade) {
-            await supabase.from('profiles').update({ grade }).eq('id', studentProfile.id);
+            return {
+              success: false,
+              error: 'Student grade changes must be made by a trusted administrator before class enrollment.'
+            };
           }
 
           const studentUuid = studentProfile.id;
@@ -842,7 +844,7 @@ export async function enrollStudentInClass(
               .eq('id', user.id)
               .maybeSingle();
 
-            const callerRole = callerProfile?.role || (user.user_metadata?.role as string) || '';
+            const callerRole = callerProfile?.role || '';
 
             if (callerRole === 'admin') {
               const { data: inst } = await supabase

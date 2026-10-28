@@ -20,7 +20,7 @@ import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../../lib/po
 import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 
 export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string; onBack: () => void; lang?: Language }) {
-  const { userData, isGuest, addPoints, setUserDirectly } = useAuth();
+  const { userData, isGuest, setUserDirectly } = useAuth();
   const { 
     lessons, 
     markCompleted,
@@ -321,12 +321,6 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
           points: res.totalPoints,
           currentStreak: res.streak?.currentStreak ?? userData.currentStreak ?? 1
         });
-      } else if (res.isFirstCompletion && res.pointsEarned && res.pointsEarned > 0 && userData) {
-        try {
-          await addPoints(res.pointsEarned);
-        } catch (e) {
-          console.warn('Error applying first-time completion points:', e);
-        }
       }
 
       // Synchronize overall application state with authoritative server summary
@@ -390,8 +384,6 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
                 percentage: attempt.percentage,
                 earnedPoints: attempt.earnedPoints,
                 totalPointsPossible: attempt.totalPointsPossible,
-                currentPoints: userData?.points,
-                currentStreak: userData?.currentStreak,
                 quizQuestions: activePublishedVersion.quizDraft?.questions
               });
               if (res.data) {
