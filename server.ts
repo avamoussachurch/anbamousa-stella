@@ -7,7 +7,7 @@ import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT ?? 3000);
 
 const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) {
@@ -16,11 +16,17 @@ if (!fs.existsSync(uploadsDir)) {
 
 app.use(express.json({ limit: '20mb' }));
 
-interface ServerAuthContext {
-  userId: string | null;
-  role: 'student' | 'teacher' | 'admin' | 'parent' | null;
-  isAuthenticated: boolean;
-}
+type ServerAuthContext =
+  | {
+      userId: string;
+      role: 'student' | 'teacher' | 'admin' | 'parent' | null;
+      isAuthenticated: true;
+    }
+  | {
+      userId: null;
+      role: null;
+      isAuthenticated: false;
+    };
 
 /**
  * Server-side helper to verify JWT authentication token from Bearer header or query parameter
@@ -45,19 +51,6 @@ async function verifyServerRequestAuth(req: express.Request): Promise<ServerAuth
     return { userId: null, role: null, isAuthenticated: false };
   }
 
-  // Development/Test token handler for automated security test verification
-  if (process.env.NODE_ENV !== "production" && token.startsWith("test_jwt_")) {
-    const parts = token.split("_");
-    const tokenRole = parts[2] as 'student' | 'teacher' | 'admin' | 'parent';
-    const userId = parts.slice(3).join("_") || "test_user";
-    const role = tokenRole || (serverReviewState?.userRoles?.[userId] as any) || "student";
-    return {
-      userId,
-      role,
-      isAuthenticated: true
-    };
-  }
-
   try {
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -77,27 +70,17 @@ async function verifyServerRequestAuth(req: express.Request): Promise<ServerAuth
     }
 
     const userId = userData.user.id;
-    let role: 'student' | 'teacher' | 'admin' | 'parent' = 'student';
-
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (profile?.role) {
-        role = profile.role as any;
-      } else if (userData.user.user_metadata?.role) {
-        role = userData.user.user_metadata.role as any;
-      } else if (userData.user.app_metadata?.role) {
-        role = userData.user.app_metadata.role as any;
-      }
-    } catch {
-      if (userData.user.user_metadata?.role) {
-        role = userData.user.user_metadata.role as any;
-      }
-    }
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+    const profileRole = !profileError ? profile?.role : null;
+    const role: ServerAuthContext['role'] =
+      profileRole === 'student' || profileRole === 'teacher' ||
+      profileRole === 'admin' || profileRole === 'parent'
+        ? profileRole
+        : null;
 
     return {
       userId,
@@ -3104,16 +3087,63 @@ function resetServerReviewState() {
 resetServerReviewState();
 loadPersistentClassState();
 
-app.post("/api/church/reset-review-test-state", (req, res) => {
-  resetServerReviewState();
-  res.json({ success: true, message: "Review state reset to initial AI_DRAFT" });
-});
+if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_REVIEW_TEST_RESET === 'true') {
+  app.post("/api/church/reset-review-test-state", (req, res) => {
+    resetServerReviewState();
+    res.json({ success: true, message: "Review state reset to initial AI_DRAFT" });
+  });
+}
 
 function isVersionOwner(targetCreatedBy: string | undefined, currentUserId: string | null): boolean {
-  if (!targetCreatedBy || !currentUserId) return true;
-  return targetCreatedBy === currentUserId ||
-         targetCreatedBy.includes(currentUserId) ||
-         currentUserId.includes(targetCreatedBy);
+  return Boolean(targetCreatedBy && currentUserId && targetCreatedBy === currentUserId);
+}
+
+async function authorizeLessonWorkflow(
+  req: express.Request,
+  res: express.Response,
+  lessonId: string | undefined,
+  version: any,
+  allowNewVersion = false
+): Promise<ServerAuthContext | null> {
+  const authContext = await verifyServerRequestAuth(req);
+  if (!authContext.isAuthenticated || !authContext.userId) {
+    res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Authentication is required." });
+    return null;
+  }
+
+  if (authContext.role === 'admin') {
+    return authContext;
+  }
+  if (authContext.role !== 'teacher') {
+    res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only assigned teachers or administrators can manage lesson review." });
+    return null;
+  }
+  if (!version && !allowNewVersion) {
+    res.status(404).json({ success: false, error: "VERSION_NOT_FOUND", message: "Lesson version was not found." });
+    return null;
+  }
+  if (version && !isVersionOwner(version.createdBy, authContext.userId)) {
+    res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only the exact version owner can manage this lesson version." });
+    return null;
+  }
+
+  const effectiveLessonId = version?.lessonId || lessonId;
+  if (!effectiveLessonId || (lessonId && version && version.lessonId !== lessonId)) {
+    res.status(403).json({ success: false, error: "FORBIDDEN", message: "Lesson ownership could not be verified." });
+    return null;
+  }
+
+  const classGroupId = version?.classGroupId || serverReviewState.lessons[effectiveLessonId]?.classGroupId;
+  const savedAssignments = Object.prototype.hasOwnProperty.call(serverReviewState.teacherAssignments, authContext.userId)
+    ? serverReviewState.teacherAssignments[authContext.userId]
+    : [];
+  const assignedClassGroups = Array.isArray(savedAssignments) ? savedAssignments : [];
+  if (!classGroupId || !assignedClassGroups.includes(classGroupId)) {
+    res.status(403).json({ success: false, error: "FORBIDDEN", message: "Teacher is not assigned to this lesson's class." });
+    return null;
+  }
+
+  return authContext;
 }
 
 // 1. Submit for Servant Review (AI_DRAFT -> SERVANT_REVIEW)
@@ -3124,27 +3154,19 @@ app.post("/api/church/submit-for-review", async (req, res) => {
       return res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "versionId is required" });
     }
 
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student' || authContext.role === 'parent') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students and parents cannot submit versions for servant review."
-        });
-      }
-
-      // Check ownership
-      const targetVersion = serverReviewState.versions[versionId];
-      if (authContext.role !== 'admin') {
-        if ((lessonId && lessonId.includes("other-teacher")) || (targetVersion && !isVersionOwner(targetVersion.createdBy, authContext.userId))) {
-          return res.status(403).json({
-            success: false,
-            error: "FORBIDDEN",
-            message: "Cannot submit another teacher's draft lesson for review."
-          });
-        }
-      }
+    const targetVersion = serverReviewState.versions[versionId];
+    const authContext = await authorizeLessonWorkflow(
+      req,
+      res,
+      lessonId,
+      targetVersion,
+      !targetVersion
+    );
+    if (!authContext) {
+      return;
+    }
+    if (!targetVersion && !lessonId) {
+      return res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "lessonId is required when creating a version." });
     }
 
     // Check version state
@@ -3155,7 +3177,7 @@ app.post("/api/church/submit-for-review", async (req, res) => {
         lessonId: lessonId || 'l-default',
         versionNumber: 1,
         status: 'AI_DRAFT',
-        createdBy: authContext.userId || 'user_teacher_mina_101',
+        createdBy: authContext.userId,
         createdAt: new Date().toISOString(),
         sectionsCount: 3
       };
@@ -3194,26 +3216,10 @@ app.post("/api/church/request-revision", async (req, res) => {
       return res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "versionId and feedbackComment are required" });
     }
 
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student' || authContext.role === 'parent') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students and parents cannot request revisions."
-        });
-      }
-
-      const targetVersion = serverReviewState.versions[versionId];
-      if (authContext.role !== 'admin') {
-        if ((lessonId && lessonId.includes("other-teacher")) || (targetVersion && !isVersionOwner(targetVersion.createdBy, authContext.userId))) {
-          return res.status(403).json({
-            success: false,
-            error: "FORBIDDEN",
-            message: "Cannot request revisions for another teacher's draft lesson."
-          });
-        }
-      }
+    const targetVersion = serverReviewState.versions[versionId];
+    const authContext = await authorizeLessonWorkflow(req, res, lessonId, targetVersion);
+    if (!authContext) {
+      return;
     }
 
     let currentVer = serverReviewState.versions[versionId];
@@ -3280,26 +3286,10 @@ app.post("/api/church/approve-version", async (req, res) => {
       return res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "versionId is required" });
     }
 
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student' || authContext.role === 'parent') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students and parents cannot approve lesson versions."
-        });
-      }
-
-      const targetVersion = serverReviewState.versions[versionId];
-      if (authContext.role !== 'admin') {
-        if ((lessonId && lessonId.includes("other-teacher")) || (targetVersion && !isVersionOwner(targetVersion.createdBy, authContext.userId))) {
-          return res.status(403).json({
-            success: false,
-            error: "FORBIDDEN",
-            message: "Cannot approve another teacher's draft version."
-          });
-        }
-      }
+    const targetVersion = serverReviewState.versions[versionId];
+    const authContext = await authorizeLessonWorkflow(req, res, lessonId, targetVersion);
+    if (!authContext) {
+      return;
     }
 
     let currentVer = serverReviewState.versions[versionId];
@@ -3381,26 +3371,10 @@ app.post("/api/church/publish-lesson-version", async (req, res) => {
       });
     }
 
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student' || authContext.role === 'parent') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students and parents cannot publish lessons."
-        });
-      }
-
-      const targetVersion = serverReviewState.versions[versionId];
-      if (authContext.role !== 'admin') {
-        if ((lessonId && lessonId.includes("other-teacher")) || (targetVersion && !isVersionOwner(targetVersion.createdBy, authContext.userId))) {
-          return res.status(403).json({
-            success: false,
-            error: "FORBIDDEN",
-            message: "Cannot publish another teacher's lesson."
-          });
-        }
-      }
+    const targetVersion = serverReviewState.versions[versionId];
+    const authContext = await authorizeLessonWorkflow(req, res, lessonId, targetVersion);
+    if (!authContext) {
+      return;
     }
 
     let currentVer = serverReviewState.versions[versionId];
@@ -3513,7 +3487,7 @@ app.get("/api/church/active-version", async (req, res) => {
     const authContext = await verifyServerRequestAuth(req);
     let targetStudentId = String(req.query.studentId || '');
     if (authContext.isAuthenticated) {
-      targetStudentId = authContext.userId;
+      targetStudentId = authContext.userId ?? '';
     }
     if (targetStudentId) {
       const access = checkStudentLessonAccess(targetStudentId, lessonRecord);
@@ -3614,37 +3588,25 @@ app.get("/api/church/student-progress", async (req, res) => {
       return res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "lessonId is required" });
     }
 
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
-        // Authenticated student can ONLY view their own progress
-        if (targetStudentId && targetStudentId !== authContext.userId) {
-          return res.status(403).json({
-            success: false,
-            error: "FORBIDDEN",
-            message: "Students cannot view other students' progress."
-          });
-        }
-        targetStudentId = authContext.userId;
-      } else if (!targetStudentId) {
-        targetStudentId = authContext.userId;
-      }
-    } else {
-      // Demo / Guest / Offline fallback
-      targetStudentId = targetStudentId || 'u1';
+    const authorizedStudentId = await authorizeStudentDataAccess(req, res, targetStudentId);
+    if (!authorizedStudentId) {
+      return;
     }
+    targetStudentId = authorizedStudentId;
 
-    const { lessonRecord } = ensurePublishedLessonAndVersion(lessonId);
-    if (targetStudentId) {
-      const access = checkStudentLessonAccess(targetStudentId, lessonRecord);
-      if (!access.allowed) {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN_CLASS_ACCESS",
-          message: access.reason || "Student is not enrolled in the class assigned to this lesson."
-        });
-      }
+    const lessonForAccess = serverReviewState.lessons[lessonId] || {
+      id: lessonId,
+      classGroupId: resolveLessonClassGroupId(lessonId)
+    };
+    const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
+    if (!access.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN_CLASS_ACCESS",
+        message: access.reason || "Student is not enrolled in the class assigned to this lesson."
+      });
     }
+    ensurePublishedLessonAndVersion(lessonId);
 
     const key = `${targetStudentId}_${lessonId}`;
     const progress = serverReviewState.progress[key] || null;
@@ -3659,12 +3621,18 @@ app.get("/api/church/student-progress", async (req, res) => {
 });
 
 // Helper: Ensure lesson and published version exist in memory
+function resolveLessonClassGroupId(lessonId: string): string {
+  return lessonId.includes('prep') ? 'preparatory' :
+    lessonId.includes('angels') ? 'angels' :
+    lessonId === 'l3' ? 'primary_1' : 'primary_2';
+}
+
 function ensurePublishedLessonAndVersion(lessonId: string, versionId?: string) {
   let lessonRecord = serverReviewState.lessons[lessonId];
   const effectiveVersionId = versionId || lessonRecord?.active_version_id || `ver-pub-${lessonId}`;
 
   if (!lessonRecord) {
-    const classGroupId = lessonId.includes('prep') ? 'preparatory' : lessonId.includes('angels') ? 'angels' : (lessonId === 'l3' ? 'primary_1' : 'primary_2');
+    const classGroupId = resolveLessonClassGroupId(lessonId);
     lessonRecord = {
       id: lessonId,
       status: 'published',
@@ -3675,7 +3643,7 @@ function ensurePublishedLessonAndVersion(lessonId: string, versionId?: string) {
     serverReviewState.lessons[lessonId] = lessonRecord;
   } else {
     if (!lessonRecord.classGroupId) {
-      lessonRecord.classGroupId = lessonId.includes('prep') ? 'preparatory' : lessonId.includes('angels') ? 'angels' : (lessonId === 'l3' ? 'primary_1' : 'primary_2');
+      lessonRecord.classGroupId = resolveLessonClassGroupId(lessonId);
     }
     if (lessonId === 'l-cross-01' || !lessonRecord.active_version_id || lessonRecord.status !== 'published') {
       lessonRecord.status = 'published';
@@ -3751,51 +3719,147 @@ function ensurePublishedLessonAndVersion(lessonId: string, versionId?: string) {
   return { lessonRecord, targetVersion };
 }
 
-// Helper: Check student authorization for class-based lesson access
-function checkStudentLessonAccess(studentId: string, lessonRecord: any): { allowed: boolean; reason?: string } {
-  const userRole = serverReviewState.userRoles[studentId];
-  if (userRole && userRole !== 'student') {
-    return { allowed: true };
+function getStudentClassGroups(studentId: string): Set<string> {
+  const groups = new Set<string>();
+  const studentClass = serverReviewState.studentClasses[studentId];
+  if (typeof studentClass?.classGroupId === 'string') {
+    groups.add(studentClass.classGroupId);
   }
 
-  // Determine student's enrolled class group(s) across all active memberships
-  const enrolledClassGroups = new Set<string>();
+  for (const membership of Object.values(serverReviewState.classMemberships || {}) as any[]) {
+    const active = ['ACTIVE', 'APPROVED', 'active', 'approved'].includes(membership.status);
+    if (membership.studentId === studentId && active && typeof membership.classGroupId === 'string') {
+      groups.add(membership.classGroupId);
+    }
+  }
+  return groups;
+}
 
-  // 1. Check primary studentClasses
-  const studentClass = serverReviewState.studentClasses[studentId] || 
-    (studentId === 'david' ? serverReviewState.studentClasses['student-david'] : undefined);
-  if (studentClass?.classGroupId) {
-    enrolledClassGroups.add(studentClass.classGroupId);
+async function authorizeStudentDataAccess(
+  req: express.Request,
+  res: express.Response,
+  requestedStudentId: string
+): Promise<string | null> {
+  const authContext = await verifyServerRequestAuth(req);
+  if (!authContext.isAuthenticated || !authContext.userId) {
+    res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Authentication is required." });
+    return null;
   }
 
-  // 2. Check classMemberships (supporting multi-class memberships)
-  const memberships = Object.values(serverReviewState.classMemberships || {});
-  for (const m of memberships as any[]) {
-    if ((m.studentId === studentId || (studentId === 'david' && m.studentId === 'student-david')) && (m.status === 'active' || m.status === 'APPROVED' || !m.status)) {
-      if (m.classGroupId) enrolledClassGroups.add(m.classGroupId);
+  if (authContext.role === 'student') {
+    if (requestedStudentId && requestedStudentId !== authContext.userId) {
+      res.status(403).json({ success: false, error: "FORBIDDEN", message: "Students can only access their own learning data." });
+      return null;
+    }
+    return authContext.userId;
+  }
+
+  if (!requestedStudentId) {
+    res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "studentId is required for delegated access." });
+    return null;
+  }
+  if (authContext.role === 'admin') {
+    return requestedStudentId;
+  }
+  if (authContext.role === 'parent') {
+    const related = serverReviewState.parentChildRelationships.some(
+      relation => relation.parentId === authContext.userId &&
+        relation.childId === requestedStudentId &&
+        (relation.relationshipType === 'parent_child' || relation.relationshipType === 'guardian_student')
+    );
+    if (related) {
+      return requestedStudentId;
+    }
+  } else if (authContext.role === 'teacher') {
+    const studentGroups = getStudentClassGroups(requestedStudentId);
+    const savedAssignments = Object.prototype.hasOwnProperty.call(serverReviewState.teacherAssignments, authContext.userId)
+      ? serverReviewState.teacherAssignments[authContext.userId]
+      : [];
+    const assignedGroups = Array.isArray(savedAssignments) ? savedAssignments : [];
+    if (Array.from(studentGroups).some(group => assignedGroups.includes(group))) {
+      return requestedStudentId;
     }
   }
 
-  // 3. Fallback for demo student 'u1' or guest baseline (Primary 2)
-  if (studentId === 'u1' || studentId.startsWith('guest_') || studentId === 'user_student_mark_101' || studentId === 'mark' || studentId === 'david' || studentId === 'student-david') {
-    enrolledClassGroups.add('primary_2');
+  res.status(403).json({ success: false, error: "FORBIDDEN", message: "No verified relationship grants access to this student's data." });
+  return null;
+}
+
+async function authorizeStudentProgressWrite(
+  req: express.Request,
+  res: express.Response,
+  requestedStudentId: unknown
+): Promise<string | null> {
+  const authContext = await verifyServerRequestAuth(req);
+  if (!authContext.isAuthenticated || !authContext.userId) {
+    res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Authentication is required." });
+    return null;
   }
-
-  // 4. Default fallback: allow access to primary_2 for any student without an explicit assigned class yet
-  if (enrolledClassGroups.size === 0) {
-    enrolledClassGroups.add('primary_2');
+  if (authContext.role !== 'student') {
+    res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only students can write their own learning progress." });
+    return null;
   }
+  if (requestedStudentId && requestedStudentId !== authContext.userId) {
+    res.status(403).json({ success: false, error: "FORBIDDEN", message: "Students cannot write progress for another student." });
+    return null;
+  }
+  return authContext.userId;
+}
 
-  const lessonClassGroupId = lessonRecord.classGroupId || (lessonRecord.id?.includes('prep') ? 'preparatory' : lessonRecord.id?.includes('angels') ? 'angels' : (lessonRecord.id === 'l3' ? 'primary_1' : 'primary_2'));
-
-  if (!lessonClassGroupId || enrolledClassGroups.has(lessonClassGroupId)) {
+// Helper: Check student authorization for class-based lesson access
+function checkStudentLessonAccess(studentId: string, lessonRecord: any): { allowed: boolean; reason?: string } {
+  const enrolledClassGroups = getStudentClassGroups(studentId);
+  const lessonClassGroupId = lessonRecord.classGroupId || resolveLessonClassGroupId(lessonRecord.id);
+  if (typeof lessonClassGroupId === 'string' && enrolledClassGroups.has(lessonClassGroupId)) {
     return { allowed: true };
   }
-
-  return { 
-    allowed: false, 
-    reason: `Lesson is designated for class group "${lessonClassGroupId}", but student is enrolled in "${Array.from(enrolledClassGroups).join(', ')}".` 
+  return {
+    allowed: false,
+    reason: `Student is not enrolled in the class assigned to this lesson.`
   };
+}
+
+async function persistLessonCompletion(
+  studentId: string,
+  lessonId: string,
+  completedAt: string
+): Promise<{ pointsAwarded: number; totalPoints: number; completedAt: string } | null> {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null;
+  }
+
+  const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) {
+    throw new Error('SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY must be configured on the trusted server.');
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(lessonId)) {
+    throw new Error('The lesson ID is not a UUID accepted by public.lesson_progress.');
+  }
+
+  const trustedClient = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  const { data, error } = await trustedClient.rpc('record_lesson_completion', {
+    p_student_id: studentId,
+    p_lesson_id: lessonId,
+    p_completed_at: completedAt
+  });
+  if (error) {
+    throw new Error(`Supabase completion transaction failed: ${error.message}`);
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  const pointsAwarded = Number(row?.points_awarded);
+  const totalPoints = Number(row?.total_points);
+  const persistedAt = row?.completed_at;
+  if (!Number.isInteger(pointsAwarded) || pointsAwarded < 0 ||
+      !Number.isInteger(totalPoints) || totalPoints < 0 ||
+      typeof persistedAt !== 'string' || Number.isNaN(Date.parse(persistedAt))) {
+    throw new Error('Supabase completion transaction returned an invalid result.');
+  }
+  return { pointsAwarded, totalPoints, completedAt: persistedAt };
 }
 
 // 2. Start Lesson Progress
@@ -3810,26 +3874,9 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       });
     }
 
-    let targetStudentId = studentId;
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'parent' || authContext.role === 'teacher') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Parents and servants cannot write student learning progress."
-        });
-      }
-      if (studentId && studentId !== authContext.userId) {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students cannot write or start progress for another student."
-        });
-      }
-      targetStudentId = authContext.userId;
-    } else {
-      targetStudentId = targetStudentId || 'u1';
+    const targetStudentId = await authorizeStudentProgressWrite(req, res, studentId);
+    if (!targetStudentId) {
+      return;
     }
 
     if (versionId.startsWith('non-existent')) {
@@ -3846,9 +3893,11 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       }
     }
 
-    const { lessonRecord, targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
-
-    const access = checkStudentLessonAccess(targetStudentId, lessonRecord);
+    const lessonForAccess = serverReviewState.lessons[lessonId] || {
+      id: lessonId,
+      classGroupId: resolveLessonClassGroupId(lessonId)
+    };
+    const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
     if (!access.allowed) {
       return res.status(403).json({
         success: false,
@@ -3856,6 +3905,7 @@ app.post("/api/church/student-progress/start", async (req, res) => {
         message: access.reason || "Student is not enrolled in the class assigned to this lesson."
       });
     }
+    const { targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
 
     const key = `${targetStudentId}_${lessonId}`;
     const existing = serverReviewState.progress[key];
@@ -3905,31 +3955,16 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
       });
     }
 
-    let targetStudentId = studentId;
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'parent' || authContext.role === 'teacher') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Parents and servants cannot write student learning progress."
-        });
-      }
-      if (studentId && studentId !== authContext.userId) {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students cannot write or modify progress for another student."
-        });
-      }
-      targetStudentId = authContext.userId;
-    } else {
-      targetStudentId = targetStudentId || 'u1';
+    const targetStudentId = await authorizeStudentProgressWrite(req, res, studentId);
+    if (!targetStudentId) {
+      return;
     }
 
-    const { lessonRecord, targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
-
-    const access = checkStudentLessonAccess(targetStudentId, lessonRecord);
+    const lessonForAccess = serverReviewState.lessons[lessonId] || {
+      id: lessonId,
+      classGroupId: resolveLessonClassGroupId(lessonId)
+    };
+    const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
     if (!access.allowed) {
       return res.status(403).json({
         success: false,
@@ -3937,6 +3972,7 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
         message: access.reason || "Student is not enrolled in the class assigned to this lesson."
       });
     }
+    const { lessonRecord, targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
 
     if (sectionId === 'non-existent-section-id-404' || (targetVersion.sections && targetVersion.sections.length > 0 && !targetVersion.sections.some((s: any) => s.id === sectionId || s === sectionId))) {
       return res.status(400).json({
@@ -4007,31 +4043,16 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
       });
     }
 
-    let targetStudentId = studentId;
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'parent' || authContext.role === 'teacher') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Parents and servants cannot write student learning progress."
-        });
-      }
-      if (studentId && studentId !== authContext.userId) {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students cannot write or modify progress for another student."
-        });
-      }
-      targetStudentId = authContext.userId;
-    } else {
-      targetStudentId = targetStudentId || 'u1';
+    const targetStudentId = await authorizeStudentProgressWrite(req, res, studentId);
+    if (!targetStudentId) {
+      return;
     }
 
-    const { lessonRecord, targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
-
-    const access = checkStudentLessonAccess(targetStudentId, lessonRecord);
+    const lessonForAccess = serverReviewState.lessons[lessonId] || {
+      id: lessonId,
+      classGroupId: resolveLessonClassGroupId(lessonId)
+    };
+    const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
     if (!access.allowed) {
       return res.status(403).json({
         success: false,
@@ -4039,6 +4060,7 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
         message: access.reason || "Student is not enrolled in the class assigned to this lesson."
       });
     }
+    const { lessonRecord, targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
 
     const key = `${targetStudentId}_${lessonId}`;
     let prog = serverReviewState.progress[key];
@@ -4053,16 +4075,31 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
       });
     }
 
-    const isFirstCompletion = !prog.pointsAwarded;
+    const proposedCompletedAt = prog.completedAt || new Date().toISOString();
+    let persistedCompletion: Awaited<ReturnType<typeof persistLessonCompletion>>;
+    try {
+      persistedCompletion = await persistLessonCompletion(targetStudentId, lessonId, proposedCompletedAt);
+    } catch (error: any) {
+      console.error("Could not persist lesson completion:", error);
+      return res.status(502).json({
+        success: false,
+        error: "PROGRESS_PERSISTENCE_FAILED",
+        message: "Lesson completion could not be saved to Supabase. Please try again."
+      });
+    }
+
+    const isFirstCompletion = persistedCompletion
+      ? persistedCompletion.pointsAwarded > 0
+      : !prog.pointsAwarded;
     prog.status = 'COMPLETED';
-    prog.completedAt = prog.completedAt || new Date().toISOString();
+    prog.completedAt = persistedCompletion?.completedAt || proposedCompletedAt;
     prog.completionPercent = 100;
     prog.pointsAwarded = true;
 
     // Authoritative Points Calculation
     const currentPoints = serverReviewState.userPoints[targetStudentId] ?? (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0);
-    const pointsEarned = isFirstCompletion ? 50 : 0;
-    const newTotalPoints = currentPoints + pointsEarned;
+    const pointsEarned = persistedCompletion?.pointsAwarded ?? (isFirstCompletion ? 50 : 0);
+    const newTotalPoints = persistedCompletion?.totalPoints ?? currentPoints + pointsEarned;
     serverReviewState.userPoints[targetStudentId] = newTotalPoints;
 
     // Authoritative Cairo-Local Streak Calculation
@@ -4128,26 +4165,6 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
     // Save persistent class & learning state to file
     savePersistentClassState();
 
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
-    if (supabaseUrl && supabaseAnonKey) {
-      try {
-        const client = createClient(supabaseUrl, supabaseAnonKey);
-        await client.from('lesson_progress').upsert({
-          student_id: targetStudentId,
-          lesson_id: lessonId,
-          completed: true,
-          completed_at: prog.completedAt
-        });
-        await client.from('profiles').update({
-          current_streak: streakInfo.currentStreak,
-          longest_streak: streakInfo.longestStreak,
-          points: newTotalPoints,
-          last_active: prog.completedAt
-        }).eq('id', targetStudentId);
-      } catch (e) {}
-    }
-
     return res.json({
       success: true,
       progress: prog,
@@ -4170,24 +4187,9 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
 // 4b. Record School Learning Activity (Shared Daily Streak across Sunday School, Hymns & Taxis)
 app.post("/api/church/student-progress/record-activity", async (req, res) => {
   try {
-    const authContext = await verifyServerRequestAuth(req);
-    let targetStudentId = req.body?.studentId;
-
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
-        if (targetStudentId && targetStudentId !== authContext.userId) {
-          return res.status(403).json({
-            success: false,
-            error: "FORBIDDEN",
-            message: "Students cannot record activity on behalf of other students."
-          });
-        }
-        targetStudentId = authContext.userId;
-      } else if (!targetStudentId) {
-        targetStudentId = authContext.userId;
-      }
-    } else {
-      targetStudentId = targetStudentId || 'u1';
+    const targetStudentId = await authorizeStudentProgressWrite(req, res, req.body?.studentId);
+    if (!targetStudentId) {
+      return;
     }
 
     const { school, activityId, activityType, titleAr, titleEn } = req.body || {};
@@ -4206,7 +4208,7 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
         serverReviewState.hymnsCollection[cleanHymnId] ||
         Object.values(serverReviewState.hymnsCollection).find((h: any) => h.id === activityId || h.id === cleanHymnId) ||
         (cleanHymnId === 'ep_oro' ? { id: 'ep_oro', level: 1 } : (cleanHymnId === 'agios' ? { id: 'agios', level: 2 } : null));
-      if (hymn && hymn.level > 1 && authContext.role === 'student') {
+      if (hymn && hymn.level > 1) {
         const studentEnrollment = getStudentHymnsMembership(targetStudentId);
         if (!studentEnrollment || studentEnrollment.status !== 'approved' || studentEnrollment.level < hymn.level) {
           return res.status(403).json({
@@ -4218,7 +4220,7 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       }
     } else if (school === 'taxis') {
       const ritual = serverReviewState.taxisCollection[activityId];
-      if (ritual && ritual.status === 'draft' && authContext.role === 'student') {
+      if (ritual && ritual.status === 'draft') {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN_DRAFT",
@@ -4323,19 +4325,10 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
 // 5. Get Student Progress Summary (Cross-Device, Fresh Session & Dependent UI Sync)
 app.get("/api/church/student-progress/summary", async (req, res) => {
   try {
-    let targetStudentId = String(req.query.studentId || '');
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
-        if (targetStudentId && targetStudentId !== authContext.userId) {
-          return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Students cannot view other students' progress." });
-        }
-        targetStudentId = authContext.userId;
-      } else if (!targetStudentId) {
-        targetStudentId = authContext.userId;
-      }
-    } else {
-      targetStudentId = targetStudentId || 'u1';
+    const requestedStudentId = String(req.query.studentId || '');
+    const targetStudentId = await authorizeStudentDataAccess(req, res, requestedStudentId);
+    if (!targetStudentId) {
+      return;
     }
 
     const studentProgressMap: Record<string, any> = {};
@@ -4450,19 +4443,10 @@ app.get("/api/church/student-progress/summary", async (req, res) => {
 // 6. Get Authoritative Completion History
 app.get("/api/church/completion-history", async (req, res) => {
   try {
-    let targetStudentId = String(req.query.studentId || '');
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
-        if (targetStudentId && targetStudentId !== authContext.userId) {
-          return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Students cannot view other students' completion history." });
-        }
-        targetStudentId = authContext.userId;
-      } else if (!targetStudentId) {
-        targetStudentId = authContext.userId;
-      }
-    } else {
-      targetStudentId = targetStudentId || 'u1';
+    const requestedStudentId = String(req.query.studentId || '');
+    const targetStudentId = await authorizeStudentDataAccess(req, res, requestedStudentId);
+    if (!targetStudentId) {
+      return;
     }
 
     const history = serverReviewState.completionHistory[targetStudentId] || [];
@@ -4486,23 +4470,10 @@ app.get("/api/church/completion-history", async (req, res) => {
 app.get("/api/church/student-progress/diagnose/:lessonId", async (req, res) => {
   try {
     const { lessonId } = req.params;
-    let targetStudentId = String(req.query.studentId || '');
-    const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
-        if (targetStudentId && targetStudentId !== authContext.userId) {
-          return res.status(403).json({
-            success: false,
-            error: "FORBIDDEN",
-            message: "Students cannot inspect completion diagnostics for other students."
-          });
-        }
-        targetStudentId = authContext.userId;
-      } else if (!targetStudentId) {
-        targetStudentId = authContext.userId;
-      }
-    } else {
-      targetStudentId = targetStudentId || 'u1';
+    const requestedStudentId = String(req.query.studentId || '');
+    const targetStudentId = await authorizeStudentDataAccess(req, res, requestedStudentId);
+    if (!targetStudentId) {
+      return;
     }
 
     const key = `${targetStudentId}_${lessonId}`;
@@ -5088,12 +5059,10 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     const currentRewardState = () => {
       const todayCairo = getCairoDateString();
       const currentPoints = serverReviewState.userPoints[targetStudentId] ?? 
-        (typeof req.body.currentPoints === 'number' && req.body.currentPoints > 0 ? req.body.currentPoints : (targetStudentId.startsWith('guest_') ? 120 : (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0)));
+        (targetStudentId.startsWith('guest_') ? 120 : (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0));
       let streakRecord = serverReviewState.userStreaks[targetStudentId];
       if (!streakRecord) {
-        const fallbackStreak = (typeof req.body.currentStreak === 'number' && req.body.currentStreak > 0)
-          ? req.body.currentStreak
-          : (targetStudentId.startsWith('guest_') ? 3 : 1);
+        const fallbackStreak = targetStudentId.startsWith('guest_') ? 3 : 1;
         streakRecord = {
           currentStreak: fallbackStreak,
           longestStreak: Math.max(fallbackStreak, targetStudentId.startsWith('guest_') ? 5 : fallbackStreak),
@@ -5226,9 +5195,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     let streakGained = false;
     let initialPoints = serverReviewState.userPoints[targetStudentId];
     if (initialPoints === undefined) {
-      if (typeof req.body.currentPoints === 'number' && req.body.currentPoints > 0) {
-        initialPoints = req.body.currentPoints;
-      } else if (targetStudentId.startsWith('guest_')) {
+      if (targetStudentId.startsWith('guest_')) {
         initialPoints = 120;
       } else if (targetStudentId === 'mark' || targetStudentId === 'u1') {
         initialPoints = 100;
@@ -5240,9 +5207,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
 
     let streakRecord = serverReviewState.userStreaks[targetStudentId];
     if (!streakRecord) {
-      const fallbackStreak = (typeof req.body.currentStreak === 'number' && req.body.currentStreak > 0)
-        ? req.body.currentStreak
-        : (targetStudentId.startsWith('guest_') ? 3 : 1);
+      const fallbackStreak = targetStudentId.startsWith('guest_') ? 3 : 1;
       streakRecord = {
         currentStreak: fallbackStreak,
         longestStreak: Math.max(fallbackStreak, targetStudentId.startsWith('guest_') ? 5 : fallbackStreak),

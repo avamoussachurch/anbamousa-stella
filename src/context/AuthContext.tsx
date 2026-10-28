@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { updateSupabaseProfile, addStudentPoints } from '../lib/supabaseDatabase';
+import { updateSupabaseProfile } from '../lib/supabaseDatabase';
 import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../lib/pointsService';
 import { User } from '../types';
 
@@ -74,12 +74,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsGuest(isGuestUser);
     setLoading(false);
 
-    // Propagate streak & points to Supabase public.profiles if online authenticated
+    // Keep only user-editable profile fields in sync; role, points, and streaks are server-owned.
     if (!isGuestUser && isSupabaseConfigured && supabase && user.id && !user.id.startsWith('guest_')) {
       updateSupabaseProfile(user.id, {
-        points: user.points,
-        current_streak: user.currentStreak,
-        longest_streak: user.longestStreak,
         last_active: new Date().toISOString()
       }).catch(err => {
         console.warn('Note on Supabase profile sync in setUserDirectly:', err);
@@ -148,10 +145,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { error } = await updateSupabaseProfile(userData.id, {
           name: updates.fullName,
           avatar: updates.avatarUrl,
-          grade: updates.grade,
-          points: updates.points !== undefined ? updates.points : updatedUser.points,
-          current_streak: updates.currentStreak !== undefined ? updates.currentStreak : updatedUser.currentStreak,
-          longest_streak: updates.longestStreak !== undefined ? updates.longestStreak : updatedUser.longestStreak,
           push_notifications_enabled: updates.pushNotificationsEnabled,
           notify_lesson_completion: updates.notifyLessonCompletion,
           notify_event_reminders: updates.notifyEventReminders,
@@ -209,8 +202,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isGuest && isSupabaseConfigured && supabase) {
       try {
         await updateSupabaseProfile(userData.id, {
-          current_streak: nextCurrent,
-          longest_streak: nextLongest,
           last_active: new Date().toISOString()
         });
       } catch (e) {
@@ -221,6 +212,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addPoints = async (pointsDelta: number): Promise<number> => {
     if (!userData) return 0;
+    if (!isGuest && isSupabaseConfigured) {
+      throw new Error('Points can only be changed by a server-verified lesson completion or trusted reward workflow.');
+    }
 
     const newPoints = Math.max(0, (userData.points || 0) + pointsDelta);
     const updatedUser: User = {
@@ -238,14 +232,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Update dynamic leaderboard
     updateLeaderboardUser(updatedUser, pointsDelta);
-
-    if (!isGuest && isSupabaseConfigured && supabase) {
-      try {
-        await addStudentPoints(userData.id, pointsDelta);
-      } catch (e) {
-        console.warn('Error adding student points in Supabase:', e);
-      }
-    }
 
     return newPoints;
   };
@@ -373,7 +359,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const loadedUser: User = {
             id: uid,
             fullName: profile?.name || session.user.user_metadata?.full_name || 'User',
-            role: (profile?.role as any) || (session.user.user_metadata?.role as any) || 'student',
+            role: profile?.role || 'student',
             avatarUrl: profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`,
             points: resolvedPoints,
             currentStreak: resolvedStreak,
@@ -430,7 +416,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const loadedUser: User = {
             id: uid,
             fullName: profile?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-            role: (profile?.role as any) || (session.user.user_metadata?.role as any) || 'student',
+            role: profile?.role || 'student',
             avatarUrl: profile?.avatar || session.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`,
             points: resolvedPoints,
             currentStreak: resolvedStreak,

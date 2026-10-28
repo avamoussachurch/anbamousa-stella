@@ -1,0 +1,7 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "bun": true,
+        "Test-Path": true,
+        "npm install": true
+    }
+}
