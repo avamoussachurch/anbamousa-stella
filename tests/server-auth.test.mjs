@@ -321,6 +321,47 @@ test('unauthorized progress writes and disabled reset endpoint do not proceed', 
   assert.equal(reset.status, 404);
 });
 
+test('lesson section progress can be marked read and unread through the authenticated route', async () => {
+  const lessonId = 'l-cross-01';
+  const versionId = 'v-section-toggle-regression';
+  const userId = 'stu_section_toggle_regression';
+  const start = await request('/api/church/student-progress/start', {
+    method: 'POST',
+    role: 'student',
+    userId,
+    body: { lessonId, versionId }
+  });
+  assert.equal(start.status, 200, await start.text());
+
+  const markRead = await request('/api/church/student-progress/complete-section', {
+    method: 'POST',
+    role: 'student',
+    userId,
+    body: { lessonId, versionId, sectionId: 'sec-1', isRead: true }
+  });
+  const readResult = await markRead.json();
+  assert.equal(markRead.status, 200);
+  assert.equal(readResult.progress.sectionsCompleted.includes('sec-1'), true);
+
+  const markUnread = await request('/api/church/student-progress/complete-section', {
+    method: 'POST',
+    role: 'student',
+    userId,
+    body: { lessonId, versionId, sectionId: 'sec-1', isRead: false }
+  });
+  const unreadResult = await markUnread.json();
+  assert.equal(markUnread.status, 200);
+  assert.equal(unreadResult.progress.sectionsCompleted.includes('sec-1'), false);
+
+  const invalidReadState = await request('/api/church/student-progress/complete-section', {
+    method: 'POST',
+    role: 'student',
+    userId,
+    body: { lessonId, versionId, sectionId: 'sec-1', isRead: 'false' }
+  });
+  assert.equal(invalidReadState.status, 400);
+});
+
 test('lesson completion persists using the verified student identity and server-calculated points', async () => {
   const lessonId = '9b0a8f4c-9e1d-4c7b-8a12-123456789abc';
   await prepareLessonCompletion({ lessonId, versionId: 'v-persisted-completion' });

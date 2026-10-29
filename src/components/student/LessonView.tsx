@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BookOpen, Sparkles, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { mockLessons } from '../../data';
 import { useAuth } from '../../context/AuthContext';
@@ -18,6 +18,7 @@ import { getStudentMastery, evaluateStudentMastery } from '../../lib/studentMast
 import { getClassGroupForGrade, getClassGroupLabel, getClassGroupById } from '../../lib/classGroups';
 import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../../lib/pointsService';
 import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
+import { calculateSectionProgress, toggleReadSection } from '../../lib/lessonReadingProgress';
 
 export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string; onBack: () => void; lang?: Language }) {
   const { userData, isGuest, setUserDirectly } = useAuth();
@@ -226,6 +227,8 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
   const [isFinishing, setIsFinishing] = useState<boolean>(false);
   const [finishError, setFinishError] = useState<string | null>(null);
   const [finishSuccess, setFinishSuccess] = useState<boolean>(false);
+  const [sectionProgressError, setSectionProgressError] = useState<string | null>(null);
+  const completionInFlightRef = useRef(false);
 
   useEffect(() => {
     if (activePublishedVersion && userData) {
@@ -267,7 +270,8 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
   }, [lessonId, activePublishedVersion?.id, userData?.id, currentStudentId]);
 
   const handleFinishLesson = async () => {
-    if (isFinishing || !activePublishedVersion) return;
+    if (completionInFlightRef.current || isFinishing || !activePublishedVersion) return;
+    completionInFlightRef.current = true;
     setIsFinishing(true);
     setFinishError(null);
 
@@ -284,6 +288,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
             : `Please read all sections (${currentSections.length} of ${allSections.length} read) before finishing the lesson.`
         );
         setIsFinishing(false);
+        completionInFlightRef.current = false;
         return;
       }
 
@@ -297,6 +302,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
       if (res.error) {
         setFinishError(res.error.message || (lang === 'ar' ? 'تعذر حفظ إتمام الدرس' : 'Failed to save lesson completion'));
         setIsFinishing(false);
+        completionInFlightRef.current = false;
         return;
       }
 
@@ -346,6 +352,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
       }).catch(() => {});
 
       setIsFinishing(false);
+      completionInFlightRef.current = false;
       setFinishSuccess(true);
 
       // Automatically transition to the quiz if questions exist on the active published version
@@ -362,6 +369,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
       console.error(err);
       setFinishError(err?.message || (lang === 'ar' ? 'فشل حفظ الإتمام' : 'Error saving completion'));
       setIsFinishing(false);
+      completionInFlightRef.current = false;
     }
   };
 
@@ -478,39 +486,45 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
         onFinishLesson={handleFinishLesson}
         isFinishing={isFinishing}
         finishError={finishError}
+        sectionProgressError={sectionProgressError}
         finishSuccess={finishSuccess}
         onNavigateHome={onBack}
-        onMarkSectionRead={async (sectionId, totalSections) => {
+        onMarkSectionRead={async sectionId => {
           const existingSections = currentProgress?.sectionsCompleted || [];
-          const newSections = existingSections.includes(sectionId)
-            ? existingSections
-            : [...existingSections, sectionId];
-          const pct = Math.round((newSections.length / totalSections) * 100);
-          updateStudentContentProgress(currentStudentId, lessonId, newSections, pct);
+          const isRead = !existingSections.includes(sectionId);
+          setSectionProgressError(null);
 
-          if (activePublishedVersion) {
-            const { data } = await completeSectionProgress({
+          if (activePublishedVersion && isOnlineAuth) {
+            const result = await completeSectionProgress({
               lessonId,
               versionId: activePublishedVersion.id,
               sectionId,
+              isRead,
               studentId: currentStudentId
             });
-            if (data) {
-              updateStudentContentProgress(
-                currentStudentId,
-                lessonId,
-                data.sectionsCompleted,
-                data.completionPercent,
-                data.status === 'COMPLETED'
+            if (result.error || !result.data) {
+              setSectionProgressError(
+                lang === 'ar'
+                  ? 'مش قادرين نحفظ التغيير دلوقتي. جرّب تاني، وتأكد إن اتصالك بالإنترنت شغال.'
+                  : 'We could not save that change. Please try again and check your connection.'
               );
-              if (data.status === 'COMPLETED') {
-                markCompleted(lessonId);
-                setFinishSuccess(true);
-              }
+              return;
             }
+            updateStudentContentProgress(
+              currentStudentId,
+              lessonId,
+              result.data.sectionsCompleted,
+              result.data.completionPercent,
+              result.data.status === 'COMPLETED'
+            );
+            return;
           }
+
+          const sectionIds = activePublishedVersion?.sections.map(section => section.id) || [];
+          const newSections = toggleReadSection(existingSections, sectionId);
+          const { completionPercent } = calculateSectionProgress(sectionIds, newSections);
+          updateStudentContentProgress(currentStudentId, lessonId, newSections, completionPercent);
         }}
-        onCompleteContent={handleFinishLesson}
         onStartQuiz={() => {
           setTargetSectionId(undefined);
           setIsTakingQuiz(true);

@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ArrowLeft,
   Calendar,
-  Check,
   Video,
   FileText,
   Image as ImageIcon,
@@ -32,8 +31,7 @@ import {
 import { SundaySchoolAudioPlayer } from '../viewers/SundaySchoolAudioPlayer';
 import { InAppDocumentViewer } from '../viewers/InAppDocumentViewer';
 import { formatStudentClassDisplay } from '../../../lib/classGroups';
-import { useAuth } from '../../../context/AuthContext';
-import { isSupabaseConfigured } from '../../../lib/supabase';
+import { calculateSectionProgress, canFinishLesson } from '../../../lib/lessonReadingProgress';
 
 interface SundaySchoolLessonViewProps {
   lesson: Lesson;
@@ -43,11 +41,11 @@ interface SundaySchoolLessonViewProps {
   quizAttempts: StudentQuizAttempt[];
   mastery?: StudentMastery;
   onBack: () => void;
-  onMarkSectionRead: (sectionId: string, totalSections: number) => void;
-  onCompleteContent: () => void;
+  onMarkSectionRead: (sectionId: string, totalSections: number) => Promise<void>;
   onFinishLesson?: () => Promise<void>;
   isFinishing?: boolean;
   finishError?: string | null;
+  sectionProgressError?: string | null;
   finishSuccess?: boolean;
   onNavigateHome?: () => void;
   onStartQuiz: () => void;
@@ -66,10 +64,10 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
   mastery,
   onBack,
   onMarkSectionRead,
-  onCompleteContent,
   onFinishLesson,
   isFinishing = false,
   finishError = null,
+  sectionProgressError = null,
   finishSuccess = false,
   onNavigateHome,
   onStartQuiz,
@@ -77,28 +75,27 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
   lang = 'ar' as Language,
   isOnlineAuth
 }) => {
-  const { userData, isGuest } = useAuth();
   const isAr = lang === 'ar';
 
   const [showDocumentModal, setShowDocumentModal] = useState<boolean>(false);
   const [activeFlashcardIndex, setActiveFlashcardIndex] = useState<number>(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState<boolean>(false);
+  const [savingSectionId, setSavingSectionId] = useState<string | null>(null);
+  const [sectionActionError, setSectionActionError] = useState<string | null>(null);
 
   // Sections
   const rawSections = version.sections || [];
   const sections = [...rawSections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const completedSections = progress?.sectionsCompleted || [];
-  const completionRatio = sections.length > 0 ? (completedSections.length / sections.length) : 1;
-  const isAllSectionsRead = sections.length > 0 && completedSections.length >= sections.length;
-  const isSubstantiallyCompleted = completionRatio >= 0.9;
-  const isContentCompleted = progress?.status === 'COMPLETED' || finishSuccess || isAllSectionsRead;
+  const sectionProgress = calculateSectionProgress(sections.map(section => section.id), completedSections);
+  const isAllSectionsRead = sectionProgress.allCompleted;
+  const isContentCompleted = progress?.status === 'COMPLETED' || finishSuccess;
+  const canFinish = canFinishLesson(sections.map(section => section.id), completedSections, progress) && !finishSuccess;
   const latestQuizAttempt = quizAttempts[quizAttempts.length - 1];
 
   const handleFinish = () => {
     if (onFinishLesson) {
       onFinishLesson();
-    } else {
-      onCompleteContent();
     }
   };
 
@@ -140,7 +137,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-16" dir={isAr ? 'rtl' : 'ltr'}>
-      {/* Top Breadcrumb & Actions with Clearly Visible Finish Lesson Action */}
+      {/* Top Breadcrumb and lesson information */}
       <div className="flex items-center justify-between gap-4 flex-wrap bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] p-3.5 sm:p-4 rounded-3xl border-2 border-[var(--mousa-border-sand)] shadow-2xs">
         <button
           onClick={onBack}
@@ -151,41 +148,6 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
         </button>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Top Finish Lesson Action Button */}
-          <button
-            onClick={handleFinish}
-            disabled={isFinishing || isContentCompleted}
-            className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-xs cursor-pointer ${
-              isContentCompleted
-                ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                : isFinishing
-                ? 'bg-amber-300 text-amber-950 opacity-80 cursor-wait'
-                : 'bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 text-white active:scale-95'
-            }`}
-          >
-            {isFinishing ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-amber-950 border-t-transparent rounded-full animate-spin"></div>
-                <span>{isAr ? 'جاري حفظ الإتمام...' : 'Saving...'}</span>
-              </>
-            ) : isContentCompleted ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>{isAr ? 'الدرس مكتمل ✅' : 'Lesson Completed ✅'}</span>
-              </>
-            ) : !isAllSectionsRead && sections.length > 0 ? (
-              <>
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>{isAr ? `قراءة الأقسام (${completedSections.length}/${sections.length})` : `Read Sections (${completedSections.length}/${sections.length})`}</span>
-              </>
-            ) : (
-              <>
-                <Check className="w-4 h-4" />
-                <span>{isAr ? 'إنهاء محطة الدرس' : 'Finish Lesson'}</span>
-              </>
-            )}
-          </button>
-
           {isContentCompleted && (
             <button
               onClick={onNavigateHome || onBack}
@@ -211,13 +173,15 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             <span className="text-base">⚠️</span>
             <span className="font-bold">{finishError}</span>
           </div>
-          <button
-            onClick={handleFinish}
-            disabled={isFinishing}
-            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shrink-0 cursor-pointer shadow-xs min-h-[36px]"
-          >
-            {isAr ? 'إعادة المحاولة' : 'Retry'}
-          </button>
+          {canFinish && (
+            <button
+              onClick={handleFinish}
+              disabled={isFinishing}
+              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shrink-0 cursor-pointer shadow-xs min-h-[36px]"
+            >
+              {isAr ? 'إعادة المحاولة' : 'Retry'}
+            </button>
+          )}
         </div>
       )}
 
@@ -480,26 +444,63 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               <BookOpen className="w-4 h-4 text-amber-500" />
               <span>{isAr ? 'أقسام القراءة والقصة الإيمانية للدرس' : 'Lesson Sections & Story Reading'}</span>
             </h3>
-            <span className="text-xs text-stone-400 font-mono">
-              {completedSections.length} {isAr ? 'من' : 'of'} {sections.length} {isAr ? 'مقروء' : 'Sections Read'}
+            <span className="text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] font-black" aria-live="polite">
+              {isAr
+                ? `${sectionProgress.completedCount} من ${sectionProgress.totalCount} أقسام خلصت قرايتها`
+                : `${sectionProgress.completedCount} of ${sectionProgress.totalCount} sections completed`}
             </span>
+          </div>
+          <div
+            className="h-2.5 rounded-full bg-[var(--mousa-sand-100)] dark:bg-stone-800 overflow-hidden"
+            role="progressbar"
+            aria-label={isAr ? 'تقدم قراءة الدرس' : 'Lesson reading progress'}
+            aria-valuemin={0}
+            aria-valuemax={sectionProgress.totalCount}
+            aria-valuenow={sectionProgress.completedCount}
+          >
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[var(--mousa-teal)] to-[var(--mousa-gold)] transition-[width] duration-500 motion-reduce:transition-none"
+              style={{ width: `${sectionProgress.completionPercent}%` }}
+            />
           </div>
 
           <div className="space-y-4">
             {sections.map((section, idx) => {
               const isCompleted = completedSections.includes(section.id);
               const isTargeted = targetSectionId === section.id;
+              const isSaving = savingSectionId === section.id;
 
               return (
-                <div
+                <button
+                  type="button"
                   key={section.id}
                   id={`section-${section.id}`}
-                  className={`p-6 bg-stone-900 rounded-2xl border transition-all ${
+                  aria-pressed={isCompleted}
+                  aria-label={isAr
+                    ? `${section.titleAr || section.titleEn}، ${isCompleted ? 'مقروء، اضغط للتحديد كغير مقروء' : 'غير مقروء، اضغط للتحديد كمقروء'}`
+                    : `${section.titleEn}, ${isCompleted ? 'read, activate to mark unread' : 'unread, activate to mark read'}`}
+                  disabled={Boolean(savingSectionId) || isContentCompleted}
+                  onClick={async () => {
+                    setSectionActionError(null);
+                    setSavingSectionId(section.id);
+                    try {
+                      await onMarkSectionRead(section.id, sections.length);
+                    } catch {
+                      setSectionActionError(
+                        isAr
+                          ? 'مش قادرين نحفظ التغيير. جرّب تاني.'
+                          : 'We could not save that change. Please try again.'
+                      );
+                    } finally {
+                      setSavingSectionId(null);
+                    }
+                  }}
+                  className={`block w-full text-start p-6 rounded-2xl border-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--mousa-gold)] active:scale-[0.995] motion-reduce:transition-none motion-reduce:transform-none disabled:cursor-not-allowed ${
                     isTargeted
-                      ? 'border-amber-500 ring-2 ring-amber-500/50 bg-amber-950/20'
+                      ? 'border-[var(--mousa-gold)] ring-2 ring-[var(--mousa-gold)]/40 bg-[var(--mousa-cream-surface)] dark:bg-amber-950/20'
                       : isCompleted
-                      ? 'border-stone-800'
-                      : 'border-stone-800 hover:border-stone-700'
+                      ? 'border-[var(--mousa-teal)] bg-emerald-50 dark:bg-emerald-950/30 shadow-md'
+                      : 'border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] hover:border-[var(--mousa-gold)] hover:shadow-md dark:bg-[#1E1914] dark:hover:border-[var(--mousa-gold)]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4 mb-4">
@@ -529,42 +530,69 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                       )}
                     </div>
 
-                    <button
-                      onClick={() => onMarkSectionRead(section.id, sections.length)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
+                    <span
+                      className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 motion-reduce:transition-none ${
                         isCompleted
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
-                          : 'bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700'
+                          ? 'bg-[var(--mousa-teal)] text-white scale-100'
+                          : 'bg-[var(--mousa-sand-100)] text-[var(--mousa-sand-500)] dark:bg-stone-800'
                       }`}
+                      aria-hidden="true"
                     >
-                      {isCompleted ? <Check className="w-3.5 h-3.5" /> : null}
-                      <span>{isCompleted ? (isAr ? 'تمت القراءة' : 'Completed') : (isAr ? 'تحديد كمقروء' : 'Mark as Read')}</span>
-                    </button>
+                      {isSaving
+                        ? <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin motion-reduce:animate-none" />
+                        : isCompleted
+                          ? <CheckCircle2 className="w-6 h-6 animate-in zoom-in-75 duration-300 motion-reduce:animate-none" />
+                          : <span className="text-xl font-black">○</span>}
+                    </span>
                   </div>
 
-                  <div className="space-y-3 text-sm text-stone-200 leading-relaxed pr-8">
+                  <div className={`space-y-3 text-sm leading-relaxed ${isCompleted ? 'text-[var(--mousa-teal-deep)] dark:text-emerald-100' : 'text-[var(--mousa-sand-700)] dark:text-stone-200'}`}>
                     {section.contentCop && (
-                      <div className="p-3 rounded-xl bg-stone-950/60 border border-amber-900/30 text-amber-200 font-serif leading-relaxed">
-                        <span className="text-[10px] text-amber-500 font-bold block mb-1 uppercase tracking-wider">
+                      <div className="p-3 rounded-xl bg-amber-50 dark:bg-stone-950/60 border border-amber-200 dark:border-amber-900/30 text-amber-900 dark:text-amber-200 font-serif leading-relaxed">
+                        <span className="text-[10px] text-amber-700 dark:text-amber-500 font-bold block mb-1 uppercase tracking-wider">
                           Ⲙⲉⲑⲣⲉⲙⲛ̀ⲭⲏⲙⲓ (Coptic)
                         </span>
                         <p>{section.contentCop}</p>
                       </div>
                     )}
 
-                    <p className="text-stone-100 font-sans leading-relaxed text-base">
+                    <p className="font-sans leading-relaxed text-base">
                       {isAr ? (section.contentAr || section.contentEn) : section.contentEn}
                     </p>
                     {isAr && section.contentEn && section.contentAr !== section.contentEn && (
-                      <p className="text-stone-400 font-serif pt-3 border-t border-stone-800/80 leading-relaxed text-xs sm:text-sm">
+                      <p className="text-[var(--mousa-sand-500)] dark:text-stone-400 font-serif pt-3 border-t border-[var(--mousa-border-sand)] dark:border-stone-800/80 leading-relaxed text-xs sm:text-sm">
                         {section.contentEn}
                       </p>
                     )}
                   </div>
-                </div>
+                  <span className="mt-4 inline-flex text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-light)]">
+                    {isSaving
+                      ? (isAr ? 'جاري الحفظ...' : 'Saving...')
+                      : isCompleted
+                        ? (isAr ? 'مقروءة — اضغط للتراجع' : 'Read — tap to mark unread')
+                        : (isAr ? 'اضغط هنا بعد ما تخلص القراية' : 'Tap here when you finish reading')}
+                  </span>
+                </button>
               );
             })}
           </div>
+          {(sectionProgressError || sectionActionError) && (
+            <p className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-200" role="alert">
+              {sectionProgressError || sectionActionError}
+            </p>
+          )}
+          {canFinish && (
+            <button
+              type="button"
+              onClick={handleFinish}
+              disabled={isFinishing || Boolean(savingSectionId)}
+              className="w-full min-h-14 rounded-2xl bg-gradient-to-r from-[var(--mousa-teal)] via-[var(--mousa-gold)] to-[var(--mousa-coral)] px-6 py-4 text-base sm:text-lg font-black tracking-wide text-white shadow-lg transition-transform hover:brightness-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--mousa-gold)] active:scale-[0.99] motion-reduce:transition-none motion-reduce:transform-none disabled:cursor-wait disabled:opacity-70"
+            >
+              {isFinishing
+                ? (isAr ? 'جاري حفظ إتمام الدرس...' : 'SAVING LESSON...')
+                : (isAr ? 'خلصت الدرس!' : 'FINISHED LESSON!')}
+            </button>
+          )}
         </div>
       )}
 
@@ -633,7 +661,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           <h3 className="text-base sm:text-lg font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
             {isContentCompleted
               ? (isAr ? '🎉 مبروك! اكتملت محطة هذا الدرس بنجاح' : '🎉 Congratulations! Milestone Completed!')
-              : (isAr ? 'هل انتهيت من قراءة ومتابعة محطة الدرس؟' : 'Finished with this lesson milestone?')}
+              : (isAr ? 'خد وقتك واقرأ كل الأقسام على مهلك' : 'Take your time and read each section.')}
           </h3>
           <p className="text-xs text-[var(--mousa-sand-500)] max-w-xl">
             {isContentCompleted
@@ -641,54 +669,12 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                   ? 'تم تسجيل إنجازك وحفظ النقاط بأمان. يمكنك مراجعة الأقسام أو العودة للرئيسية.' 
                   : 'Your progress is reliably saved and points awarded. You can return home or take the review quiz.')
               : (isAr 
-                  ? 'سجّل إتمام قراءة ومتابعة الدرس لتحصيل نقاط البركة والتقدم في وسام رحلة الأنبا موسى.' 
-                  : 'Mark your lesson completed to record your genuine progress and earn your blessing points.')}
+                  ? 'لما تخلص كل قسم، دوس عليه عشان تحفظ قرايته. زر إنهاء الدرس هيظهر بعد ما تكمّل كل الأقسام.'
+                  : 'Tap each section when you finish reading it. The finish button appears after every section is complete.')}
           </p>
-          {finishError && (
-            <p className="text-xs font-bold text-red-600 dark:text-red-400 mt-1">
-              ⚠️ {finishError}
-            </p>
-          )}
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Finish Lesson Action Button */}
-          <button
-            onClick={handleFinish}
-            disabled={isFinishing || isContentCompleted}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 shadow-xs ${
-              isContentCompleted
-                ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                : isFinishing
-                ? 'bg-amber-300 text-amber-950 opacity-80 cursor-wait'
-                : (sections.length === 0 || isSubstantiallyCompleted || isAllSectionsRead)
-                ? 'bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 text-white cursor-pointer active:scale-95'
-                : 'bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 text-white cursor-pointer active:scale-95'
-            }`}
-          >
-            {isFinishing ? (
-              <>
-                <div className="w-4 h-4 border-2 border-amber-950 border-t-transparent rounded-full animate-spin"></div>
-                <span>{isAr ? 'جاري حفظ الإتمام...' : 'Saving completion...'}</span>
-              </>
-            ) : isContentCompleted ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>{isAr ? 'تم إتمام الدرس بالكامل (١٠٠٪) ✅' : 'Lesson Completed (100%) ✅'}</span>
-              </>
-            ) : !isAllSectionsRead && sections.length > 0 ? (
-              <>
-                <BookOpen className="w-4 h-4" />
-                <span>{isAr ? `إتمام قراءة الأقسام أولاً (${completedSections.length}/${sections.length})` : `Read All Sections First (${completedSections.length}/${sections.length})`}</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{isAr ? 'إنهاء محطة الدرس' : 'Finish Lesson'}</span>
-              </>
-            )}
-          </button>
-
           {/* Clear Route Back Home upon completion */}
           {isContentCompleted && (
             <button

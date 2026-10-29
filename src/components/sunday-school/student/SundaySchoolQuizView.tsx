@@ -23,6 +23,13 @@ import {
 import { QuizDraft, StudentQuizAttempt, QuizAnswer, Language } from '../../../types';
 import { ConfettiCanvas } from './ConfettiCanvas';
 import { RewardCelebration } from './RewardCelebration';
+import {
+  calculateQuizScore,
+  getSavedQuizScore,
+  moveQuizQuestion,
+  resolveQuizSubmission,
+  selectQuizAnswer
+} from '../../../lib/studentQuizPresentation';
 
 interface SundaySchoolQuizViewProps {
   quiz: QuizDraft;
@@ -94,25 +101,21 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   const handleSelectOption = (index: number) => {
     if (isSubmitted || isSubmitting) return;
     setValidationWarning(null);
-    setSelectedAnswers(prev => ({
-      ...prev,
-      [currentQuestion.id]: index
-    }));
+    setSelectedAnswers(prev => selectQuizAnswer(prev, currentQuestion.id, index, false));
     setShowExplanation(true);
   };
 
   const handlePrev = () => {
     setValidationWarning(null);
-    setShowExplanation(selectedAnswers[questions[currentQuestionIndex - 1]?.id] !== undefined);
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
+    const previousIndex = moveQuizQuestion(currentQuestionIndex, questions.length, -1);
+    setShowExplanation(selectedAnswers[questions[previousIndex]?.id] !== undefined);
+    setCurrentQuestionIndex(previousIndex);
   };
 
   const handleNext = () => {
     setValidationWarning(null);
     if (currentQuestionIndex < questions.length - 1) {
-      const nextIndex = currentQuestionIndex + 1;
+      const nextIndex = moveQuizQuestion(currentQuestionIndex, questions.length, 1);
       setCurrentQuestionIndex(nextIndex);
       setShowExplanation(selectedAnswers[questions[nextIndex]?.id] !== undefined);
     } else {
@@ -121,7 +124,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   };
 
   const handleJumpToQuestion = (idx: number) => {
-    if (isSubmitting) return;
+    if (isSubmitting || idx < 0 || idx >= questions.length) return;
     setValidationWarning(null);
     setCurrentQuestionIndex(idx);
     setShowExplanation(selectedAnswers[questions[idx]?.id] !== undefined);
@@ -154,14 +157,9 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
     setSubmitError(null);
     setValidationWarning(null);
 
-    let correctCount = 0;
-
     const recordedAnswers: QuizAnswer[] = questions.map(q => {
       const selected = selectedAnswers[q.id];
       const isCorrect = selected === q.correctIndex;
-      if (isCorrect) {
-        correctCount += 1;
-      }
 
       return {
         questionId: q.id,
@@ -175,32 +173,31 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
         recommendedSectionTitle: q.sourceRef?.sectionTitle
       };
     });
-
-    const percentage = questions.length > 0 
-      ? Math.round((correctCount / questions.length) * 100) 
-      : 0;
+    const score = calculateQuizScore(questions, selectedAnswers);
 
     try {
       const result = await onSubmitAttempt({
         studentId,
         lessonId,
         quizId: quiz.id,
-        score: correctCount,
-        totalScore: questions.length,
-        percentage,
-        passed: percentage >= 50,
+        score: score.correctCount,
+        totalScore: score.totalQuestions,
+        percentage: score.percentage,
+        passed: score.percentage >= 50,
         answers: recordedAnswers
       });
 
-      if (!result.success) {
-        throw new Error(result.error || (isAr ? 'فشل حفظ نتيجة الاختبار' : 'Failed to submit quiz attempt'));
+      const resolved = resolveQuizSubmission(
+        result,
+        isAr ? 'فشل حفظ نتيجة الاختبار' : 'Failed to submit quiz attempt'
+      );
+      if ('error' in resolved) {
+        throw new Error(resolved.error);
       }
 
-      if (result.data) {
-        setSubmittedAttempt(result.data);
-      }
+      setSubmittedAttempt(resolved.attempt);
       setSubmissionResult({
-        attempt: result.data || null,
+        attempt: resolved.attempt,
         isDuplicate: Boolean(result.isDuplicate),
         isFirstCompletion: Boolean(result.isFirstCompletion),
         pointsEarned: Number(result.pointsEarned ?? 0),
@@ -231,20 +228,11 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
     setSubmissionResult(null);
   };
 
-  // Result Calculation for submitted view (Authoritative & Raw Question Count)
-  let calculatedCorrectCount = 0;
-  questions.forEach(q => {
-    if (selectedAnswers[q.id] === q.correctIndex) {
-      calculatedCorrectCount += 1;
-    }
-  });
-  const calculatedPercentage = questions.length > 0 
-    ? Math.round((calculatedCorrectCount / questions.length) * 100) 
-    : 0;
-
-  const displayPercentage = submittedAttempt?.percentage ?? calculatedPercentage;
-  const displayCorrectCount = submittedAttempt?.score ?? calculatedCorrectCount;
-  const displayTotalQuestions = submittedAttempt?.totalScore ?? questions.length;
+  const savedScore = getSavedQuizScore(submittedAttempt);
+  const displayPercentage = savedScore?.percentage ?? 0;
+  const displayCorrectCount = savedScore?.correctCount ?? 0;
+  const displayTotalQuestions = savedScore?.totalQuestions ?? 0;
+  const showSavedResults = isSubmitted && savedScore !== null;
 
   if (questions.length === 0) {
     return (
@@ -264,7 +252,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5 pb-16">
+    <div className="max-w-3xl mx-auto space-y-5 pb-16" dir={isAr ? 'rtl' : 'ltr'}>
       {/* Top Header Navigation */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <button
@@ -330,16 +318,39 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
         </div>
       )}
 
-      {!isSubmitted ? (
+      {!showSavedResults ? (
         <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-border-sand)] rounded-3xl p-5 sm:p-8 space-y-6 shadow-sm">
-          {/* Question Counter & Difficulty Level */}
-          <div className="flex items-center justify-between text-xs flex-wrap gap-2.5">
-            <div className="flex items-center gap-2">
-              <span className="font-black text-[var(--mousa-gold)] uppercase tracking-wider text-xs">
+          <div className="space-y-2" aria-label={isAr ? 'تقدم الاختبار' : 'Quiz progress'}>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]" aria-live="polite">
                 {isAr
                   ? `السؤال ${currentQuestionIndex + 1} من ${questions.length}`
                   : `Question ${currentQuestionIndex + 1} of ${questions.length}`}
               </span>
+              <span className="text-xs font-bold text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-300)]">
+                {isAr
+                  ? `${Object.keys(selectedAnswers).filter(id => questions.some(question => question.id === id)).length} إجابات`
+                  : `${Object.keys(selectedAnswers).filter(id => questions.some(question => question.id === id)).length} answered`}
+              </span>
+            </div>
+            <div
+              className="h-3 rounded-full bg-[var(--mousa-sand-200)] dark:bg-stone-800 overflow-hidden"
+              role="progressbar"
+              aria-label={isAr ? 'تقدم أسئلة الاختبار' : 'Quiz question progress'}
+              aria-valuemin={0}
+              aria-valuemax={questions.length}
+              aria-valuenow={currentQuestionIndex + 1}
+            >
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[var(--mousa-teal)] via-[var(--mousa-gold)] to-[var(--mousa-coral)] transition-[width] duration-500 motion-reduce:transition-none"
+                style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Difficulty and question navigation */}
+          <div className="flex items-center justify-between text-xs flex-wrap gap-2.5">
+            <div className="flex items-center gap-2">
               <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border font-mono ${
                 (currentQuestion.difficulty || 'EASY') === 'HARD'
                   ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40'
@@ -365,8 +376,9 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
                     key={q.id || i}
                     onClick={() => handleJumpToQuestion(i)}
                     disabled={isSubmitting}
-                    aria-label={`Jump to question ${i + 1}`}
-                    className={`w-7 h-7 rounded-xl text-[11px] font-bold flex items-center justify-center transition-all cursor-pointer ${
+                    aria-label={isAr ? `انتقل للسؤال ${i + 1}` : `Jump to question ${i + 1}`}
+                    aria-current={isCurrent ? 'step' : undefined}
+                    className={`w-9 h-9 rounded-xl text-xs font-black flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--mousa-gold)] motion-reduce:transition-none cursor-pointer ${
                       isCurrent
                         ? 'bg-[var(--mousa-gold)] text-amber-950 shadow-xs ring-2 ring-[var(--mousa-gold)]/50 scale-105'
                         : isAnswered
@@ -382,7 +394,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
           </div>
 
           {/* Question Text */}
-          <div className="space-y-2.5">
+          <div key={currentQuestion.id} className="space-y-2.5 quiz-question-transition" aria-live="polite">
             {currentQuestion.questionAr && (
               <h2 className="text-lg sm:text-xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] font-sans leading-relaxed" dir="rtl">
                 {currentQuestion.questionAr}
@@ -396,7 +408,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
           </div>
 
           {/* Answer Options */}
-          <div className="space-y-3 pt-2">
+          <div className="space-y-3 pt-2" role="group" aria-label={isAr ? 'اختار إجابة واحدة' : 'Choose one answer'}>
             {currentQuestion.optionsEn.map((opt, oIdx) => {
               const isSelected = selectedAnswers[currentQuestion.id] === oIdx;
               const hasAnswered = selectedAnswers[currentQuestion.id] !== undefined;
@@ -408,17 +420,34 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
                   key={oIdx}
                   onClick={() => handleSelectOption(oIdx)}
                   disabled={hasAnswered || isSubmitting}
-                  className={`w-full p-4 rounded-2xl border-2 text-start transition-all flex items-center justify-between text-sm cursor-pointer min-h-[52px] ${
+                  aria-pressed={isSelected}
+                  className={`w-full p-4 sm:p-5 rounded-2xl border-2 text-start transition-all duration-200 flex items-center justify-between text-sm cursor-pointer min-h-[68px] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--mousa-gold)] active:scale-[0.99] motion-reduce:transition-none motion-reduce:transform-none ${
                     hasAnswered && isCorrectAnswer
-                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-600 text-emerald-900 dark:text-emerald-100 font-bold'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-600 text-emerald-900 dark:text-emerald-100 font-bold shadow-sm'
                       : hasAnswered && isSelected && !isCorrectAnswer
-                      ? 'bg-rose-50 dark:bg-rose-950/60 border-[var(--mousa-coral)] text-rose-950 dark:text-rose-100 font-medium'
+                      ? 'bg-rose-50 dark:bg-rose-950/60 border-[var(--mousa-coral)] text-rose-950 dark:text-rose-100 font-bold shadow-sm'
                       : isSelected
-                      ? 'bg-[var(--mousa-sand-100)] border-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-bold'
-                      : 'bg-[var(--mousa-cream)] dark:bg-stone-900/60 border-[var(--mousa-border-sand)] hover:border-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]'
+                      ? 'bg-[var(--mousa-gold-soft)] border-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-bold shadow-sm'
+                      : 'bg-[var(--mousa-cream)] dark:bg-stone-900/60 border-[var(--mousa-border-sand)] hover:border-[var(--mousa-teal)] hover:-translate-y-0.5 text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]'
                   }`}
                 >
-                  <div className="space-y-1 pr-2">
+                  <div className="flex items-center gap-3 space-y-1 min-w-0">
+                    <span className={`w-9 h-9 rounded-xl border-2 flex items-center justify-center shrink-0 font-black ${
+                      hasAnswered && isCorrectAnswer
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                        : hasAnswered && isSelected
+                          ? 'border-rose-600 bg-rose-600 text-white'
+                          : isSelected
+                            ? 'border-[var(--mousa-gold)] bg-[var(--mousa-gold)] text-amber-950'
+                            : 'border-[var(--mousa-border-sand)] bg-white dark:bg-stone-800 text-[var(--mousa-sand-600)] dark:text-stone-200'
+                    }`} aria-hidden="true">
+                      {hasAnswered && isCorrectAnswer
+                        ? <CheckCircle2 className="w-5 h-5" />
+                        : hasAnswered && isSelected
+                          ? <XCircle className="w-5 h-5" />
+                          : String.fromCharCode(65 + oIdx)}
+                    </span>
+                    <div className="space-y-1 min-w-0">
                     {optionArText && (
                       <span className="font-sans font-bold text-sm sm:text-base block" dir="rtl">
                         {optionArText}
@@ -429,13 +458,23 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
                         {opt}
                       </span>
                     )}
+                    </div>
                   </div>
 
-                  {hasAnswered && isCorrectAnswer && (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                  )}
-                  {hasAnswered && isSelected && !isCorrectAnswer && (
-                    <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
+                  {hasAnswered && (
+                    <span className={`text-xs font-black shrink-0 ${
+                    isCorrectAnswer
+                      ? 'text-emerald-800 dark:text-emerald-200'
+                      : isSelected
+                        ? 'text-rose-800 dark:text-rose-200'
+                        : 'sr-only'
+                    }`}>
+                    {isCorrectAnswer
+                      ? (isAr ? 'صحيحة' : 'Correct')
+                      : isSelected
+                        ? (isAr ? 'اختيارك' : 'Your choice')
+                        : ''}
+                    </span>
                   )}
                 </button>
               );
@@ -521,30 +560,17 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
         </div>
       ) : (
         /* Results Screen with Celebrations, Points & Streak */
-        <div className="relative bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-border-sand)] rounded-3xl p-6 sm:p-10 space-y-7 shadow-md text-center animate-in fade-in overflow-hidden">
-          {/* Confetti & Particle Celebration Styles (Always plays without reduced-motion suppression) */}
-          <style>{`
-            @keyframes celebrationFall {
-              0% { transform: translateY(-24px) rotate(0deg) scale(0.8); opacity: 0; }
-              15% { opacity: 1; transform: translateY(10px) rotate(45deg) scale(1.1); }
-              85% { opacity: 0.9; }
-              100% { transform: translateY(380px) rotate(360deg) scale(0.9); opacity: 0; }
-            }
-          `}</style>
-
-          {/* Lightweight Canvas Confetti Component: triggers only after server confirms 100% */}
+        <div className="relative bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-border-sand)] rounded-3xl p-6 sm:p-10 space-y-7 shadow-md text-center quiz-result-enter overflow-hidden" aria-live="polite">
           {displayPercentage === 100 && <ConfettiCanvas />}
 
-          {/* 100% Tier Party Particles Animation */}
           {displayPercentage === 100 && (
             <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl" aria-hidden="true">
               {[...Array(24)].map((_, i) => (
                 <span
                   key={i}
-                  className="celebration-particle absolute select-none pointer-events-none"
+                  className="quiz-celebration-particle absolute select-none pointer-events-none"
                   style={{
                     left: `${(i * 4.1 + 3) % 94}%`,
-                    animation: `celebrationFall ${2.3 + (i % 4) * 0.35}s ease-in-out infinite`,
                     animationDelay: `${(i * 0.16) % 2.4}s`,
                     fontSize: `${16 + (i % 3) * 6}px`
                   }}
@@ -554,6 +580,11 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
               ))}
             </div>
           )}
+
+          <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200" role="status" data-testid="quiz-saved-outcome">
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <span>{isAr ? 'النتيجة اتحفظت واتأكدت بنجاح' : 'Result saved and confirmed'}</span>
+          </div>
 
           {/* Duplicate Submission Recovery Notice */}
           {submissionResult?.isDuplicate && (
