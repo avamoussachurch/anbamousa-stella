@@ -9,8 +9,9 @@ import {
 import { Language } from '../../../types';
 import { HymnsPublishingStudio } from './HymnsPublishingStudio';
 import { TaxisPublishingStudio } from './TaxisPublishingStudio';
+import { CurriculumImportCenter } from './CurriculumImportCenter';
 
-export type PublishingMode = 'sunday_school' | 'hymns' | 'taxis';
+export type PublishingMode = 'sunday_school' | 'hymns' | 'taxis' | 'import';
 
 interface TeacherPublishingHubProps {
   lang?: Language;
@@ -37,7 +38,7 @@ export function TeacherPublishingHub({
     <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
       {/* 3-Way Functional Publishing Mode Switcher */}
       <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] p-2 rounded-3xl border-2 border-[var(--mousa-border-sand)] max-w-4xl mx-auto shadow-sm">
-        <div className="flex flex-col sm:flex-row items-center gap-1.5">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => setPublishingMode('sunday_school')}
@@ -86,6 +87,18 @@ export function TeacherPublishingHub({
             </span>
           </button>
 
+          <button
+            type="button"
+            onClick={() => setPublishingMode('import')}
+            className={`flex-1 w-full sm:w-auto py-3 px-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              publishingMode === 'import'
+                ? 'bg-[var(--mousa-coral)] text-white shadow-md'
+                : 'text-stone-600 dark:text-stone-300 hover:text-[var(--mousa-coral)]'
+            }`}
+          >
+            <Sparkles size={18} />
+            <span>{isAr ? 'تجهيز دفعة ملفات' : 'Batch import'}</span>
+          </button>
         </div>
       </div>
 
@@ -102,6 +115,10 @@ export function TeacherPublishingHub({
 
       {publishingMode === 'taxis' && (
         <TaxisPublishingStudio lang={lang} />
+      )}
+
+      {publishingMode === 'import' && (
+        <CurriculumImportCenter lang={lang} />
       )}
 
     </div>

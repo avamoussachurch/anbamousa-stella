@@ -14,6 +14,7 @@ export interface HymnLyricLine {
 
 export interface CopticHymnItem {
   id: string;
+  createdBy?: string;
   titleAr: string;
   titleEn: string;
   titleCoptic: string;
@@ -23,6 +24,8 @@ export interface CopticHymnItem {
   difficulty: 'easy' | 'medium' | 'advanced';
   level: 1 | 2 | 3;
   audioUrl: string;
+  pdfUrl?: string;
+  sheetMusicUrl?: string;
   durationSec: number;
   hazatExplanationAr: string;
   hazatExplanationEn: string;

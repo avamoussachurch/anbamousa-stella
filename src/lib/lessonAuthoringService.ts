@@ -16,6 +16,8 @@ import {
 } from './curriculumService';
 
 export interface CreateLessonDraftInput {
+  id?: string;
+  versionId?: string;
   titleEn: string;
   titleAr?: string;
   category?: 'bible' | 'hymns' | 'history' | 'virtues';
@@ -182,8 +184,8 @@ export async function createLessonDraft(
     const category = input.category || 'bible';
     const gradeLevel = input.gradeLevel || '4th Grade';
     const nowIso = new Date().toISOString();
-    const lessonId = generateUuid();
-    const versionId = generateUuid();
+    const lessonId = input.id || generateUuid();
+    const versionId = input.versionId || generateUuid();
 
     // 1. Insert root public.lessons record in safe draft state
     // Note: Do NOT set active_version_id or publication fields

@@ -857,7 +857,7 @@ export interface TaxisAttachment {
   id: string;
   title: string;
   fileUrl: string;
-  fileType: 'pdf' | 'audio' | 'image' | 'doc';
+  fileType: 'pdf' | 'audio' | 'image' | 'doc' | 'video' | 'presentation';
   fileSize?: number;
   mimeType?: string;
 }
