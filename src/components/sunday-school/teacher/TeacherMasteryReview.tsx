@@ -53,7 +53,7 @@ export const TeacherMasteryReview: React.FC<TeacherMasteryReviewProps> = ({
   ]);
 
   React.useEffect(() => {
-    getClassRoster().then(({ data }) => {
+    getClassRoster(undefined, true).then(({ data }) => {
       if (data && data.length > 0) {
         setStudents(data.map(d => ({
           id: d.id,

@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   School,
   Music,
   BookOpen,
-  Users,
   Sparkles,
   ChevronRight
 } from 'lucide-react';
 import { Language } from '../../../types';
 import { HymnsPublishingStudio } from './HymnsPublishingStudio';
 import { TaxisPublishingStudio } from './TaxisPublishingStudio';
-import { HymnsEnrollmentManager } from './HymnsEnrollmentManager';
 
-export type PublishingMode = 'sunday_school' | 'hymns' | 'taxis' | 'hymns_roster';
+export type PublishingMode = 'sunday_school' | 'hymns' | 'taxis';
 
 interface TeacherPublishingHubProps {
   lang?: Language;
   onPreviewLesson?: (lessonId: string) => void;
+  initialMode?: PublishingMode;
   // Sunday School studio content rendered as children or callback
   sundaySchoolContent?: React.ReactNode;
 }
@@ -24,10 +23,15 @@ interface TeacherPublishingHubProps {
 export function TeacherPublishingHub({
   lang = 'ar',
   onPreviewLesson,
-  sundaySchoolContent
+  sundaySchoolContent,
+  initialMode = 'sunday_school'
 }: TeacherPublishingHubProps) {
   const isAr = lang === 'ar';
-  const [publishingMode, setPublishingMode] = useState<PublishingMode>('sunday_school');
+  const [publishingMode, setPublishingMode] = useState<PublishingMode>(initialMode);
+
+  useEffect(() => {
+    setPublishingMode(initialMode);
+  }, [initialMode]);
 
   return (
     <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
@@ -82,19 +86,6 @@ export function TeacherPublishingHub({
             </span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setPublishingMode('hymns_roster')}
-            className={`w-full sm:w-auto py-3 px-3.5 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              publishingMode === 'hymns_roster'
-                ? 'bg-amber-500 text-white shadow-md'
-                : 'text-stone-500 dark:text-stone-400 hover:text-amber-600'
-            }`}
-            title={isAr ? 'مراجعة طلبات الالتحاق بمدرسة الألحان' : 'Review Hymns School Applications'}
-          >
-            <Users size={16} />
-            <span>{isAr ? 'طلبات الألحان' : 'Admissions'}</span>
-          </button>
         </div>
       </div>
 
@@ -113,9 +104,6 @@ export function TeacherPublishingHub({
         <TaxisPublishingStudio lang={lang} />
       )}
 
-      {publishingMode === 'hymns_roster' && (
-        <HymnsEnrollmentManager lang={lang} />
-      )}
     </div>
   );
 }

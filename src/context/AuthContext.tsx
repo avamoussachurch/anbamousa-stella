@@ -4,6 +4,7 @@ import { updateSupabaseProfile } from '../lib/supabaseDatabase';
 import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../lib/pointsService';
 import { User } from '../types';
 import type { Session } from '@supabase/supabase-js';
+import { parseHymnsTaxisLevel } from '../lib/hymnsTaxisLevel';
 
 interface AuthContextType {
   currentUser: { uid: string; email?: string | null } | null;
@@ -164,6 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       parentEmail: 'parent.guardian@church.org',
       phone: '+20 100 123 4567',
       grade: 'الابتدائي - المرحلة الثالثة',
+      hymnsTaxisLevel: 1,
       parentPin: '1234',
       requireRewardApproval: true,
       pushNotificationsEnabled: true,
@@ -183,7 +185,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateUserProfile = async (updates: Partial<User>): Promise<{ success: boolean; error?: string }> => {
     if (!userData) return { success: false, error: 'No active user session' };
 
-    const { role: _role, points: _points, currentStreak: _currentStreak, longestStreak: _longestStreak, ...editableUpdates } = updates;
+    const {
+      role: _role,
+      points: _points,
+      currentStreak: _currentStreak,
+      longestStreak: _longestStreak,
+      hymnsTaxisLevel: _hymnsTaxisLevel,
+      ...editableUpdates
+    } = updates;
     const updatedUser: User = {
       ...userData,
       ...editableUpdates,
@@ -464,6 +473,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         parentEmail: cachedAuthUser.parentEmail || profile?.email || session.user.email,
         phone: cachedAuthUser.phone,
         grade: profile?.grade || cachedAuthUser.grade,
+        hymnsTaxisLevel: parseHymnsTaxisLevel(profile?.hymns_taxis_level) || undefined,
         parentPin: cachedAuthUser.parentPin,
         requireRewardApproval: profile?.require_reward_approval ?? true,
         pushNotificationsEnabled: profile?.push_notifications_enabled ?? true,

@@ -5,6 +5,7 @@ import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
+import { canInitializeHymnsTaxisLevel, parseHymnsTaxisLevel } from "./src/lib/hymnsTaxisLevel";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -6483,7 +6484,7 @@ app.get("/api/church/my-class", async (req, res) => {
               const studentIds = memberships.map((m: any) => m.student_id);
               const { data: profiles } = await client
                 .from('profiles')
-                .select('id, name, avatar, grade, role')
+                .select('id, name, avatar, grade, role, hymns_taxis_level')
                 .in('id', studentIds);
 
               const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
@@ -6502,6 +6503,7 @@ app.get("/api/church/my-class", async (req, res) => {
                   grade: mem.exact_grade,
                   classGroupId: assignedClassGroupId,
                   avatarUrl: p?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${mem.student_id}`,
+                  hymnsTaxisLevel: parseHymnsTaxisLevel(p?.hymns_taxis_level) || undefined,
                   joinedAt: mem.joined_at,
                   learningSummary: {
                     latestMasteryStatus: mastery ? mastery.status : 'NOT_STARTED',
@@ -6936,7 +6938,7 @@ app.get("/api/church/class-roster", async (req, res) => {
             const studentIds = memberships.map((m: any) => m.student_id);
             const { data: profiles } = await client
               .from('profiles')
-              .select('id, name, avatar, grade, role')
+              .select('id, name, avatar, grade, role, hymns_taxis_level')
               .in('id', studentIds);
 
             const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
@@ -6955,6 +6957,7 @@ app.get("/api/church/class-roster", async (req, res) => {
                 grade: mem.exact_grade,
                 classGroupId: targetClassGroupId,
                 avatarUrl: p?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${mem.student_id}`,
+                hymnsTaxisLevel: parseHymnsTaxisLevel(p?.hymns_taxis_level) || undefined,
                 joinedAt: mem.joined_at,
                 learningSummary: {
                   latestMasteryStatus: mastery ? mastery.status : 'NOT_STARTED',
@@ -11579,6 +11582,84 @@ Return ONLY valid JSON matching this schema:
 // HYMNS SCHOOL (مدرسة الألحان) API & RBAC
 // ==============================================================================
 
+async function getSharedHymnsTaxisProfile(studentId: string): Promise<{
+  hymns_taxis_level: number | null;
+  grade: string | null;
+} | null> {
+  const client = getTrustedProgressClient();
+  const { data, error } = await client
+    .from('profiles')
+    .select('hymns_taxis_level, grade')
+    .eq('id', studentId)
+    .maybeSingle();
+  if (error) throw new Error(`Could not read the student program profile: ${error.message}`);
+  return data || null;
+}
+
+app.put("/api/church/hymns-taxis-level", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to save your level." });
+    }
+    if (authContext.role !== 'student') {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only students can set a student curriculum level." });
+    }
+
+    const requestedLevel = parseHymnsTaxisLevel(req.body?.level);
+    if (requestedLevel === null) {
+      return res.status(400).json({ success: false, error: "INVALID_LEVEL", message: "Level must be 1, 2, or 3." });
+    }
+
+    const client = getTrustedProgressClient();
+    const { data: profile, error: profileError } = await client
+      .from('profiles')
+      .select('id, role, hymns_taxis_level')
+      .eq('id', authContext.userId)
+      .maybeSingle();
+    if (profileError) throw new Error(`Could not verify the student profile: ${profileError.message}`);
+    if (!profile) {
+      return res.status(404).json({ success: false, error: "PROFILE_NOT_FOUND", message: "Student profile was not found." });
+    }
+    if (profile.role !== 'student') {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only student profiles can set this level." });
+    }
+    if (!canInitializeHymnsTaxisLevel(profile.role, profile.hymns_taxis_level, requestedLevel)) {
+      return res.status(409).json({
+        success: false,
+        error: "LEVEL_ALREADY_ASSIGNED",
+        message: "A curriculum level is already assigned. Contact your teacher if it needs to change."
+      });
+    }
+
+    const { data: updated, error: updateError } = await client
+      .from('profiles')
+      .update({ hymns_taxis_level: requestedLevel })
+      .eq('id', authContext.userId)
+      .is('hymns_taxis_level', null)
+      .select('hymns_taxis_level')
+      .maybeSingle();
+    if (updateError) throw new Error(`Could not save the student curriculum level: ${updateError.message}`);
+    if (!updated) {
+      return res.status(409).json({
+        success: false,
+        error: "LEVEL_ALREADY_ASSIGNED",
+        message: "A curriculum level is already assigned. Contact your teacher if it needs to change."
+      });
+    }
+
+    return res.json({ success: true, level: updated.hymns_taxis_level });
+  } catch (error: any) {
+    console.error("Hymns/Taxis level setup error:", error);
+    const status = /trusted supabase configuration/i.test(error?.message || '') ? 503 : 500;
+    return res.status(status).json({
+      success: false,
+      error: status === 503 ? "PERSISTENCE_UNAVAILABLE" : "SERVER_ERROR",
+      message: status === 503 ? "Level setup is temporarily unavailable. Please try again later." : "Could not save the curriculum level."
+    });
+  }
+});
+
 // Helper to get student's approved Hymns School level
 function getStudentHymnsMembership(studentId: string) {
   if (!studentId) return null;
@@ -11614,68 +11695,11 @@ app.get("/api/church/hymns/my-enrollment", async (req, res) => {
 
 // 2. Student submits enrollment request
 app.post("/api/church/hymns/enroll", async (req, res) => {
-  try {
-    const authContext = await verifyServerRequestAuth(req);
-    const { level, rosterGroup, notes, studentId, studentName } = req.body;
-
-    // Student ID resolution: enforce caller's identity if student
-    let effectiveStudentId = studentId || authContext.userId;
-    if (authContext.role === 'student' && authContext.userId) {
-      effectiveStudentId = authContext.userId;
-    }
-
-    if (!effectiveStudentId) {
-      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "User must be logged in to apply" });
-    }
-
-    const targetLevel = Number(level);
-    if (![1, 2, 3].includes(targetLevel)) {
-      return res.status(400).json({ success: false, error: "INVALID_LEVEL", message: "Level must be 1, 2, or 3" });
-    }
-
-    // Check existing membership
-    const existing = getStudentHymnsMembership(effectiveStudentId);
-    if (existing) {
-      if (existing.status === 'pending') {
-        return res.status(400).json({
-          success: false,
-          error: "ALREADY_PENDING",
-          message: "You already have an enrollment request pending review."
-        });
-      }
-      if (existing.status === 'approved' && existing.level === targetLevel) {
-        return res.status(400).json({
-          success: false,
-          error: "ALREADY_ENROLLED",
-          message: `Already enrolled in Level ${targetLevel}.`
-        });
-      }
-    }
-
-    const memId = `mem_${effectiveStudentId}_lvl${targetLevel}_${Date.now()}`;
-    const newMembership = {
-      id: memId,
-      studentId: effectiveStudentId,
-      studentName: studentName || (authContext.userId ? `Student ${authContext.userId}` : 'Student Candidate'),
-      level: targetLevel as 1 | 2 | 3,
-      rosterGroup: rosterGroup || (targetLevel === 1 ? 'primary_choir' : targetLevel === 2 ? 'deacons_prep' : 'master_deacons'),
-      status: 'pending' as const,
-      requestedAt: new Date().toISOString(),
-      notes: notes || ''
-    };
-
-    serverReviewState.hymnsMemberships[memId] = newMembership;
-    savePersistentClassState();
-
-    return res.json({
-      success: true,
-      membership: newMembership,
-      message: "Enrollment request submitted successfully and awaiting servant review."
-    });
-  } catch (err: any) {
-    console.error("Hymns enroll error:", err);
-    res.status(500).json({ success: false, error: "SERVER_ERROR", message: err.message });
-  }
+  return res.status(410).json({
+    success: false,
+    error: "LEGACY_ENROLLMENT_DISABLED",
+    message: "Hymns and Taxis use the shared student profile level. Select it from the student curriculum setup."
+  });
 });
 
 // 3. Servants list pending/approved Hymns School enrollment requests
@@ -11774,37 +11798,38 @@ app.get("/api/church/hymns", async (req, res) => {
     const isTeacherOrAdmin = authContext.role === 'teacher' || authContext.role === 'admin';
 
     // Query filters
-    const levelQuery = req.query.level ? Number(req.query.level) : null;
+    const levelQuery = req.query.level ? parseHymnsTaxisLevel(req.query.level) : null;
+    if (req.query.level && levelQuery === null) {
+      return res.status(400).json({ success: false, error: "INVALID_LEVEL", message: "Level must be 1, 2, or 3." });
+    }
     const seasonQuery = req.query.season as string;
     const statusQuery = req.query.status as string;
 
     if (!isTeacherOrAdmin) {
-      // Caller is student or anonymous:
-      let studentApprovedLevel: number = 1;
-      let hasApprovedMembership = false;
-
-      if (authContext.userId) {
-        const mem = getStudentHymnsMembership(authContext.userId);
-        if (mem && mem.status === 'approved') {
-          studentApprovedLevel = mem.level;
-          hasApprovedMembership = true;
+      let studentLevel = 1;
+      if (authContext.role === 'student' && authContext.userId) {
+        const studentProfile = await getSharedHymnsTaxisProfile(authContext.userId);
+        studentLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level) || 0;
+        if (!studentLevel) {
+          return res.status(409).json({
+            success: false,
+            error: "LEVEL_SETUP_REQUIRED",
+            message: "Choose your shared Hymns and Taxis level to view lessons."
+          });
         }
       }
 
       // Filter: only published hymns
       let accessibleHymns = allHymns.filter((h: any) => h.status === 'published');
 
-      // Student can only access hymns at or below their approved level
-      accessibleHymns = accessibleHymns.filter((h: any) => h.level <= studentApprovedLevel);
+      // Students see only the exact level assigned in their profile.
+      accessibleHymns = accessibleHymns.filter((h: any) => h.level === studentLevel);
 
-      if (levelQuery && levelQuery <= studentApprovedLevel) {
-        accessibleHymns = accessibleHymns.filter((h: any) => h.level === levelQuery);
-      } else if (levelQuery && levelQuery > studentApprovedLevel) {
-        // Forbidden to request higher level materials
+      if (levelQuery && levelQuery !== studentLevel) {
         return res.status(403).json({
           success: false,
           error: "HYMN_LEVEL_ACCESS_DENIED",
-          message: `Access denied. You are approved for Level ${studentApprovedLevel}, but requested Level ${levelQuery} content.`
+          message: `Access denied. Your assigned level is ${studentLevel}.`
         });
       }
 
@@ -11815,14 +11840,14 @@ app.get("/api/church/hymns", async (req, res) => {
       return res.json({
         success: true,
         items: accessibleHymns,
-        enrolledLevel: hasApprovedMembership ? studentApprovedLevel : null,
-        isApproved: hasApprovedMembership
+        enrolledLevel: authContext.role === 'student' ? studentLevel : null,
+        isApproved: authContext.role === 'student'
       });
     }
 
     // Teacher / Admin: full library access with filter support
     let results = allHymns;
-    if (levelQuery) results = results.filter((h: any) => h.level === levelQuery);
+    if (levelQuery !== null) results = results.filter((h: any) => h.level === levelQuery);
     if (seasonQuery && seasonQuery !== 'all') results = results.filter((h: any) => h.occasionTag === seasonQuery);
     if (statusQuery && statusQuery !== 'all') results = results.filter((h: any) => h.status === statusQuery);
 
@@ -11854,12 +11879,19 @@ app.get("/api/church/hymns/:id", async (req, res) => {
 
       // Check student level
       let studentLevel = 1;
-      if (authContext.userId) {
-        const mem = getStudentHymnsMembership(authContext.userId);
-        if (mem && mem.status === 'approved') studentLevel = mem.level;
+      if (authContext.role === 'student' && authContext.userId) {
+        const studentProfile = await getSharedHymnsTaxisProfile(authContext.userId);
+        studentLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level) || 0;
+        if (!studentLevel) {
+          return res.status(409).json({
+            success: false,
+            error: "LEVEL_SETUP_REQUIRED",
+            message: "Choose your shared Hymns and Taxis level to view lessons."
+          });
+        }
       }
 
-      if (hymn.level > studentLevel) {
+      if (hymn.level !== studentLevel) {
         return res.status(403).json({
           success: false,
           error: "HYMN_LEVEL_ACCESS_DENIED",
@@ -12138,19 +12170,34 @@ app.get("/api/church/taxis", async (req, res) => {
     const { category, audience } = req.query;
 
     if (authContext.role === 'student' || (!authContext.isAuthenticated && !authContext.userId)) {
+      const studentProfile = authContext.role === 'student' && authContext.userId
+        ? await getSharedHymnsTaxisProfile(authContext.userId)
+        : null;
+      const assignedLevel = authContext.role === 'student'
+        ? parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level)
+        : 1;
+      if (assignedLevel === null) {
+        return res.status(409).json({
+          success: false,
+          error: "LEVEL_SETUP_REQUIRED",
+          message: "Choose your shared Hymns and Taxis level to view lessons."
+        });
+      }
+
       // Students see only published items
       let visible = allItems.filter((i: any) => i.status === 'published');
+      visible = visible.filter((item: any) => item.level === assignedLevel);
 
       // Audience check
       visible = visible.filter((i: any) => {
         if (!i.audience || i.audience === 'all') return true;
         if (i.audience === 'preparatory') {
           const userClass = serverReviewState.studentClasses?.[authContext.userId || ''];
-          return Boolean(userClass?.grade?.toLowerCase().includes('prep') || userClass?.classGroupId === 'preparatory');
+          const grade = studentProfile?.grade || userClass?.grade || '';
+          return Boolean(grade.toLowerCase().includes('prep') || userClass?.classGroupId === 'preparatory');
         }
         if (i.audience === 'deacons') {
-          const hym = getStudentHymnsMembership(authContext.userId || '');
-          return Boolean(hym && hym.status === 'approved' && hym.level >= 2);
+          return assignedLevel >= 2;
         }
         return false;
       });
@@ -12188,6 +12235,24 @@ app.get("/api/church/taxis/:id", async (req, res) => {
         message: "You are not authorized to view this ritual draft or private liturgical material."
       });
     }
+    if (authContext.role === 'student' && authContext.userId) {
+      const studentProfile = await getSharedHymnsTaxisProfile(authContext.userId);
+      const assignedLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level);
+      if (assignedLevel === null) {
+        return res.status(409).json({
+          success: false,
+          error: "LEVEL_SETUP_REQUIRED",
+          message: "Choose your shared Hymns and Taxis level to view lessons."
+        });
+      }
+      if (item.level !== assignedLevel) {
+        return res.status(403).json({
+          success: false,
+          error: "TAXIS_LEVEL_ACCESS_DENIED",
+          message: "This item is not assigned to your curriculum level."
+        });
+      }
+    }
 
     return res.json({ success: true, item, permissions: perms });
   } catch (err: any) {
@@ -12217,9 +12282,10 @@ app.post("/api/church/taxis", async (req, res) => {
       references,
       documents
     } = req.body;
+    const level = parseHymnsTaxisLevel(req.body?.level);
 
-    if (!titleAr) {
-      return res.status(400).json({ success: false, error: "VALIDATION_FAILED", message: "Arabic title (titleAr) is required." });
+    if (!titleAr || level === null) {
+      return res.status(400).json({ success: false, error: "VALIDATION_FAILED", message: "Arabic title and a valid curriculum level (1, 2, or 3) are required." });
     }
 
     const id = req.body.id || `taxis_${Date.now()}`;
@@ -12229,6 +12295,7 @@ app.post("/api/church/taxis", async (req, res) => {
       titleEn: titleEn || titleAr,
       titleCopt: titleCopt || '',
       category: category || 'liturgy',
+      level,
       audience: audience || 'all',
       status: 'draft' as const,
       summaryAr: summaryAr || '',
@@ -12269,6 +12336,9 @@ app.put("/api/church/taxis/:id", async (req, res) => {
     if (!perms.canEdit) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "You are not authorized to edit this ritual." });
     }
+    if (req.body?.level !== undefined && parseHymnsTaxisLevel(req.body.level) === null) {
+      return res.status(400).json({ success: false, error: "INVALID_LEVEL", message: "Level must be 1, 2, or 3." });
+    }
 
     // Record version snapshot in history
     const snapshot = {
@@ -12286,6 +12356,7 @@ app.put("/api/church/taxis/:id", async (req, res) => {
     const updated = {
       ...item,
       ...req.body,
+      level: req.body?.level === undefined ? item.level ?? null : parseHymnsTaxisLevel(req.body.level),
       id: item.id,
       version: (item.version || 1) + 1,
       updatedAt: new Date().toISOString(),
@@ -12364,6 +12435,13 @@ app.post("/api/church/taxis/:id/publish", async (req, res) => {
     const perms = evaluateServerTaxisPermissions(authContext, item);
     if (!perms.canPublish) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to publish rituals." });
+    }
+    if (parseHymnsTaxisLevel(item.level) === null) {
+      return res.status(400).json({
+        success: false,
+        error: "LEVEL_REQUIRED",
+        message: "Assign this item to a valid curriculum level before publishing."
+      });
     }
 
     item.status = 'published';

@@ -1,4 +1,5 @@
 import { TaxisItem, TaxisUserPermissions, TaxisAudience, TaxisCategory, TaxisStatus, User } from '../types';
+import { filterTaxisItemsByLevel, parseHymnsTaxisLevel } from './hymnsTaxisLevel';
 
 export const INITIAL_TAXIS_COLLECTION: TaxisItem[] = [
   {
@@ -276,12 +277,25 @@ export function computeTaxisPermissions(
 /**
  * Fetch list of Taxis items authorized for the current user
  */
-export async function getTaxisItems(category?: string, audience?: string): Promise<{
+export async function getTaxisItems(category?: string, audience?: string, viewer?: User): Promise<{
   success: boolean;
   items: TaxisItem[];
+  error?: string;
 }> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+  const filterForStudent = (items: TaxisItem[], checkAudience = true) => {
+    if (viewer?.role !== 'student') return items;
+    const level = parseHymnsTaxisLevel(viewer.hymnsTaxisLevel);
+    if (level === null) return [];
+    const grade = (viewer.grade || '').toLowerCase();
+    return filterTaxisItemsByLevel(items, level).filter(item =>
+      item.status === 'published' &&
+      (!checkAudience || item.audience === 'all' ||
+        (item.audience === 'preparatory' && grade.includes('prep')) ||
+        (item.audience === 'deacons' && level >= 2))
+    );
+  };
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
     const q = new URLSearchParams();
     if (category && category !== 'ALL') q.set('category', category);
     if (audience && audience !== 'ALL') q.set('audience', audience);
@@ -295,14 +309,26 @@ export async function getTaxisItems(category?: string, audience?: string): Promi
     if (res.ok) {
       const data = await res.json();
       if (data.success && Array.isArray(data.items)) {
-        return { success: true, items: data.items };
+        let items = filterForStudent(data.items, false);
+        if (category && category !== 'ALL') items = items.filter(item => item.category === category);
+        if (audience && audience !== 'ALL') items = items.filter(item => item.audience === audience);
+        return { success: true, items };
       }
+      if (token) return { success: false, items: [], error: data.message || data.error || 'Could not load Taxis lessons.' };
+    } else if (token) {
+      return { success: false, items: [], error: `Could not load Taxis lessons (HTTP ${res.status}).` };
     }
-  } catch (_) {}
+  } catch (error) {
+    if (token) return { success: false, items: [], error: error instanceof Error ? error.message : 'Network error while loading Taxis lessons.' };
+  }
 
-  // Fallback to local items
+  if (viewer?.role === 'student' && parseHymnsTaxisLevel(viewer.hymnsTaxisLevel) === null) {
+    return { success: false, items: [], error: 'Choose your shared Hymns and Taxis level to view lessons.' };
+  }
+
+  // Only unauthenticated demo mode can use local items.
   const local = getStoredTaxisItems();
-  let filtered = local;
+  let filtered = filterForStudent(local);
   if (category && category !== 'ALL') filtered = filtered.filter(i => i.category === category);
   if (audience && audience !== 'ALL') filtered = filtered.filter(i => i.audience === audience);
   return { success: true, items: filtered };
@@ -315,8 +341,14 @@ export async function saveTaxisItem(
   item: Partial<TaxisItem> & { titleAr: string; titleEn: string },
   user: User
 ): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
+  let token: string | null = null;
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+    token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Could not read the authentication session.' };
+  }
+
+  try {
     const isNew = !item.id || item.id.startsWith('new_');
     const url = isNew ? '/api/church/taxis' : `/api/church/taxis/${encodeURIComponent(item.id!)}`;
     const method = isNew ? 'POST' : 'PUT';
@@ -340,7 +372,10 @@ export async function saveTaxisItem(
         return { success: false, error: data.message || data.error };
       }
     }
-  } catch (_) {}
+    if (token) return { success: false, error: `Could not save Taxis item (HTTP ${res.status}).` };
+  } catch (error) {
+    if (token) return { success: false, error: error instanceof Error ? error.message : 'Network error while saving Taxis item.' };
+  }
 
   // Local fallback
   const list = getStoredTaxisItems();
@@ -406,8 +441,14 @@ export async function executeTaxisStatusAction(
   action: 'SUBMIT_REVIEW' | 'APPROVE' | 'PUBLISH' | 'UNPUBLISH' | 'RESTORE',
   params?: { restoreVersion?: number; notes?: string }
 ): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
+  let token: string | null = null;
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+    token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Could not read the authentication session.' };
+  }
+
+  try {
     let endpoint = '';
     let payload: any = {};
 
@@ -445,8 +486,11 @@ export async function executeTaxisStatusAction(
           return { success: false, error: data.message || data.error };
         }
       }
+      if (token) return { success: false, error: `Could not update Taxis item (HTTP ${res.status}).` };
     }
-  } catch (_) {}
+  } catch (error) {
+    if (token) return { success: false, error: error instanceof Error ? error.message : 'Network error while updating Taxis item.' };
+  }
 
   // Local fallback
   const list = getStoredTaxisItems();
@@ -454,6 +498,9 @@ export async function executeTaxisStatusAction(
   if (idx < 0) return { success: false, error: 'Taxis item not found' };
 
   const item = { ...list[idx] };
+  if (action === 'PUBLISH' && parseHymnsTaxisLevel(item.level) === null) {
+    return { success: false, error: 'Assign this item to a valid curriculum level before publishing.' };
+  }
   const now = new Date().toISOString();
   item.updatedAt = now;
 

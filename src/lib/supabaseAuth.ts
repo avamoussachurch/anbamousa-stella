@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User } from '../types';
+import { isValidSundaySchoolGrade, parseHymnsTaxisLevel, type HymnsTaxisLevel } from './hymnsTaxisLevel';
 
 export interface SupabaseAuthResult {
   success: boolean;
@@ -15,7 +16,8 @@ export async function registerWithSupabase(
   password: string,
   fullName: string,
   role: 'student' | 'teacher' | 'parent',
-  grade?: string
+  grade: string | undefined,
+  hymnsTaxisLevel: HymnsTaxisLevel | null
 ): Promise<SupabaseAuthResult> {
   if (!isSupabaseConfigured || !supabase) {
     return {
@@ -30,6 +32,14 @@ export async function registerWithSupabase(
       error: 'Teacher and parent accounts must be provisioned by a church administrator.',
     };
   }
+  const normalizedGrade = grade?.trim();
+  if (!isValidSundaySchoolGrade(normalizedGrade)) {
+    return { success: false, error: 'Select your Sunday School grade before registering.' };
+  }
+  const parsedLevel = parseHymnsTaxisLevel(hymnsTaxisLevel);
+  if (!parsedLevel) {
+    return { success: false, error: 'Select a valid Hymns & Taxis level.' };
+  }
 
   try {
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -38,7 +48,8 @@ export async function registerWithSupabase(
       options: {
         data: {
           full_name: fullName,
-          grade: grade || undefined,
+          grade: normalizedGrade,
+          hymns_taxis_level: parsedLevel,
         },
       },
     });
@@ -56,7 +67,8 @@ export async function registerWithSupabase(
       id: userId,
       fullName: fullName,
       role: 'student',
-      grade: grade,
+      grade: normalizedGrade,
+      hymnsTaxisLevel: parsedLevel,
       avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
       points: 0,
       currentStreak: 0,
@@ -122,6 +134,7 @@ export async function loginWithSupabase(
       id: userId,
       fullName: profileData.name || authData.user.user_metadata?.full_name || 'User',
       role: profileData.role,
+      grade: profileData.grade || undefined,
       avatarUrl: profileData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
       points: profileData.points ?? 0,
       currentStreak: profileData.current_streak ?? 0,
@@ -131,6 +144,7 @@ export async function loginWithSupabase(
       notifyLessonCompletion: profileData.notify_lesson_completion ?? true,
       notifyEventReminders: profileData.notify_event_reminders ?? true,
       screenTimeSeconds: profileData.screen_time_seconds ?? 0,
+      hymnsTaxisLevel: parseHymnsTaxisLevel(profileData.hymns_taxis_level) || undefined,
     };
 
     return { success: true, user };

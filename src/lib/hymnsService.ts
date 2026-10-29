@@ -1,5 +1,6 @@
 import { HymnsRosterMembership, HymnsEnrollmentRequestPayload, Language } from '../types';
 import { CopticHymnItem, COPTIC_HYMNS_COLLECTION } from '../data/hymnsData';
+import { filterItemsByHymnsTaxisLevel, parseHymnsTaxisLevel } from './hymnsTaxisLevel';
 
 const TOKEN_KEY = 'church_auth_token';
 
@@ -134,13 +135,16 @@ export async function reviewHymnsEnrollment(
 export async function getHymns(
   level?: number,
   season?: string,
-  status?: string
+  status?: string,
+  viewer?: { role: string; hymnsTaxisLevel?: number }
 ): Promise<{
   success: boolean;
   items: CopticHymnItem[];
   enrolledLevel?: number | null;
   isApproved?: boolean;
+  error?: string;
 }> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
   try {
     const q = new URLSearchParams();
     if (level) q.set('level', String(level));
@@ -150,25 +154,53 @@ export async function getHymns(
     const res = await fetch(`/api/church/hymns?${q.toString()}`, {
       headers: getAuthHeaders()
     });
+    if (!res.ok && token) {
+      const data = await res.json().catch(() => null);
+      return { success: false, items: [], error: data?.message || data?.error || `Could not load Hymns (HTTP ${res.status}).` };
+    }
     if (res.ok) {
       const data = await res.json();
       if (data.success && Array.isArray(data.items)) {
+        const items = viewer?.role === 'student'
+          ? filterItemsByHymnsTaxisLevel(data.items, viewer.hymnsTaxisLevel)
+          : data.items;
         return {
           success: true,
-          items: data.items,
+          items,
           enrolledLevel: data.enrolledLevel,
           isApproved: data.isApproved
         };
       }
+      if (token) {
+        return { success: false, items: [], error: data.message || data.error || 'Could not load Hymns.' };
+      }
     }
   } catch (err) {
-    console.warn("Failed to fetch hymns from server, fallback to local collection:", err);
+    if (token) {
+      return { success: false, items: [], error: err instanceof Error ? err.message : 'Network error while loading Hymns.' };
+    }
   }
 
-  // Fallback to static collection
+  if (viewer?.role === 'student') {
+    const assignedLevel = parseHymnsTaxisLevel(viewer.hymnsTaxisLevel);
+    if (assignedLevel === null) {
+      return { success: false, items: [], error: 'Choose your shared Hymns and Taxis level to view lessons.' };
+    }
+    return {
+      success: true,
+      items: filterItemsByHymnsTaxisLevel(COPTIC_HYMNS_COLLECTION, assignedLevel)
+        .filter(hymn => hymn.status === 'published' && (!season || season === 'all' || hymn.occasionTag === season))
+    };
+  }
+
+  // Only unauthenticated demo mode can use the bundled collection.
   return {
     success: true,
-    items: COPTIC_HYMNS_COLLECTION,
+    items: COPTIC_HYMNS_COLLECTION.filter(hymn =>
+      (!level || hymn.level === level) &&
+      (!season || season === 'all' || hymn.occasionTag === season) &&
+      (!status || status === 'all' || hymn.status === status)
+    ),
     enrolledLevel: 1,
     isApproved: true
   };

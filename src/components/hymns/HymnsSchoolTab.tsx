@@ -15,20 +15,17 @@ import {
   ChevronRight, 
   Award, 
   ExternalLink,
-  Lock,
-  Clock,
-  AlertCircle,
   FileText,
-  Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COPTIC_HYMNS_COLLECTION, CopticHymnItem, HymnLyricLine } from '../../data/hymnsData';
 import { useAuth } from '../../context/AuthContext';
 import { awardPoints } from '../../lib/pointsService';
-import { Language, HymnsRosterMembership } from '../../types';
-import { getMyHymnsEnrollment, submitHymnsEnrollment, getHymns } from '../../lib/hymnsService';
+import { Language } from '../../types';
+import { getHymns } from '../../lib/hymnsService';
 import { recordStudentSchoolActivity } from '../../lib/studentProgressService';
-import { HYMNS_LEVEL_DEFINITIONS } from '../../lib/hymnsEnrollmentService';
+import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
+import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
 
 export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isAr = lang === 'ar';
@@ -37,17 +34,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
 
   // Live Hymns & Enrollment State
   const [hymnsList, setHymnsList] = useState<CopticHymnItem[]>(COPTIC_HYMNS_COLLECTION);
+  const [hymnsLoadError, setHymnsLoadError] = useState<string | null>(null);
   const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem>(COPTIC_HYMNS_COLLECTION[0]);
-  const [enrollment, setEnrollment] = useState<HymnsRosterMembership | null>(null);
-  const [isEnrollmentLoading, setIsEnrollmentLoading] = useState(true);
-
-  // Application Form State
-  const [showApplyForm, setShowApplyForm] = useState(false);
-  const [applyLevel, setApplyLevel] = useState<1 | 2 | 3>(1);
-  const [applyRoster, setApplyRoster] = useState('primary_choir');
-  const [applyNotes, setApplyNotes] = useState('');
-  const [isSubmittingApp, setIsSubmittingApp] = useState(false);
-  const [appStatusMessage, setAppStatusMessage] = useState<string | null>(null);
 
   // Audio Playback
   const [isPlaying, setIsPlaying] = useState(false);
@@ -68,41 +56,37 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Load Enrollment Status
+  const assignedLevel = parseHymnsTaxisLevel(userData?.hymnsTaxisLevel);
+
   useEffect(() => {
-    let isMounted = true;
-    setIsEnrollmentLoading(true);
-
-    getMyHymnsEnrollment(userData?.id).then(res => {
-      if (!isMounted) return;
-      if (res.success) {
-        setEnrollment(res.membership);
-        if (res.membership && res.membership.status === 'approved' && !isTeacherOrAdmin) {
-          setLevelFilter(res.membership.level);
-        }
-      }
-      setIsEnrollmentLoading(false);
-    });
-
-    return () => { isMounted = false; };
-  }, [userData?.id, isTeacherOrAdmin]);
+    if (!isTeacherOrAdmin && assignedLevel !== null) setLevelFilter(assignedLevel);
+  }, [assignedLevel, isTeacherOrAdmin]);
 
   // Load Hymns from Server or Fallback
   useEffect(() => {
     let isMounted = true;
-    const reqLevel = levelFilter === 'all' ? undefined : levelFilter;
-    getHymns(reqLevel, seasonFilter).then(res => {
+    if (!isTeacherOrAdmin && assignedLevel === null) {
+      setHymnsList([]);
+      setHymnsLoadError(null);
+      return () => { isMounted = false; };
+    }
+    const reqLevel = isTeacherOrAdmin && levelFilter !== 'all' ? levelFilter : undefined;
+    setHymnsLoadError(null);
+    getHymns(reqLevel, seasonFilter, undefined, userData ? { role: userData.role, hymnsTaxisLevel: userData.hymnsTaxisLevel } : undefined).then(res => {
       if (!isMounted) return;
-      if (res.success && res.items && res.items.length > 0) {
+      if (res.success && res.items) {
         setHymnsList(res.items);
         if (!res.items.some(h => h.id === selectedHymn.id)) {
-          setSelectedHymn(res.items[0]);
+          if (res.items[0]) setSelectedHymn(res.items[0]);
         }
+      } else {
+        setHymnsList([]);
+        setHymnsLoadError(res.error || (isAr ? 'تعذر تحميل الألحان.' : 'Could not load Hymns.'));
       }
     });
 
     return () => { isMounted = false; };
-  }, [levelFilter, seasonFilter]);
+  }, [levelFilter, seasonFilter, isTeacherOrAdmin, assignedLevel, userData?.id, userData?.role, lang]);
 
   // Read mastered hymns
   useEffect(() => {
@@ -159,28 +143,6 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     setActiveLineId(1);
     setCurrentTime(0);
     setRecordedAudioUrl(null);
-  };
-
-  // Student Submits Enrollment
-  const handleSubmitEnrollment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmittingApp(true);
-    setAppStatusMessage(null);
-
-    const res = await submitHymnsEnrollment({
-      level: applyLevel,
-      rosterGroup: applyRoster,
-      notes: applyNotes
-    }, userData?.fullName);
-
-    setIsSubmittingApp(false);
-    if (res.success && res.membership) {
-      setEnrollment(res.membership);
-      setShowApplyForm(false);
-      setAppStatusMessage(isAr ? 'تم إرسال طلبك بنجاح للخادم المسؤول.' : 'Application submitted successfully.');
-    } else {
-      alert(res.error || (isAr ? 'تعذر إرسال الطلب' : 'Failed to submit application'));
-    }
   };
 
   // Voice recording alongside hymn
@@ -247,13 +209,9 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     }
   };
 
-  // Student maximum allowed level
-  const approvedLevel = isTeacherOrAdmin ? 3 : (enrollment?.status === 'approved' ? enrollment.level : 1);
-  const isEnrolledAndApproved = isTeacherOrAdmin || (enrollment?.status === 'approved');
-
   // Filter hymns
   const filteredHymns = hymnsList.filter(h => {
-    if (!isTeacherOrAdmin && h.level > approvedLevel) return false;
+    if (!isTeacherOrAdmin && (assignedLevel === null || h.level !== assignedLevel)) return false;
     if (levelFilter !== 'all' && h.level !== levelFilter) return false;
     if (seasonFilter === 'all') return true;
     return h.occasionTag === seasonFilter;
@@ -297,160 +255,28 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         </div>
       </div>
 
-      {/* Enrollment Status Notice & Application Card for Students */}
       {!isTeacherOrAdmin && (
-        <div>
-          {isEnrollmentLoading ? null : !enrollment ? (
-            /* Not Enrolled: Prompt Application */
-            <div className="bg-gradient-to-r from-amber-50 to-amber-100/70 dark:from-stone-900 dark:to-stone-850 border-2 border-amber-400/50 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Award size={18} className="text-amber-600" />
-                  <h3 className="font-black text-sm text-stone-900 dark:text-amber-200">
-                    {isAr ? 'التسجيل الرسمي في مدرسة الشمامسة والألحان' : 'Enroll in Coptic Hymns School'}
-                  </h3>
-                </div>
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-                  {isAr
-                    ? 'أنت تتصفح ألحان المستوى الأول التمهيدي. قدم طلبك الآن ليتم تسكينك في مستواك المعتمد ومتابعة تقدمك مع الخدام.'
-                    : 'You are browsing introductory Level 1 hymns. Apply to get officially enrolled in your deacon level.'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowApplyForm(!showApplyForm)}
-                className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-105 text-white font-black text-xs rounded-xl shadow-xs shrink-0 cursor-pointer"
-              >
-                {showApplyForm ? (isAr ? 'إغلاق الاستمارة' : 'Close Form') : (isAr ? 'تقديم طلب التحاق' : 'Apply for Enrollment')}
-              </button>
-            </div>
-          ) : enrollment.status === 'pending' ? (
-            /* Pending Review Notice */
-            <div className="bg-amber-500/15 border border-amber-500/40 text-amber-950 dark:text-amber-200 p-4 rounded-3xl flex items-center justify-between gap-3 text-xs font-bold">
-              <div className="flex items-center gap-2.5">
-                <Clock size={18} className="text-amber-600 shrink-0" />
-                <span>
-                  {isAr
-                    ? `طلبك للالتحاق بالمستوى (${enrollment.level}) قيد المراجعة بواسطة الخدام. يمكنك دراسة ألحان المستوى التمهيدي لحين اعتماد تسجيلك.`
-                    : `Your enrollment application for Level ${enrollment.level} is pending servant review.`}
-                </span>
-              </div>
-              <span className="px-2.5 py-1 bg-amber-400/30 text-amber-900 dark:text-amber-100 rounded-lg text-[10px] font-black shrink-0">
-                {isAr ? 'قيد المراجعة' : 'Pending Review'}
-              </span>
-            </div>
-          ) : enrollment.status === 'approved' ? (
-            /* Approved Roster Badge */
-            <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200 p-3.5 rounded-2xl flex items-center justify-between text-xs font-bold shadow-2xs">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                <span>
-                  {isAr
-                    ? `مرحباً بك! أنت مسجل رسمياً في مدرسة الألحان: ${HYMNS_LEVEL_DEFINITIONS.find(d => d.level === enrollment.level)?.nameAr} (${enrollment.rosterGroup}).`
-                    : `Approved in Hymns School: Level ${enrollment.level} (${enrollment.rosterGroup}).`}
-                </span>
-              </div>
-              <span className="px-2 py-0.5 bg-emerald-600 text-white rounded-full text-[10px] font-black shrink-0">
-                {isAr ? 'طالب معتمد' : 'Approved Deacon'}
-              </span>
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      {/* Application Form Drawer (Modal / Collapsible) */}
-      {showApplyForm && !isTeacherOrAdmin && (
-        <form onSubmit={handleSubmitEnrollment} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border-2 border-amber-500/30 space-y-4 shadow-md">
-          <div className="flex items-center justify-between">
-            <h4 className="font-black text-sm text-[var(--mousa-teal-deep)] dark:text-amber-300 flex items-center gap-2">
-              <Send size={16} />
-              <span>{isAr ? 'استمارة الالتحاق بمدرسة الألحان والشمامسة' : 'Hymns School Application'}</span>
-            </h4>
-            <button
-              type="button"
-              onClick={() => setShowApplyForm(false)}
-              className="text-stone-400 hover:text-stone-600 text-xs font-bold"
-            >
-              ✕
-            </button>
+        assignedLevel === null ? (
+          <HymnsTaxisLevelSetup
+            lang={lang}
+            onSaved={level => {
+              if (userData && setUserDirectly) setUserDirectly({ ...userData, hymnsTaxisLevel: level });
+            }}
+          />
+        ) : (
+          <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-3 text-sm font-bold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+            {isAr ? `محتوى الألحان المعروض على مستواك المشترك: المستوى ${assignedLevel}.` : `Showing Hymns for your shared Level ${assignedLevel}.`}
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {HYMNS_LEVEL_DEFINITIONS.map(def => (
-              <div
-                key={def.level}
-                onClick={() => {
-                  setApplyLevel(def.level);
-                  setApplyRoster(def.rosterGroups[0]?.id || 'primary_choir');
-                }}
-                className={`p-3 rounded-2xl border cursor-pointer transition-all ${
-                  applyLevel === def.level
-                    ? 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/40 ring-2 ring-amber-400/40'
-                    : 'border-stone-200 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-800/40 opacity-75'
-                }`}
-              >
-                <div className="font-black text-xs text-amber-950 dark:text-amber-200 mb-1">
-                  {isAr ? def.nameAr : def.nameEn}
-                </div>
-                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">
-                  {isAr ? def.subAr : def.subEn}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-              {isAr ? 'المستوى المستهدف وخورس الخدمة:' : 'Roster Group:'}
-            </label>
-            <select
-              value={applyRoster}
-              onChange={(e) => setApplyRoster(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-white"
-            >
-              {HYMNS_LEVEL_DEFINITIONS.find(d => d.level === applyLevel)?.rosterGroups.map(grp => (
-                <option key={grp.id} value={grp.id}>
-                  {isAr ? grp.nameAr : grp.nameEn}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-              {isAr ? 'ملاحظات أو خبراتك السابقة في الألحان (اختياري):' : 'Notes or prior experience (optional):'}
-            </label>
-            <input
-              type="text"
-              value={applyNotes}
-              onChange={(e) => setApplyNotes(e.target.value)}
-              placeholder="مثال: أحفظ لحن إبؤورو وخين إفران وأرغب في دراسة ألحان القداس..."
-              className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-white"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmittingApp}
-            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-xs rounded-xl shadow-xs cursor-pointer disabled:opacity-50"
-          >
-            {isSubmittingApp ? (isAr ? 'جاري الإرسال...' : 'Submitting...') : (isAr ? 'تأكيد وإرسال طلب الالتحاق' : 'Submit Application')}
-          </button>
-        </form>
+        )
       )}
 
       {/* 3 Class Levels Selector Bar */}
-      <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] p-3 rounded-2xl border-2 border-[var(--mousa-border-sand)] space-y-2">
+      {(isTeacherOrAdmin || assignedLevel !== null) && <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] p-3 rounded-2xl border-2 border-[var(--mousa-border-sand)] space-y-2">
         <div className="flex items-center justify-between gap-2 px-1">
           <span className="text-xs font-black text-stone-800 dark:text-stone-200 uppercase tracking-wider flex items-center gap-1.5">
             <Award size={15} className="text-amber-500" />
-            <span>{isAr ? 'المستويات الدراسية للألحان:' : 'Hymn Class Levels:'}</span>
+            <span>{isAr ? (isTeacherOrAdmin ? 'المستويات الدراسية للألحان:' : 'مستواك المشترك:') : (isTeacherOrAdmin ? 'Hymn Class Levels:' : 'Your shared level:')}</span>
           </span>
-          {!isTeacherOrAdmin && enrollment?.status === 'approved' && (
-            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">
-              {isAr ? `مستواك المعتمد: مستوى ${approvedLevel}` : `Approved: Level ${approvedLevel}`}
-            </span>
-          )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
@@ -458,38 +284,26 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
             { id: 1 as const, levelNum: 1, labelAr: 'المستوى الأول', labelEn: 'Level 1: Novice', subAr: 'تمهيدي ومبتدئين', subEn: 'Foundational' },
             { id: 2 as const, levelNum: 2, labelAr: 'المستوى الثاني', labelEn: 'Level 2: Intermediate', subAr: 'متوسط وشمامسة', subEn: 'Deacon Service' },
             { id: 3 as const, levelNum: 3, labelAr: 'المستوى الثالث', labelEn: 'Level 3: Advanced', subAr: 'متقدم والمناسبات الكبرى', subEn: 'Solemn Rites' },
-          ].map(lvl => {
-            const isLocked = !isTeacherOrAdmin && lvl.levelNum > approvedLevel;
+          ].filter(lvl => isTeacherOrAdmin || (assignedLevel !== null && lvl.levelNum === assignedLevel)).map(lvl => {
             return (
               <button
                 key={lvl.id}
-                onClick={() => {
-                  if (isLocked) {
-                    alert(isAr 
-                      ? `هذا المستوى مخصص للشمامسة المعتمدين في المستوى ${lvl.levelNum}. يرجى التقديم أو طلب الترقية من الخادم المسؤول.` 
-                      : `Access requires Level ${lvl.levelNum} enrollment.`);
-                    return;
-                  }
-                  setLevelFilter(lvl.id);
-                }}
+                onClick={() => setLevelFilter(lvl.id)}
                 className={`p-2.5 rounded-xl text-start transition-all cursor-pointer border relative ${
                   levelFilter === lvl.id
                     ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] border-[var(--mousa-gold)] shadow-xs font-black'
-                    : isLocked
-                    ? 'bg-stone-100/60 dark:bg-stone-900/30 text-stone-400 border-dashed border-stone-300 dark:border-stone-800'
                     : 'bg-white/70 dark:bg-stone-900/60 text-stone-700 dark:text-stone-300 border-[var(--mousa-border-sand)] hover:border-amber-300 font-bold'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="text-xs sm:text-sm font-black truncate">{isAr ? lvl.labelAr : lvl.labelEn}</div>
-                  {isLocked && <Lock size={12} className="text-stone-400 shrink-0" />}
                 </div>
                 <div className="text-[10px] opacity-80 truncate">{isAr ? lvl.subAr : lvl.subEn}</div>
               </button>
             );
           })}
         </div>
-      </div>
+      </div>}
 
       {/* Season Filter Buttons */}
       <div className="flex flex-wrap items-center gap-2">
@@ -519,6 +333,11 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Hymns Playlist */}
         <div className="space-y-3">
+          {hymnsLoadError && (
+            <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-bold text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+              {hymnsLoadError}
+            </p>
+          )}
           <div className="flex items-center justify-between px-1">
             <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Music size={16} className="text-[var(--color-church-blue)]" />
@@ -568,7 +387,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         </div>
 
         {/* Right Column: In-Depth Hymn Player & Synced Karaoke Lyrics */}
-        <div className="lg:col-span-2 space-y-6">
+        {filteredHymns.some(hymn => hymn.id === selectedHymn.id) && <div className="lg:col-span-2 space-y-6">
           {/* Active Hymn Hero Card */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-[var(--mousa-border-sand)] space-y-5 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
@@ -733,7 +552,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
       </div>
     </motion.div>
   );

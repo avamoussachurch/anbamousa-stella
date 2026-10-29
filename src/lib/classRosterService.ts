@@ -39,7 +39,8 @@ async function getAuthHeader(): Promise<Record<string, string>> {
  * Students and parents are blocked from accessing class rosters.
  */
 export async function getClassRoster(
-  classGroupId?: string
+  classGroupId?: string,
+  allowDemoFallback = !isSupabaseConfigured
 ): Promise<{ data: ClassRosterStudent[] | null; error: Error | null }> {
   const headers = await getAuthHeader();
   try {
@@ -61,6 +62,13 @@ export async function getClassRoster(
 
     return { data: json.roster, error: null };
   } catch (err: any) {
+    if (!allowDemoFallback) {
+      return {
+        data: null,
+        error: err instanceof Error ? err : new Error('Network error fetching class roster')
+      };
+    }
+
     // Pure offline demo fallback
     const targetGroup = classGroupId || 'primary_2';
     const fallbackStudents: ClassRosterStudent[] = sundaySchoolRoster
@@ -167,7 +175,8 @@ export interface MyClassResult {
  */
 export async function getMyClass(
   classGroupId?: string,
-  classCode?: string
+  classCode?: string,
+  allowDemoFallback = !isSupabaseConfigured
 ): Promise<{ data: MyClassResult | null; error: Error | null }> {
   const headers = await getAuthHeader();
   try {
@@ -197,10 +206,18 @@ export async function getMyClass(
       error: null
     };
   } catch (err: any) {
+    if (!allowDemoFallback) {
+      return {
+        data: null,
+        error: err instanceof Error ? err : new Error('Network error fetching class')
+      };
+    }
+
+    const roster = await getClassRoster(classGroupId, true);
     return {
       data: {
         classInfo: DEMO_STUDENT_CLASS,
-        roster: []
+        roster: roster.data || []
       },
       error: null
     };
@@ -506,4 +523,3 @@ export async function getStudentLearningReview(
     return { data: demoReview, error: null };
   }
 }
-

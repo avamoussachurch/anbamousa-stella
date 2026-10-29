@@ -14,8 +14,6 @@ import {
   Trash2, 
   RotateCcw,
   Sparkles,
-  ExternalLink,
-  ShieldCheck,
   Globe,
   Award,
   BookOpen,
@@ -41,7 +39,6 @@ import { ServantClassManagement } from './ServantClassManagement';
 import { ServantSourceManagement } from './ServantSourceManagement';
 import { getPendingActivationRequests } from '../../lib/onboardingService';
 import { EvidenceCoverageModal } from '../sunday-school/evidence/EvidenceCoverageModal';
-import { LessonEngagementSummary } from './LessonEngagementSummary';
 import { PdfDocumentViewer } from '../sunday-school/viewers/PdfDocumentViewer';
 import { SlideDeckViewer } from '../sunday-school/viewers/SlideDeckViewer';
 import { TeacherPublishingHub } from './publishing/TeacherPublishingHub';
@@ -77,6 +74,8 @@ export function TeacherDashboard({
     studentProgress,
     quizAttempts,
     studentMasteries,
+    curriculumLoading,
+    curriculumError,
     addClassSession,
     updateClassSession,
     addLessonSource,
@@ -92,7 +91,8 @@ export function TeacherDashboard({
     updateStudentMastery
   } = useLessons();
 
-  const [activeTab, setActiveTab] = useState<'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation'>('sundaySchool');
+  const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation'>('overview');
+  const [publishingModeToOpen, setPublishingModeToOpen] = useState<'sunday_school' | 'hymns' | 'taxis'>('sunday_school');
   const [selectedSessionId, setSelectedSessionId] = useState<string>(() => classSessions[0]?.id || 'cs-2026-09-27');
   
   // Active session and lesson resolution
@@ -175,28 +175,33 @@ export function TeacherDashboard({
 
   // Pending activation requests count
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
+  const [pendingRequestsError, setPendingRequestsError] = useState<string | null>(null);
 
   React.useEffect(() => {
     let isMounted = true;
+    setPendingRequestsError(null);
     getPendingActivationRequests().then((res) => {
       if (!isMounted) return;
       if (res.success && res.requests) {
         setPendingRequestsCount(res.requests.filter(r => r.status === 'PENDING_APPROVAL').length);
+      } else {
+        setPendingRequestsCount(0);
+        setPendingRequestsError(res.error || (lang === 'ar' ? 'تعذر تحميل طلبات التفعيل.' : 'Could not load activation requests.'));
       }
-    }).catch(() => {});
+    }).catch((error: unknown) => {
+      if (!isMounted) return;
+      setPendingRequestsCount(0);
+      setPendingRequestsError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر تحميل طلبات التفعيل.' : 'Could not load activation requests.'));
+    });
 
     return () => { isMounted = false; };
-  }, [activeTab]);
+  }, [activeTab, lang]);
 
   // Moderation state
-  const [flaggedPosts, setFlaggedPosts] = useState<Array<{ id: string; author: string; content: string; flagReason: string }>>([
-    {
-      id: 'flag-1',
-      author: 'George N.',
-      content: 'Can someone share their homework answers before Sunday service?',
-      flagReason: lang === 'ar' ? 'طلب إجابات الواجب' : 'Requesting homework answers'
-    }
-  ]);
+  const openPublishing = (mode: 'sunday_school' | 'hymns' | 'taxis') => {
+    setPublishingModeToOpen(mode);
+    setActiveTab('sundaySchool');
+  };
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -429,6 +434,38 @@ export function TeacherDashboard({
         </div>
       </div>
 
+      {!isOnlineAuth && (
+        <p role="note" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+          {lang === 'ar'
+            ? 'الوضع الحالي تجريبي أو غير متصل: أي بيانات أو تغييرات محلية مش معناها إنها اتحفظت في قاعدة البيانات.'
+            : 'Demo or offline mode: locally available data and changes are not confirmed as saved in the database.'}
+        </p>
+      )}
+
+      {curriculumError && (
+        <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p>{lang === 'ar'
+              ? `تعذر تحديث المنهج من الخادم. الدروس الظاهرة ممكن تكون من نسخة محفوظة ومش مؤكدة. ${curriculumError}`
+              : `The curriculum could not be refreshed. Any lessons currently shown may be cached and are not confirmed as server data. ${curriculumError}`}</p>
+            <button type="button" onClick={() => void refreshCurriculum()} className="shrink-0 rounded-xl bg-amber-700 px-4 py-2 font-bold text-white hover:bg-amber-800">
+              {lang === 'ar' ? 'حاول تاني' : 'Retry'}
+            </button>
+          </div>
+        </div>
+      )}
+      {curriculumLoading && (
+        <p role="status" className="text-sm font-semibold text-[var(--mousa-sand-500)]">
+          {lang === 'ar' ? 'بنحمّل المنهج...' : 'Loading curriculum...'}
+        </p>
+      )}
+
+      {pendingRequestsError && (
+        <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+          {lang === 'ar' ? 'مش قادرين نحمّل طلبات تفعيل الحسابات دلوقتي.' : 'Activation requests could not be loaded.'}
+        </div>
+      )}
+
       {/* Pending Account Activation Alert for Servant */}
       {pendingRequestsCount > 0 && activeTab !== 'classManagement' && (
         <div className="bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl p-4 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm">
@@ -451,96 +488,102 @@ export function TeacherDashboard({
         </div>
       )}
 
-      {/* Navigation tabs within Teacher Studio */}
-      <div className="flex bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] p-1.5 rounded-2xl max-w-4xl mx-auto shadow-xs border-2 border-[var(--mousa-border-sand)] overflow-x-auto">
-        <button 
-          onClick={() => setActiveTab('sundaySchool')}
-          className={`flex-1 min-w-[140px] py-2.5 font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            activeTab === 'sundaySchool' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs font-black' 
-              : 'text-[var(--mousa-sand-500)] hover:text-[var(--mousa-teal)]'
-          }`}
+      <nav aria-label={lang === 'ar' ? 'أقسام استوديو المعلم' : 'Teacher studio sections'} className="space-y-3 rounded-3xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-4 shadow-xs dark:bg-[#1E1914]">
+        <button
+          type="button"
+          onClick={() => setActiveTab('overview')}
+          aria-current={activeTab === 'overview' ? 'page' : undefined}
+          className={`w-full rounded-2xl px-4 py-3 text-start font-black transition-colors ${activeTab === 'overview' ? 'bg-[var(--mousa-teal)] text-white' : 'text-[var(--mousa-teal-deep)] hover:bg-white/70 dark:text-amber-200 dark:hover:bg-stone-800'}`}
         >
-          <School size={16} />
-          <span>{lang === 'ar' ? 'منصة النشر (مدارس الأحد • الألحان • الطقس)' : 'Publishing Hub (Lessons • Hymns • Taxis)'}</span>
+          {lang === 'ar' ? 'نظرة عامة' : 'Overview'}
         </button>
-        <button 
-          onClick={() => setActiveTab('mastery')}
-          className={`flex-1 min-w-[130px] py-2.5 font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            activeTab === 'mastery' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs font-black' 
-              : 'text-[var(--mousa-sand-500)] hover:text-[var(--mousa-teal)]'
-          }`}
-        >
-          <Award size={16} className="text-[var(--mousa-gold)]" />
-          <span>{lang === 'ar' ? 'تقييم وإتقان الطلاب' : 'Student Mastery'}</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('classManagement')}
-          className={`flex-1 min-w-[130px] py-2.5 font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer relative ${
-            activeTab === 'classManagement' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs font-black' 
-              : 'text-[var(--mousa-sand-500)] hover:text-[var(--mousa-teal)]'
-          }`}
-        >
-          <Users size={16} />
-          <span>{lang === 'ar' ? 'فصلي وقائمة الطلاب' : 'My Class & Roster'}</span>
-          {pendingRequestsCount > 0 && (
-            <span className="px-1.5 py-0.2 bg-[var(--mousa-coral)] text-white text-[10px] font-black rounded-full shadow-xs">
-              {pendingRequestsCount}
-            </span>
-          )}
-        </button>
-        <button 
-          onClick={() => setActiveTab('sources')}
-          className={`flex-1 min-w-[130px] py-2.5 font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            activeTab === 'sources' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs font-black' 
-              : 'text-[var(--mousa-sand-500)] hover:text-[var(--mousa-teal)]'
-          }`}
-        >
-          <FolderOpen size={16} />
-          <span>{lang === 'ar' ? 'المصادر والوسائط' : 'Media & Sources'}</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('attendance')}
-          className={`flex-1 min-w-[120px] py-2.5 font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            activeTab === 'attendance' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs font-black' 
-              : 'text-[var(--mousa-sand-500)] hover:text-[var(--mousa-teal)]'
-          }`}
-        >
-          <UserCheck size={16} className="text-emerald-600" />
-          <span>{lang === 'ar' ? 'الافتقاد والحضور' : 'Attendance & Visits'}</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('lessons')}
-          className={`flex-1 min-w-[110px] py-2.5 font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            activeTab === 'lessons' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs font-black' 
-              : 'text-[var(--mousa-sand-500)] hover:text-[var(--mousa-teal)]'
-          }`}
-        >
-          <FileText size={16} />
-          <span>{lang === 'ar' ? `الدروس (${lessons.length})` : `Lessons (${lessons.length})`}</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('moderation')}
-          className={`flex-1 min-w-[110px] py-2.5 font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            activeTab === 'moderation' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs font-black' 
-              : 'text-[var(--mousa-sand-500)] hover:text-[var(--mousa-teal)]'
-          }`}
-        >
-          <ShieldAlert size={16} />
-          <span>{lang === 'ar' ? 'الرقابة والإشراف' : 'Moderation'}</span>
-        </button>
-      </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            {
+              title: lang === 'ar' ? 'الفصول والطلاب' : 'Classes & students',
+              links: [
+                { label: lang === 'ar' ? 'الفصل وقائمة الطلاب' : 'Classes & roster', tab: 'classManagement' as const, icon: <Users size={16} /> },
+                { label: lang === 'ar' ? 'التقدم ونتائج الاختبارات' : 'Progress & quiz results', tab: 'mastery' as const, icon: <Award size={16} /> }
+              ]
+            },
+            {
+              title: lang === 'ar' ? 'الدروس والنشر' : 'Lessons & publishing',
+              links: [
+                { label: lang === 'ar' ? 'مدارس الأحد' : 'Sunday School', tab: 'sundaySchool' as const, mode: 'sunday_school' as const, icon: <School size={16} /> },
+                { label: lang === 'ar' ? 'الألحان' : 'Hymns', tab: 'sundaySchool' as const, mode: 'hymns' as const, icon: <Mic size={16} /> },
+                { label: lang === 'ar' ? 'الطقس' : 'Taxis', tab: 'sundaySchool' as const, mode: 'taxis' as const, icon: <BookOpen size={16} /> },
+                { label: lang === 'ar' ? 'مكتبة الدروس' : 'Lesson library', tab: 'lessons' as const, icon: <FileText size={16} /> }
+              ]
+            },
+            {
+              title: lang === 'ar' ? 'أدوات الفصل' : 'Classroom tools',
+              links: [
+                { label: lang === 'ar' ? 'المصادر والوسائط' : 'Media & sources', tab: 'sources' as const, icon: <FolderOpen size={16} /> },
+                { label: lang === 'ar' ? 'الحضور والافتقاد' : 'Attendance & visits', tab: 'attendance' as const, icon: <UserCheck size={16} /> },
+                { label: lang === 'ar' ? 'الإشراف' : 'Moderation', tab: 'moderation' as const, icon: <ShieldAlert size={16} /> }
+              ]
+            }
+          ].map(group => (
+            <section key={group.title} className="rounded-2xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 dark:bg-stone-900/60">
+              <h2 className="mb-2 px-1 text-xs font-black uppercase tracking-wide text-[var(--mousa-sand-500)]">{group.title}</h2>
+              <div className="flex flex-wrap gap-2">
+                {group.links.map(link => (
+                  <button
+                    key={link.label}
+                    type="button"
+                    onClick={() => {
+                      if ('mode' in link && link.mode) openPublishing(link.mode);
+                      else setActiveTab(link.tab);
+                    }}
+                    aria-current={activeTab === link.tab ? 'page' : undefined}
+                    className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-start text-xs font-bold transition-colors ${activeTab === link.tab ? 'border-[var(--mousa-teal)] bg-[var(--mousa-teal)] text-white' : 'border-transparent bg-[var(--mousa-sand-100)] text-[var(--mousa-teal-deep)] hover:border-[var(--mousa-border-sand)] dark:bg-stone-800 dark:text-stone-100'}`}
+                  >
+                    {link.icon}
+                    {link.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </nav>
+
+      {activeTab === 'overview' && (
+        <section aria-labelledby="teacher-overview-heading" className="space-y-4">
+          <div>
+            <h2 id="teacher-overview-heading" className="text-xl font-black text-[var(--mousa-teal-deep)] dark:text-amber-100">
+              {lang === 'ar' ? 'ابدأ من هنا' : 'Your teaching workspace'}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--mousa-sand-500)]">
+              {lang === 'ar' ? 'اختار القسم اللي محتاجه، وهتلاقي أدوات كل مهمة مع بعض.' : 'Choose a section to find the tools for each teaching task together.'}
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { title: lang === 'ar' ? 'الفصول والطلاب' : 'Classes & students', detail: lang === 'ar' ? 'إدارة الفصل ومراجعة طلبات الانضمام.' : 'Manage your class and review enrollment requests.', action: () => setActiveTab('classManagement') },
+              { title: lang === 'ar' ? 'تقدم الطلاب ونتائج الاختبارات' : 'Student progress & quiz results', detail: lang === 'ar' ? 'ملخص النتائج غير متاح لحد ما يتوصل بقراءة موثوقة من قاعدة البيانات.' : 'Summary results are unavailable until a trusted database read path is connected.', action: () => setActiveTab('mastery') },
+              { title: lang === 'ar' ? 'مكتبة الدروس' : 'Lesson library', detail: lang === 'ar' ? 'ابحث في الدروس وعاينها أو عدّلها.' : 'Find, preview, and edit lessons.', action: () => setActiveTab('lessons') },
+              { title: lang === 'ar' ? 'نشر مدارس الأحد' : 'Publish Sunday School content', detail: lang === 'ar' ? 'جهّز دروس مدارس الأحد وانشرها.' : 'Prepare and publish Sunday School lessons.', action: () => openPublishing('sunday_school') },
+              { title: lang === 'ar' ? 'نشر الألحان والطقس' : 'Publish hymns & Taxis', detail: lang === 'ar' ? 'افتح أدوات الألحان أو الطقس.' : 'Open the Hymns or Taxis publishing tools.', action: () => openPublishing('hymns') },
+              { title: lang === 'ar' ? 'أدوات الفصل' : 'Classroom tools', detail: lang === 'ar'
+                ? (isOnlineAuth ? 'الوسائط والإشراف، والحضور متاح كتجربة محلية فقط.' : 'الوسائط والحضور والإشراف.')
+                : (isOnlineAuth ? 'Media and moderation; attendance is currently a local demo only.' : 'Media, attendance, and moderation.'),
+                action: () => setActiveTab('sources') }
+            ].map(card => (
+              <button key={card.title} type="button" onClick={card.action} className="min-h-32 rounded-2xl border border-[var(--mousa-border-sand)] bg-white p-5 text-start shadow-xs transition hover:-translate-y-0.5 hover:border-[var(--mousa-teal)] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mousa-teal)] dark:bg-slate-900">
+                <span className="block font-black text-[var(--mousa-teal-deep)] dark:text-amber-100">{card.title}</span>
+                <span className="mt-2 block text-sm leading-relaxed text-[var(--mousa-sand-500)]">{card.detail}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Tab: Multi-Mode Publishing Hub (Sunday School, Hymns School, Coptic Rituals / Taxis) */}
       {activeTab === 'sundaySchool' && (
         <TeacherPublishingHub
           lang={lang}
+          initialMode={publishingModeToOpen}
           onPreviewLesson={onPreviewLesson}
           sundaySchoolContent={
             <ManualLessonStudio
@@ -585,19 +628,42 @@ export function TeacherDashboard({
 
       {/* Tab: Student Mastery Evaluation */}
       {activeTab === 'mastery' && (
-        <TeacherMasteryReview
-          lessonId={activeLessonId}
-          lessonTitle={activeLesson?.title || 'Feast of the Holy Cross'}
-          contentProgress={studentProgress}
-          quizAttempts={quizAttempts}
-          masteries={studentMasteries}
-          onUpdateMastery={updateStudentMastery}
-        />
+        isOnlineAuth ? (
+          <section role="status" className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+            <div className="flex items-start gap-3">
+              <Award className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
+              <div>
+                <h2 className="font-black">{lang === 'ar' ? 'نتائج التقدم والاختبارات غير متاحة' : 'Progress and quiz reports are unavailable'}</h2>
+                <p className="mt-2 text-sm leading-relaxed">
+                  {lang === 'ar'
+                    ? 'مش هنعرض بيانات محفوظة في المتصفح على إنها نتائج مؤكدة. التقرير الحالي مفيهوش قراءة موثوقة ومباشرة من سجلات الطلاب والاختبارات في قاعدة البيانات.'
+                    : 'Browser-cached values are not shown as confirmed results. This report does not yet read student progress and quiz attempts from an authoritative database-backed teacher endpoint.'}
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <>
+            <p role="note" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+              {lang === 'ar'
+                ? 'وضع تجريبي: الأسماء والنتائج المعروضة أمثلة، والتغييرات محلية ومش محفوظة على الخادم.'
+                : 'Demo mode: names and results are sample data; changes are local and are not saved to the server.'}
+            </p>
+            <TeacherMasteryReview
+              lessonId={activeLessonId}
+              lessonTitle={activeLesson?.title || 'Feast of the Holy Cross'}
+              contentProgress={studentProgress}
+              quizAttempts={quizAttempts}
+              masteries={studentMasteries}
+              onUpdateMastery={updateStudentMastery}
+            />
+          </>
+        )
       )}
 
       {/* Tab: Servant Class Management & Persistent Roster */}
       {activeTab === 'classManagement' && (
-        <ServantClassManagement lang={lang} />
+        <ServantClassManagement lang={lang} isOnlineAuth={isOnlineAuth} />
       )}
 
       {/* Tab: Servant Curriculum Media & Source Management (Phase 2E.1) */}
@@ -613,7 +679,18 @@ export function TeacherDashboard({
 
       {/* Tab 0: Attendance & Visitation Tracker */}
       {activeTab === 'attendance' && (
-        <AttendanceVisitationTracker lang={lang} />
+        isOnlineAuth ? (
+          <section role="status" className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+            <h2 className="font-black">{lang === 'ar' ? 'الحضور والافتقاد غير متاحين للحسابات المتصلة' : 'Attendance is unavailable for online accounts'}</h2>
+            <p className="mt-2 text-sm leading-relaxed">
+              {lang === 'ar'
+                ? 'المتابع الحالي بيستخدم أسماء تجريبية وبيحفظ التغييرات في المتصفح بس، من غير حفظ موثوق على الخادم. عشان كده مش هنعرضه كبيانات فصل حقيقية.'
+                : 'The current tracker uses sample names and stores changes only in this browser, with no trusted server persistence. It is not shown as real class attendance.'}
+            </p>
+          </section>
+        ) : (
+          <AttendanceVisitationTracker lang={lang} />
+        )
       )}
 
       {/* Tab 1: Secondary Assistant & Lesson Generator */}
@@ -632,17 +709,6 @@ export function TeacherDashboard({
                 : 'Record your teaching voice or upload audio to generate a draft lesson, or use the primary "Publish Lesson" button to create lessons directly without AI input.'}
             </p>
 
-            <div className="pt-2 flex justify-center">
-              <button
-                type="button"
-                onClick={() => setShowExpressPublishModal(true)}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
-              >
-                <Plus size={16} className="stroke-[3]" />
-                <span>{lang === 'ar' ? 'المسار الأساسي: نشر درس' : 'Primary: Publish Lesson'}</span>
-              </button>
-            </div>
-            
             <div className="flex justify-center items-center gap-4 pt-4">
               <motion.button 
                 whileHover={{ scale: 1.05 }}
@@ -792,17 +858,6 @@ export function TeacherDashboard({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Default Primary Action: Publish Lesson (AI-Free) */}
-              <button
-                type="button"
-                onClick={() => setShowExpressPublishModal(true)}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
-                title={lang === 'ar' ? 'نشر درس جديد لمدارس الأحد مع الفيديو والشرائح والتسجيل والامتحان (بدون ذكاء اصطناعي)' : 'Publish Lesson directly with slides, video, audio, and tiered quiz (AI-Free)'}
-              >
-                <Plus size={16} className="stroke-[3]" />
-                <span>{lang === 'ar' ? '+ نشر درس جديد' : '+ Publish Lesson'}</span>
-              </button>
-
               {/* Direct Manual Lesson Creator */}
               <button
                 type="button"
@@ -835,28 +890,14 @@ export function TeacherDashboard({
                 <span>{lang === 'ar' ? 'مسودة يدوية' : 'Manual Draft'}</span>
               </button>
 
-              {/* Secondary Generate Lesson Action */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('ai')}
-                className="px-3 py-2 rounded-xl bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300 font-bold text-xs flex items-center gap-1.5 border border-stone-300 dark:border-stone-700 transition-colors cursor-pointer"
-                title={lang === 'ar' ? 'توليد درس كخيار ثانوي' : 'Generate Lesson (Secondary option)'}
-              >
-                <Sparkles size={14} className="text-purple-600 dark:text-purple-400" />
-                <span>{lang === 'ar' ? 'توليد درس' : 'Generate Lesson'}</span>
-              </button>
             </div>
           </div>
 
-          {/* Visual Student Engagement Summary for Published Lessons */}
-          <LessonEngagementSummary
-            lessons={lessons}
-            studentProgress={studentProgress}
-            quizAttempts={quizAttempts}
-            studentMasteries={studentMasteries}
-            activeGradeFilter={lessonGradeFilter !== 'ALL' ? lessonGradeFilter : undefined}
-            lang={lang === 'ar' ? 'ar' : 'en'}
-          />
+          <div role="status" className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
+            {lang === 'ar'
+              ? 'ملخص تقدم الطلاب ونتائج الاختبارات مش متاح هنا لحد ما يتوصل بقراءة موثوقة من قاعدة البيانات. مش هنعرض أرقام تجريبية أو محفوظة محلياً على إنها نتائج حقيقية.'
+              : 'Student progress and quiz summaries are unavailable here until a trusted database read path is connected. Demo or browser-cached values are not presented as real results.'}
+          </div>
 
           {/* Universal Grade Level Filter Bar */}
           <div className="space-y-2.5 bg-stone-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-stone-200 dark:border-slate-800">
@@ -933,18 +974,22 @@ export function TeacherDashboard({
             {filteredTeacherLessons.length === 0 ? (
               <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-stone-200 dark:border-stone-800 space-y-3">
                 <p className="text-sm text-stone-500 font-medium">
-                  {lang === 'ar' ? 'لا توجد دروس تطابق هذا الفلتر أو البحث.' : 'No lessons found matching this filter.'}
+                  {lessons.length === 0
+                    ? (lang === 'ar' ? 'لسه مفيش دروس ظاهرة. ابدأ بنشر درس جديد من الزر اللي فوق.' : 'No lessons are available yet. Start by publishing a lesson with the button above.')
+                    : (lang === 'ar' ? 'مفيش دروس مطابقة للبحث أو الفلاتر. جرّب تغيّر الاختيارات.' : 'No lessons match these filters. Try changing your selections.')}
                 </p>
-                <button
-                  onClick={() => {
-                    setLessonGradeFilter('ALL');
-                    setLessonCategoryFilter('ALL');
-                    setLessonSearchQuery('');
-                  }}
-                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold"
-                >
-                  {lang === 'ar' ? 'إعادة ضبط الفلاتر' : 'Reset Filters'}
-                </button>
+                {lessons.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setLessonGradeFilter('ALL');
+                      setLessonCategoryFilter('ALL');
+                      setLessonSearchQuery('');
+                    }}
+                    className="px-4 py-2 bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold"
+                  >
+                    {lang === 'ar' ? 'إعادة ضبط الفلاتر' : 'Reset Filters'}
+                  </button>
+                )}
               </div>
             ) : (
               filteredTeacherLessons.map(lesson => (
@@ -975,6 +1020,7 @@ export function TeacherDashboard({
 
                       {/* Publish Status Badge */}
                       <button
+                        disabled={isOnlineAuth && Boolean(curriculumError)}
                         onClick={() => {
                           if (isOnlineAuth) {
                             alert(lang === 'ar' 
@@ -984,14 +1030,20 @@ export function TeacherDashboard({
                           }
                           togglePublish(lesson.id);
                         }}
-                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-black cursor-pointer transition-colors ${
-                          lesson.status === 'published' 
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-black transition-colors ${
+                          isOnlineAuth && curriculumError
+                            ? 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+                            : lesson.status === 'published'
                             ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800' 
                             : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-800'
                         }`}
-                        title={lang === 'ar' ? 'حالة النشر' : 'Publish status'}
+                        title={isOnlineAuth && curriculumError
+                          ? (lang === 'ar' ? 'حالة النشر غير مؤكدة بسبب تعذر تحديث المنهج' : 'Publication status is unverified because the curriculum refresh failed')
+                          : (lang === 'ar' ? 'حالة النشر' : 'Publish status')}
                       >
-                        {lesson.status === 'published' 
+                        {isOnlineAuth && curriculumError
+                          ? (lang === 'ar' ? 'حالة غير مؤكدة' : 'Unverified')
+                          : lesson.status === 'published'
                           ? (lang === 'ar' ? 'منشور ✅' : 'Published ✅') 
                           : (lang === 'ar' ? 'مسودة 📝' : 'Draft 📝')}
                       </button>
@@ -1079,57 +1131,17 @@ export function TeacherDashboard({
 
       {/* Tab 3: Moderation Queue */}
       {activeTab === 'moderation' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-[var(--color-church-cream-dark)] dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck size={24} className="text-emerald-600" />
-                <h3 className="font-bold text-base text-[var(--color-church-blue)] dark:text-white">
-                  {lang === 'ar' ? 'طابور الرقابة وإشراف الخادم' : 'Community Moderation Queue'}
-                </h3>
-              </div>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-[var(--color-church-blue)]">
-                {flaggedPosts.length} {lang === 'ar' ? 'منشورات للمراجعة' : 'to review'}
-              </span>
+        <div role="status" className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+          <div className="flex items-start gap-3">
+            <ShieldAlert className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
+            <div>
+              <h2 className="font-black">{lang === 'ar' ? 'قائمة الإشراف مش متاحة' : 'Moderation queue unavailable'}</h2>
+              <p className="mt-2 text-sm leading-relaxed">
+                {lang === 'ar'
+                  ? 'مفيش اتصال موثوق ببيانات البلاغات أو بإجراءات الإشراف. مش هنعرض منشورات تجريبية أو نقول إن مفيش بلاغات من غير ما نقدر نتحقق.'
+                  : 'There is no trusted connection to moderation reports or actions. Demo posts are not shown, and we cannot claim the queue is empty without checking its data source.'}
+              </p>
             </div>
-
-            {flaggedPosts.length === 0 ? (
-              <div className="text-center py-10 space-y-2">
-                <ShieldAlert size={40} className="text-gray-300 mx-auto" />
-                <p className="font-bold text-gray-700 dark:text-gray-300 text-sm">
-                  {lang === 'ar' ? 'لا توجد منشورات مخالفة معلقة' : 'No pending posts to review. Great job!'}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {lang === 'ar' ? 'جميع مشاركات الطلاب ملتزمة بالآداب الكنسية' : 'All student community discussions are clean and polite.'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {flaggedPosts.map((item) => (
-                  <div key={item.id} className="p-4 rounded-2xl bg-amber-50/60 dark:bg-slate-800 border border-amber-200 dark:border-slate-700 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-gray-900 dark:text-white">{item.author}</span>
-                      <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">{item.flagReason}</span>
-                    </div>
-                    <p className="text-xs text-gray-700 dark:text-gray-300 italic">"{item.content}"</p>
-                    <div className="flex gap-2 pt-2 justify-end">
-                      <button 
-                        onClick={() => setFlaggedPosts(prev => prev.filter(f => f.id !== item.id))}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 cursor-pointer"
-                      >
-                        {lang === 'ar' ? 'موافقة ونشر' : 'Approve'}
-                      </button>
-                      <button 
-                        onClick={() => setFlaggedPosts(prev => prev.filter(f => f.id !== item.id))}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-red-100 text-red-700 font-bold hover:bg-red-200 cursor-pointer"
-                      >
-                        {lang === 'ar' ? 'حذف المنشور' : 'Remove'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}
