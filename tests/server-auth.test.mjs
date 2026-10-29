@@ -13,8 +13,10 @@ let baseUrl;
 let authUrl;
 let appOutput = '';
 let rpcFailure = false;
+let quizInsertFailure = false;
 const completionWrites = new Map();
 const completionRpcCalls = [];
+const quizAttemptWrites = [];
 const stateFilePaths = [
   new URL('../uploads/church_year_classes_persistence.json', import.meta.url),
   new URL('../uploads/class_roster_persistence.json', import.meta.url),
@@ -77,7 +79,30 @@ before(async () => {
       });
     }
     if (url.pathname === '/rest/v1/profiles') {
+      if (req.method === 'PATCH') {
+        if (bearer !== 'test-service-role-key') {
+          return respondJson(res, 403, { message: 'Trusted server key required' });
+        }
+        return respondJson(res, 200, []);
+      }
       return respondJson(res, 200, [{ role }]);
+    }
+    if (url.pathname === '/rest/v1/quiz_attempts') {
+      if (bearer !== 'test-service-role-key') {
+        return respondJson(res, 403, { message: 'Trusted server key required' });
+      }
+      if (req.method === 'POST') {
+        let rawBody = '';
+        req.on('data', chunk => { rawBody += chunk; });
+        req.on('end', () => {
+          if (quizInsertFailure) {
+            return respondJson(res, 403, { code: '42501', message: 'Simulated quiz-attempt write denial' });
+          }
+          quizAttemptWrites.push(JSON.parse(rawBody || '{}'));
+          return respondJson(res, 201, {});
+        });
+        return;
+      }
     }
     if (url.pathname === '/rest/v1/rpc/record_lesson_completion') {
       if (bearer !== 'test-service-role-key') {
@@ -395,4 +420,69 @@ test('failed authoritative completion does not report lesson completion in progr
   assert.equal(summaryResponse.status, 200);
   assert.equal(summary.completedLessonIds.includes(lessonId), false);
   assert.equal(summary.allProgress[lessonId].status, 'IN_PROGRESS');
+});
+
+test('quiz submission uses trusted persistence and reports database write failures', async () => {
+  const lessonId = 'l-cross-01';
+  const quizResponse = await request(`/api/church/student-quiz?lessonId=${lessonId}`, {
+    role: 'student',
+    userId: `quiz_read_${Date.now()}`
+  });
+  assert.equal(quizResponse.status, 200);
+  const quiz = (await quizResponse.json()).quiz;
+  const answers = quiz.questions.map(question => ({
+    questionId: question.id,
+    selectedOptionIndex: question.correctIndex
+  }));
+  const initialWriteCount = quizAttemptWrites.length;
+
+  quizInsertFailure = true;
+  try {
+    const failed = await request('/api/church/student-quiz/submit', {
+      method: 'POST',
+      role: 'student',
+      userId: `quiz_failed_${Date.now()}`,
+      body: {
+        lessonId,
+        versionId: quiz.versionId,
+        quizId: quiz.id,
+        answers
+      }
+    });
+    const failedResult = await failed.json();
+    assert.equal(failed.status, 502);
+    assert.equal(failedResult.success, false);
+    assert.equal(failedResult.error, 'QUIZ_PERSISTENCE_FAILED');
+    assert.equal(quizAttemptWrites.length, initialWriteCount);
+  } finally {
+    quizInsertFailure = false;
+  }
+
+  const studentId = `quiz_saved_${Date.now()}`;
+  const saved = await request('/api/church/student-quiz/submit', {
+    method: 'POST',
+    role: 'student',
+    userId: studentId,
+    body: {
+      lessonId,
+      versionId: quiz.versionId,
+      quizId: quiz.id,
+      answers,
+      score: 999999,
+      percentage: 100,
+      pointsEarned: 999999,
+      totalPoints: 999999,
+      passed: true,
+      quizQuestions: [{ id: 'forged-question', correctIndex: -1 }]
+    }
+  });
+  const savedResult = await saved.json();
+  assert.equal(saved.status, 200);
+  assert.equal(savedResult.success, true);
+  assert.equal(savedResult.attempt.studentId, studentId);
+  assert.equal(savedResult.attempt.score, quiz.questions.length);
+  assert.equal(savedResult.attempt.totalScore, quiz.questions.length);
+  assert.equal(quizAttemptWrites.length, initialWriteCount + 1);
+  assert.equal(quizAttemptWrites.at(-1).student_id, studentId);
+  assert.equal(quizAttemptWrites.at(-1).percentage, 100);
 });

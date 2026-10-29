@@ -377,83 +377,80 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
           previousAttempts={userQuizAttempts}
           onBackToLesson={() => setIsTakingQuiz(false)}
           onSubmitAttempt={async (attempt) => {
-            if (activePublishedVersion) {
-              const res = await submitStudentQuizAttempt({
-                lessonId,
-                versionId: activePublishedVersion.id,
-                quizId: attempt.quizId,
-                answers: attempt.answers.map(a => ({
-                  questionId: a.questionId,
-                  selectedOptionIndex: a.selectedOptionIndex
-                })),
-                score: attempt.score,
-                percentage: attempt.percentage,
-                earnedPoints: attempt.earnedPoints,
-                totalPointsPossible: attempt.totalPointsPossible,
-                quizQuestions: activePublishedVersion.quizDraft?.questions
-              });
-              if (res.data) {
-                recordQuizAttempt(res.data);
-              }
-
-              // Evaluate student mastery after quiz attempt
-              const masteryRes = await evaluateStudentMastery({
-                lessonId,
-                versionId: activePublishedVersion.id,
-                studentId: currentStudentId
-              });
-              if (masteryRes.data) {
-                setStudentMastery(
-                  currentStudentId,
-                  lessonId,
-                  masteryRes.data.status,
-                  masteryRes.data.evaluatedBy || 'Automated Curriculum Engine',
-                  masteryRes.data.teacherNotes
-                );
-              }
-
-              // Authoritative streak and points synchronization across all screens
-              if (userData) {
-                const nextPoints = typeof res.totalPoints === 'number' && res.totalPoints > 0 ? res.totalPoints : userData.points;
-                const nextStreak = res.streak?.currentStreak && res.streak.currentStreak > 0 ? res.streak.currentStreak : (userData.currentStreak ?? 1);
-                const nextLongest = res.streak?.longestStreak && res.streak.longestStreak > 0 
-                  ? res.streak.longestStreak 
-                  : Math.max(userData.longestStreak ?? 1, nextStreak);
-
-                const updatedUser = {
-                  ...userData,
-                  points: nextPoints,
-                  currentStreak: nextStreak,
-                  longestStreak: nextLongest
-                };
-                setUserDirectly(updatedUser);
-                updateLeaderboardUser(updatedUser, res.pointsEarned ?? 0);
-                updateStreakLeaderboardUser(updatedUser);
-                if (typeof window !== 'undefined') {
-                  window.dispatchEvent(new CustomEvent('church_user_updated', { detail: updatedUser }));
-                }
-              }
-
-              if (refreshProgressSummary) {
-                try {
-                  await refreshProgressSummary();
-                } catch (_) {}
-              }
-
-              return {
-                success: !res.error,
-                data: res.data,
-                isDuplicate: res.isDuplicate,
-                isFirstCompletion: res.isFirstCompletion,
-                pointsEarned: res.pointsEarned,
-                totalPoints: res.totalPoints,
-                streak: res.streak,
-                error: res.error?.message
-              };
-            } else {
-              recordQuizAttempt(attempt as any);
-              return { success: true, data: attempt as any };
+            if (!activePublishedVersion) {
+              return { success: false, error: 'The active published quiz is unavailable. Reopen the lesson and try again.' };
             }
+
+            const res = await submitStudentQuizAttempt({
+              lessonId,
+              versionId: activePublishedVersion.id,
+              quizId: attempt.quizId,
+              answers: attempt.answers.map(a => ({
+                questionId: a.questionId,
+                selectedOptionIndex: a.selectedOptionIndex
+              }))
+            });
+            if (res.error || !res.data) {
+              return {
+                success: false,
+                error: res.error?.message || 'The server did not confirm that your quiz was saved. Please retry.'
+              };
+            }
+            recordQuizAttempt(res.data);
+
+            // Evaluate student mastery only after the server confirms the attempt was saved.
+            const masteryRes = await evaluateStudentMastery({
+              lessonId,
+              versionId: activePublishedVersion.id,
+              studentId: currentStudentId
+            });
+            if (masteryRes.data) {
+              setStudentMastery(
+                currentStudentId,
+                lessonId,
+                masteryRes.data.status,
+                masteryRes.data.evaluatedBy || 'Automated Curriculum Engine',
+                masteryRes.data.teacherNotes
+              );
+            }
+
+            // Authoritative streak and points synchronization across all screens
+            if (userData) {
+              const nextPoints = typeof res.totalPoints === 'number' && res.totalPoints > 0 ? res.totalPoints : userData.points;
+              const nextStreak = res.streak?.currentStreak && res.streak.currentStreak > 0 ? res.streak.currentStreak : (userData.currentStreak ?? 1);
+              const nextLongest = res.streak?.longestStreak && res.streak.longestStreak > 0
+                ? res.streak.longestStreak
+                : Math.max(userData.longestStreak ?? 1, nextStreak);
+
+              const updatedUser = {
+                ...userData,
+                points: nextPoints,
+                currentStreak: nextStreak,
+                longestStreak: nextLongest
+              };
+              setUserDirectly(updatedUser);
+              updateLeaderboardUser(updatedUser, res.pointsEarned ?? 0);
+              updateStreakLeaderboardUser(updatedUser);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('church_user_updated', { detail: updatedUser }));
+              }
+            }
+
+            if (refreshProgressSummary) {
+              try {
+                await refreshProgressSummary();
+              } catch (_) {}
+            }
+
+            return {
+              success: true,
+              data: res.data,
+              isDuplicate: res.isDuplicate,
+              isFirstCompletion: res.isFirstCompletion,
+              pointsEarned: res.pointsEarned,
+              totalPoints: res.totalPoints,
+              streak: res.streak
+            };
           }}
           onReviewSection={(secId) => {
             setTargetSectionId(secId);

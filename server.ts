@@ -5502,12 +5502,12 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       });
     }
 
-    // Role check: Only students may submit attempts. Teachers and parents strictly forbidden.
-    if (authContext.role === 'parent' || authContext.role === 'teacher') {
+    // Only a verified student profile may submit quiz attempts.
+    if (authContext.role !== 'student') {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
-        message: "Teachers and parents cannot submit student quiz attempts."
+        message: "Only students can submit quiz attempts."
       });
     }
 
@@ -5575,9 +5575,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
 
     // Deterministic Server-Side Scoring
     // Never trust client-provided score or percentage!
-    const questions = (req.body.quizQuestions && Array.isArray(req.body.quizQuestions) && req.body.quizQuestions.length > 0)
-      ? req.body.quizQuestions
-      : quizDraft.questions;
+    const questions = quizDraft.questions;
 
     let correctCount = 0;
     const recordedAnswers: any[] = questions.map((q: any, idx: number) => {
@@ -5691,48 +5689,65 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
 
     // Supabase Durable Write & Unique Constraint Conflict Recovery
     const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
-    if (supabaseUrl && supabaseAnonKey) {
-      try {
-        const client = createClient(supabaseUrl, supabaseAnonKey);
-        const dbPayload = mapAttemptToDb(newAttempt);
-        const { error: insErr } = await client.from('quiz_attempts').insert(dbPayload);
+    const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return res.status(503).json({
+        success: false,
+        error: "QUIZ_PERSISTENCE_NOT_CONFIGURED",
+        message: "Quiz submission is temporarily unavailable because secure persistence is not configured."
+      });
+    }
 
-        if (insErr) {
-          // If code is 23505 (unique_violation) or duplicate key conflict, recover original attempt
-          if (insErr.code === '23505' || insErr.message?.includes('duplicate key') || insErr.message?.includes('unique constraint')) {
-            let conflictQuery = client.from('quiz_attempts').select('*').eq('student_id', targetStudentId).eq('lesson_id', lessonId).eq('quiz_id', quizId);
-            if (idempotencyKey) {
-              conflictQuery = client.from('quiz_attempts').select('*').eq('idempotency_key', idempotencyKey);
-            } else {
-              conflictQuery = conflictQuery.eq('answer_fingerprint', incomingFingerprint);
-            }
-            const { data: conflictRows } = await conflictQuery.limit(1);
-            if (conflictRows && conflictRows[0]) {
-              const recovered = mapDbToAttempt(conflictRows[0]);
-              const { streakRecord, currentPoints } = currentRewardState();
-              return res.json({
-                success: true,
-                attempt: recovered,
-                isDuplicate: true,
-                isFirstCompletion: false,
-                pointsEarned: 0,
-                totalPoints: currentPoints,
-                streak: {
-                  currentStreak: streakRecord.currentStreak,
-                  longestStreak: streakRecord.longestStreak,
-                  streakGained: false,
-                  lastActiveCairoDate: streakRecord.lastActiveCairoDate
-                },
-                message: "Duplicate submission safely handled via database unique constraint; existing attempt preserved."
-              });
-            }
-          }
+    const trustedClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+    const dbPayload = mapAttemptToDb(newAttempt);
+    const { error: insErr } = await trustedClient.from('quiz_attempts').insert(dbPayload);
+
+    if (insErr) {
+      if (insErr.code === '23505' || insErr.message?.includes('duplicate key') || insErr.message?.includes('unique constraint')) {
+        let conflictQuery = trustedClient.from('quiz_attempts').select('*').eq('student_id', targetStudentId).eq('lesson_id', lessonId).eq('quiz_id', quizId);
+        if (idempotencyKey) {
+          conflictQuery = trustedClient.from('quiz_attempts').select('*').eq('idempotency_key', idempotencyKey);
+        } else {
+          conflictQuery = conflictQuery.eq('answer_fingerprint', incomingFingerprint);
         }
-      } catch (sbErr) {
-        // Fallback to local persistent state without failing request
-        console.warn("Supabase quiz attempt write note:", sbErr);
+        const { data: conflictRows, error: conflictErr } = await conflictQuery.limit(1);
+        if (conflictErr) {
+          console.error("Quiz duplicate recovery query failed:", conflictErr.message);
+          return res.status(502).json({
+            success: false,
+            error: "QUIZ_PERSISTENCE_FAILED",
+            message: "The quiz could not be confirmed as saved. Please retry."
+          });
+        }
+        if (conflictRows?.[0]) {
+          const recovered = mapDbToAttempt(conflictRows[0]);
+          const { streakRecord, currentPoints } = currentRewardState();
+          return res.json({
+            success: true,
+            attempt: recovered,
+            isDuplicate: true,
+            isFirstCompletion: false,
+            pointsEarned: 0,
+            totalPoints: currentPoints,
+            streak: {
+              currentStreak: streakRecord.currentStreak,
+              longestStreak: streakRecord.longestStreak,
+              streakGained: false,
+              lastActiveCairoDate: streakRecord.lastActiveCairoDate
+            },
+            message: "Duplicate submission safely handled via database unique constraint; existing attempt preserved."
+          });
+        }
       }
+
+      console.error("Supabase quiz attempt write failed:", insErr.message);
+      return res.status(502).json({
+        success: false,
+        error: "QUIZ_PERSISTENCE_FAILED",
+        message: "Your quiz could not be saved. Check your connection and retry."
+      });
     }
 
     // Single-Award Verification:
@@ -5812,16 +5827,18 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       });
 
       // Synchronize to Supabase profiles
-      if (supabaseUrl && supabaseAnonKey) {
-        try {
-          const client = createClient(supabaseUrl, supabaseAnonKey);
-          await client.from('profiles').update({
-            current_streak: streakRecord.currentStreak,
-            longest_streak: streakRecord.longestStreak,
-            points: newTotalPoints,
-            last_active: new Date().toISOString()
-          }).eq('id', targetStudentId);
-        } catch (_) {}
+      try {
+        const { error: profileUpdateError } = await trustedClient.from('profiles').update({
+          current_streak: streakRecord.currentStreak,
+          longest_streak: streakRecord.longestStreak,
+          points: newTotalPoints,
+          last_active: new Date().toISOString()
+        }).eq('id', targetStudentId);
+        if (profileUpdateError) {
+          console.error("Supabase quiz reward profile update failed:", profileUpdateError.message);
+        }
+      } catch (profileUpdateError) {
+        console.error("Supabase quiz reward profile update failed:", profileUpdateError);
       }
     }
 
