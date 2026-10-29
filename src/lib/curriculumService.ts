@@ -361,22 +361,87 @@ export async function getPublishedLessonsForCurrentUser(): Promise<{
   }
 
   try {
-    // 1. Fetch lessons from public.lessons
+    // 1. Fetch lessons from public.lessons that have an active version pointer and published status
     const { data: dbLessons, error: lessonsErr } = await supabase
       .from('lessons')
       .select('*');
 
     if (lessonsErr) {
-      console.warn('Note on lessons query from Supabase:', lessonsErr.message);
-      return { data: null, error: null };
+      return { data: null, error: new Error(`Failed to query lessons: ${lessonsErr.message}`) };
     }
 
     if (!dbLessons || dbLessons.length === 0) {
       return { data: [], error: null };
     }
 
-    // 2. Adapt dbLessons directly
-    const adaptedLessons: Lesson[] = dbLessons.map((l: any) => adaptDbLessonToAppLesson(l as DbLesson));
+    // Filter to only lessons that have an active version pointer and are marked published
+    const publishedDbLessons = dbLessons.filter(
+      (l: any) => Boolean(l.active_version_id) && 
+        ((l.status && l.status.toLowerCase() === 'published') || 
+         (l.lesson_status && l.lesson_status.toLowerCase() === 'published'))
+    );
+
+    if (publishedDbLessons.length === 0) {
+      return { data: [], error: null };
+    }
+
+    const activeVersionIds = publishedDbLessons
+      .map((l: any) => l.active_version_id)
+      .filter((id: any): id is string => Boolean(id));
+
+    // 2. Fetch authoritative active versions with status = 'PUBLISHED'
+    const { data: dbVersions, error: versionsErr } = await supabase
+      .from('lesson_versions')
+      .select('*')
+      .in('id', activeVersionIds)
+      .eq('status', 'PUBLISHED');
+
+    if (versionsErr) {
+      return { data: null, error: new Error(`Failed to query active lesson versions: ${versionsErr.message}`) };
+    }
+
+    const versionMap = new Map<string, DbLessonVersion>();
+    (dbVersions || []).forEach((v: any) => {
+      versionMap.set(v.id, v as DbLessonVersion);
+    });
+
+    // 3. Fetch sections for the retrieved published versions
+    const foundVersionIds = Array.from(versionMap.keys());
+    const sectionsMap = new Map<string, DbLessonSection[]>();
+
+    if (foundVersionIds.length > 0) {
+      const { data: dbSections, error: sectionsErr } = await supabase
+        .from('lesson_sections')
+        .select('*')
+        .in('lesson_version_id', foundVersionIds)
+        .order('order_index', { ascending: true });
+
+      if (sectionsErr) {
+        return { data: null, error: new Error(`Failed to query lesson sections: ${sectionsErr.message}`) };
+      }
+
+      if (dbSections) {
+        dbSections.forEach((s: any) => {
+          const list = sectionsMap.get(s.lesson_version_id) || [];
+          list.push(s as DbLessonSection);
+          sectionsMap.set(s.lesson_version_id, list);
+        });
+      }
+    }
+
+    // 4. Assemble lessons with their authoritative active version
+    const adaptedLessons: Lesson[] = [];
+    for (const l of publishedDbLessons) {
+      const v = versionMap.get(l.active_version_id);
+      if (!v) {
+        // Version is not PUBLISHED or does not exist — exclude from published student view
+        continue;
+      }
+      const vSections = sectionsMap.get(v.id) || [];
+      const assembledVersion = assembleLessonVersion(v, vSections);
+      adaptedLessons.push(adaptDbLessonToAppLesson(l as DbLesson, assembledVersion));
+    }
+
     return { data: adaptedLessons, error: null };
   } catch (err: any) {
     return { data: null, error: new Error(err?.message || 'Unexpected curriculum query failure') };

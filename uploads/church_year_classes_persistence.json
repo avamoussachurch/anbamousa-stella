@@ -6,7 +6,7 @@
       "year": "2026–2027",
       "status": "ACTIVE",
       "startDate": "2026-09-01",
-      "createdAt": "2026-10-24T09:21:10.195Z",
+      "createdAt": "2026-10-29T11:05:22.566Z",
       "createdBy": "system"
     }
   },
@@ -23,7 +23,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     },
     "inst_2026-2027_primary_1": {
       "id": "inst_2026-2027_primary_1",
@@ -37,7 +37,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     },
     "inst_2026-2027_primary_2": {
       "id": "inst_2026-2027_primary_2",
@@ -51,7 +51,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     },
     "inst_2026-2027_preparatory": {
       "id": "inst_2026-2027_preparatory",
@@ -65,7 +65,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     },
     "inst_2026-2027_secondary": {
       "id": "inst_2026-2027_secondary",
@@ -79,7 +79,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     },
     "inst_2026-2027_university": {
       "id": "inst_2026-2027_university",
@@ -93,7 +93,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     }
   },
   "classMemberships": {
@@ -106,7 +106,7 @@
       "studentName": "Mark Shenouda",
       "exactGrade": "Grade 4",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-24T09:21:10.195Z",
+      "enrolledAt": "2026-10-29T11:05:22.566Z",
       "enrolledBy": "servant"
     },
     "mem_david_2026-2027": {
@@ -118,7 +118,7 @@
       "studentName": "David Emad",
       "exactGrade": "Grade 5",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-24T09:21:10.195Z",
+      "enrolledAt": "2026-10-29T11:05:22.566Z",
       "enrolledBy": "servant"
     },
     "mem_other_2026-2027": {
@@ -130,68 +130,8 @@
       "studentName": "Peter Fadi",
       "exactGrade": "Prep 1",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-24T09:21:10.195Z",
+      "enrolledAt": "2026-10-29T11:05:22.566Z",
       "enrolledBy": "servant"
-    },
-    "mem_student_test_99_2026-2027": {
-      "id": "mem_student_test_99_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "primary_1",
-      "classInstanceId": "inst_2026-2027_primary_1",
-      "studentId": "student_test_99",
-      "studentName": "student_test_99",
-      "exactGrade": "Primary 2",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-25T11:40:47.870Z",
-      "enrolledBy": "join_code"
-    },
-    "mem_stu_pers_1792928506786_1_2026-2027": {
-      "id": "mem_stu_pers_1792928506786_1_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "primary_1",
-      "classInstanceId": "inst_2026-2027_primary_1",
-      "studentId": "stu_pers_1792928506786_1",
-      "studentName": "stu_pers_1792928506786_1",
-      "exactGrade": "Primary 2",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-25T11:41:47.032Z",
-      "enrolledBy": "join_code"
-    },
-    "mem_stu_pers_1792928524908_1_2026-2027": {
-      "id": "mem_stu_pers_1792928524908_1_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "primary_1",
-      "classInstanceId": "inst_2026-2027_primary_1",
-      "studentId": "stu_pers_1792928524908_1",
-      "studentName": "stu_pers_1792928524908_1",
-      "exactGrade": "Primary 2",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-25T11:42:05.086Z",
-      "enrolledBy": "join_code"
-    },
-    "mem_stu_pers_1792929452025_1_2026-2027": {
-      "id": "mem_stu_pers_1792929452025_1_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "primary_1",
-      "classInstanceId": "inst_2026-2027_primary_1",
-      "studentId": "stu_pers_1792929452025_1",
-      "studentName": "stu_pers_1792929452025_1",
-      "exactGrade": "Primary 2",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-25T11:57:32.252Z",
-      "enrolledBy": "join_code"
-    },
-    "mem_stu_pers_1793018534592_1_2026-2027": {
-      "id": "mem_stu_pers_1793018534592_1_2026-2027",
-      "churchYear": "2026–2027",
-      "classGroupId": "primary_1",
-      "classInstanceId": "inst_2026-2027_primary_1",
-      "studentId": "stu_pers_1793018534592_1",
-      "studentName": "stu_pers_1793018534592_1",
-      "exactGrade": "Primary 2",
-      "status": "ACTIVE",
-      "enrolledAt": "2026-10-26T12:42:14.891Z",
-      "enrolledBy": "join_code"
     }
   },
   "teacherAssignments": {
@@ -264,46 +204,6 @@
       "classGroupId": "preparatory",
       "churchYear": "2026–2027",
       "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Peter"
-    },
-    "student_test_99": {
-      "studentId": "student_test_99",
-      "fullName": "student_test_99",
-      "grade": "Primary 2",
-      "classGroupId": "primary_1",
-      "churchYear": "2026–2027",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=student_test_99"
-    },
-    "stu_pers_1792928506786_1": {
-      "studentId": "stu_pers_1792928506786_1",
-      "fullName": "stu_pers_1792928506786_1",
-      "grade": "Primary 2",
-      "classGroupId": "primary_1",
-      "churchYear": "2026–2027",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=stu_pers_1792928506786_1"
-    },
-    "stu_pers_1792928524908_1": {
-      "studentId": "stu_pers_1792928524908_1",
-      "fullName": "stu_pers_1792928524908_1",
-      "grade": "Primary 2",
-      "classGroupId": "primary_1",
-      "churchYear": "2026–2027",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=stu_pers_1792928524908_1"
-    },
-    "stu_pers_1792929452025_1": {
-      "studentId": "stu_pers_1792929452025_1",
-      "fullName": "stu_pers_1792929452025_1",
-      "grade": "Primary 2",
-      "classGroupId": "primary_1",
-      "churchYear": "2026–2027",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=stu_pers_1792929452025_1"
-    },
-    "stu_pers_1793018534592_1": {
-      "studentId": "stu_pers_1793018534592_1",
-      "fullName": "stu_pers_1793018534592_1",
-      "grade": "Primary 2",
-      "classGroupId": "primary_1",
-      "churchYear": "2026–2027",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=stu_pers_1793018534592_1"
     }
   },
   "teacherStudentRelationships": [],
@@ -312,31 +212,31 @@
       "parentId": "mary",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     },
     {
       "parentId": "mary",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     },
     {
       "parentId": "other_parent",
       "childId": "other",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-24T09:21:10.195Z"
+      "createdAt": "2026-10-29T11:05:22.566Z"
     }
   ],
   "activationRequests": {
@@ -350,7 +250,7 @@
       "requestedGrade": "Grade 4",
       "notes": "New student joining Sunday school with Servant Mina",
       "status": "PENDING_APPROVAL",
-      "requestedAt": "2026-10-24T08:21:10.195Z"
+      "requestedAt": "2026-10-29T10:05:22.566Z"
     }
   },
   "classServants": {
@@ -668,2371 +568,345 @@
       "history": []
     }
   },
-  "progress": {
-    "mark_l-test-multiversion-01": {
-      "studentId": "mark",
+  "progress": {},
+  "attempts": {},
+  "mastery": {},
+  "userPoints": {},
+  "userStreaks": {},
+  "completionHistory": {},
+  "lessons": {
+    "l-test-draft-01": {
+      "id": "l-test-draft-01",
+      "createdBy": "user_teacher_mina_101",
+      "status": "published",
+      "active_version_id": "v-test-approved-1",
+      "classGroupId": "primary_2",
+      "published_at": "2026-10-29T11:05:22.570Z"
+    },
+    "l-cross-01": {
+      "id": "l-cross-01",
+      "createdBy": "user_teacher_mina_101",
+      "status": "draft",
+      "active_version_id": null,
+      "classGroupId": "primary_2"
+    },
+    "l-test-other-teacher-lesson": {
+      "id": "l-test-other-teacher-lesson",
+      "createdBy": "user_teacher_other_404",
+      "status": "draft",
+      "active_version_id": null,
+      "classGroupId": "preparatory"
+    },
+    "l-test-multiversion-01": {
+      "id": "l-test-multiversion-01",
+      "createdBy": "user_teacher_mina_101",
+      "status": "published",
+      "active_version_id": "v-test-multi-2",
+      "classGroupId": "primary_2",
+      "published_at": "2026-10-29T11:05:23.187Z"
+    },
+    "l-prep-01": {
+      "id": "l-prep-01",
+      "createdBy": "user_teacher_other_404",
+      "status": "published",
+      "active_version_id": "v-prep-01",
+      "classGroupId": "preparatory"
+    },
+    "l-sec-01": {
+      "id": "l-sec-01",
+      "createdBy": "user_teacher_other_404",
+      "status": "published",
+      "active_version_id": "v-sec-01",
+      "classGroupId": "secondary"
+    }
+  },
+  "versions": {
+    "v-test-draft-1": {
+      "id": "v-test-draft-1",
+      "lessonId": "l-test-draft-01",
+      "versionNumber": 1,
+      "status": "AI_DRAFT",
+      "createdBy": "user_teacher_mina_101",
+      "createdAt": "2026-10-29T11:05:22.566Z",
+      "sectionsCount": 3,
+      "sections": [
+        {
+          "id": "sec-draft-1",
+          "order": 1,
+          "titleEn": "Draft Intro"
+        }
+      ],
+      "quizDraft": {
+        "id": "quiz-draft-01",
+        "lessonId": "l-test-draft-01",
+        "titleEn": "Draft Assessment",
+        "titleAr": "تقييم تجريبي",
+        "instructionsEn": "Draft questions only",
+        "instructionsAr": "أسئلة مسودة فقط",
+        "status": "DRAFT",
+        "questions": [
+          {
+            "id": "q-draft-1",
+            "type": "multiple_choice",
+            "questionEn": "Draft Question 1?",
+            "questionAr": "السؤال التجريبي الأول؟",
+            "optionsEn": [
+              "Option A",
+              "Option B"
+            ],
+            "optionsAr": [
+              "أ",
+              "ب"
+            ],
+            "correctIndex": 0,
+            "explanationEn": "Draft explanation",
+            "explanationAr": "شرح تجريبي",
+            "sourceRef": {
+              "sectionId": "sec-draft-1",
+              "sectionTitle": "Draft Intro",
+              "sourceId": "src-1",
+              "location": "Page 1"
+            }
+          }
+        ]
+      }
+    },
+    "v-test-approved-1": {
+      "id": "v-test-approved-1",
+      "lessonId": "l-test-draft-01",
+      "versionNumber": 2,
+      "status": "PUBLISHED",
+      "createdBy": "user_teacher_mina_101",
+      "approvedBy": "Servant Mina",
+      "approvedAt": "2026-10-29T11:05:22.566Z",
+      "approvalNote": "Theological content verified and approved.",
+      "createdAt": "2026-10-29T11:05:22.566Z",
+      "sectionsCount": 3,
+      "sections": [
+        {
+          "id": "sec-approved-1",
+          "order": 1,
+          "titleEn": "Approved Intro"
+        }
+      ],
+      "quizDraft": {
+        "id": "quiz-approved-01",
+        "lessonId": "l-test-draft-01",
+        "titleEn": "Approved Review Assessment",
+        "titleAr": "تقييم معتمد لم ينشر بعد",
+        "instructionsEn": "Approved quiz",
+        "instructionsAr": "اختبار معتمد",
+        "status": "APPROVED",
+        "questions": [
+          {
+            "id": "q-app-1",
+            "type": "multiple_choice",
+            "questionEn": "Approved Question 1?",
+            "questionAr": "السؤال المعتمد الأول؟",
+            "optionsEn": [
+              "Choice 1",
+              "Choice 2"
+            ],
+            "optionsAr": [
+              "١",
+              "٢"
+            ],
+            "correctIndex": 1,
+            "explanationEn": "Approved explanation",
+            "explanationAr": "شرح معتمد",
+            "sourceRef": {
+              "sectionId": "sec-approved-1",
+              "sectionTitle": "Approved Intro",
+              "sourceId": "src-1",
+              "location": "Page 1"
+            }
+          }
+        ]
+      },
+      "publishedAt": "2026-10-29T11:05:22.570Z",
+      "publishedBy": "mina"
+    },
+    "v-test-multi-1": {
+      "id": "v-test-multi-1",
       "lessonId": "l-test-multiversion-01",
-      "versionId": "v-test-multi-1",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-multi-1",
-        "sec-multi-2",
-        "sec-multi-3"
+      "versionNumber": 1,
+      "status": "PUBLISHED",
+      "createdBy": "user_teacher_mina_101",
+      "approvedBy": "Servant Mina",
+      "approvedAt": "2026-10-29T11:05:22.566Z",
+      "publishedAt": "2026-10-29T11:05:22.566Z",
+      "sectionsCount": 3,
+      "sections": [
+        {
+          "id": "sec-multi-1",
+          "order": 1,
+          "titleEn": "1. Discovery of the True Cross"
+        },
+        {
+          "id": "sec-multi-2",
+          "order": 2,
+          "titleEn": "2. The Miracle of Bishop Macarius"
+        },
+        {
+          "id": "sec-multi-3",
+          "order": 3,
+          "titleEn": "3. Liturgical Traditions and Basil"
+        }
       ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-24T09:21:10.223Z",
-      "completedAt": "2026-10-24T09:21:10.234Z",
-      "pointsAwarded": true
-    },
-    "test_idem_student_1792834220343_l-cross-01": {
-      "studentId": "test_idem_student_1792834220343",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-24T09:30:20.376Z",
-      "completedAt": "2026-10-24T09:30:20.388Z",
-      "pointsAwarded": true,
-      "quizScore": 100
-    },
-    "test_quiz_student_1792834236185_l-cross-01": {
-      "studentId": "test_quiz_student_1792834236185",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-24T09:30:36.210Z",
-      "completedAt": "2026-10-24T09:30:36.220Z",
-      "pointsAwarded": true,
-      "quizScore": 100
-    },
-    "stu_pers_1792928348996_1_l-cross-01": {
-      "studentId": "stu_pers_1792928348996_1",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:39:09.045Z",
-      "completedAt": "2026-10-25T11:39:09.054Z",
-      "pointsAwarded": true,
-      "quizScore": 100
-    },
-    "stu_pers_1792928506786_1_l-cross-01": {
-      "studentId": "stu_pers_1792928506786_1",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:41:46.817Z",
-      "completedAt": "2026-10-25T11:41:46.824Z",
-      "pointsAwarded": true,
-      "quizScore": 100
-    },
-    "stu_pers_1792928524908_1_l-cross-01": {
-      "studentId": "stu_pers_1792928524908_1",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:42:04.936Z",
-      "completedAt": "2026-10-25T11:42:04.945Z",
-      "pointsAwarded": true,
-      "quizScore": 100
-    },
-    "test_quiz_student_1792928533246_l-cross-01": {
-      "studentId": "test_quiz_student_1792928533246",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:42:13.270Z",
-      "completedAt": "2026-10-25T11:42:13.278Z",
-      "pointsAwarded": true,
-      "quizScore": 100
-    },
-    "test_idem_student_1792928538784_l-cross-01": {
-      "studentId": "test_idem_student_1792928538784",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:42:18.799Z",
-      "completedAt": "2026-10-25T11:42:18.810Z",
-      "pointsAwarded": true,
-      "quizScore": 100
-    },
-    "test_student_step2_1792928561245_l-cross-01": {
-      "studentId": "test_student_step2_1792928561245",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:42:41.267Z",
-      "completedAt": "2026-10-25T11:42:41.277Z",
-      "pointsAwarded": true
-    },
-    "std_mark_1792928568145_l-cross-01": {
-      "studentId": "std_mark_1792928568145",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:42:48.166Z",
-      "completedAt": "2026-10-25T11:42:48.176Z",
-      "pointsAwarded": true
-    },
-    "stu_pers_1792929452025_1_l-cross-01": {
-      "studentId": "stu_pers_1792929452025_1",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:57:32.070Z",
-      "completedAt": "2026-10-25T11:57:32.079Z",
-      "pointsAwarded": true,
-      "quizScore": 100
-    },
-    "test_quiz_student_1792929466388_l-cross-01": {
-      "studentId": "test_quiz_student_1792929466388",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:57:46.409Z",
-      "completedAt": "2026-10-25T11:57:46.417Z",
-      "pointsAwarded": true,
-      "quizScore": 100
-    },
-    "test_student_step2_1792929466627_l-cross-01": {
-      "studentId": "test_student_step2_1792929466627",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-25T11:57:46.652Z",
-      "completedAt": "2026-10-25T11:57:46.661Z",
-      "pointsAwarded": true
-    },
-    "stu_step4_1793018527896_100_l-cross-01": {
-      "studentId": "stu_step4_1793018527896_100",
-      "lessonId": "l-cross-01",
-      "status": "COMPLETED",
-      "quizScore": 50,
-      "quizPassed": true,
-      "pointsAwarded": true
-    },
-    "stu_step4_1793018528193_85_l-step4-tier85-20q": {
-      "studentId": "stu_step4_1793018528193_85",
-      "lessonId": "l-step4-tier85-20q",
-      "status": "COMPLETED",
-      "quizScore": 85,
-      "quizPassed": true,
-      "pointsAwarded": true
-    },
-    "stu_step4_1793018528337_50_l-step4-50-1793018528337": {
-      "studentId": "stu_step4_1793018528337_50",
-      "lessonId": "l-step4-50-1793018528337",
-      "status": "COMPLETED",
-      "quizScore": 50,
-      "quizPassed": true,
-      "pointsAwarded": true
-    },
-    "stu_step4_1793018528438_below_l-step4-below-1793018528438": {
-      "studentId": "stu_step4_1793018528438_below",
-      "lessonId": "l-step4-below-1793018528438",
-      "status": "IN_PROGRESS",
-      "quizScore": 0,
-      "quizPassed": false,
-      "pointsAwarded": false
-    },
-    "stu_pers_1793018534592_1_l-cross-01": {
-      "studentId": "stu_pers_1793018534592_1",
-      "lessonId": "l-cross-01",
-      "versionId": "ver-pub-l-cross-01",
-      "status": "COMPLETED",
-      "sectionsCompleted": [
-        "sec-1",
-        "sec-2",
-        "sec-3"
-      ],
-      "totalSections": 3,
-      "completionPercent": 100,
-      "startedAt": "2026-10-26T12:42:14.622Z",
-      "completedAt": "2026-10-26T12:42:14.635Z",
-      "pointsAwarded": true,
-      "quizScore": 100,
-      "quizPassed": true
-    },
-    "stu_ux_1793019192569_l-step4-ux-1793019192569": {
-      "studentId": "stu_ux_1793019192569",
-      "lessonId": "l-step4-ux-1793019192569",
-      "status": "COMPLETED",
-      "quizScore": 100,
-      "quizPassed": true,
-      "pointsAwarded": true
-    },
-    "stu_step4_1793019217316_100_l-cross-01": {
-      "studentId": "stu_step4_1793019217316_100",
-      "lessonId": "l-cross-01",
-      "status": "COMPLETED",
-      "quizScore": 50,
-      "quizPassed": true,
-      "pointsAwarded": true
-    },
-    "stu_step4_1793019217490_85_l-step4-tier85-20q": {
-      "studentId": "stu_step4_1793019217490_85",
-      "lessonId": "l-step4-tier85-20q",
-      "status": "COMPLETED",
-      "quizScore": 85,
-      "quizPassed": true,
-      "pointsAwarded": true
-    },
-    "stu_step4_1793019217570_50_l-step4-50-1793019217570": {
-      "studentId": "stu_step4_1793019217570_50",
-      "lessonId": "l-step4-50-1793019217570",
-      "status": "COMPLETED",
-      "quizScore": 50,
-      "quizPassed": true,
-      "pointsAwarded": true
-    },
-    "stu_step4_1793019217648_below_l-step4-below-1793019217648": {
-      "studentId": "stu_step4_1793019217648_below",
-      "lessonId": "l-step4-below-1793019217648",
-      "status": "IN_PROGRESS",
-      "quizScore": 0,
-      "quizPassed": false,
-      "pointsAwarded": false
-    },
-    "stu_ux_1793019363084_l-step4-ux-1793019363084": {
-      "studentId": "stu_ux_1793019363084",
-      "lessonId": "l-step4-ux-1793019363084",
-      "status": "COMPLETED",
-      "quizScore": 100,
-      "quizPassed": true,
-      "pointsAwarded": true
-    },
-    "stu_ux_1793019388057_l-step4-ux-1793019388057": {
-      "studentId": "stu_ux_1793019388057",
-      "lessonId": "l-step4-ux-1793019388057",
-      "status": "COMPLETED",
-      "quizScore": 100,
-      "quizPassed": true,
-      "pointsAwarded": true
-    },
-    "stu_ux_1793019476994_l-step4-ux-1793019476994": {
-      "studentId": "stu_ux_1793019476994",
-      "lessonId": "l-step4-ux-1793019476994",
-      "status": "COMPLETED",
-      "quizScore": 100,
-      "quizPassed": true,
-      "pointsAwarded": true
-    }
-  },
-  "attempts": {
-    "test_idem_student_1792834220343_l-cross-01": [
-      {
-        "id": "att-1792834220475-tgpsa",
-        "studentId": "test_idem_student_1792834220343",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-24T09:30:20.475Z"
-      }
-    ],
-    "test_quiz_student_1792834236185_l-cross-01": [
-      {
-        "id": "att-1792834236280-sv9md",
-        "studentId": "test_quiz_student_1792834236185",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-24T09:30:36.280Z"
-      }
-    ],
-    "stu_pers_1792928348996_1_l-cross-01": [
-      {
-        "id": "att-1792928349419-b7beh",
-        "studentId": "stu_pers_1792928348996_1",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": "idem-1792928349417-g3p8",
-        "submittedAt": "2026-10-25T11:39:09.419Z"
-      }
-    ],
-    "stu_pers_1792928506786_1_l-cross-01": [
-      {
-        "id": "att-1792928506972-spqbs",
-        "studentId": "stu_pers_1792928506786_1",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": "idem-1792928506969-eyfu",
-        "submittedAt": "2026-10-25T11:41:46.972Z"
-      }
-    ],
-    "stu_pers_1792928524908_1_l-cross-01": [
-      {
-        "id": "att-1792928525045-ubj1b",
-        "studentId": "stu_pers_1792928524908_1",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": "idem-1792928525043-bcv4",
-        "submittedAt": "2026-10-25T11:42:05.045Z"
-      }
-    ],
-    "test_quiz_student_1792928533246_l-cross-01": [
-      {
-        "id": "att-1792928533418-u7d18",
-        "studentId": "test_quiz_student_1792928533246",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-25T11:42:13.418Z"
-      }
-    ],
-    "test_idem_student_1792928538784_l-cross-01": [
-      {
-        "id": "att-1792928538935-nhcu2",
-        "studentId": "test_idem_student_1792928538784",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-25T11:42:18.935Z"
-      }
-    ],
-    "stu_pers_1792929452025_1_l-cross-01": [
-      {
-        "id": "att-1792929452202-78rw7",
-        "studentId": "stu_pers_1792929452025_1",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": "idem-1792929452199-21w9",
-        "submittedAt": "2026-10-25T11:57:32.202Z"
-      }
-    ],
-    "test_quiz_student_1792929466388_l-cross-01": [
-      {
-        "id": "att-1792929466505-tsd6a",
-        "studentId": "test_quiz_student_1792929466388",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-25T11:57:46.505Z"
-      }
-    ],
-    "stu_step4_1793018483464_100_l-cross-01": [
-      {
-        "id": "att-1793018483522-jgmj3",
-        "studentId": "stu_step4_1793018483464_100",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:41:23.522Z"
-      },
-      {
-        "id": "att-1793018483711-03qf5",
-        "studentId": "stu_step4_1793018483464_100",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 1,
-        "totalScore": 2,
-        "percentage": 50,
-        "passed": false,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":1}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:41:23.711Z"
-      }
-    ],
-    "stu_step4_1793018527896_100_l-cross-01": [
-      {
-        "id": "att-1793018527950-74hf8",
-        "studentId": "stu_step4_1793018527896_100",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:42:07.950Z"
-      },
-      {
-        "id": "att-1793018528479-nc9p8",
-        "studentId": "stu_step4_1793018527896_100",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 1,
-        "totalScore": 2,
-        "percentage": 50,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":1}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:42:08.479Z"
-      }
-    ],
-    "stu_step4_1793018528193_85_l-step4-tier85-20q": [
-      {
-        "id": "att-1793018528197-x4zr1",
-        "studentId": "stu_step4_1793018528193_85",
-        "lessonId": "l-step4-tier85-20q",
-        "versionId": "ver-pub-l-step4-tier85-20q",
-        "quizId": "quiz-l-step4-tier85-20q",
-        "score": 17,
-        "totalScore": 20,
-        "percentage": 85,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-step4-tier85-20q-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-3",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-4",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-5",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-6",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-7",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-8",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-9",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-10",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-11",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-12",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-13",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-14",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-15",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-16",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-17",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-18",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-19",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-20",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-tier85-20q-1\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-10\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-11\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-12\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-13\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-14\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-15\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-16\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-17\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-18\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-19\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-2\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-20\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-3\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-4\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-5\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-6\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-7\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-8\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-9\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:42:08.197Z"
-      }
-    ],
-    "stu_step4_1793018528337_50_l-step4-50-1793018528337": [
-      {
-        "id": "att-1793018528341-nd4gx",
-        "studentId": "stu_step4_1793018528337_50",
-        "lessonId": "l-step4-50-1793018528337",
-        "versionId": "ver-pub-l-step4-50-1793018528337",
-        "quizId": "quiz-l-step4-50-1793018528337",
-        "score": 1,
-        "totalScore": 2,
-        "percentage": 50,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-step4-50-1793018528337-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-50-1793018528337-2",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-50-1793018528337-1\",\"opt\":0},{\"q\":\"q-l-step4-50-1793018528337-2\",\"opt\":1}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:42:08.341Z"
-      }
-    ],
-    "stu_step4_1793018528438_below_l-step4-below-1793018528438": [
-      {
-        "id": "att-1793018528443-5smwk",
-        "studentId": "stu_step4_1793018528438_below",
-        "lessonId": "l-step4-below-1793018528438",
-        "versionId": "ver-pub-l-step4-below-1793018528438",
-        "quizId": "quiz-l-step4-below-1793018528438",
-        "score": 0,
-        "totalScore": 2,
-        "percentage": 0,
-        "passed": false,
-        "answers": [
-          {
-            "questionId": "q-l-step4-below-1793018528438-1",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-below-1793018528438-2",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-below-1793018528438-1\",\"opt\":1},{\"q\":\"q-l-step4-below-1793018528438-2\",\"opt\":1}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:42:08.443Z"
-      }
-    ],
-    "stu_pers_1793018534592_1_l-cross-01": [
-      {
-        "id": "att-1793018534811-47ftb",
-        "studentId": "stu_pers_1793018534592_1",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": "idem-1793018534809-jchu",
-        "submittedAt": "2026-10-26T12:42:14.811Z"
-      }
-    ],
-    "stu_ux_1793019192569_l-step4-ux-1793019192569": [
-      {
-        "id": "att-1793019192633-ef73u",
-        "studentId": "stu_ux_1793019192569",
-        "lessonId": "l-step4-ux-1793019192569",
-        "versionId": "ver-pub-l-step4-ux-1793019192569",
-        "quizId": "quiz-l-step4-ux-1793019192569",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-step4-ux-1793019192569-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-ux-1793019192569-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-ux-1793019192569-1\",\"opt\":0},{\"q\":\"q-l-step4-ux-1793019192569-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:53:12.633Z"
-      }
-    ],
-    "stu_step4_1793019217316_100_l-cross-01": [
-      {
-        "id": "att-1793019217339-ahlff",
-        "studentId": "stu_step4_1793019217316_100",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:53:37.339Z"
-      },
-      {
-        "id": "att-1793019217726-8x1fs",
-        "studentId": "stu_step4_1793019217316_100",
-        "lessonId": "l-cross-01",
-        "versionId": "ver-pub-l-cross-01",
-        "quizId": "quiz-ver-pub-l-cross-01",
-        "score": 1,
-        "totalScore": 2,
-        "percentage": 50,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-cross-01-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-cross-01-2",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":1}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:53:37.726Z"
-      }
-    ],
-    "stu_step4_1793019217490_85_l-step4-tier85-20q": [
-      {
-        "id": "att-1793019217494-40vd0",
-        "studentId": "stu_step4_1793019217490_85",
-        "lessonId": "l-step4-tier85-20q",
-        "versionId": "ver-pub-l-step4-tier85-20q",
-        "quizId": "quiz-l-step4-tier85-20q",
-        "score": 17,
-        "totalScore": 20,
-        "percentage": 85,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-step4-tier85-20q-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-3",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-4",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-5",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-6",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-7",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-8",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-9",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-10",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-11",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-12",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-13",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-14",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-15",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-16",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-17",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-18",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-19",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-tier85-20q-20",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
-            "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-tier85-20q-1\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-10\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-11\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-12\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-13\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-14\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-15\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-16\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-17\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-18\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-19\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-2\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-20\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-3\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-4\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-5\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-6\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-7\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-8\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-9\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:53:37.494Z"
-      }
-    ],
-    "stu_step4_1793019217570_50_l-step4-50-1793019217570": [
-      {
-        "id": "att-1793019217574-lygae",
-        "studentId": "stu_step4_1793019217570_50",
-        "lessonId": "l-step4-50-1793019217570",
-        "versionId": "ver-pub-l-step4-50-1793019217570",
-        "quizId": "quiz-l-step4-50-1793019217570",
-        "score": 1,
-        "totalScore": 2,
-        "percentage": 50,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-step4-50-1793019217570-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-50-1793019217570-2",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-50-1793019217570-1\",\"opt\":0},{\"q\":\"q-l-step4-50-1793019217570-2\",\"opt\":1}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:53:37.574Z"
-      }
-    ],
-    "stu_step4_1793019217648_below_l-step4-below-1793019217648": [
-      {
-        "id": "att-1793019217652-qmfp6",
-        "studentId": "stu_step4_1793019217648_below",
-        "lessonId": "l-step4-below-1793019217648",
-        "versionId": "ver-pub-l-step4-below-1793019217648",
-        "quizId": "quiz-l-step4-below-1793019217648",
-        "score": 0,
-        "totalScore": 2,
-        "percentage": 0,
-        "passed": false,
-        "answers": [
-          {
-            "questionId": "q-l-step4-below-1793019217648-1",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-below-1793019217648-2",
-            "selectedOptionIndex": 1,
-            "isCorrect": false,
-            "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-below-1793019217648-1\",\"opt\":1},{\"q\":\"q-l-step4-below-1793019217648-2\",\"opt\":1}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:53:37.652Z"
-      }
-    ],
-    "stu_ux_1793019363084_l-step4-ux-1793019363084": [
-      {
-        "id": "att-1793019363131-cwsnn",
-        "studentId": "stu_ux_1793019363084",
-        "lessonId": "l-step4-ux-1793019363084",
-        "versionId": "ver-pub-l-step4-ux-1793019363084",
-        "quizId": "quiz-l-step4-ux-1793019363084",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-step4-ux-1793019363084-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-ux-1793019363084-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-ux-1793019363084-1\",\"opt\":0},{\"q\":\"q-l-step4-ux-1793019363084-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:56:03.131Z"
-      }
-    ],
-    "stu_ux_1793019388057_l-step4-ux-1793019388057": [
-      {
-        "id": "att-1793019388082-j3sht",
-        "studentId": "stu_ux_1793019388057",
-        "lessonId": "l-step4-ux-1793019388057",
-        "versionId": "ver-pub-l-step4-ux-1793019388057",
-        "quizId": "quiz-l-step4-ux-1793019388057",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-step4-ux-1793019388057-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-ux-1793019388057-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-ux-1793019388057-1\",\"opt\":0},{\"q\":\"q-l-step4-ux-1793019388057-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:56:28.082Z"
-      }
-    ],
-    "stu_ux_1793019476994_l-step4-ux-1793019476994": [
-      {
-        "id": "att-1793019477040-u4spd",
-        "studentId": "stu_ux_1793019476994",
-        "lessonId": "l-step4-ux-1793019476994",
-        "versionId": "ver-pub-l-step4-ux-1793019476994",
-        "quizId": "quiz-l-step4-ux-1793019476994",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "passed": true,
-        "answers": [
-          {
-            "questionId": "q-l-step4-ux-1793019476994-1",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
-            "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
-            "recommendedSectionId": "sec-1",
-            "recommendedSectionTitle": "Section 1"
-          },
-          {
-            "questionId": "q-l-step4-ux-1793019476994-2",
-            "selectedOptionIndex": 0,
-            "isCorrect": true,
-            "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
-            "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
-            "recommendedSectionId": "sec-2",
-            "recommendedSectionTitle": "Section 2"
-          }
-        ],
-        "answerFingerprint": "[{\"q\":\"q-l-step4-ux-1793019476994-1\",\"opt\":0},{\"q\":\"q-l-step4-ux-1793019476994-2\",\"opt\":0}]",
-        "idempotencyKey": null,
-        "submittedAt": "2026-10-26T12:57:57.040Z"
-      }
-    ]
-  },
-  "mastery": {
-    "mark_l-test-multiversion-01": {
-      "lessonId": "l-test-multiversion-01",
-      "studentId": "mark",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-24T09:21:10.234Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "test_idem_student_1792834220343_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "test_idem_student_1792834220343",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-24T09:30:20.388Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "test_quiz_student_1792834236185_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "test_quiz_student_1792834236185",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-24T09:30:36.220Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "stu_pers_1792928348996_1_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "stu_pers_1792928348996_1",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:39:09.054Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "stu_pers_1792928506786_1_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "stu_pers_1792928506786_1",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:41:46.824Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "stu_pers_1792928524908_1_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "stu_pers_1792928524908_1",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:42:04.945Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "test_quiz_student_1792928533246_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "test_quiz_student_1792928533246",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:42:13.278Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "test_idem_student_1792928538784_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "test_idem_student_1792928538784",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:42:18.810Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "test_student_step2_1792928561245_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "test_student_step2_1792928561245",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:42:41.277Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "std_mark_1792928568145_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "std_mark_1792928568145",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:42:48.176Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "stu_pers_1792929452025_1_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "stu_pers_1792929452025_1",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:57:32.079Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "test_quiz_student_1792929466388_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "test_quiz_student_1792929466388",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:57:46.417Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "test_student_step2_1792929466627_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "test_student_step2_1792929466627",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-25T11:57:46.661Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    },
-    "stu_pers_1793018534592_1_l-cross-01": {
-      "lessonId": "l-cross-01",
-      "studentId": "stu_pers_1793018534592_1",
-      "status": "MASTERED",
-      "contentCompleted": true,
-      "quizPassed": true,
-      "bestQuizScore": 100,
-      "evaluatedAt": "2026-10-26T12:42:14.635Z",
-      "evaluatedBy": "Automated Curriculum Engine",
-      "teacherNotes": "Completed all sections and verified by church curriculum engine"
-    }
-  },
-  "userPoints": {
-    "mark": 150,
-    "test_idem_student_1792834220343": 50,
-    "test_quiz_student_1792834236185": 50,
-    "stu_pers_1792928348996_1": 50,
-    "stu_pers_1792928506786_1": 50,
-    "stu_pers_1792928524908_1": 50,
-    "test_quiz_student_1792928533246": 50,
-    "test_idem_student_1792928538784": 50,
-    "test_student_step2_1792928561245": 50,
-    "std_mark_1792928568145": 50,
-    "stu_pers_1792929452025_1": 50,
-    "test_quiz_student_1792929466388": 50,
-    "test_student_step2_1792929466627": 50,
-    "stu_step4_1793018527896_100": 50,
-    "stu_step4_1793018528193_85": 50,
-    "stu_step4_1793018528337_50": 50,
-    "stu_pers_1793018534592_1": 50,
-    "stu_ux_1793019192569": 50,
-    "stu_step4_1793019217316_100": 50,
-    "stu_step4_1793019217490_85": 50,
-    "stu_step4_1793019217570_50": 50,
-    "stu_ux_1793019363084": 50,
-    "stu_ux_1793019388057": 50,
-    "stu_ux_1793019476994": 50
-  },
-  "userStreaks": {
-    "mark": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-24",
-      "activeCairoDays": [
-        "2026-10-24"
-      ]
-    },
-    "test_idem_student_1792834220343": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-24",
-      "activeCairoDays": [
-        "2026-10-24"
-      ]
-    },
-    "test_quiz_student_1792834236185": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-24",
-      "activeCairoDays": [
-        "2026-10-24"
-      ]
-    },
-    "stu_pers_1792928348996_1": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "stu_pers_1792928506786_1": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "stu_pers_1792928524908_1": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "test_quiz_student_1792928533246": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "test_idem_student_1792928538784": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "test_student_step2_1792928561245": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "std_mark_1792928568145": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "stu_pers_1792929452025_1": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "test_quiz_student_1792929466388": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "test_student_step2_1792929466627": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-25",
-      "activeCairoDays": [
-        "2026-10-25"
-      ]
-    },
-    "stu_step4_1793018527896_100": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_step4_1793018528193_85": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_step4_1793018528337_50": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_pers_1793018534592_1": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_ux_1793019192569": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_step4_1793019217316_100": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_step4_1793019217490_85": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_step4_1793019217570_50": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_ux_1793019363084": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_ux_1793019388057": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    },
-    "stu_ux_1793019476994": {
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastActiveCairoDate": "2026-10-26",
-      "activeCairoDays": [
-        "2026-10-26"
-      ]
-    }
-  },
-  "completionHistory": {
-    "mark": [
-      {
-        "id": "act_1792833670238_rhnlv",
-        "studentId": "mark",
-        "type": "LESSON_COMPLETED",
+      "quizDraft": {
+        "id": "quiz-multi-01",
         "lessonId": "l-test-multiversion-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-24T09:21:10.234Z",
-        "cairoDate": "2026-10-24",
-        "cairoTime": "12:21:10",
-        "isFirstCompletion": true
+        "titleEn": "Feast of the Holy Cross Review Assessment",
+        "titleAr": "تقييم مراجعة درس عيد الصليب المجيد",
+        "instructionsEn": "Answer all questions to check your knowledge.",
+        "instructionsAr": "أجب على جميع الأسئلة لمراجعة معلوماتك.",
+        "status": "APPROVED",
+        "questions": [
+          {
+            "id": "q-multi-1",
+            "type": "multiple_choice",
+            "questionEn": "In what year did Queen Helena travel to Jerusalem to find the Holy Cross?",
+            "questionAr": "في أي عام سافرت الملكة هيلانة إلى أورشليم للبحث عن الصليب المقدس؟",
+            "optionsEn": [
+              "326 AD",
+              "451 AD",
+              "70 AD",
+              "1054 AD"
+            ],
+            "optionsAr": [
+              "٣٢٦ م",
+              "٤٥١ م",
+              "٧٠ م",
+              "١٠٥٤ م"
+            ],
+            "correctIndex": 0,
+            "explanationEn": "Queen Helena traveled to Jerusalem in 326 AD.",
+            "explanationAr": "سافرت الملكة هيلانة إلى أورشليم في سنة ٣٢٦ ميلادية.",
+            "sourceRef": {
+              "sectionId": "sec-multi-1",
+              "sectionTitle": "Discovery of the True Cross",
+              "sourceId": "src-1",
+              "location": "Page 1"
+            }
+          },
+          {
+            "id": "q-multi-2",
+            "type": "multiple_choice",
+            "questionEn": "Who was the bishop of Jerusalem who assisted in identifying the True Cross?",
+            "questionAr": "من هو أسقف أورشليم الذي ساعد في التحقق من عود الصليب المقدس؟",
+            "optionsEn": [
+              "Bishop Athanasius",
+              "Bishop Macarius",
+              "Bishop Peter",
+              "Bishop Cyril"
+            ],
+            "optionsAr": [
+              "الأنبا أثناسيوس",
+              "الأنبا مكاريوس",
+              "الأنبا بطرس",
+              "الأنبا كيرلس"
+            ],
+            "correctIndex": 1,
+            "explanationEn": "Bishop Macarius of Jerusalem brought a deceased person who was resurrected by the True Cross.",
+            "explanationAr": "الأنبا مكاريوس أسقف أورشليم أحضر جثمان ميت قام بملامسة الصليب الحقيقي.",
+            "sourceRef": {
+              "sectionId": "sec-multi-2",
+              "sectionTitle": "The Miracle of Bishop Macarius",
+              "sourceId": "src-2",
+              "location": "Page 2"
+            }
+          }
+        ]
       }
-    ],
-    "test_idem_student_1792834220343": [
-      {
-        "id": "act_1792834220406_1tnd8",
-        "studentId": "test_idem_student_1792834220343",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-24T09:30:20.388Z",
-        "cairoDate": "2026-10-24",
-        "cairoTime": "12:30:20",
-        "isFirstCompletion": true
-      }
-    ],
-    "test_quiz_student_1792834236185": [
-      {
-        "id": "act_1792834236223_c6761",
-        "studentId": "test_quiz_student_1792834236185",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-24T09:30:36.220Z",
-        "cairoDate": "2026-10-24",
-        "cairoTime": "12:30:36",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_pers_1792928348996_1": [
-      {
-        "id": "act_1792928349057_abo9j",
-        "studentId": "stu_pers_1792928348996_1",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:39:09.054Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:39:09",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_pers_1792928506786_1": [
-      {
-        "id": "act_1792928506827_bdfkq",
-        "studentId": "stu_pers_1792928506786_1",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:41:46.824Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:41:46",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_pers_1792928524908_1": [
-      {
-        "id": "act_1792928524949_4c7s1",
-        "studentId": "stu_pers_1792928524908_1",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:42:04.945Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:42:04",
-        "isFirstCompletion": true
-      }
-    ],
-    "test_quiz_student_1792928533246": [
-      {
-        "id": "act_1792928533281_z93ni",
-        "studentId": "test_quiz_student_1792928533246",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:42:13.278Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:42:13",
-        "isFirstCompletion": true
-      }
-    ],
-    "test_idem_student_1792928538784": [
-      {
-        "id": "act_1792928538813_k7i8j",
-        "studentId": "test_idem_student_1792928538784",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:42:18.810Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:42:18",
-        "isFirstCompletion": true
-      }
-    ],
-    "test_student_step2_1792928561245": [
-      {
-        "id": "act_1792928561280_349aj",
-        "studentId": "test_student_step2_1792928561245",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:42:41.277Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:42:41",
-        "isFirstCompletion": true
-      }
-    ],
-    "std_mark_1792928568145": [
-      {
-        "id": "act_1792928568178_yejoh",
-        "studentId": "std_mark_1792928568145",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:42:48.176Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:42:48",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_pers_1792929452025_1": [
-      {
-        "id": "act_1792929452083_qnn1b",
-        "studentId": "stu_pers_1792929452025_1",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:57:32.079Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:57:32",
-        "isFirstCompletion": true
-      }
-    ],
-    "test_quiz_student_1792929466388": [
-      {
-        "id": "act_1792929466420_8g1ky",
-        "studentId": "test_quiz_student_1792929466388",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:57:46.417Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:57:46",
-        "isFirstCompletion": true
-      }
-    ],
-    "test_student_step2_1792929466627": [
-      {
-        "id": "act_1792929466664_9zogh",
-        "studentId": "test_student_step2_1792929466627",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-25T11:57:46.661Z",
-        "cairoDate": "2026-10-25",
-        "cairoTime": "14:57:46",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_step4_1793018527896_100": [
-      {
-        "id": "act_1793018528120_sztxg",
-        "studentId": "stu_step4_1793018527896_100",
-        "school": "sunday-school-quiz",
-        "activityId": "l-cross-01",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:42:08.120Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:42:08",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_step4_1793018528193_85": [
-      {
-        "id": "act_1793018528272_bflzj",
-        "studentId": "stu_step4_1793018528193_85",
-        "school": "sunday-school-quiz",
-        "activityId": "l-step4-tier85-20q",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 17,
-        "totalScore": 20,
-        "percentage": 85,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:42:08.272Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:42:08",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_step4_1793018528337_50": [
-      {
-        "id": "act_1793018528391_hg84e",
-        "studentId": "stu_step4_1793018528337_50",
-        "school": "sunday-school-quiz",
-        "activityId": "l-step4-50-1793018528337",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 1,
-        "totalScore": 2,
-        "percentage": 50,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:42:08.391Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:42:08",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_pers_1793018534592_1": [
-      {
-        "id": "act_1793018534640_0x54c",
-        "studentId": "stu_pers_1793018534592_1",
-        "type": "LESSON_COMPLETED",
-        "lessonId": "l-cross-01",
-        "lessonTitleAr": "درس كنسي مبارك",
-        "lessonTitleEn": "Spiritual Milestone Lesson",
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:42:14.635Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:42:14",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_ux_1793019192569": [
-      {
-        "id": "act_1793019192832_bn45o",
-        "studentId": "stu_ux_1793019192569",
-        "school": "sunday-school-quiz",
-        "activityId": "l-step4-ux-1793019192569",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:53:12.832Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:53:12",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_step4_1793019217316_100": [
-      {
-        "id": "act_1793019217428_ezvy9",
-        "studentId": "stu_step4_1793019217316_100",
-        "school": "sunday-school-quiz",
-        "activityId": "l-cross-01",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:53:37.428Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:53:37",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_step4_1793019217490_85": [
-      {
-        "id": "act_1793019217537_fzl05",
-        "studentId": "stu_step4_1793019217490_85",
-        "school": "sunday-school-quiz",
-        "activityId": "l-step4-tier85-20q",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 17,
-        "totalScore": 20,
-        "percentage": 85,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:53:37.537Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:53:37",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_step4_1793019217570_50": [
-      {
-        "id": "act_1793019217616_5cp8m",
-        "studentId": "stu_step4_1793019217570_50",
-        "school": "sunday-school-quiz",
-        "activityId": "l-step4-50-1793019217570",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 1,
-        "totalScore": 2,
-        "percentage": 50,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:53:37.616Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:53:37",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_ux_1793019363084": [
-      {
-        "id": "act_1793019363239_lo0xl",
-        "studentId": "stu_ux_1793019363084",
-        "school": "sunday-school-quiz",
-        "activityId": "l-step4-ux-1793019363084",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:56:03.239Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:56:03",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_ux_1793019388057": [
-      {
-        "id": "act_1793019388181_z5vtc",
-        "studentId": "stu_ux_1793019388057",
-        "school": "sunday-school-quiz",
-        "activityId": "l-step4-ux-1793019388057",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:56:28.181Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:56:28",
-        "isFirstCompletion": true
-      }
-    ],
-    "stu_ux_1793019476994": [
-      {
-        "id": "act_1793019477129_bermz",
-        "studentId": "stu_ux_1793019476994",
-        "school": "sunday-school-quiz",
-        "activityId": "l-step4-ux-1793019476994",
-        "activityType": "QUIZ_COMPLETED",
-        "lessonTitleAr": "اختبار مراجعة الدرس",
-        "lessonTitleEn": "Review Assessment",
-        "score": 2,
-        "totalScore": 2,
-        "percentage": 100,
-        "pointsEarned": 50,
-        "timestamp": "2026-10-26T12:57:57.129Z",
-        "cairoDate": "2026-10-26",
-        "cairoTime": "15:57:57",
-        "isFirstCompletion": true
-      }
-    ]
+    },
+    "v-test-multi-2": {
+      "id": "v-test-multi-2",
+      "lessonId": "l-test-multiversion-01",
+      "versionNumber": 2,
+      "status": "PUBLISHED",
+      "createdBy": "user_teacher_mina_101",
+      "approvedBy": "Servant Mina",
+      "approvedAt": "2026-10-29T11:05:22.566Z",
+      "approvalNote": "Revised edition with improved vocabulary",
+      "createdAt": "2026-10-29T11:05:22.566Z",
+      "sectionsCount": 3,
+      "sections": [
+        {
+          "id": "sec-multi-1",
+          "order": 1,
+          "titleEn": "1. Discovery of the True Cross (Revised)"
+        },
+        {
+          "id": "sec-multi-2",
+          "order": 2,
+          "titleEn": "2. The Miracle of Bishop Macarius (Revised)"
+        },
+        {
+          "id": "sec-multi-3",
+          "order": 3,
+          "titleEn": "3. Liturgical Traditions and Basil (Revised)"
+        }
+      ],
+      "publishedAt": "2026-10-29T11:05:23.187Z",
+      "publishedBy": "mina"
+    },
+    "v-test-other-1": {
+      "id": "v-test-other-1",
+      "lessonId": "l-test-other-teacher-lesson",
+      "versionNumber": 1,
+      "status": "AI_DRAFT",
+      "createdBy": "user_teacher_other_404",
+      "createdAt": "2026-10-29T11:05:22.566Z",
+      "sectionsCount": 3,
+      "sections": [
+        {
+          "id": "sec-other-1",
+          "order": 1,
+          "titleEn": "1. Other Class Section"
+        }
+      ]
+    },
+    "v-prep-01": {
+      "id": "v-prep-01",
+      "lessonId": "l-prep-01",
+      "versionNumber": 1,
+      "status": "PUBLISHED",
+      "createdBy": "user_teacher_other_404",
+      "createdAt": "2026-10-29T11:05:22.566Z",
+      "sectionsCount": 2,
+      "sections": [
+        {
+          "id": "sec-prep-1",
+          "order": 1,
+          "titleEn": "1. Daniel’s Unwavering Faith"
+        },
+        {
+          "id": "sec-prep-2",
+          "order": 2,
+          "titleEn": "2. Prayer in the Den of Lions"
+        }
+      ]
+    },
+    "v-sec-01": {
+      "id": "v-sec-01",
+      "lessonId": "l-sec-01",
+      "versionNumber": 1,
+      "status": "PUBLISHED",
+      "createdBy": "user_teacher_other_404",
+      "createdAt": "2026-10-29T11:05:22.566Z",
+      "sectionsCount": 2,
+      "sections": [
+        {
+          "id": "sec-sec-1",
+          "order": 1,
+          "titleEn": "1. The Ministry and Defense of Stephen"
+        },
+        {
+          "id": "sec-sec-2",
+          "order": 2,
+          "titleEn": "2. Vision of the Open Heavens and Forgiveness"
+        }
+      ]
+    }
   }
 }

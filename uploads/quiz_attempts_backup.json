@@ -1252,5 +1252,1133 @@
       "idempotencyKey": null,
       "submittedAt": "2026-10-26T12:57:57.040Z"
     }
+  ],
+  "stu_step4_1793214538371_100_l-cross-01": [
+    {
+      "id": "att-1793214538437-bxh6d",
+      "studentId": "stu_step4_1793214538371_100",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 0,
+      "totalScore": 2,
+      "percentage": 0,
+      "passed": false,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": -1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": -1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":-1},{\"q\":\"q-l-cross-01-2\",\"opt\":-1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:08:58.437Z"
+    }
+  ],
+  "stu_ux_1793214607450_l-step4-ux-1793214607450": [
+    {
+      "id": "att-1793214607512-sl7ye",
+      "studentId": "stu_ux_1793214607450",
+      "lessonId": "l-step4-ux-1793214607450",
+      "versionId": "ver-pub-l-step4-ux-1793214607450",
+      "quizId": "quiz-l-step4-ux-1793214607450",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-step4-ux-1793214607450-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-ux-1793214607450-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-ux-1793214607450-1\",\"opt\":0},{\"q\":\"q-l-step4-ux-1793214607450-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:10:07.512Z"
+    }
+  ],
+  "stu_step4_1793214613073_100_l-cross-01": [
+    {
+      "id": "att-1793214613097-6fyhg",
+      "studentId": "stu_step4_1793214613073_100",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:10:13.097Z"
+    },
+    {
+      "id": "att-1793214613745-g4z58",
+      "studentId": "stu_step4_1793214613073_100",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 1,
+      "totalScore": 2,
+      "percentage": 50,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:10:13.745Z"
+    }
+  ],
+  "stu_step4_1793214613325_85_l-step4-tier85-20q": [
+    {
+      "id": "att-1793214613329-t2wf5",
+      "studentId": "stu_step4_1793214613325_85",
+      "lessonId": "l-step4-tier85-20q",
+      "versionId": "ver-pub-l-step4-tier85-20q",
+      "quizId": "quiz-l-step4-tier85-20q",
+      "score": 17,
+      "totalScore": 20,
+      "percentage": 85,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-step4-tier85-20q-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-3",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-4",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-5",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-6",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-7",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-8",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-9",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-10",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-11",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-12",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-13",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-14",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-15",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-16",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-17",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-18",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-19",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-20",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-tier85-20q-1\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-10\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-11\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-12\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-13\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-14\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-15\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-16\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-17\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-18\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-19\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-2\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-20\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-3\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-4\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-5\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-6\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-7\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-8\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-9\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:10:13.329Z"
+    }
+  ],
+  "stu_step4_1793214613484_50_l-step4-50-1793214613484": [
+    {
+      "id": "att-1793214613488-aavkv",
+      "studentId": "stu_step4_1793214613484_50",
+      "lessonId": "l-step4-50-1793214613484",
+      "versionId": "ver-pub-l-step4-50-1793214613484",
+      "quizId": "quiz-l-step4-50-1793214613484",
+      "score": 1,
+      "totalScore": 2,
+      "percentage": 50,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-step4-50-1793214613484-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-50-1793214613484-2",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-50-1793214613484-1\",\"opt\":0},{\"q\":\"q-l-step4-50-1793214613484-2\",\"opt\":1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:10:13.488Z"
+    }
+  ],
+  "stu_step4_1793214613646_below_l-step4-below-1793214613646": [
+    {
+      "id": "att-1793214613650-l5nyz",
+      "studentId": "stu_step4_1793214613646_below",
+      "lessonId": "l-step4-below-1793214613646",
+      "versionId": "ver-pub-l-step4-below-1793214613646",
+      "quizId": "quiz-l-step4-below-1793214613646",
+      "score": 0,
+      "totalScore": 2,
+      "percentage": 0,
+      "passed": false,
+      "answers": [
+        {
+          "questionId": "q-l-step4-below-1793214613646-1",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-below-1793214613646-2",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-below-1793214613646-1\",\"opt\":1},{\"q\":\"q-l-step4-below-1793214613646-2\",\"opt\":1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:10:13.650Z"
+    }
+  ],
+  "stu_step4_1793214661597_100_l-cross-01": [
+    {
+      "id": "att-1793214661627-s6m1p",
+      "studentId": "stu_step4_1793214661597_100",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:11:01.627Z"
+    },
+    {
+      "id": "att-1793214662006-c5g7w",
+      "studentId": "stu_step4_1793214661597_100",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 1,
+      "totalScore": 2,
+      "percentage": 50,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:11:02.006Z"
+    }
+  ],
+  "stu_step4_1793214661755_85_l-step4-tier85-20q": [
+    {
+      "id": "att-1793214661759-g2qrx",
+      "studentId": "stu_step4_1793214661755_85",
+      "lessonId": "l-step4-tier85-20q",
+      "versionId": "ver-pub-l-step4-tier85-20q",
+      "quizId": "quiz-l-step4-tier85-20q",
+      "score": 17,
+      "totalScore": 20,
+      "percentage": 85,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-step4-tier85-20q-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-3",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-4",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-5",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-6",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-7",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-8",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-9",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-10",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-11",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-12",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-13",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-14",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-15",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-16",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-17",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-18",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-19",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-20",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-tier85-20q-1\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-10\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-11\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-12\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-13\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-14\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-15\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-16\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-17\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-18\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-19\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-2\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-20\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-3\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-4\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-5\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-6\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-7\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-8\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-9\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:11:01.759Z"
+    }
+  ],
+  "stu_step4_1793214661851_50_l-step4-50-1793214661851": [
+    {
+      "id": "att-1793214661854-bhzoe",
+      "studentId": "stu_step4_1793214661851_50",
+      "lessonId": "l-step4-50-1793214661851",
+      "versionId": "ver-pub-l-step4-50-1793214661851",
+      "quizId": "quiz-l-step4-50-1793214661851",
+      "score": 1,
+      "totalScore": 2,
+      "percentage": 50,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-step4-50-1793214661851-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-50-1793214661851-2",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-50-1793214661851-1\",\"opt\":0},{\"q\":\"q-l-step4-50-1793214661851-2\",\"opt\":1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:11:01.854Z"
+    }
+  ],
+  "stu_step4_1793214661932_below_l-step4-below-1793214661932": [
+    {
+      "id": "att-1793214661940-52226",
+      "studentId": "stu_step4_1793214661932_below",
+      "lessonId": "l-step4-below-1793214661932",
+      "versionId": "ver-pub-l-step4-below-1793214661932",
+      "quizId": "quiz-l-step4-below-1793214661932",
+      "score": 0,
+      "totalScore": 2,
+      "percentage": 0,
+      "passed": false,
+      "answers": [
+        {
+          "questionId": "q-l-step4-below-1793214661932-1",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-below-1793214661932-2",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-below-1793214661932-1\",\"opt\":1},{\"q\":\"q-l-step4-below-1793214661932-2\",\"opt\":1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T19:11:01.943Z"
+    }
+  ],
+  "stu_ux_1793217873852_l-step4-ux-1793217873852": [
+    {
+      "id": "att-1793217873889-nd0xp",
+      "studentId": "stu_ux_1793217873852",
+      "lessonId": "l-step4-ux-1793217873852",
+      "versionId": "ver-pub-l-step4-ux-1793217873852",
+      "quizId": "quiz-l-step4-ux-1793217873852",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-step4-ux-1793217873852-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-ux-1793217873852-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-ux-1793217873852-1\",\"opt\":0},{\"q\":\"q-l-step4-ux-1793217873852-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T20:04:33.889Z"
+    }
+  ],
+  "stu_step4_1793217878744_100_l-cross-01": [
+    {
+      "id": "att-1793217878771-mwlzl",
+      "studentId": "stu_step4_1793217878744_100",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 2,
+      "totalScore": 2,
+      "percentage": 100,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T20:04:38.771Z"
+    },
+    {
+      "id": "att-1793217879112-ta6x7",
+      "studentId": "stu_step4_1793217878744_100",
+      "lessonId": "l-cross-01",
+      "versionId": "ver-pub-l-cross-01",
+      "quizId": "quiz-ver-pub-l-cross-01",
+      "score": 1,
+      "totalScore": 2,
+      "percentage": 50,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-cross-01-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-cross-01-2",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-cross-01-1\",\"opt\":0},{\"q\":\"q-l-cross-01-2\",\"opt\":1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T20:04:39.112Z"
+    }
+  ],
+  "stu_step4_1793217878887_85_l-step4-tier85-20q": [
+    {
+      "id": "att-1793217878891-adspq",
+      "studentId": "stu_step4_1793217878887_85",
+      "lessonId": "l-step4-tier85-20q",
+      "versionId": "ver-pub-l-step4-tier85-20q",
+      "quizId": "quiz-l-step4-tier85-20q",
+      "score": 17,
+      "totalScore": 20,
+      "percentage": 85,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-step4-tier85-20q-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-2",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-3",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-4",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-5",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-6",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-7",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-8",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-9",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-10",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-11",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-12",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-13",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-14",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-15",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-16",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-17",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-18",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-19",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-tier85-20q-20",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: Sound orthodox doctrine preserves the soul.",
+          "feedbackAr": "التعليم الأرثوذكسي السليم يثبت النفس في مخافة الرب.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-tier85-20q-1\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-10\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-11\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-12\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-13\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-14\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-15\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-16\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-17\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-18\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-19\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-2\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-20\",\"opt\":1},{\"q\":\"q-l-step4-tier85-20q-3\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-4\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-5\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-6\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-7\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-8\",\"opt\":0},{\"q\":\"q-l-step4-tier85-20q-9\",\"opt\":0}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T20:04:38.891Z"
+    }
+  ],
+  "stu_step4_1793217878982_50_l-step4-50-1793217878982": [
+    {
+      "id": "att-1793217878985-hosdm",
+      "studentId": "stu_step4_1793217878982_50",
+      "lessonId": "l-step4-50-1793217878982",
+      "versionId": "ver-pub-l-step4-50-1793217878982",
+      "quizId": "quiz-l-step4-50-1793217878982",
+      "score": 1,
+      "totalScore": 2,
+      "percentage": 50,
+      "passed": true,
+      "answers": [
+        {
+          "questionId": "q-l-step4-50-1793217878982-1",
+          "selectedOptionIndex": 0,
+          "isCorrect": true,
+          "feedbackEn": "The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-50-1793217878982-2",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-50-1793217878982-1\",\"opt\":0},{\"q\":\"q-l-step4-50-1793217878982-2\",\"opt\":1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T20:04:38.985Z"
+    }
+  ],
+  "stu_step4_1793217879054_below_l-step4-below-1793217879054": [
+    {
+      "id": "att-1793217879058-wajjb",
+      "studentId": "stu_step4_1793217879054_below",
+      "lessonId": "l-step4-below-1793217879054",
+      "versionId": "ver-pub-l-step4-below-1793217879054",
+      "quizId": "quiz-l-step4-below-1793217879054",
+      "score": 0,
+      "totalScore": 2,
+      "percentage": 0,
+      "passed": false,
+      "answers": [
+        {
+          "questionId": "q-l-step4-below-1793217879054-1",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Fathers teach that repentance and humility bring divine grace.",
+          "feedbackAr": "يعلمنا آباء الكنيسة أن التوبة المتواضعة تجلب نعمة الله وتثمر خلاصاً.",
+          "recommendedSectionId": "sec-1",
+          "recommendedSectionTitle": "Section 1"
+        },
+        {
+          "questionId": "q-l-step4-below-1793217879054-2",
+          "selectedOptionIndex": 1,
+          "isCorrect": false,
+          "feedbackEn": "Review needed: The Holy Spirit preserves the Church through living liturgical tradition.",
+          "feedbackAr": "الروح القدس يحفظ الكنيسة حية عبر الصلاة والتسبيح والتعليم الأرثوذكسي الأصيل.",
+          "recommendedSectionId": "sec-2",
+          "recommendedSectionTitle": "Section 2"
+        }
+      ],
+      "answerFingerprint": "[{\"q\":\"q-l-step4-below-1793217879054-1\",\"opt\":1},{\"q\":\"q-l-step4-below-1793217879054-2\",\"opt\":1}]",
+      "idempotencyKey": null,
+      "submittedAt": "2026-10-28T20:04:39.058Z"
+    }
   ]
 }
