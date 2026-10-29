@@ -1,5 +1,5 @@
-import { supabase, isSupabaseConfigured } from './supabase';
-import { QuizDraft, StudentQuizAttempt, QuizAnswer } from '../types';
+import { supabase } from './supabase';
+import { QuizDraft, StudentQuizAttempt } from '../types';
 
 export interface SubmitQuizAttemptInput {
   lessonId: string;
@@ -17,7 +17,6 @@ export interface SubmitQuizAttemptInput {
   percentage?: number;
   earnedPoints?: number;
   totalPointsPossible?: number;
-  quizQuestions?: any[];
   idempotencyKey?: string;
   attemptId?: string;
 }
@@ -113,7 +112,6 @@ export async function submitStudentQuizAttempt(
         quizId,
         answers,
         studentId,
-        quizQuestions: input.quizQuestions,
         idempotencyKey,
         attemptId
       })
@@ -124,6 +122,13 @@ export async function submitStudentQuizAttempt(
       return {
         data: null,
         error: new Error(json?.message || json?.error || `HTTP ${res.status}: Failed to submit quiz attempt`)
+      };
+    }
+
+    if (!json?.attempt || typeof json.attempt.id !== 'string') {
+      return {
+        data: null,
+        error: new Error('Quiz submission was not confirmed by the server. Please retry.')
       };
     }
 
