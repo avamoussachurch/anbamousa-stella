@@ -63,7 +63,12 @@ import {
   updateClaimVerification as updateClaimVerificationService,
   resolveSourceConflict as resolveSourceConflictService
 } from '../lib/evidenceMapService';
-import { getStudentProgressSummary } from '../lib/studentProgressService';
+import {
+  completeSectionProgress,
+  completeLessonProgress,
+  getStudentProgressSummary,
+  isStudentProgressSynced
+} from '../lib/studentProgressService';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
 interface LessonsContextType {
@@ -145,7 +150,7 @@ interface LessonsContextType {
   saveLessonOutline: (lessonId: string, outline: LessonOutline) => void;
   approveLessonOutline: (lessonId: string) => void;
   publishLessonVersion: (lessonId: string, versionId: string) => Promise<{ success: boolean; error?: string }> | void;
-  updateStudentContentProgress: (studentId: string, lessonId: string, sections: string[], pct: number) => void;
+  updateStudentContentProgress: (studentId: string, lessonId: string, sections: string[], pct: number, confirmedComplete?: boolean) => void;
   updateStudentMastery: (studentId: string, lessonId: string, status: MasteryStatus, notes?: string) => void;
 
   // Normalized Curriculum Online Status
@@ -281,7 +286,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
   const [searchAuditLogs, setSearchAuditLogs] = useState<SearchAuditLog[]>([]);
 
   // 12. Online Normalized Curriculum State
-  const { userData, isGuest, setUserDirectly } = useAuth();
+  const { userData, isGuest, syncAuthoritativeProgress } = useAuth();
   const [curriculumLoading, setCurriculumLoading] = useState<boolean>(false);
   const [curriculumError, setCurriculumError] = useState<string | null>(null);
 
@@ -309,19 +314,24 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
       let onlineLessons = result.data || [];
       let completedSet = new Set<string>();
+      let hasAuthoritativeSummary = false;
 
       // Authoritative Progress Synchronization:
       // Fetch authoritative student progress summary from server to survive refreshes & cross-device sessions
       try {
         const summaryData = await getStudentProgressSummary(userData.id);
-        if (summaryData?.completedLessonIds) {
+        if (summaryData.success && summaryData.completedLessonIds) {
           completedSet = new Set(summaryData.completedLessonIds);
+          hasAuthoritativeSummary = true;
         }
-        if (summaryData?.allProgress) {
+        if (summaryData.success && summaryData.allProgress) {
           setContentProgress(prev => {
             const next = { ...prev };
             for (const [lessonId, p] of Object.entries(summaryData.allProgress)) {
-              next[`${userData.id}_${lessonId}`] = p as any;
+              const key = `${userData.id}_${lessonId}`;
+              if (!(prev[key] as (StudentContentProgress & { pendingSync?: boolean }) | undefined)?.pendingSync) {
+                next[key] = p;
+              }
             }
             return next;
           });
@@ -333,14 +343,14 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       if (onlineLessons.length > 0) {
         setLessons(onlineLessons.map(l => ({
           ...l,
-          isCompleted: completedSet.has(l.id) || Boolean(l.isCompleted)
+          isCompleted: hasAuthoritativeSummary ? completedSet.has(l.id) : Boolean(l.isCompleted)
         })));
       } else {
         setLessons(prev => {
           const base = (prev && prev.length > 0) ? prev : mockLessons;
           return base.map(l => ({
             ...l,
-            isCompleted: completedSet.has(l.id) || Boolean(l.isCompleted)
+            isCompleted: hasAuthoritativeSummary ? completedSet.has(l.id) : Boolean(l.isCompleted)
           }));
         });
       }
@@ -412,37 +422,31 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (userData?.id) {
       getStudentProgressSummary(userData.id).then(summaryData => {
-        if (summaryData?.completedLessonIds) {
+        if (summaryData.success && summaryData.completedLessonIds) {
           const completedSet = new Set(summaryData.completedLessonIds);
           setLessons(prev => prev.map(l => ({
             ...l,
             isCompleted: completedSet.has(l.id)
           })));
         }
-        if (summaryData?.allProgress) {
+        if (summaryData.success && summaryData.allProgress) {
           setContentProgress(prev => {
             const next = { ...prev };
             for (const [lessonId, p] of Object.entries(summaryData.allProgress)) {
-              next[`${userData.id}_${lessonId}`] = p as any;
+              const key = `${userData.id}_${lessonId}`;
+              if (!(prev[key] as (StudentContentProgress & { pendingSync?: boolean }) | undefined)?.pendingSync) {
+                next[key] = p;
+              }
             }
             return next;
           });
         }
-        if (summaryData?.streak && setUserDirectly && userData) {
-          const serverStreak = summaryData.streak.currentStreak ?? 0;
-          const serverPoints = summaryData.points ?? userData.points;
-          const targetStreak = Math.max(serverStreak, userData.currentStreak || 1);
-          const targetLongest = Math.max(summaryData.streak.longestStreak ?? 0, userData.longestStreak || targetStreak, targetStreak);
-          const targetPoints = Math.max(serverPoints, userData.points || 0);
-
-          if (userData.currentStreak !== targetStreak || userData.points !== targetPoints || (userData.longestStreak && userData.longestStreak < targetLongest)) {
-            setUserDirectly({
-              ...userData,
-              currentStreak: targetStreak,
-              longestStreak: targetLongest,
-              points: targetPoints
-            });
-          }
+        if (summaryData.success && summaryData.streak) {
+          syncAuthoritativeProgress(
+            summaryData.points,
+            summaryData.streak.currentStreak,
+            summaryData.streak.longestStreak
+          );
         }
       }).catch(err => {
         console.warn('Note on initial progress summary sync:', err);
@@ -1075,6 +1079,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
       const pct = Math.round((newSections.length / Math.max(1, totalSections)) * 100);
       const isComplete = newSections.length >= totalSections;
+      const locallyComplete = isComplete && !isOnlineAuth;
 
       return {
         ...prev,
@@ -1083,10 +1088,11 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
           sectionsCompleted: newSections,
           totalSections,
           completionPercent: pct,
-          status: isComplete ? 'COMPLETED' : 'IN_PROGRESS',
-          completedAt: isComplete ? new Date().toISOString() : current.completedAt,
-          lastPositionSectionId: sectionId
-        }
+          status: locallyComplete ? 'COMPLETED' : 'IN_PROGRESS',
+          completedAt: locallyComplete ? new Date().toISOString() : current.completedAt,
+            lastPositionSectionId: sectionId,
+            pendingSync: isOnlineAuth
+          }
       };
     });
   };
@@ -1105,7 +1111,8 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
           totalSections: current?.totalSections || 1,
           completionPercent: 100,
           startedAt: current?.startedAt || new Date().toISOString(),
-          completedAt: new Date().toISOString()
+          completedAt: new Date().toISOString(),
+          pendingSync: isOnlineAuth
         }
       };
     });
@@ -1162,6 +1169,77 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
   const getStudentMastery = (studentId: string, lessonId: string) => {
     return masteries[`${studentId}_${lessonId}`];
   };
+
+  useEffect(() => {
+    if (isGuest || !userData || !isSupabaseConfigured) return;
+    let active = true;
+
+    const synchronizePendingProgress = async () => {
+      for (const [key, progress] of Object.entries(contentProgress)) {
+        const pending = progress as StudentContentProgress & { pendingSync?: boolean };
+        if (!active || !pending.pendingSync || pending.studentId !== userData.id) continue;
+
+        const lesson = lessons.find(item => item.id === pending.lessonId);
+        const version = lesson?.latestVersion ||
+          (lessonVersions[pending.lessonId] || []).find(item => item.status === 'PUBLISHED');
+        if (!version) continue;
+
+        let serverProgress: StudentContentProgress | null = null;
+        for (const sectionId of pending.sectionsCompleted) {
+          const result = await completeSectionProgress({
+            lessonId: pending.lessonId,
+            versionId: pending.versionId || version.id,
+            sectionId,
+            studentId: userData.id
+          });
+          if (result.error || !result.data) {
+            console.warn(`Pending progress sync failed for ${pending.lessonId}:`, result.error?.message || 'No server progress returned');
+            serverProgress = null;
+            break;
+          }
+          serverProgress = result.data;
+        }
+
+        if (serverProgress && pending.status === 'COMPLETED' && active) {
+          const completion = await completeLessonProgress({
+            lessonId: pending.lessonId,
+            versionId: pending.versionId || version.id,
+            studentId: userData.id
+          });
+          if (!active) return;
+          if (completion.error || !completion.data) {
+            console.warn(`Pending lesson completion sync failed for ${pending.lessonId}:`, completion.error?.message || 'No server completion returned');
+            continue;
+          }
+          serverProgress = completion.data;
+          if (typeof completion.totalPoints === 'number' && completion.streak) {
+            syncAuthoritativeProgress(
+              completion.totalPoints,
+              completion.streak.currentStreak,
+              completion.streak.longestStreak
+            );
+          }
+          setLessons(previous => previous.map(item =>
+            item.id === pending.lessonId ? { ...item, isCompleted: true } : item
+          ));
+        }
+
+        if (serverProgress && active) {
+          setContentProgress(previous => ({
+            ...previous,
+            [key]: { ...serverProgress!, pendingSync: false } as StudentContentProgress
+          }));
+        }
+      }
+    };
+
+    void synchronizePendingProgress();
+    window.addEventListener('online', synchronizePendingProgress);
+    return () => {
+      active = false;
+      window.removeEventListener('online', synchronizePendingProgress);
+    };
+  }, [contentProgress, isGuest, lessonVersions, lessons, userData?.id]);
 
   // Search Audit Logs
   const addSearchAuditLog = (log: SearchAuditLog) => {
@@ -1240,18 +1318,27 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       saveLessonOutline: saveOutline,
       approveLessonOutline: approveOutline,
       publishLessonVersion,
-      updateStudentContentProgress: (studentId: string, lessonId: string, sections: string[], pct: number) => {
+      updateStudentContentProgress: (studentId: string, lessonId: string, sections: string[], pct: number, confirmedComplete = false) => {
         const key = `${studentId}_${lessonId}`;
+        const status = pct >= 100 && (confirmedComplete || !isOnlineAuth) ? 'COMPLETED' : 'IN_PROGRESS';
         setContentProgress(prev => ({
           ...prev,
           [key]: {
             studentId,
             lessonId,
-            status: pct >= 100 ? 'COMPLETED' : 'IN_PROGRESS',
+            status,
             sectionsCompleted: sections,
             totalSections: Math.max(sections.length, 3),
             completionPercent: pct,
-            completedAt: pct >= 100 ? new Date().toISOString() : undefined
+            completedAt: status === 'COMPLETED' ? new Date().toISOString() : undefined,
+            pendingSync: isOnlineAuth && !isStudentProgressSynced({
+              studentId,
+              lessonId,
+              status,
+              sectionsCompleted: sections,
+              totalSections: Math.max(sections.length, 3),
+              completionPercent: pct
+            })
           }
         }));
       },
@@ -1265,37 +1352,31 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
         if (!userData) return;
         try {
           const summaryData = await getStudentProgressSummary(userData.id);
-          if (summaryData?.completedLessonIds) {
+          if (summaryData.success && summaryData.completedLessonIds) {
             const completedSet = new Set(summaryData.completedLessonIds);
             setLessons(prev => prev.map(l => ({
               ...l,
               isCompleted: completedSet.has(l.id)
             })));
           }
-          if (summaryData?.allProgress) {
+          if (summaryData.success && summaryData.allProgress) {
             setContentProgress(prev => {
               const next = { ...prev };
               for (const [lessonId, p] of Object.entries(summaryData.allProgress)) {
-                next[`${userData.id}_${lessonId}`] = p as any;
+                const key = `${userData.id}_${lessonId}`;
+                if (!(prev[key] as (StudentContentProgress & { pendingSync?: boolean }) | undefined)?.pendingSync) {
+                  next[key] = p;
+                }
               }
               return next;
             });
           }
-          if (summaryData?.streak && setUserDirectly && userData) {
-            const serverStreak = summaryData.streak.currentStreak ?? 0;
-            const serverPoints = summaryData.points ?? userData.points;
-            const targetStreak = Math.max(serverStreak, userData.currentStreak || 1);
-            const targetLongest = Math.max(summaryData.streak.longestStreak ?? 0, userData.longestStreak || targetStreak, targetStreak);
-            const targetPoints = Math.max(serverPoints, userData.points || 0);
-
-            if (userData.currentStreak !== targetStreak || userData.points !== targetPoints || (userData.longestStreak && userData.longestStreak < targetLongest)) {
-              setUserDirectly({
-                ...userData,
-                currentStreak: targetStreak,
-                longestStreak: targetLongest,
-                points: targetPoints
-              });
-            }
+          if (summaryData.success && summaryData.streak) {
+            syncAuthoritativeProgress(
+              summaryData.points,
+              summaryData.streak.currentStreak,
+              summaryData.streak.longestStreak
+            );
           }
         } catch (e) {
           console.warn('Could not refresh progress summary:', e);

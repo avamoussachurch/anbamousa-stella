@@ -90,6 +90,14 @@ test('client-facing privileged checks do not trust user-editable auth metadata',
   }
 });
 
+test('deterministic test tokens are never accepted in production', async () => {
+  const server = await read('server.ts');
+  assert.match(
+    server,
+    /process\.env\.NODE_ENV\s*!==\s*['"]production['"]\s*&&\s*\(token\.startsWith\(["']test_jwt_["']\)\s*\|\|\s*token\.startsWith\(["']test_token_["']\)\)/
+  );
+});
+
 test('read-only SQL verification checks forbidden writes and trusted grants', async () => {
   const checks = await read('scripts/migrations/phase4_security_hardening_checks.sql');
   assert.match(checks, /profiles.*role.*UPDATE/s);

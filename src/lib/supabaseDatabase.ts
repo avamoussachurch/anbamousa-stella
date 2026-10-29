@@ -54,6 +54,9 @@ export async function updateSupabaseProfile(
       console.warn('Note on Supabase profile update:', updateError.message);
       return { data: null, error: updateError.message };
     }
+    if (!updateData || updateData.length === 0) {
+      return { data: null, error: `Profile ${userId} was not found or could not be updated.` };
+    }
 
     return { data: updateData, error: null };
   } catch (err: any) {

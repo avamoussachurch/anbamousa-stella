@@ -372,3 +372,27 @@ test('failed Supabase completion writes return an error without awarding points'
     rpcFailure = false;
   }
 });
+
+test('failed authoritative completion does not report lesson completion in progress summaries', async () => {
+  const studentId = `test_student_failed_completion_${Date.now()}`;
+  const lessonId = 'l-cross-01';
+  const versionId = `ver-failed-completion-${Date.now()}`;
+  await prepareLessonCompletion({ studentId, lessonId, versionId });
+
+  const completion = await request('/api/church/student-progress/complete-lesson', {
+    method: 'POST',
+    role: 'student',
+    userId: studentId,
+    body: { lessonId, versionId }
+  });
+  assert.equal(completion.status, 502);
+
+  const summaryResponse = await request('/api/church/student-progress/summary', {
+    role: 'student',
+    userId: studentId
+  });
+  const summary = await summaryResponse.json();
+  assert.equal(summaryResponse.status, 200);
+  assert.equal(summary.completedLessonIds.includes(lessonId), false);
+  assert.equal(summary.allProgress[lessonId].status, 'IN_PROGRESS');
+});

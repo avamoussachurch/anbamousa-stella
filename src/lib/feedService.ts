@@ -39,7 +39,7 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
     // 1. Fetch posts
     const { data: postsData, error: postsErr } = await supabase
       .from('feed_posts')
-      .select('*')
+      .select('id, author_id, author_name, author_avatar, content, created_at, media_type, media_url, media_thumbnail, media_provider, is_pinned, is_announcement')
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -53,23 +53,29 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
 
     const postIds = postsData.map(p => p.id);
 
-    // 2. Fetch comments for these posts
-    const { data: commentsData, error: commentsErr } = await supabase
+    // Comments and post reactions depend only on the post IDs, so request them together.
+    const commentsRequest = supabase
       .from('feed_comments')
-      .select('*')
+      .select('id, post_id, parent_id, author_name, author_avatar, content, created_at')
       .in('post_id', postIds)
       .order('created_at', { ascending: true });
+
+    const postReactionsRequest = supabase
+      .from('feed_reactions')
+      .select('post_id, reaction_type')
+      .in('post_id', postIds);
+
+    const [
+      { data: commentsData, error: commentsErr },
+      { data: postReactionsData, error: pReactionsErr }
+    ] = await Promise.all([commentsRequest, postReactionsRequest]);
 
     if (commentsErr) {
       console.warn('Note on feed_comments query:', commentsErr.message);
     }
 
-    // 3. Fetch reactions for these posts and comments
+    // Fetch comment reactions after the comment IDs are available.
     const commentIds = (commentsData || []).map(c => c.id);
-    const { data: postReactionsData, error: pReactionsErr } = await supabase
-      .from('feed_reactions')
-      .select('post_id, reaction_type')
-      .in('post_id', postIds);
 
     if (pReactionsErr) {
       console.warn('Note on feed_reactions query for posts:', pReactionsErr.message);

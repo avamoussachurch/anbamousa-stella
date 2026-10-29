@@ -21,22 +21,72 @@ export interface CompleteLessonProgressInput {
 }
 
 // In-memory fallback for local/guest/demo/offline resilience
-const LOCAL_PROGRESS_STORE: Record<string, StudentContentProgress> = {};
+type LocallyTrackedProgress = StudentContentProgress & { pendingSync?: boolean };
+const LOCAL_PROGRESS_STORE: Record<string, LocallyTrackedProgress> = {};
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   };
+  if (isSupabaseConfigured && !supabase) {
+    throw new Error('Supabase is configured but its client is unavailable.');
+  }
   if (supabase) {
     try {
-      const { data } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw new Error(error.message);
       const token = data?.session?.access_token;
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-    } catch (_) {}
+    } catch (error) {
+      throw new Error(error instanceof Error ? `Could not verify the current session: ${error.message}` : 'Could not verify the current session.');
+    }
+  }
+  if (isSupabaseConfigured && !headers.Authorization) {
+    throw new Error('Your session has expired. Sign in again to synchronize progress.');
   }
   return headers;
+}
+
+function responseError(status: number, json: any, operation: string): Error {
+  if (status === 401) return new Error('Your session has expired or is no longer authorized. Sign in again.');
+  if (status === 403) return new Error(json?.message || `You are not authorized to ${operation}.`);
+  return new Error(json?.message || json?.error || `HTTP ${status}: Failed to ${operation}`);
+}
+
+function storeServerProgress(progress: StudentContentProgress): LocallyTrackedProgress {
+  const confirmed: LocallyTrackedProgress = { ...progress, pendingSync: false };
+  const key = `${confirmed.studentId}_${confirmed.lessonId}`;
+  LOCAL_PROGRESS_STORE[key] = confirmed;
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(`church_progress_${key}`, JSON.stringify(confirmed));
+    } catch (error) {
+      console.warn('Could not cache synchronized progress:', error);
+    }
+  }
+  return confirmed;
+}
+
+function progressMatchesRequest(progress: any, lessonId: string, studentId?: string): progress is StudentContentProgress {
+  return Boolean(
+    progress?.studentId &&
+    progress.lessonId === lessonId &&
+    (!studentId || progress.studentId === studentId) &&
+    Array.isArray(progress.sectionsCompleted)
+  );
+}
+
+export function isStudentProgressSynced(progress: StudentContentProgress): boolean {
+  const saved = LOCAL_PROGRESS_STORE[`${progress.studentId}_${progress.lessonId}`];
+  if (!saved) return false;
+  const savedSections = [...saved.sectionsCompleted].sort();
+  const requestedSections = [...progress.sectionsCompleted].sort();
+  return saved.status === progress.status &&
+    saved.completionPercent === progress.completionPercent &&
+    savedSections.length === requestedSections.length &&
+    savedSections.every((section, index) => section === requestedSections[index]);
 }
 
 /**
@@ -52,8 +102,8 @@ export async function getStudentProgress(
     return { data: null, error: new Error('lessonId is required') };
   }
 
-  const headers = await getAuthHeader();
   try {
+    const headers = await getAuthHeader();
     const query = new URLSearchParams({ lessonId });
     if (studentId) query.set('studentId', studentId);
 
@@ -65,16 +115,19 @@ export async function getStudentProgress(
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.success) {
       return {
-        data: null,
-        error: new Error(json?.message || json?.error || `HTTP ${res.status}: Failed to fetch student progress`)
+        data: LOCAL_PROGRESS_STORE[`${studentId || 'u1'}_${lessonId}`] || null,
+        error: responseError(res.status, json, 'fetch student progress')
       };
     }
 
     return { data: json.progress, error: null };
   } catch (err: any) {
-    // Offline / Demo fallback
+    // Keep an offline copy available while exposing the failed request to callers.
     const key = `${studentId || 'u1'}_${lessonId}`;
-    return { data: LOCAL_PROGRESS_STORE[key] || null, error: null };
+    return {
+      data: LOCAL_PROGRESS_STORE[key] || null,
+      error: err instanceof Error ? err : new Error('Could not fetch student progress.')
+    };
   }
 }
 
@@ -91,8 +144,8 @@ export async function startLessonProgress(
     return { data: null, error: new Error('lessonId and versionId are required') };
   }
 
-  const headers = await getAuthHeader();
   try {
+    const headers = await getAuthHeader();
     const res = await fetch('/api/church/student-progress/start', {
       method: 'POST',
       headers,
@@ -101,16 +154,15 @@ export async function startLessonProgress(
 
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.success) {
-      return {
-        data: null,
-        error: new Error(json?.message || json?.error || `HTTP ${res.status}: Failed to start lesson progress`)
-      };
+      return { data: null, error: responseError(res.status, json, 'start lesson progress') };
     }
 
-    const key = `${json.progress.studentId}_${lessonId}`;
-    LOCAL_PROGRESS_STORE[key] = json.progress;
+    if (!progressMatchesRequest(json.progress, lessonId, studentId)) {
+      return { data: null, error: new Error('The server did not return persisted lesson progress.') };
+    }
+    const confirmed = storeServerProgress(json.progress);
 
-    return { data: json.progress, error: null };
+    return { data: confirmed, error: null };
   } catch (err: any) {
     return { data: null, error: new Error(err?.message || 'Could not start lesson progress.') };
   }
@@ -129,8 +181,8 @@ export async function completeSectionProgress(
     return { data: null, error: new Error('lessonId, versionId, and sectionId are required') };
   }
 
-  const headers = await getAuthHeader();
   try {
+    const headers = await getAuthHeader();
     const res = await fetch('/api/church/student-progress/complete-section', {
       method: 'POST',
       headers,
@@ -139,15 +191,13 @@ export async function completeSectionProgress(
 
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.success) {
-      return {
-        data: null,
-        error: new Error(json?.message || json?.error || `HTTP ${res.status}: Failed to complete section`)
-      };
+      return { data: null, error: responseError(res.status, json, 'save lesson section progress') };
     }
 
-    const prog: StudentContentProgress = json.progress;
-    const key = `${prog.studentId}_${lessonId}`;
-    LOCAL_PROGRESS_STORE[key] = prog;
+    if (!progressMatchesRequest(json.progress, lessonId, studentId)) {
+      return { data: null, error: new Error('The server did not return persisted section progress.') };
+    }
+    const prog = storeServerProgress(json.progress);
 
     return { data: prog, error: null };
   } catch (err: any) {
@@ -175,8 +225,8 @@ export async function completeLessonProgress(
     return { data: null, error: new Error('lessonId and versionId are required') };
   }
 
-  const headers = await getAuthHeader();
   try {
+    const headers = await getAuthHeader();
     const res = await fetch('/api/church/student-progress/complete-lesson', {
       method: 'POST',
       headers,
@@ -188,28 +238,36 @@ export async function completeLessonProgress(
       const errorMsg = json?.message || json?.error || `HTTP ${res.status}: Failed to save lesson completion`;
       return {
         data: null,
-        error: new Error(errorMsg)
+        error: responseError(res.status, json, errorMsg)
       };
     }
-    if (isSupabaseConfigured && typeof json.totalPoints !== 'number') {
+    if (
+      !progressMatchesRequest(json.progress, lessonId, studentId) ||
+      json.progress.status !== 'COMPLETED' ||
+      json.progress.completionPercent < 100
+    ) {
+      return { data: null, error: new Error('The server did not return persisted lesson completion.') };
+    }
+    if (
+      !Number.isFinite(json.totalPoints) ||
+      !Number.isFinite(json.pointsEarned) ||
+      typeof json.isFirstCompletion !== 'boolean' ||
+      !Number.isFinite(json.streak?.currentStreak) ||
+      !Number.isFinite(json.streak?.longestStreak)
+    ) {
       return {
         data: null,
-        error: new Error('The server did not confirm persisted points for this lesson completion.')
+        error: new Error('The server did not confirm persisted points and streak for this lesson completion.')
       };
     }
 
-    const prog: StudentContentProgress = json.progress;
-    const key = `${prog.studentId}_${lessonId}`;
-    LOCAL_PROGRESS_STORE[key] = prog;
-    try {
-      localStorage.setItem(`church_progress_${key}`, JSON.stringify(prog));
-    } catch (e) {}
+    const prog = storeServerProgress(json.progress);
 
     return { 
       data: prog, 
       error: null,
-      isFirstCompletion: json.isFirstCompletion ?? true,
-      pointsEarned: json.pointsEarned ?? (json.isFirstCompletion ? 50 : 0),
+      isFirstCompletion: json.isFirstCompletion,
+      pointsEarned: json.pointsEarned,
       totalPoints: json.totalPoints,
       streak: json.streak,
       completionHistory: json.completionHistory
@@ -249,8 +307,8 @@ export async function recordStudentSchoolActivity(
   };
   error?: string;
 }> {
-  const headers = await getAuthHeader();
   try {
+    const headers = await getAuthHeader();
     const res = await fetch('/api/church/student-progress/record-activity', {
       method: 'POST',
       headers,
@@ -258,7 +316,14 @@ export async function recordStudentSchoolActivity(
     });
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.success) {
-      throw new Error(json?.message || `HTTP ${res.status}: Failed to record school activity`);
+      throw responseError(res.status, json, 'record school activity');
+    }
+    if (
+      !Number.isFinite(json.totalPoints) ||
+      !Number.isFinite(json.streak?.currentStreak) ||
+      !Number.isFinite(json.streak?.longestStreak)
+    ) {
+      throw new Error('The server did not confirm persisted points and streak for this activity.');
     }
     return {
       success: true,
@@ -266,8 +331,8 @@ export async function recordStudentSchoolActivity(
       activityId: json.activityId,
       isFirstCompletion: Boolean(json.isFirstCompletion),
       pointsEarned: json.pointsEarned ?? 0,
-      totalPoints: json.totalPoints ?? 0,
-      streak: json.streak || { currentStreak: 1, longestStreak: 1, lastActiveCairoDate: '', isActiveToday: true }
+      totalPoints: json.totalPoints,
+      streak: json.streak
     };
   } catch (err: any) {
     return {
@@ -277,7 +342,7 @@ export async function recordStudentSchoolActivity(
       isFirstCompletion: false,
       pointsEarned: 0,
       totalPoints: 0,
-      streak: { currentStreak: 1, longestStreak: 1, lastActiveCairoDate: '', isActiveToday: true },
+      streak: { currentStreak: 0, longestStreak: 0, lastActiveCairoDate: '', isActiveToday: false },
       error: err?.message
     };
   }
@@ -303,8 +368,8 @@ export async function getStudentProgressSummary(
   serverCairoDate: string;
   error?: string;
 }> {
-  const headers = await getAuthHeader();
   try {
+    const headers = await getAuthHeader();
     const query = new URLSearchParams();
     if (studentId) query.set('studentId', studentId);
 
@@ -315,7 +380,14 @@ export async function getStudentProgressSummary(
 
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.success) {
-      throw new Error(json?.message || `HTTP ${res.status}`);
+      throw responseError(res.status, json, 'fetch student progress summary');
+    }
+    if (
+      !Number.isFinite(json.points) ||
+      !Number.isFinite(json.streak?.currentStreak) ||
+      !Number.isFinite(json.streak?.longestStreak)
+    ) {
+      throw new Error('The server returned an incomplete authoritative progress summary.');
     }
 
     return {
@@ -325,8 +397,8 @@ export async function getStudentProgressSummary(
       totalAssignedLessons: json.totalAssignedLessons || 0,
       progressPercent: json.progressPercent || 0,
       allProgress: json.allProgress || {},
-      points: json.points ?? 100,
-      streak: json.streak || { currentStreak: 0, longestStreak: 0, lastActiveCairoDate: '', isActiveToday: false },
+      points: json.points,
+      streak: json.streak,
       completionHistory: json.completionHistory || [],
       serverCairoDate: json.serverCairoDate || new Date().toISOString().split('T')[0]
     };
@@ -373,8 +445,8 @@ export async function getStudentProgressSummary(
       totalAssignedLessons: Math.max(1, completedIds.length),
       progressPercent: completedIds.length > 0 ? 100 : 0,
       allProgress: allProg,
-      points: 100,
-      streak: { currentStreak: 1, longestStreak: 1, lastActiveCairoDate: '' },
+      points: 0,
+      streak: { currentStreak: 0, longestStreak: 0, lastActiveCairoDate: '' },
       completionHistory: [],
       serverCairoDate: new Date().toISOString().split('T')[0],
       error: err?.message
@@ -390,8 +462,8 @@ export async function getAuthoritativeCompletionHistory(
   studentId?: string,
   limit = 20
 ): Promise<{ success: boolean; activities: any[]; totalCount: number; error?: string }> {
-  const headers = await getAuthHeader();
   try {
+    const headers = await getAuthHeader();
     const query = new URLSearchParams({ limit: String(limit) });
     if (studentId) query.set('studentId', studentId);
 
@@ -437,8 +509,8 @@ export async function getAuthoritativeLeaderboard(options?: {
   cairoWeekReset: string;
   error?: string;
 }> {
-  const headers = await getAuthHeader();
   try {
+    const headers = await getAuthHeader();
     const query = new URLSearchParams();
     if (options?.classGroupId) query.set('classGroupId', options.classGroupId);
     if (options?.timeframe) query.set('timeframe', options.timeframe);
@@ -523,11 +595,11 @@ export async function diagnoseLessonCompletion(
   lessonId: string,
   clientState?: { isCompleted?: boolean; points?: number; studentId?: string }
 ): Promise<LessonCompletionDiagnosticResult> {
-  const headers = await getAuthHeader();
   const query = new URLSearchParams();
   if (clientState?.studentId) query.set('studentId', clientState.studentId);
 
   try {
+    const headers = await getAuthHeader();
     const res = await fetch(`/api/church/student-progress/diagnose/${encodeURIComponent(lessonId)}?${query.toString()}`, {
       method: 'GET',
       headers

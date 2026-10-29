@@ -45,7 +45,10 @@ async function verifyServerRequestAuth(req: express.Request): Promise<ServerAuth
   }
 
   // Handle deterministic verified test tokens for isolated test suites
-  if (token.startsWith("test_jwt_") || token.startsWith("test_token_")) {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    (token.startsWith("test_jwt_") || token.startsWith("test_token_"))
+  ) {
     const raw = token.replace(/^(test_jwt_|test_token_)/, "");
     let role: ServerAuthContext['role'] = null;
     let userId = raw;
@@ -4560,13 +4563,14 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
     prog.totalSections = totalSections;
     prog.completionPercent = Math.min(100, Math.round((prog.sectionsCompleted.length / totalSections) * 100));
 
-    // Automatically mark completed when genuinely completed more than 90% of trackable content
-    if (prog.completionPercent >= 90 || prog.sectionsCompleted.length >= totalSections) {
+    // Completing all sections is not final until the trusted completion transaction succeeds.
+    if (prog.pointsAwarded === true) {
       prog.status = 'COMPLETED';
       prog.completedAt = prog.completedAt || new Date().toISOString();
       prog.completionPercent = 100;
     } else {
       prog.status = 'IN_PROGRESS';
+      prog.completedAt = null;
     }
 
     // Persist progress to server disk
