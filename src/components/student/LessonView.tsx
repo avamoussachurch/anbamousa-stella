@@ -235,7 +235,13 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
         studentId: currentStudentId
       }).then(({ data }) => {
         if (data && data.sectionsCompleted) {
-          updateStudentContentProgress(currentStudentId, lessonId, data.sectionsCompleted, data.completionPercent);
+          updateStudentContentProgress(
+            currentStudentId,
+            lessonId,
+            data.sectionsCompleted,
+            data.completionPercent,
+            data.status === 'COMPLETED'
+          );
         }
       });
 
@@ -295,7 +301,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
       }
 
       const allSecIds = allSections.map(s => s.id);
-      updateStudentContentProgress(currentStudentId, lessonId, allSecIds, 100);
+      updateStudentContentProgress(currentStudentId, lessonId, allSecIds, 100, true);
       markCompleted(lessonId);
 
       // Automatically evaluate student mastery after lesson completion
@@ -493,8 +499,14 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
               studentId: currentStudentId
             });
             if (data) {
-              updateStudentContentProgress(currentStudentId, lessonId, data.sectionsCompleted, data.completionPercent);
-              if (data.status === 'COMPLETED' || data.completionPercent >= 90) {
+              updateStudentContentProgress(
+                currentStudentId,
+                lessonId,
+                data.sectionsCompleted,
+                data.completionPercent,
+                data.status === 'COMPLETED'
+              );
+              if (data.status === 'COMPLETED') {
                 markCompleted(lessonId);
                 setFinishSuccess(true);
               }

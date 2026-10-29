@@ -144,7 +144,9 @@ export function awardPoints(
   second: string | number,
   third?: string
 ): number {
-  if (typeof window === 'undefined') return 0;
+  if (typeof window === 'undefined') {
+    throw new Error('Points can only be awarded in a verified browser session.');
+  }
   
   let targetUserId: string | undefined;
   let pointsToAdd = 0;
@@ -159,24 +161,32 @@ export function awardPoints(
     reason = typeof second === 'string' ? second : '';
   }
 
+  let guestUser: User | null = null;
   try {
-    const isGuest = Boolean(localStorage.getItem('church_guest_user'));
-    const storageKey = isGuest ? 'church_guest_user' : 'church_auth_user';
-    const userJson = localStorage.getItem(storageKey);
-    if (userJson) {
-      const user = JSON.parse(userJson);
-      if (!targetUserId || user.id === targetUserId) {
-        user.points = (user.points || 0) + pointsToAdd;
-        localStorage.setItem(storageKey, JSON.stringify(user));
-        updateLeaderboardUser(user, pointsToAdd);
-        window.dispatchEvent(new CustomEvent('church_user_updated', { detail: user }));
-        return user.points;
-      }
-    }
-  } catch (e) {
-    console.warn('Error awarding points:', e);
+    const raw = localStorage.getItem('church_guest_user');
+    if (raw) guestUser = JSON.parse(raw);
+  } catch (error) {
+    console.warn('Could not read guest progress before awarding demo points:', error);
+    throw new Error('Could not verify the guest session for this point award.');
   }
-  return pointsToAdd;
+
+  if (guestUser) {
+    if (targetUserId && guestUser.id !== targetUserId) {
+      throw new Error('The guest session does not match the requested point recipient.');
+    }
+    guestUser.points = Math.max(0, Number(guestUser.points) || 0) + pointsToAdd;
+    try {
+      localStorage.setItem('church_guest_user', JSON.stringify(guestUser));
+    } catch (error) {
+      console.warn('Could not persist guest demo points:', error);
+      throw new Error('Could not save guest demo points.');
+    }
+    updateLeaderboardUser(guestUser, pointsToAdd);
+    window.dispatchEvent(new CustomEvent('church_user_updated', { detail: guestUser }));
+    return guestUser.points;
+  }
+
+  throw new Error('Authenticated points must be awarded by a server-verified activity.');
 }
 
 export interface StreakLeaderboardEntry {
@@ -286,4 +296,3 @@ export function updateStreakLeaderboardUser(currentUser: User): StreakLeaderboar
   }
   return list;
 }
-
