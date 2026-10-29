@@ -6,13 +6,15 @@ import {
   Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { mockPosts } from '../../data';
-import { Post, Comment, Reply, Language } from '../../types';
+import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { getFeedDisplayState } from '../../lib/feedDisplayState';
 import { uploadFeedMediaToSupabase, extractEmbedMedia, checkStorageBackendStatus } from '../../lib/supabaseDatabase';
 import {
   fetchFeedPostsFromSupabase,
   createFeedPostInSupabase,
+  cleanupFeedMediaReferences,
+  FeedPostAttachmentInput,
   deleteFeedPostFromSupabase,
   toggleFeedPostPinInSupabase,
   toggleFeedReactionInSupabase,
@@ -20,157 +22,106 @@ import {
   syncUserLocalPostsToSupabase,
   ExtendedPost
 } from '../../lib/feedService';
+import {
+  canAddFeedAttachments,
+  getPostAttachments,
+  MAX_FEED_ATTACHMENTS,
+  UploadedFeedAttachment,
+  uploadFeedAttachmentFile
+} from '../../lib/feedAttachments';
 
 type SortOption = 'latest' | 'popular' | 'discussed' | 'announcements';
 
 const FEED_STORAGE_KEY = 'orthodox_church_feed_posts_v5';
 
+type ComposerAttachment = UploadedFeedAttachment & {
+  localPreviewUrl?: string;
+  isExternal?: boolean;
+};
+
 export function FeedTab({ lang }: { lang: Language }) {
   const { userData } = useAuth();
   const isCop = lang === 'copt' || lang === 'cop';
   
-  // 1. Saved Feed Posts from localStorage with default initial seed
-  const [posts, setPosts] = useState<ExtendedPost[]>(() => {
-    try {
-      const saved = localStorage.getItem(FEED_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load feed posts from storage', e);
-    }
+  const [posts, setPosts] = useState<ExtendedPost[]>([]);
+  const [hasLoadedFeed, setHasLoadedFeed] = useState(false);
+  const [feedReloadKey, setFeedReloadKey] = useState(0);
+  const [feedResultScope, setFeedResultScope] = useState<string | null>(null);
 
-    return [
-      {
-        id: 'announcement-1',
-        authorId: 'teacher-1',
-        authorName: lang === 'ar' ? 'أ. عماد (خادم أسرة مارمينا)' : 'Servant Emad (Sunday School)',
-        authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=TeacherEmad',
-        content: lang === 'ar' 
-          ? '🔔 تذكير هام لجميع الأبناء: موعد خدمة مدارس الأحد الجمعة القادمة الساعة ٩:٠٠ صباحاً، يرجى حفظ آية الأسبوع!' 
-          : '🔔 Important Announcement: Sunday School gathering is this Friday at 9:00 AM. Please memorize this week\'s verse!',
-        reactions: { heart: 14, candle: 22, cross: 18 },
-        comments: [
-          {
-            id: 'c-1',
-            authorName: lang === 'ar' ? 'مينا سامي' : 'Mina Samy',
-            authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mina',
-            content: lang === 'ar' ? 'حاضر يا أستاذنا، حفظت الآية ومستعد للمسابقة! 🙏' : 'Yes sir, memorized the verse and ready for the quiz! 🙏',
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-            reactions: { heart: 5, candle: 3, cross: 4 },
-            replies: [
-              {
-                id: 'r-1',
-                authorName: lang === 'ar' ? 'أ. عماد (خادم)' : 'Servant Emad',
-                content: lang === 'ar' ? 'باركك الرب يا مينا، شاطر جداً يا حبيبي 🌟' : 'God bless you Mina, wonderful effort 🌟',
-                createdAt: new Date(Date.now() - 1800000).toISOString(),
-                reactions: { heart: 3, candle: 2, cross: 2 }
-              }
-            ]
-          }
-        ],
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
-        isPinned: true,
-        isAnnouncement: true
-      },
-      {
-        id: 'photo-post-1',
-        authorId: 'teacher-2',
-        authorName: lang === 'ar' ? 'تاسوني مريم (خدمة ابتدائي)' : 'Tasoni Mary (Sunday School)',
-        authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=TasoniMary',
-        content: lang === 'ar' 
-          ? '📸 صور من لقاء مدارس الأحد وتوزيع بركة أعياد النيروز على أبنائنا الأحباء. بارك الله في خدمتكم جميعاً! ✝️❤️' 
-          : '📸 Photos from our Sunday School gathering celebrating Coptic Nayrouz. God bless our children! ✝️❤️',
-        reactions: { heart: 19, candle: 15, cross: 12 },
-        comments: [],
-        createdAt: new Date(Date.now() - 14400000).toISOString(),
-        mediaType: 'image',
-        mediaUrl: 'https://images.unsplash.com/photo-1548625361-19597793b80b?w=800&auto=format&fit=crop&q=80'
-      },
-      {
-        id: 'video-post-1',
-        authorId: 'deacon-1',
-        authorName: lang === 'ar' ? 'الشماس بيشوي عادل' : 'Deacon Bishoy Adel',
-        authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=DeaconBishoy',
-        content: lang === 'ar' 
-          ? '🎥 تدريب لحن "تين أوسشت" مع الناقوس والدف. تدربوا عليه جيداً مع إخوتكم الشمامسة لقداس الجمعة القادم! 🔔' 
-          : '🎥 Hymn rehearsal video for "Ten Oousht" with cymbals. Practice well for Friday Liturgy! 🔔',
-        reactions: { heart: 25, candle: 31, cross: 20 },
-        comments: [],
-        createdAt: new Date(Date.now() - 28800000).toISOString(),
-        mediaType: 'youtube',
-        mediaUrl: 'https://www.youtube-nocookie.com/embed/9Bv_A_2h1OQ'
-      },
-      ...mockPosts.map(p => ({
-        ...p,
-        comments: p.comments.map(c => ({
-          ...c,
-          reactions: c.reactions || { heart: 2, candle: 1, cross: 3 },
-          replies: (c.replies || []).map(r => ({
-            ...r,
-            reactions: r.reactions || { heart: 1, candle: 0, cross: 1 }
-          }))
-        }))
-      }))
-    ];
-  });
-
-  // Save to localStorage whenever posts change (as an offline cache)
+  // Cache only after the server has supplied authoritative feed content.
   useEffect(() => {
+    if (!hasLoadedFeed) return;
     try {
       localStorage.setItem(FEED_STORAGE_KEY, JSON.stringify(posts));
     } catch (e) {
       console.error('Failed to cache feed posts locally', e);
     }
-  }, [posts]);
+  }, [posts, hasLoadedFeed]);
 
   // Server state & notifications
   const [syncStatusText, setSyncStatusText] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [isLoadingServerPosts, setIsLoadingServerPosts] = useState(false);
+  const [isLoadingServerPosts, setIsLoadingServerPosts] = useState(true);
+  const [feedLoadError, setFeedLoadError] = useState<string | null>(null);
 
   // Load authoritative posts from Supabase on mount & run safe idempotent migration
   useEffect(() => {
     let isMounted = true;
     async function loadFeed() {
       setIsLoadingServerPosts(true);
-      const res = await fetchFeedPostsFromSupabase();
-      if (!isMounted) return;
-      setIsLoadingServerPosts(false);
-
-      if (res.data && res.data.length > 0) {
-        setPosts(res.data);
-      }
+      setFeedLoadError(null);
+      setHasLoadedFeed(false);
+      setPosts([]);
 
       // If user is authenticated, check for any unmigrated authentic local posts
       if (userData?.id) {
         try {
           const migRes = await syncUserLocalPostsToSupabase(userData);
-          if (migRes.migratedCount > 0 && isMounted) {
+          if (migRes.migratedCount > 0) {
             setSyncStatusText(
               lang === 'ar'
                 ? `✨ تمت مزامنة ${migRes.migratedCount} منشور خاص بك مع سحابة الكنيسة بنجاح`
                 : `✨ Successfully synced ${migRes.migratedCount} of your posts to church cloud`
             );
             setTimeout(() => setSyncStatusText(null), 6000);
-            // Re-fetch authoritative posts
-            const fresh = await fetchFeedPostsFromSupabase();
-            if (fresh.data && isMounted) {
-              setPosts(fresh.data);
-            }
           }
         } catch (migErr) {
           console.warn('Note on local feed migration:', migErr);
         }
       }
+
+      const res = await fetchFeedPostsFromSupabase();
+      if (!isMounted) return;
+      setIsLoadingServerPosts(false);
+
+      if (res.error || !res.data) {
+        setFeedLoadError(res.error?.message || (lang === 'ar' ? 'تعذر تحميل منشورات المجتمع.' : 'The community feed could not be loaded.'));
+        setFeedResultScope(userData?.id || 'guest');
+        return;
+      }
+
+      setFeedLoadError(null);
+      setPosts(res.data);
+      setHasLoadedFeed(true);
+      setFeedResultScope(userData?.id || 'guest');
     }
 
-    loadFeed();
+    loadFeed().catch(error => {
+      if (!isMounted) return;
+      setIsLoadingServerPosts(false);
+      setFeedLoadError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر تحميل منشورات المجتمع.' : 'The community feed could not be loaded.'));
+      setFeedResultScope(userData?.id || 'guest');
+    });
+
     return () => { isMounted = false; };
-  }, [userData?.id]);
+  }, [userData?.id, lang, feedReloadKey]);
+
+  const retryFeedLoad = () => {
+    setFeedLoadError(null);
+    setIsLoadingServerPosts(true);
+    setFeedReloadKey(key => key + 1);
+  };
+  const isFeedLoading = isLoadingServerPosts || feedResultScope !== (userData?.id || 'guest');
 
   // 2. State controls
   const [sortBy, setSortBy] = useState<SortOption>('latest');
@@ -199,19 +150,30 @@ export function FeedTab({ lang }: { lang: Language }) {
   }, []);
 
   // Media state for compose
-  const [selectedMediaType, setSelectedMediaType] = useState<'image' | 'video' | 'youtube' | 'audio' | 'embed' | null>(null);
-  const [selectedMediaUrl, setSelectedMediaUrl] = useState<string | null>(null);
-  const [mediaSizeKb, setMediaSizeKb] = useState<number | null>(null);
-  const [mediaProvider, setMediaProvider] = useState<string | null>(null);
+  const [composerAttachments, setComposerAttachments] = useState<ComposerAttachment[]>([]);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [uploadStatusText, setUploadStatusText] = useState('');
   const [mediaError, setMediaError] = useState<string | null>(null);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkInputValue, setLinkInputValue] = useState('');
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxAttachment, setLightboxAttachment] = useState<FeedAttachment | null>(null);
+  const [missingMediaIds, setMissingMediaIds] = useState<Set<string>>(() => new Set());
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const postDraftIdRef = useRef<string | null>(null);
+  const composerAttachmentsRef = useRef<ComposerAttachment[]>([]);
+
+  useEffect(() => {
+    composerAttachmentsRef.current = composerAttachments;
+  }, [composerAttachments]);
+
+  useEffect(() => () => {
+    composerAttachmentsRef.current.forEach(attachment => {
+      if (attachment.localPreviewUrl) URL.revokeObjectURL(attachment.localPreviewUrl);
+    });
+  }, []);
 
   const isTeacher = userData?.role === 'teacher';
 
@@ -476,126 +438,215 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   };
 
-  // Media file upload handler (handles photos, videos, and audio recordings up to 150MB with zero cap)
-  const handleMediaFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'audio') => {
-    const file = e.target.files?.[0];
-    if (!file || !userData) return;
+  const handleMediaFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    const files: File[] = [];
+    if (fileList) {
+      for (let index = 0; index < fileList.length; index += 1) {
+        const file = fileList.item(index);
+        if (file) files.push(file);
+      }
+    }
+    e.target.value = '';
+    if (files.length === 0 || !userData) return;
+    if (!canAddFeedAttachments(composerAttachments.length, files.length)) {
+      setMediaError(lang === 'ar'
+        ? `يمكنك إرفاق ${MAX_FEED_ATTACHMENTS} ملفات كحد أقصى في المنشور الواحد.`
+        : `You can attach up to ${MAX_FEED_ATTACHMENTS} files to one post.`);
+      return;
+    }
 
     setMediaError(null);
+    setShowLinkInput(false);
     setIsUploadingMedia(true);
-    setUploadStatusText(
-      type === 'image'
-        ? (lang === 'ar' ? 'جارٍ حفظ الصورة في سحابة الكنيسة...' : 'Uploading photo to church cloud...')
-        : type === 'video'
-        ? (lang === 'ar' ? 'جارٍ رفع الفيديو (سعة غير محدودة)...' : 'Uploading video (unlimited capacity)...')
-        : (lang === 'ar' ? 'جارٍ رفع التسجيل الصوتي للحن الكنسي...' : 'Uploading hymn audio recording...')
-    );
+    const queued = files.map(file => {
+      const localPreviewUrl = URL.createObjectURL(file);
+      return {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        mediaType: (file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : 'image') as ComposerAttachment['mediaType'],
+        mediaUrl: localPreviewUrl,
+        localPreviewUrl,
+        originalFilename: file.name,
+        byteSize: file.size,
+        file,
+        status: 'uploading' as const
+      };
+    });
+    setComposerAttachments(previous => [...previous, ...queued]);
 
     try {
-      const res = await uploadFeedMediaToSupabase(file, userData.id);
-      if (res.success && res.mediaUrl) {
-        setSelectedMediaType(res.mediaType);
-        setSelectedMediaUrl(res.mediaUrl);
-        setMediaProvider(res.provider || null);
-        setMediaSizeKb(res.sizeKb || null);
-        setShowLinkInput(false);
-      } else {
-        setMediaError(res.error || (lang === 'ar' ? 'تعذر رفع الملف' : 'Upload failed'));
+      for (let index = 0; index < queued.length; index += 1) {
+        const item = queued[index];
+        setUploadStatusText(lang === 'ar'
+          ? `جارٍ رفع الملف ${index + 1} من ${queued.length}...`
+          : `Uploading file ${index + 1} of ${queued.length}...`);
+        const result = await uploadFeedAttachmentFile(item.file!, userData.id, uploadFeedMediaToSupabase);
+        setComposerAttachments(previous => previous.map(current => {
+          if (current.id !== item.id) return current;
+          if (result.error || !result.data) {
+            return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'تعذر رفع الملف.' : 'Upload failed.') };
+          }
+          URL.revokeObjectURL(current.localPreviewUrl || '');
+          return { ...result.data, localPreviewUrl: undefined };
+        }));
       }
-    } catch (err: any) {
-      setMediaError(err.message || 'Upload failed');
     } finally {
       setIsUploadingMedia(false);
       setUploadStatusText('');
-      e.target.value = '';
     }
+  };
+
+  const retryComposerAttachment = async (id: string) => {
+    const item = composerAttachments.find(attachment => attachment.id === id);
+    if (!item?.file || !userData || isUploadingMedia) return;
+    setMediaError(null);
+    setIsUploadingMedia(true);
+    setComposerAttachments(previous => previous.map(current =>
+      current.id === id ? { ...current, status: 'uploading', error: undefined } : current
+    ));
+    try {
+      const result = await uploadFeedAttachmentFile(item.file, userData.id, uploadFeedMediaToSupabase);
+      setComposerAttachments(previous => previous.map(current => {
+        if (current.id !== id) return current;
+        if (result.error || !result.data) {
+          return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'تعذر رفع الملف.' : 'Upload failed.') };
+        }
+        URL.revokeObjectURL(current.localPreviewUrl || '');
+        return { ...result.data, localPreviewUrl: undefined };
+      }));
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  const removeComposerAttachment = async (id: string) => {
+    const item = composerAttachments.find(attachment => attachment.id === id);
+    if (!item) return;
+    setComposerAttachments(previous => previous.filter(attachment => attachment.id !== id));
+    if (item.localPreviewUrl) URL.revokeObjectURL(item.localPreviewUrl);
+    if (item.storageReference) {
+      const cleanup = await cleanupFeedMediaReferences([item.storageReference]);
+      if (cleanup.error) {
+        setMediaError(lang === 'ar'
+          ? `تمت إزالة الملف من المنشور، لكن تعذر تنظيف الملف المرفوع: ${cleanup.error.message}`
+          : `The attachment was removed, but the uploaded file could not be cleaned up: ${cleanup.error.message}`);
+      }
+    }
+  };
+
+  const clearComposerAttachments = async (): Promise<Error | null> => {
+    const references = composerAttachments
+      .map(attachment => attachment.storageReference)
+      .filter((reference): reference is string => Boolean(reference));
+    composerAttachments.forEach(attachment => {
+      if (attachment.localPreviewUrl) URL.revokeObjectURL(attachment.localPreviewUrl);
+    });
+    setComposerAttachments([]);
+    if (references.length > 0) {
+      const cleanup = await cleanupFeedMediaReferences(references);
+      return cleanup.error;
+    }
+    return null;
   };
 
   const handleApplyLink = () => {
     if (!linkInputValue.trim()) return;
+    if (!canAddFeedAttachments(composerAttachments.length, 1)) {
+      setMediaError(lang === 'ar'
+        ? `يمكنك إرفاق ${MAX_FEED_ATTACHMENTS} ملفات كحد أقصى في المنشور الواحد.`
+        : `You can attach up to ${MAX_FEED_ATTACHMENTS} files to one post.`);
+      return;
+    }
     const parsed = extractEmbedMedia(linkInputValue.trim());
     if (parsed.mediaType !== 'unknown') {
-      setSelectedMediaType(parsed.mediaType);
-      setSelectedMediaUrl(parsed.embedUrl);
-      setMediaProvider('external-stream');
-      setMediaSizeKb(null);
+      setComposerAttachments(previous => [...previous, {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        mediaType: parsed.mediaType,
+        mediaUrl: parsed.embedUrl,
+        mediaProvider: 'external-stream',
+        status: 'ready',
+        isExternal: true
+      }]);
       setMediaError(null);
+      setLinkInputValue('');
       setShowLinkInput(false);
     } else {
       setMediaError(lang === 'ar' ? 'يرجى إدخال رابط يوتيوب أو جوجل درايف أو فيديو أو صوت صالح' : 'Please enter a valid YouTube, Google Drive, video or audio link');
     }
   };
 
-  const handleRemoveMedia = () => {
-    setSelectedMediaType(null);
-    setSelectedMediaUrl(null);
-    setMediaProvider(null);
-    setMediaSizeKb(null);
+  const handleCloseComposer = async () => {
+    if (isUploadingMedia || isCreatingPost) return;
     setMediaError(null);
+    const cleanupError = await clearComposerAttachments();
+    if (cleanupError) {
+      setActionError(lang === 'ar'
+        ? `تم إغلاق المنشور، لكن تعذر تنظيف بعض الملفات المرفوعة: ${cleanupError.message}`
+        : `The composer was closed, but some uploaded files could not be cleaned up: ${cleanupError.message}`);
+    }
     setLinkInputValue('');
     setShowLinkInput(false);
+    setIsComposeModalOpen(false);
   };
 
-  // 8. Create New Post (Optimistic update with Supabase persistence & rollback)
+  // 8. Create New Post only after the server confirms the post and its attachments.
   const handleCreatePost = async () => {
-    if (!newPostText.trim() || !userData) return;
+    if ((!newPostText.trim() && composerAttachments.length === 0) || !userData || isCreatingPost) return;
+    if (composerAttachments.some(attachment => attachment.status !== 'ready')) {
+      setMediaError(lang === 'ar' ? 'أكمل رفع الملفات أو أعد محاولة الملفات التي فشل رفعها أولاً.' : 'Finish or retry every attachment upload before publishing.');
+      return;
+    }
     setActionError(null);
-
-    const tempId = 'post-' + Date.now().toString();
-    const newPost: ExtendedPost = {
-      id: tempId,
-      authorId: userData.id,
-      authorName: userData.fullName + (isTeacher ? ` (${lang === 'ar' ? 'خادم' : 'Servant'})` : ''),
-      authorAvatar: userData.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + userData.fullName,
-      content: newPostText.trim(),
-      createdAt: new Date().toISOString(),
-      reactions: { heart: 0, candle: 0, cross: 0 },
-      comments: [],
-      isPinned: isTeacher && isOfficialAnnouncement,
-      isAnnouncement: isTeacher && isOfficialAnnouncement,
-      mediaType: selectedMediaType || undefined,
-      mediaUrl: selectedMediaUrl || undefined,
-      mediaProvider: mediaProvider || undefined,
-    };
-
-    const previousPosts = posts;
-    setPosts(prev => [newPost, ...prev]);
-
-    const postContent = newPostText.trim();
-    const postMediaType = selectedMediaType;
-    const postMediaUrl = selectedMediaUrl;
-    const postMediaProvider = mediaProvider;
+    const authorName = userData.fullName + (isTeacher ? ` (${lang === 'ar' ? 'خادم' : 'Servant'})` : '');
+    const authorAvatar = userData.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + userData.fullName;
+    const attachments: FeedPostAttachmentInput[] = composerAttachments.map(attachment => ({
+      mediaType: attachment.mediaType,
+      mediaUrl: attachment.mediaUrl,
+      storageReference: attachment.storageReference,
+      mediaProvider: attachment.mediaProvider,
+      originalFilename: attachment.originalFilename,
+      mimeType: attachment.mimeType,
+      byteSize: attachment.byteSize
+    }));
     const postPinned = isTeacher && isOfficialAnnouncement;
+    const postId = postDraftIdRef.current || `post-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    postDraftIdRef.current = postId;
+    setIsCreatingPost(true);
+    try {
+      const res = await createFeedPostInSupabase({
+        id: postId,
+        authorId: userData.id,
+        authorName,
+        authorAvatar,
+        content: newPostText.trim(),
+        attachments,
+        isPinned: postPinned,
+        isAnnouncement: postPinned
+      });
 
-    setNewPostText("");
-    setSelectedMediaType(null);
-    setSelectedMediaUrl(null);
-    setMediaProvider(null);
-    setMediaSizeKb(null);
-    setShowLinkInput(false);
-    setLinkInputValue('');
-    setMediaError(null);
-    setIsOfficialAnnouncement(false);
-    setIsComposeModalOpen(false);
-
-    const res = await createFeedPostInSupabase({
-      authorId: userData.id,
-      authorName: newPost.authorName,
-      authorAvatar: newPost.authorAvatar,
-      content: postContent,
-      mediaType: postMediaType || undefined,
-      mediaUrl: postMediaUrl || undefined,
-      mediaProvider: postMediaProvider || undefined,
-      isPinned: postPinned,
-      isAnnouncement: postPinned
-    });
-
-    if (res.error) {
-      console.warn('Post creation error:', res.error);
-      setActionError(lang === 'ar' ? `تعذر حفظ المشاركة على السحابة: ${res.error.message}` : `Failed to save post to cloud: ${res.error.message}`);
-      setPosts(previousPosts);
-    } else if (res.data?.id) {
-      setPosts(prev => prev.map(p => p.id === tempId ? { ...p, id: res.data!.id } : p));
+      if (res.error || !res.data) {
+        const errorMessage = res.error?.message || 'The post was not confirmed by the server.';
+        console.warn('Post creation error:', errorMessage);
+        setActionError(lang === 'ar' ? `تعذر حفظ المشاركة على السحابة: ${errorMessage}` : `Failed to save post to cloud: ${errorMessage}`);
+        return;
+      }
+      setPosts(previous => [res.data!, ...previous]);
+      setNewPostText('');
+      setIsOfficialAnnouncement(false);
+      setShowLinkInput(false);
+      setLinkInputValue('');
+      setMediaError(null);
+      composerAttachments.forEach(attachment => {
+        if (attachment.localPreviewUrl) URL.revokeObjectURL(attachment.localPreviewUrl);
+      });
+      setComposerAttachments([]);
+      postDraftIdRef.current = null;
+      setIsComposeModalOpen(false);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'The post could not be saved.';
+      setActionError(lang === 'ar' ? `تعذر حفظ المشاركة: ${errorMessage}` : `Failed to save post: ${errorMessage}`);
+    } finally {
+      setIsCreatingPost(false);
     }
   };
 
@@ -805,22 +856,25 @@ export function FeedTab({ lang }: { lang: Language }) {
               <input 
                 type="file" 
                 ref={imageInputRef} 
-                onChange={e => handleMediaFileChange(e, 'image')} 
+                onChange={handleMediaFileChange}
                 accept="image/*" 
+                multiple
                 className="hidden" 
               />
               <input 
                 type="file" 
                 ref={videoInputRef} 
-                onChange={e => handleMediaFileChange(e, 'video')} 
+                onChange={handleMediaFileChange}
                 accept="video/mp4,video/webm,video/quicktime,video/*" 
+                multiple
                 className="hidden" 
               />
               <input 
                 type="file" 
                 ref={audioInputRef} 
-                onChange={e => handleMediaFileChange(e, 'audio')} 
+                onChange={handleMediaFileChange}
                 accept="audio/mp3,audio/wav,audio/m4a,audio/aac,audio/*" 
+                multiple
                 className="hidden" 
               />
 
@@ -835,8 +889,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                 </div>
                 <button 
                   onClick={() => {
-                    setIsComposeModalOpen(false);
-                    handleRemoveMedia();
+                    void handleCloseComposer();
                   }} 
                   className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                 >
@@ -860,7 +913,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                   <button
                     type="button"
                     onClick={() => imageInputRef.current?.click()}
-                    disabled={isUploadingMedia}
+                    disabled={isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
                     className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
                   >
                     <ImageIcon size={15} />
@@ -870,7 +923,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                   <button
                     type="button"
                     onClick={() => videoInputRef.current?.click()}
-                    disabled={isUploadingMedia}
+                    disabled={isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
                     className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[var(--mousa-teal-deep)] border border-blue-200 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
                   >
                     <Video size={15} />
@@ -880,7 +933,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                   <button
                     type="button"
                     onClick={() => audioInputRef.current?.click()}
-                    disabled={isUploadingMedia}
+                    disabled={isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
                     className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
                   >
                     <Music size={15} />
@@ -890,7 +943,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                   <button
                     type="button"
                     onClick={() => setShowLinkInput(!showLinkInput)}
-                    disabled={isUploadingMedia}
+                    disabled={isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
                     className={`flex items-center gap-1.5 px-3.5 py-2 border rounded-xl text-xs font-bold transition-all cursor-pointer ${
                       showLinkInput
                         ? 'bg-[var(--mousa-teal-deep)] text-white border-[var(--mousa-teal-deep)]'
@@ -944,79 +997,61 @@ export function FeedTab({ lang }: { lang: Language }) {
                 </div>
               )}
 
-              {/* Media Preview Box */}
-              {selectedMediaUrl && (
-                <div className="relative rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden bg-gray-50 dark:bg-slate-800 p-2">
-                  <div className="flex items-center justify-between pb-2 px-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                        <Check size={12} />
-                        {selectedMediaType === 'youtube'
-                          ? (lang === 'ar' ? 'يوتيوب (سعة مجانية غير محدودة)' : 'YouTube Stream (0 Storage Used)')
-                          : selectedMediaType === 'audio'
-                          ? (lang === 'ar' ? `تسجيل لحن كنسي (~${mediaSizeKb || 0} ك.ب)` : `Hymn Audio (~${mediaSizeKb || 0} KB)`)
-                          : selectedMediaType === 'video'
-                          ? (lang === 'ar' ? `فيديو مباشر (~${mediaSizeKb || 0} ك.ب)` : `Direct Video (~${mediaSizeKb || 0} KB)`)
-                          : selectedMediaType === 'embed'
-                          ? (lang === 'ar' ? 'تضمين جوجل درايف / وسائط' : 'Google Drive / Media Embed')
-                          : (lang === 'ar' ? `صورة كنسية (~${mediaSizeKb || 0} ك.ب)` : `Church Photo (~${mediaSizeKb || 0} KB)`)}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRemoveMedia}
-                      className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded-lg transition-colors cursor-pointer text-xs font-bold flex items-center gap-1"
-                    >
-                      <Trash2 size={13} />
-                      <span>{lang === 'ar' ? 'إزالة' : 'Remove'}</span>
-                    </button>
+              {composerAttachments.length > 0 && (
+                <section className="space-y-2" aria-label={lang === 'ar' ? 'المرفقات' : 'Attachments'}>
+                  <div className="flex items-center justify-between text-xs font-bold text-gray-600 dark:text-gray-300">
+                    <span>{lang === 'ar' ? 'المرفقات' : 'Attachments'}</span>
+                    <span>{composerAttachments.length} / {MAX_FEED_ATTACHMENTS}</span>
                   </div>
-
-                  {selectedMediaType === 'youtube' ? (
-                    <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
-                      <iframe 
-                        src={selectedMediaUrl} 
-                        title="Preview" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        className="w-full h-full border-0"
-                      />
-                    </div>
-                  ) : selectedMediaType === 'audio' ? (
-                    <div className="p-3 bg-blue-50/80 dark:bg-slate-700 rounded-xl flex flex-col gap-2">
-                      <div className="flex items-center gap-2 text-xs font-bold text-blue-900 dark:text-blue-200">
-                        <Volume2 size={16} />
-                        <span>{lang === 'ar' ? 'معاينة التسجيل الصوتي للحن الكنسي' : 'Spiritual Hymn Recording Preview'}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {composerAttachments.map(attachment => (
+                      <div key={attachment.id} className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
+                        <div className="flex items-center justify-between gap-2 p-2">
+                          <span className="truncate text-xs font-bold text-gray-700 dark:text-gray-200">
+                            {attachment.originalFilename || (attachment.mediaType === 'youtube' ? 'YouTube' : attachment.mediaType)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => void removeComposerAttachment(attachment.id)}
+                            disabled={isUploadingMedia || isCreatingPost}
+                            aria-label={lang === 'ar' ? 'إزالة المرفق' : 'Remove attachment'}
+                            className="shrink-0 rounded-lg p-1 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                        {attachment.mediaType === 'audio' ? (
+                          <div className="p-3"><audio src={attachment.mediaUrl} controls className="w-full" /></div>
+                        ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
+                          <iframe src={attachment.mediaUrl} title="Media preview" className="aspect-video w-full bg-black" allowFullScreen />
+                        ) : attachment.mediaType === 'video' ? (
+                          <video src={attachment.mediaUrl} controls playsInline className="aspect-video w-full bg-black object-contain" />
+                        ) : (
+                          <img src={attachment.mediaUrl} alt={attachment.originalFilename || 'Attachment preview'} className="aspect-video w-full object-cover" />
+                        )}
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
+                          <span className={attachment.status === 'ready' ? 'font-bold text-emerald-700' : attachment.status === 'error' ? 'font-bold text-red-700' : 'font-bold text-blue-700'}>
+                            {attachment.status === 'ready'
+                              ? (lang === 'ar' ? 'جاهز للنشر' : 'Ready to publish')
+                              : attachment.status === 'error'
+                              ? (attachment.error || (lang === 'ar' ? 'فشل الرفع' : 'Upload failed'))
+                              : (lang === 'ar' ? 'جارٍ الرفع...' : 'Uploading...')}
+                          </span>
+                          {attachment.status === 'error' && (
+                            <button
+                              type="button"
+                              onClick={() => void retryComposerAttachment(attachment.id)}
+                              disabled={isUploadingMedia}
+                              className="rounded-lg bg-white px-2 py-1 font-bold text-[var(--mousa-teal-deep)] disabled:opacity-50"
+                            >
+                              {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <audio src={selectedMediaUrl} controls className="w-full h-9 rounded-lg outline-none" />
-                    </div>
-                  ) : selectedMediaType === 'embed' ? (
-                    <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
-                      <iframe 
-                        src={selectedMediaUrl} 
-                        title="Embed Preview" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        className="w-full h-full border-0"
-                      />
-                    </div>
-                  ) : selectedMediaType === 'video' ? (
-                    <div className="relative rounded-xl overflow-hidden bg-black max-h-56">
-                      <video 
-                        src={selectedMediaUrl} 
-                        controls 
-                        playsInline 
-                        className="w-full max-h-56 object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div className="relative rounded-xl overflow-hidden bg-gray-100 max-h-56">
-                      <img 
-                        src={selectedMediaUrl} 
-                        alt="Preview" 
-                        className="w-full max-h-56 object-cover rounded-xl"
-                      />
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                </section>
               )}
 
               {/* Teacher option: Pin Announcement */}
@@ -1034,14 +1069,14 @@ export function FeedTab({ lang }: { lang: Language }) {
 
               <button 
                 onClick={handleCreatePost} 
-                disabled={(!newPostText.trim() && !selectedMediaUrl) || isUploadingMedia}
+                disabled={(!newPostText.trim() && composerAttachments.length === 0) || isUploadingMedia || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready')}
                 className={`w-full font-bold py-3.5 rounded-xl transition-colors shadow-md text-sm cursor-pointer flex items-center justify-center gap-2 ${
-                  (newPostText.trim() || selectedMediaUrl) && !isUploadingMedia
+                  (newPostText.trim() || composerAttachments.length > 0) && !isUploadingMedia && !isCreatingPost && composerAttachments.every(attachment => attachment.status === 'ready')
                     ? 'bg-[var(--mousa-teal-deep)] text-[var(--mousa-gold)] hover:bg-blue-900'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                <Send size={15} />
+                {isCreatingPost ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
                 <span>{isCop ? 'Ⲁⲣⲉϩ ⲟⲩⲟϩ ϩⲓⲟⲩⲓ̀ ϧⲉⲛ ϯⲕⲟⲓⲛⲱⲛⲓⲁ' : lang === 'ar' ? 'حفظ ونشر في المجتمع الآن' : 'Save & Publish Post'}</span>
               </button>
             </motion.div>
@@ -1050,6 +1085,45 @@ export function FeedTab({ lang }: { lang: Language }) {
       </AnimatePresence>
 
       {/* Posts List */}
+      {getFeedDisplayState(isFeedLoading, feedLoadError, sortedPosts) === 'loading' ? (
+        <div className="space-y-6 md:columns-2 lg:columns-3 md:gap-6 md:space-y-0" aria-label={lang === 'ar' ? 'جارٍ تحميل المنشورات' : 'Loading posts'} aria-busy="true">
+          {[0, 1, 2].map(item => (
+            <div key={item} className="mb-6 break-inside-avoid animate-pulse rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-5 dark:bg-[#1E1914]">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-[var(--mousa-sand-200)] dark:bg-stone-700" />
+                <div className="space-y-2">
+                  <div className="h-3 w-28 rounded bg-[var(--mousa-sand-200)] dark:bg-stone-700" />
+                  <div className="h-2 w-20 rounded bg-[var(--mousa-sand-100)] dark:bg-stone-800" />
+                </div>
+              </div>
+              <div className="mb-2 h-3 w-full rounded bg-[var(--mousa-sand-100)] dark:bg-stone-800" />
+              <div className="mb-5 h-3 w-4/5 rounded bg-[var(--mousa-sand-100)] dark:bg-stone-800" />
+              <div className="h-36 rounded-2xl bg-[var(--mousa-sand-100)] dark:bg-stone-800" />
+            </div>
+          ))}
+        </div>
+      ) : getFeedDisplayState(false, feedLoadError, sortedPosts) === 'error' ? (
+        <div role="alert" className="rounded-3xl border-2 border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-900 dark:bg-rose-950/30">
+          <AlertCircle className="mx-auto mb-3 text-rose-600 dark:text-rose-300" size={32} />
+          <p className="font-bold text-rose-900 dark:text-rose-100">
+            {lang === 'ar' ? 'مش قادرين نحمّل منشورات المجتمع دلوقتي.' : 'We couldn’t load community posts right now.'}
+          </p>
+          <p className="mt-1 text-sm text-rose-800 dark:text-rose-200">{feedLoadError}</p>
+          <button onClick={retryFeedLoad} className="mt-4 rounded-xl bg-rose-700 px-5 py-2.5 font-bold text-white hover:bg-rose-800">
+            {lang === 'ar' ? 'حاول تاني' : 'Try again'}
+          </button>
+        </div>
+      ) : getFeedDisplayState(false, null, sortedPosts) === 'empty' ? (
+        <div className="rounded-3xl border-2 border-dashed border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] px-6 py-12 text-center dark:bg-[#1E1914]">
+          <MessageCircle className="mx-auto mb-3 text-[var(--mousa-teal)]" size={34} />
+          <p className="font-black text-[var(--mousa-teal-deep)] dark:text-stone-100">
+            {lang === 'ar' ? 'لسه مفيش منشورات هنا.' : 'There are no posts yet.'}
+          </p>
+          <p className="mt-1 text-sm text-[var(--mousa-sand-600)] dark:text-stone-400">
+            {lang === 'ar' ? 'شارك آية أو كلمة تشجيع مع أسرة الكنيسة.' : 'Share a verse or encouraging thought with your church family.'}
+          </p>
+        </div>
+      ) : (
       <div className="space-y-6 md:columns-2 lg:columns-3 md:gap-6 md:space-y-0">
         <AnimatePresence mode="popLayout">
           {sortedPosts.map((post, idx) => (
@@ -1123,83 +1197,81 @@ export function FeedTab({ lang }: { lang: Language }) {
               {/* Post Body */}
               <p className="text-gray-800 mb-4 text-sm leading-relaxed whitespace-pre-line">{post.content}</p>
 
-              {/* Media Attachment (Photo / Direct Video / YouTube / Audio Hymn / Embed) */}
-              {post.mediaUrl && (
-                <div className="mb-4">
-                  {post.mediaType === 'youtube' ? (
-                    <div className="relative aspect-video rounded-2xl overflow-hidden bg-black shadow-2xs border border-gray-100">
-                      <iframe 
-                        src={post.mediaUrl} 
-                        title="Church Video Embed" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowFullScreen 
-                        className="w-full h-full border-0" 
-                      />
-                    </div>
-                  ) : post.mediaType === 'embed' ? (
-                    <div className="relative aspect-video rounded-2xl overflow-hidden bg-black shadow-2xs border border-gray-100">
-                      <iframe 
-                        src={post.mediaUrl} 
-                        title="Church Media Embed" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowFullScreen 
-                        className="w-full h-full border-0" 
-                      />
-                    </div>
-                  ) : post.mediaType === 'audio' ? (
-                    <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-amber-50/80 dark:from-slate-800 dark:to-slate-850 p-4 rounded-2xl border border-blue-100 dark:border-slate-700 shadow-2xs">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[var(--mousa-teal-deep)] text-white flex items-center justify-center font-bold shadow-xs">
-                          <Volume2 size={20} />
+              {getPostAttachments(post).length > 0 && (
+                <div className={`mb-4 grid gap-3 ${getPostAttachments(post).length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
+                  {getPostAttachments(post).map((attachment, index) => (
+                    <div key={attachment.id} className="relative min-w-0 overflow-hidden rounded-2xl border border-gray-200/70 dark:border-slate-800 bg-gray-50 dark:bg-slate-900">
+                      {missingMediaIds.has(attachment.id) ? (
+                        <div className="flex aspect-video items-center justify-center gap-2 bg-gray-100 px-4 text-center text-xs font-bold text-gray-600 dark:bg-slate-800 dark:text-gray-300">
+                          <AlertCircle size={16} />
+                          {lang === 'ar' ? 'هذا الملف غير متاح حالياً.' : 'This attachment is currently unavailable.'}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-                            <span>{lang === 'ar' ? 'تسجيل ترتيل / لحن كنسي' : 'Hymn / Spiritual Audio Recording'}</span>
-                            <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded-full font-normal">
-                              MP3
+                      ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
+                        <iframe
+                          src={attachment.mediaUrl}
+                          title={attachment.mediaType === 'youtube' ? 'Church video' : 'Church media'}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="aspect-video w-full bg-black"
+                          onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
+                        />
+                      ) : attachment.mediaType === 'audio' ? (
+                        <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-amber-50/80 p-4 dark:from-slate-800 dark:to-slate-900">
+                          <div className="mb-3 flex items-center gap-2 text-xs font-bold text-gray-800 dark:text-gray-100">
+                            <Volume2 size={18} />
+                            <span>{attachment.originalFilename || (lang === 'ar' ? 'تسجيل لحن كنسي' : 'Hymn / Spiritual Audio')}</span>
+                          </div>
+                          <audio
+                            src={attachment.mediaUrl}
+                            controls
+                            preload="metadata"
+                            className="w-full"
+                            onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
+                          />
+                        </div>
+                      ) : attachment.mediaType === 'video' ? (
+                        <div className="relative aspect-video bg-black">
+                          <video
+                            src={attachment.mediaUrl}
+                            controls
+                            playsInline
+                            preload="metadata"
+                            className="h-full w-full object-contain"
+                            onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setLightboxAttachment(attachment)}
+                            aria-label={lang === 'ar' ? 'عرض الفيديو بالحجم الكامل' : 'View video full size'}
+                            className="absolute right-2 top-2 rounded-full bg-black/70 p-2 text-white hover:bg-black"
+                          >
+                            <Maximize2 size={15} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setLightboxAttachment(attachment)}
+                          aria-label={lang === 'ar' ? 'عرض الصورة بالحجم الكامل' : 'View photo full size'}
+                          className="group relative block w-full cursor-zoom-in bg-gray-900/5 dark:bg-black/30"
+                        >
+                          <img
+                            src={attachment.mediaUrl}
+                            alt={attachment.originalFilename || `Post attachment ${index + 1}`}
+                            loading="lazy"
+                            onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
+                            className="h-44 w-full object-cover transition-transform duration-200 group-hover:scale-[1.02] sm:h-52"
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white transition-colors group-hover:bg-black/30">
+                            <span className="rounded-full bg-black/70 px-3 py-1.5 text-xs font-bold opacity-0 group-hover:opacity-100">
+                              <Maximize2 size={13} className="me-1 inline" />
+                              {lang === 'ar' ? 'عرض بالحجم الكامل' : 'View full size'}
                             </span>
-                          </h4>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                            {lang === 'ar' ? 'اضغط للتشغيل والاستماع للتدريب والبركة' : 'Tap play to listen and rehearse for Sunday School'}
-                          </p>
-                        </div>
-                      </div>
-                      <audio 
-                        src={post.mediaUrl} 
-                        controls 
-                        preload="metadata" 
-                        className="w-full h-10 rounded-xl outline-none" 
-                      />
+                          </span>
+                        </button>
+                      )}
                     </div>
-                  ) : post.mediaType === 'video' ? (
-                    <div className="relative rounded-2xl overflow-hidden bg-black shadow-2xs border border-gray-100">
-                      <video 
-                        src={post.mediaUrl} 
-                        controls 
-                        playsInline 
-                        preload="metadata" 
-                        className="w-full max-h-80 object-contain rounded-2xl bg-black" 
-                      />
-                    </div>
-                  ) : (
-                    <div 
-                      onClick={() => setLightboxImage(post.mediaUrl || null)}
-                      className="relative rounded-2xl overflow-hidden bg-gray-900/5 dark:bg-black/30 shadow-xs border border-gray-200/70 dark:border-slate-800 group cursor-pointer max-w-md mx-auto"
-                    >
-                      <img 
-                        src={post.mediaUrl} 
-                        alt="Post media" 
-                        loading="lazy"
-                        className="w-full h-44 sm:h-52 object-cover rounded-2xl group-hover:scale-[1.02] transition-transform duration-200" 
-                      />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="bg-black/75 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-xs">
-                          <Maximize2 size={13} />
-                          {lang === 'ar' ? 'عرض بالحجم الكامل' : 'View Full Photo'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                  ))}
                 </div>
               )}
               
@@ -1407,32 +1479,48 @@ export function FeedTab({ lang }: { lang: Language }) {
           ))}
         </AnimatePresence>
       </div>
+      )}
 
-      {/* Full-Screen Image Lightbox Modal */}
+      {/* Full-Screen Media Lightbox Modal */}
       <AnimatePresence>
-        {lightboxImage && (
+        {lightboxAttachment && (
           <div 
-            onClick={() => setLightboxImage(null)}
-            className="fixed inset-0 z-[80] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
+            onClick={() => setLightboxAttachment(null)}
+            className="fixed inset-0 z-[80] flex cursor-zoom-out items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label={lang === 'ar' ? 'عارض الوسائط' : 'Media viewer'}
+            tabIndex={-1}
           >
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl"
+              className="relative max-h-[90vh] max-w-5xl overflow-hidden rounded-3xl"
               onClick={e => e.stopPropagation()}
             >
               <button 
-                onClick={() => setLightboxImage(null)}
-                className="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white p-2.5 rounded-full transition-colors cursor-pointer z-10"
+                onClick={() => setLightboxAttachment(null)}
+                aria-label={lang === 'ar' ? 'إغلاق عارض الوسائط' : 'Close media viewer'}
+                className="absolute right-4 top-4 z-10 cursor-pointer rounded-full bg-black/70 p-2.5 text-white transition-colors hover:bg-black"
               >
                 <X size={20} />
               </button>
-              <img 
-                src={lightboxImage} 
-                alt="Enlarged Church Photo" 
-                className="w-full h-full max-h-[85vh] object-contain rounded-2xl" 
-              />
+              {lightboxAttachment.mediaType === 'video' ? (
+                <video
+                  src={lightboxAttachment.mediaUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="max-h-[85vh] max-w-full rounded-2xl object-contain"
+                />
+              ) : (
+                <img
+                  src={lightboxAttachment.mediaUrl}
+                  alt={lightboxAttachment.originalFilename || 'Enlarged church photo'}
+                  className="max-h-[85vh] max-w-full rounded-2xl object-contain"
+                />
+              )}
             </motion.div>
           </div>
         )}

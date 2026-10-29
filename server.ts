@@ -6,6 +6,8 @@ import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import { canInitializeHymnsTaxisLevel, parseHymnsTaxisLevel } from "./src/lib/hymnsTaxisLevel";
+import { createStorageReference, parseStorageReference } from "./src/lib/mediaStorageReference";
+import { randomUUID } from "crypto";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -212,7 +214,7 @@ async function checkTeacherOwnership(
   return false;
 }
 
-// Protected local media uploads endpoint
+// Legacy local media endpoint retained for files uploaded before persistent Storage migration.
 // Strictly enforces role authorization and eliminates fail-open behavior when Supabase is absent
 app.get("/uploads/:filename", async (req, res) => {
   try {
@@ -315,66 +317,61 @@ const ALLOWED_MEDIA_EXTENSIONS = new Set([
   ".pdf", ".docx", ".pptx", ".doc", ".ppt"
 ]);
 
-// Magic-bytes validator to ensure actual file content matches permitted media formats
-function validateFileContent(filePath: string, ext: string, _mimeType: string): boolean {
+// Magic-bytes validator to ensure actual file content matches permitted media formats.
+function validateFileContent(buffer: Buffer, ext: string): boolean {
   try {
-    if (!fs.existsSync(filePath)) return false;
-    const stats = fs.statSync(filePath);
-    if (stats.size === 0) return false;
-
+    if (!Buffer.isBuffer(buffer) || buffer.length === 0) return false;
     const lowerExt = ext.toLowerCase();
-    const buffer = Buffer.alloc(Math.min(16, stats.size));
-    const fd = fs.openSync(filePath, "r");
-    const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, 0);
-    fs.closeSync(fd);
+    const header = buffer.subarray(0, Math.min(16, buffer.length));
+    const bytesRead = header.length;
 
     if (bytesRead < 4) {
       return false;
     }
 
     // Reject executable binary formats (.exe, ELF, script headers, Mach-O)
-    if (buffer[0] === 0x4D && buffer[1] === 0x5A) return false; // MZ / PE executable
-    if (buffer[0] === 0x7F && buffer[1] === 0x45 && buffer[2] === 0x4C && buffer[3] === 0x46) return false; // ELF executable
-    if (buffer[0] === 0x23 && buffer[1] === 0x21) return false; // #! shebang script
+    if (header[0] === 0x4D && header[1] === 0x5A) return false; // MZ / PE executable
+    if (header[0] === 0x7F && header[1] === 0x45 && header[2] === 0x4C && header[3] === 0x46) return false; // ELF executable
+    if (header[0] === 0x23 && header[1] === 0x21) return false; // #! shebang script
 
     // PDF: %PDF-
     if (lowerExt === ".pdf") {
-      return buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
+      return header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46;
     }
 
     // PNG: \x89PNG
     if (lowerExt === ".png") {
-      return buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+      return header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4E && header[3] === 0x47;
     }
 
     // JPEG: \xFF\xD8\xFF
     if (lowerExt === ".jpg" || lowerExt === ".jpeg") {
-      return buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+      return header[0] === 0xFF && header[1] === 0xD8 && header[2] === 0xFF;
     }
 
     // GIF: GIF87a or GIF89a
     if (lowerExt === ".gif") {
-      const header = buffer.toString("ascii", 0, 6);
-      return header === "GIF87a" || header === "GIF89a";
+      const signature = header.toString("ascii", 0, 6);
+      return signature === "GIF87a" || signature === "GIF89a";
     }
 
     // WEBP / WAV: RIFF container
     if (lowerExt === ".webp" || lowerExt === ".wav") {
-      const riff = buffer.toString("ascii", 0, 4);
+      const riff = header.toString("ascii", 0, 4);
       return riff === "RIFF";
     }
 
     // MP3: ID3 tag or MPEG audio sync frame
     if (lowerExt === ".mp3") {
-      const isId3 = buffer[0] === 0x49 && buffer[1] === 0x44 && buffer[2] === 0x33;
-      const isSync = buffer[0] === 0xFF && (buffer[1] & 0xE0) === 0xE0;
+      const isId3 = header[0] === 0x49 && header[1] === 0x44 && header[2] === 0x33;
+      const isSync = header[0] === 0xFF && (header[1] & 0xE0) === 0xE0;
       return isId3 || isSync;
     }
 
     // MP4 / MOV / M4A: ISO BMFF box
     if (lowerExt === ".mp4" || lowerExt === ".mov" || lowerExt === ".m4a") {
       if (bytesRead >= 8) {
-        const box = buffer.toString("ascii", 4, 8);
+        const box = header.toString("ascii", 4, 8);
         return box === "ftyp" || box === "moov" || box === "mdat" || box === "wide";
       }
       return true;
@@ -382,22 +379,22 @@ function validateFileContent(filePath: string, ext: string, _mimeType: string): 
 
     // WEBM: EBML (0x1A 0x45 0xDF 0xA3)
     if (lowerExt === ".webm") {
-      return buffer[0] === 0x1A && buffer[1] === 0x45 && buffer[2] === 0xDF && buffer[3] === 0xA3;
+      return header[0] === 0x1A && header[1] === 0x45 && header[2] === 0xDF && header[3] === 0xA3;
     }
 
     // OGG: OggS (0x4F 0x67 0x67 0x53)
     if (lowerExt === ".ogg") {
-      return buffer[0] === 0x4F && buffer[1] === 0x67 && buffer[2] === 0x67 && buffer[3] === 0x53;
+      return header[0] === 0x4F && header[1] === 0x67 && header[2] === 0x67 && header[3] === 0x53;
     }
 
     // DOCX / PPTX: ZIP container PK\x03\x04
     if (lowerExt === ".docx" || lowerExt === ".pptx") {
-      return buffer[0] === 0x50 && buffer[1] === 0x4B;
+      return header[0] === 0x50 && header[1] === 0x4B;
     }
 
     // DOC / PPT: OLE2 compound document
     if (lowerExt === ".doc" || lowerExt === ".ppt") {
-      return buffer[0] === 0xD0 && buffer[1] === 0xCF && buffer[2] === 0x11 && buffer[3] === 0xE0;
+      return header[0] === 0xD0 && header[1] === 0xCF && header[2] === 0x11 && header[3] === 0xE0;
     }
 
     return true;
@@ -405,6 +402,39 @@ function validateFileContent(filePath: string, ext: string, _mimeType: string): 
     console.warn("File content validation error:", err);
     return false;
   }
+}
+
+const FEED_MEDIA_BUCKET = process.env.SUPABASE_FEED_MEDIA_BUCKET || 'stella-feed-media-v1';
+const CURRICULUM_MEDIA_BUCKET = process.env.SUPABASE_CURRICULUM_MEDIA_BUCKET || 'stella-curriculum-media-v1';
+
+function getTrustedMediaClient() {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
+  if (!supabaseUrl || !serviceKey) {
+    throw new Error('Persistent media storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the server.');
+  }
+  return createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+
+function mediaMimeType(extension: string, suppliedType: string): string {
+  const safeType = suppliedType.toLowerCase();
+  const knownTypes: Record<string, string> = {
+    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp',
+    '.gif': 'image/gif', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.m4a': 'audio/mp4',
+    '.ogg': 'audio/ogg', '.webm': 'video/webm', '.aac': 'audio/aac', '.mp4': 'video/mp4',
+    '.mov': 'video/quicktime', '.pdf': 'application/pdf',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    '.doc': 'application/msword', '.ppt': 'application/vnd.ms-powerpoint'
+  };
+  return knownTypes[extension.toLowerCase()] ||
+    (/^(image|video|audio|application)\/[a-z0-9.+-]+$/.test(safeType) ? safeType : 'application/octet-stream');
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 // Rate limiter for upload endpoints (max 40 uploads per 10 minutes per authenticated user)
@@ -473,9 +503,24 @@ const upload: any = multer({
   }
 });
 
-// Middleware for /api/upload-media that safely catches Multer limit and validation errors
+// Persistent media is buffered in memory and uploaded to Supabase Storage; it is never saved to local disk.
+const persistentMediaUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const cleanExt = path.extname(file.originalname).toLowerCase();
+    if (!ALLOWED_MEDIA_EXTENSIONS.has(cleanExt)) {
+      return cb(new Error(`Disallowed file extension: ${cleanExt}`));
+    }
+    cb(null, true);
+  }
+});
+
+const persistentMediaUploadHandler = persistentMediaUpload.single("media") as unknown as express.RequestHandler;
+
+// Middleware for /api/upload-media that safely catches Multer limit and validation errors.
 function mediaUploadMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
-  upload.single("media")(req, res, (err: any) => {
+  persistentMediaUploadHandler(req, res, (err: any) => {
     if (err) {
       if (err.code === "LIMIT_FILE_SIZE") {
         return res.status(413).json({
@@ -11154,38 +11199,121 @@ app.post("/api/church/get-review-packet", async (req, res) => {
 });
 
 app.get("/api/storage/status", (_req, res) => {
+  const configured = Boolean(
+    (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) &&
+    (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY)
+  );
   res.json({
-    configured: true,
-    provider: 'local-server',
-    bucket: 'uploads',
+    configured,
+    provider: 'supabase-storage',
+    bucket: FEED_MEDIA_BUCKET,
+    privateBucket: CURRICULUM_MEDIA_BUCKET,
     unlimited: false,
-    notes: 'Local media uploads directory (/uploads).'
+    notes: configured
+      ? 'Feed media uses public Supabase Storage; curriculum files use private Supabase Storage.'
+      : 'Persistent media requires server-side Supabase URL and service-role configuration.'
   });
 });
 
-// Production Media Upload Route with pre-write authentication and strict authorization
+app.get("/api/media-url", async (req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store');
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId || !authContext.role) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Sign in to access this file.' });
+    }
+
+    const reference = parseStorageReference(req.query.reference);
+    if (!reference || reference.bucket !== CURRICULUM_MEDIA_BUCKET) {
+      return res.status(400).json({ success: false, error: 'INVALID_MEDIA_REFERENCE', message: 'The private media reference is invalid.' });
+    }
+
+    const client = getTrustedMediaClient();
+    const { data: media, error: mediaError } = await client
+      .from('media_objects')
+      .select('id, owner_id, visibility')
+      .eq('storage_bucket', reference.bucket)
+      .eq('object_path', reference.objectPath)
+      .maybeSingle();
+    if (mediaError) {
+      console.error('Private media metadata lookup failed:', mediaError.message);
+      return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+    }
+    if (!media || media.visibility !== 'private') {
+      return res.status(404).json({ success: false, error: 'MEDIA_NOT_FOUND', message: 'File was not found.' });
+    }
+
+    let authorized = authContext.role === 'admin' || media.owner_id === authContext.userId;
+    if (!authorized && (authContext.role === 'student' || authContext.role === 'parent')) {
+      const { data: sources, error: sourceError } = await client
+        .from('lesson_sources')
+        .select('lesson_id')
+        .eq('file_url', req.query.reference);
+      if (sourceError) {
+        console.error('Private media lesson lookup failed:', sourceError.message);
+        return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+      }
+
+      const lessonIds = (sources || []).map((source: any) => source.lesson_id).filter(Boolean);
+      if (lessonIds.length > 0) {
+        const { data: lessons, error: lessonError } = await client
+          .from('lessons')
+          .select('id, status, lesson_status')
+          .in('id', lessonIds);
+        if (lessonError) {
+          console.error('Private media publication lookup failed:', lessonError.message);
+          return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+        }
+        authorized = (lessons || []).some((lesson: any) =>
+          lesson.status === 'published' || lesson.lesson_status === 'published'
+        );
+      }
+
+      const { data: linkedLessons, error: linkedLessonError } = await client
+        .from('lessons')
+        .select('id, status, lesson_status')
+        .or(`audio_url.eq.${req.query.reference},pdf_worksheet_url.eq.${req.query.reference}`);
+      if (linkedLessonError) {
+        console.error('Private media lesson-field lookup failed:', linkedLessonError.message);
+        return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+      }
+      authorized = authorized || (linkedLessons || []).some((lesson: any) =>
+        lesson.status === 'published' || lesson.lesson_status === 'published'
+      );
+    }
+
+    if (!authorized) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'You are not allowed to access this curriculum file.' });
+    }
+
+    const { data: signed, error: signedError } = await client.storage
+      .from(reference.bucket)
+      .createSignedUrl(reference.objectPath, 10 * 60);
+    if (signedError || !signed?.signedUrl) {
+      console.error('Private media signed URL creation failed:', signedError?.message || 'No URL returned');
+      return res.status(503).json({ success: false, error: 'MEDIA_URL_FAILED', message: 'File access is temporarily unavailable.' });
+    }
+    return res.json({ success: true, url: signed.signedUrl, expiresIn: 600 });
+  } catch (error: any) {
+    const isConfigError = /persistent media storage is not configured/i.test(error?.message || '');
+    if (!isConfigError) console.error('Private media URL error:', error);
+    return res.status(isConfigError ? 503 : 500).json({
+      success: false,
+      error: isConfigError ? 'STORAGE_NOT_CONFIGURED' : 'MEDIA_URL_FAILED',
+      message: isConfigError ? 'Persistent media storage is not configured.' : 'File access is temporarily unavailable.'
+    });
+  }
+});
+
+// Authenticates before accepting bytes; Multer buffers in memory, then the trusted server writes to Supabase Storage.
 app.post("/api/upload-media", authenticateUploadRequest, mediaUploadMiddleware, async (req, res) => {
   const file = req.file;
-  if (!file) {
+  if (!file || !file.buffer) {
     return res.status(400).json({ success: false, error: "NO_FILE", message: "No media file uploaded" });
   }
 
-  // Safe cleanup helper to ensure no orphan files or metadata remain after failures
-  const cleanupFileAndMeta = () => {
-    try {
-      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-      const metaPath = path.join(uploadsDir, `.${file.filename}.meta.json`);
-      if (fs.existsSync(metaPath)) fs.unlinkSync(metaPath);
-    } catch (cleanupErr) {
-      console.warn("Cleanup error after failed upload:", cleanupErr);
-    }
-  };
-
   try {
-    // 1. Validate actual file content binary signatures (anti-spoofing)
-    const isContentValid = validateFileContent(file.path, path.extname(file.originalname), file.mimetype);
-    if (!isContentValid) {
-      cleanupFileAndMeta();
+    if (!validateFileContent(file.buffer, path.extname(file.originalname))) {
       return res.status(400).json({
         success: false,
         error: "INVALID_FILE_CONTENT",
@@ -11197,6 +11325,9 @@ app.post("/api/upload-media", authenticateUploadRequest, mediaUploadMiddleware, 
     const authContext = (req as any).verifiedAuth as ServerAuthContext;
     const uploaderId = authContext.userId;
     const uploaderRole = authContext.role;
+    if (!uploaderId || !uploaderRole) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'An authorized profile is required to upload media.' });
+    }
 
     const isImage = file.mimetype.startsWith("image/");
     const isVideo = file.mimetype.startsWith("video/");
@@ -11210,13 +11341,13 @@ app.post("/api/upload-media", authenticateUploadRequest, mediaUploadMiddleware, 
     let isPublic = false;
 
     if (requestedType === "feed") {
-      // Community feed upload (authorized students, teachers, admins can post activity photos/recordings)
+      if (!['student', 'teacher', 'admin'].includes(uploaderRole)) {
+        return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'This account cannot upload feed media.' });
+      }
       uploadType = "feed";
       isPublic = true;
     } else {
-      // Curriculum source upload (strictly restricted to teachers and admins!)
-      if (uploaderRole === "student" || uploaderRole === "parent") {
-        cleanupFileAndMeta();
+      if (uploaderRole !== "teacher" && uploaderRole !== "admin") {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -11225,55 +11356,67 @@ app.post("/api/upload-media", authenticateUploadRequest, mediaUploadMiddleware, 
       }
 
       uploadType = "source";
-      isPublic = false; // Never trust client privacy flags for curriculum sources!
+      isPublic = false;
 
-      // Enforce verified lesson ownership
-      if (lessonId && uploaderRole === "teacher") {
-        const existingLesson = (typeof serverReviewState !== 'undefined' && serverReviewState?.lessons?.[lessonId]) || null;
-        if (existingLesson) {
-          const lessonOwner = existingLesson.createdBy || existingLesson.authorId;
-          if (lessonOwner && lessonOwner !== uploaderId &&
-              !(uploaderId === 'mina' && lessonOwner === 'user_teacher_mina_101') &&
-              !(uploaderId === 'user_teacher_mina_101' && lessonOwner === 'mina')) {
-            cleanupFileAndMeta();
-            return res.status(403).json({
-              success: false,
-              error: "FORBIDDEN",
-              message: "You cannot upload sources for a lesson created by another teacher."
-            });
-          }
+      if (lessonId && isUuid(lessonId)) {
+        const client = getTrustedMediaClient();
+        const { data: lesson, error: lessonError } = await client
+          .from('lessons')
+          .select('id, created_by')
+          .eq('id', lessonId)
+          .maybeSingle();
+        if (lessonError) {
+          console.error('Media lesson ownership check failed:', lessonError.message);
+          return res.status(503).json({ success: false, error: 'AUTHORIZATION_UNAVAILABLE', message: 'Lesson ownership could not be verified.' });
+        }
+        if (!lesson || (uploaderRole === 'teacher' && lesson.created_by !== uploaderId)) {
+          return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'You cannot upload sources for this lesson.' });
         }
       }
     }
 
-    // 4. Persist metadata file alongside the uploaded file
-    const metaData = {
-      filename: file.filename,
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
-      uploadedBy: uploaderId,
-      uploaderRole: uploaderRole,
-      lessonId: lessonId || null,
-      isPublic: Boolean(isPublic),
-      uploadType: uploadType,
-      uploadedAt: new Date().toISOString()
-    };
-
-    const metaPath = path.join(uploadsDir, `.${file.filename}.meta.json`);
-    try {
-      fs.writeFileSync(metaPath, JSON.stringify(metaData, null, 2), "utf-8");
-    } catch (metaErr) {
-      console.warn("Failed to write upload metadata:", metaErr);
-      cleanupFileAndMeta();
-      return res.status(500).json({
+    const storageClient = getTrustedMediaClient();
+    const bucket = uploadType === 'feed' ? FEED_MEDIA_BUCKET : CURRICULUM_MEDIA_BUCKET;
+    const extension = path.extname(file.originalname).toLowerCase();
+    const objectPath = `${uploaderId}/${randomUUID()}${extension}`;
+    const mimeType = mediaMimeType(extension, file.mimetype);
+    const reference = createStorageReference(bucket, objectPath);
+    const { error: uploadError } = await storageClient.storage
+      .from(bucket)
+      .upload(objectPath, file.buffer, {
+        contentType: mimeType,
+        cacheControl: '31536000',
+        upsert: false
+      });
+    if (uploadError) {
+      console.error('Supabase media upload failed:', uploadError.message);
+      return res.status(502).json({
         success: false,
-        error: "METADATA_SAVE_FAILED",
-        message: "Failed to persist media metadata."
+        error: 'MEDIA_STORAGE_FAILED',
+        message: 'The file could not be saved to persistent storage. Please retry.'
       });
     }
 
-    const fileUrl = `/uploads/${file.filename}`;
+    const { error: metadataError } = await storageClient.from('media_objects').insert({
+      storage_bucket: bucket,
+      object_path: objectPath,
+      owner_id: uploaderId,
+      visibility: isPublic ? 'public' : 'private',
+      media_type: isImage ? 'image' : isVideo ? 'video' : isAudio ? 'audio' : 'document',
+      mime_type: mimeType,
+      original_filename: path.basename(file.originalname),
+      byte_size: file.size
+    });
+    if (metadataError) {
+      const { error: cleanupError } = await storageClient.storage.from(bucket).remove([objectPath]);
+      if (cleanupError) console.error('Failed to remove object after metadata insert failure:', cleanupError.message);
+      console.error('Supabase media metadata insert failed:', metadataError.message);
+      return res.status(502).json({
+        success: false,
+        error: 'MEDIA_METADATA_FAILED',
+        message: 'The file could not be registered for persistent access. Please retry.'
+      });
+    }
 
     let createdSourceId: string | null = null;
     if (uploadType === "source" && lessonId && typeof serverReviewState !== 'undefined') {
@@ -11288,7 +11431,7 @@ app.post("/api/upload-media", authenticateUploadRequest, mediaUploadMiddleware, 
         type: isAudio ? 'TEACHER_VOICE' : file.mimetype.includes('pdf') ? 'PDF' : file.mimetype.includes('presentation') ? 'PPTX' : file.mimetype.includes('word') ? 'DOCX' : isImage ? 'IMAGE' : 'OTHER_APPROVED_RESOURCE',
         originalFilename: file.originalname,
         mimeType: file.mimetype,
-        fileUrl: fileUrl,
+        fileUrl: reference,
         fileSize: file.size,
         description: `Uploaded ${file.originalname}`,
         rightsStatus: 'TEACHER_OWNED',
@@ -11299,19 +11442,150 @@ app.post("/api/upload-media", authenticateUploadRequest, mediaUploadMiddleware, 
       });
     }
 
+    let previewUrl = '';
+    if (isPublic) {
+      previewUrl = storageClient.storage.from(bucket).getPublicUrl(objectPath).data.publicUrl;
+    } else {
+      const { data: signed, error: signedError } = await storageClient.storage
+        .from(bucket)
+        .createSignedUrl(objectPath, 10 * 60);
+      if (signedError || !signed?.signedUrl) {
+        console.error('New private media signed URL creation failed:', signedError?.message || 'No URL returned');
+        const { error: metadataCleanupError } = await storageClient
+          .from('media_objects')
+          .delete()
+          .eq('storage_bucket', bucket)
+          .eq('object_path', objectPath);
+        const { error: objectCleanupError } = await storageClient.storage.from(bucket).remove([objectPath]);
+        if (metadataCleanupError) console.error('Failed to clean up private media metadata:', metadataCleanupError.message);
+        if (objectCleanupError) console.error('Failed to clean up private media object:', objectCleanupError.message);
+        return res.status(502).json({
+          success: false,
+          error: 'MEDIA_URL_FAILED',
+          message: 'A secure preview link could not be created, so the upload was not completed. Please retry.'
+        });
+      }
+      previewUrl = signed.signedUrl;
+    }
+
     return res.json({
       success: true,
-      mediaUrl: fileUrl,
+      mediaUrl: reference,
+      previewUrl,
+      storageBucket: bucket,
+      objectPath,
       sourceId: createdSourceId,
       mediaType: isImage ? 'image' : isVideo ? 'video' : isAudio ? 'audio' : 'file',
-      provider: 'local-server',
+      provider: 'supabase-storage',
       sizeKb: Math.round(file.size / 1024),
+      mimeType,
       originalName: file.originalname
     });
   } catch (error: any) {
-    cleanupFileAndMeta();
     console.error("Upload Media Error:", error);
-    res.status(500).json({ success: false, error: error?.message || "Failed to process and save media" });
+    const isConfigError = /persistent media storage is not configured/i.test(error?.message || '');
+    res.status(isConfigError ? 503 : 500).json({
+      success: false,
+      error: isConfigError ? 'STORAGE_NOT_CONFIGURED' : 'MEDIA_UPLOAD_FAILED',
+      message: isConfigError ? 'Persistent media storage is not configured.' : 'The media upload could not be completed.'
+    });
+  }
+});
+
+app.post("/api/feed-media/cleanup", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId ||
+        !['student', 'teacher', 'admin'].includes(authContext.role || '')) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Sign in to manage your feed uploads.' });
+    }
+
+    const references = req.body?.references;
+    if (!Array.isArray(references) || references.length === 0 || references.length > 10) {
+      return res.status(400).json({ success: false, error: 'INVALID_REFERENCES', message: 'Provide between 1 and 10 uploaded media references.' });
+    }
+    const parsedReferences = references.map(parseStorageReference);
+    if (parsedReferences.some((reference: any) => !reference || reference.bucket !== FEED_MEDIA_BUCKET)) {
+      return res.status(400).json({ success: false, error: 'INVALID_REFERENCES', message: 'Only valid feed-media references can be removed.' });
+    }
+
+    const client = getTrustedMediaClient();
+    const uniqueReferences = Array.from(new Map(parsedReferences.map((reference: any) => [
+      `${reference.bucket}/${reference.objectPath}`,
+      reference
+    ])).values());
+    const objectPaths = uniqueReferences.map((reference: any) => reference.objectPath);
+    const { data: metadata, error: metadataError } = await client
+      .from('media_objects')
+      .select('storage_bucket, object_path, owner_id, visibility')
+      .eq('storage_bucket', FEED_MEDIA_BUCKET)
+      .eq('owner_id', authContext.userId)
+      .eq('visibility', 'public')
+      .in('object_path', objectPaths);
+    if (metadataError) {
+      console.error('Feed-media cleanup metadata lookup failed:', metadataError.message);
+      return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'Upload cleanup is temporarily unavailable.' });
+    }
+    if ((metadata || []).length !== objectPaths.length) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'You can only remove your own feed uploads.' });
+    }
+
+    const stableReferences = uniqueReferences.map((reference: any) =>
+      createStorageReference(reference.bucket, reference.objectPath)
+    );
+    const { data: linkedAttachments, error: attachmentLookupError } = await client
+      .from('feed_post_attachments')
+      .select('id')
+      .eq('storage_bucket', FEED_MEDIA_BUCKET)
+      .in('object_path', objectPaths);
+    const isMissingAttachmentTable =
+      attachmentLookupError?.code === '42P01' ||
+      attachmentLookupError?.code === 'PGRST205' ||
+      /feed_post_attachments.*(does not exist|not found)|could not find the table/i.test(attachmentLookupError?.message || '');
+    if (attachmentLookupError && !isMissingAttachmentTable) {
+      console.error('Feed attachment cleanup lookup failed:', attachmentLookupError.message);
+      return res.status(503).json({ success: false, error: 'ATTACHMENT_LOOKUP_FAILED', message: 'Upload cleanup is temporarily unavailable.' });
+    }
+    if ((linkedAttachments || []).length > 0) {
+      return res.status(409).json({ success: false, error: 'MEDIA_IN_USE', message: 'Media currently attached to a post cannot be removed.' });
+    }
+
+    const { data: linkedLegacyPosts, error: legacyLookupError } = await client
+      .from('feed_posts')
+      .select('id')
+      .in('media_url', stableReferences);
+    if (legacyLookupError) {
+      console.error('Legacy feed media cleanup lookup failed:', legacyLookupError.message);
+      return res.status(503).json({ success: false, error: 'POST_LOOKUP_FAILED', message: 'Upload cleanup is temporarily unavailable.' });
+    }
+    if ((linkedLegacyPosts || []).length > 0) {
+      return res.status(409).json({ success: false, error: 'MEDIA_IN_USE', message: 'Media currently attached to a post cannot be removed.' });
+    }
+
+    const { error: storageError } = await client.storage.from(FEED_MEDIA_BUCKET).remove(objectPaths);
+    if (storageError) {
+      console.error('Feed media cleanup Storage request failed:', storageError.message);
+      return res.status(502).json({ success: false, error: 'MEDIA_DELETE_FAILED', message: 'The uploaded files could not be removed yet.' });
+    }
+
+    const { error: deleteMetadataError } = await client
+      .from('media_objects')
+      .delete()
+      .eq('storage_bucket', FEED_MEDIA_BUCKET)
+      .eq('owner_id', authContext.userId)
+      .in('object_path', objectPaths);
+    if (deleteMetadataError) {
+      console.error('Feed media cleanup metadata delete failed:', deleteMetadataError.message);
+      return res.status(502).json({ success: false, error: 'MEDIA_METADATA_DELETE_FAILED', message: 'The files were removed but their metadata could not be cleaned up.' });
+    }
+    return res.json({ success: true, removedCount: objectPaths.length });
+  } catch (error: any) {
+    const isConfigError = /persistent media storage is not configured/i.test(error?.message || '');
+    return res.status(isConfigError ? 503 : 500).json({
+      success: false,
+      error: isConfigError ? 'STORAGE_NOT_CONFIGURED' : 'MEDIA_CLEANUP_FAILED',
+      message: isConfigError ? 'Persistent media storage is not configured.' : 'Upload cleanup could not be completed.'
+    });
   }
 });
 

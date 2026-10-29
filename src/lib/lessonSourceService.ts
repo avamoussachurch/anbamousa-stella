@@ -11,6 +11,8 @@ import {
   adaptDbSourceToAppSource 
 } from './curriculumService';
 import { getEditableLessonVersion } from './lessonAuthoringService';
+import { parseStorageReference } from './mediaStorageReference';
+import { parsePersistentMediaUploadResponse } from './mediaUploadResponse';
 
 export interface AddLessonSourceInput {
   lessonId: string;
@@ -96,14 +98,16 @@ async function getAuthenticatedServant(): Promise<{
 }
 
 /**
- * Uploads a source media file (PDF, PPTX, audio, video, image) to the local server storage (/uploads).
- * Does NOT use external cloud providers (S3/R2).
+ * Uploads source media through the trusted server to private Supabase Storage.
  */
 export async function uploadSourceMedia(
   file: File,
   lessonId?: string
-): Promise<{ success: boolean; fileUrl?: string; error?: string }> {
+): Promise<{ success: boolean; fileUrl?: string; previewUrl?: string; error?: string }> {
   try {
+    if (!supabase) {
+      return { success: false, error: 'Supabase is not configured; curriculum media cannot be saved persistently.' };
+    }
     const formData = new FormData();
     formData.append('media', file);
     formData.append('type', 'source');
@@ -111,32 +115,26 @@ export async function uploadSourceMedia(
       formData.append('lessonId', lessonId);
     }
 
-    const headers: Record<string, string> = {};
-    if (supabase) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-      if (session?.user?.id) {
-        formData.append('userId', session.user.id);
-      }
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (sessionError || !token) {
+      return { success: false, error: 'Your session expired. Sign in again before uploading curriculum media.' };
     }
 
     const response = await fetch('/api/upload-media', {
       method: 'POST',
-      headers,
+      headers: { Authorization: `Bearer ${token}` },
       body: formData
     });
 
-    if (!response.ok) {
-      const errJson = await response.json().catch(() => null);
-      throw new Error(errJson?.error || `Upload failed with status ${response.status}`);
+    const result = await parsePersistentMediaUploadResponse(response);
+    if (!result.success || !result.mediaUrl || !result.previewUrl) {
+      return { success: false, error: result.error || 'Persistent media upload failed.' };
     }
-
-    const data = await response.json();
     return {
       success: true,
-      fileUrl: data.mediaUrl
+      fileUrl: result.mediaUrl,
+      previewUrl: result.previewUrl
     };
   } catch (err: any) {
     console.error('Source media upload error:', err);
@@ -148,11 +146,37 @@ export async function uploadSourceMedia(
 }
 
 /**
- * Resolves an authenticated URL for accessing a private source file.
- * Appends the current user's session token as a query parameter for browser media elements and download links.
+ * Resolves a fresh, authorized URL for private source files while keeping the
+ * permanent database value as a stable storage reference.
  */
 export async function getAuthorizedSourceUrl(fileUrl?: string): Promise<string> {
-  if (!fileUrl || !fileUrl.startsWith('/uploads/')) {
+  if (!fileUrl) return '';
+
+  const reference = parseStorageReference(fileUrl);
+  if (reference) {
+    if (!supabase) return '';
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (sessionError || !token) return '';
+      const response = await fetch(`/api/media-url?reference=${encodeURIComponent(fileUrl)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store'
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result?.success || typeof result.url !== 'string') {
+        console.warn('Private curriculum media URL request failed:', result?.message || response.status);
+        return '';
+      }
+      return result.url;
+    } catch (error) {
+      console.warn('Private curriculum media URL request failed:', error);
+      return '';
+    }
+  }
+
+  if (fileUrl.startsWith('supabase-storage://')) return '';
+  if (!fileUrl.startsWith('/uploads/')) {
     return fileUrl || '';
   }
   // Public samples do not need auth tokens

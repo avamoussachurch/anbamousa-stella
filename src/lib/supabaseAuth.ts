@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User } from '../types';
 import { isValidSundaySchoolGrade, parseHymnsTaxisLevel, type HymnsTaxisLevel } from './hymnsTaxisLevel';
+import { parsePersistentMediaUploadResponse } from './mediaUploadResponse';
 
 export interface SupabaseAuthResult {
   success: boolean;
@@ -232,28 +233,42 @@ export async function testSupabaseConnection(): Promise<{
 }
 
 /**
- * Upload lesson worksheets or audio files to Supabase Storage
+ * Upload lesson worksheets or audio files through the trusted private-media endpoint.
  */
 export async function uploadLessonAssetToSupabase(
   bucket: 'hymns-audio' | 'lesson-worksheets',
   path: string,
   file: File
 ): Promise<{ url: string | null; error: string | null }> {
+  void bucket;
+  void path;
   if (!supabase) {
-    return { url: null, error: 'Supabase is not configured' };
+    return { url: null, error: 'Supabase is not configured; media cannot be saved persistently.' };
   }
 
   try {
-    const { data, error } = await supabase.storage.from(bucket).upload(path, file, {
-      upsert: true,
-    });
-
-    if (error) {
-      return { url: null, error: error.message };
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (sessionError || !token) {
+      return { url: null, error: 'Your session expired. Sign in again before uploading media.' };
     }
 
-    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
-    return { url: publicUrlData.publicUrl, error: null };
+    const formData = new FormData();
+    formData.append('media', file);
+    formData.append('type', 'source');
+    const response = await fetch('/api/upload-media', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+    const result = await parsePersistentMediaUploadResponse(response);
+    if (!result.success || !result.mediaUrl) {
+      return {
+        url: null,
+        error: result.error || 'Persistent media upload failed.'
+      };
+    }
+    return { url: result.mediaUrl, error: null };
   } catch (e: any) {
     return { url: null, error: e.message };
   }
