@@ -41,7 +41,7 @@ import { getPendingActivationRequests } from '../../lib/onboardingService';
 import { EvidenceCoverageModal } from '../sunday-school/evidence/EvidenceCoverageModal';
 import { PdfDocumentViewer } from '../sunday-school/viewers/PdfDocumentViewer';
 import { SlideDeckViewer } from '../sunday-school/viewers/SlideDeckViewer';
-import { TeacherPublishingHub } from './publishing/TeacherPublishingHub';
+import { TeacherPublishingHub, PublishingMode } from './publishing/TeacherPublishingHub';
 
 interface TeacherDashboardProps {
   onBackToApp?: () => void;
@@ -92,7 +92,7 @@ export function TeacherDashboard({
   } = useLessons();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation'>('overview');
-  const [publishingModeToOpen, setPublishingModeToOpen] = useState<'sunday_school' | 'hymns' | 'taxis'>('sunday_school');
+  const [publishingModeToOpen, setPublishingModeToOpen] = useState<PublishingMode>('sunday_school');
   const [selectedSessionId, setSelectedSessionId] = useState<string>(() => classSessions[0]?.id || 'cs-2026-09-27');
   
   // Active session and lesson resolution
@@ -198,7 +198,7 @@ export function TeacherDashboard({
   }, [activeTab, lang]);
 
   // Moderation state
-  const openPublishing = (mode: 'sunday_school' | 'hymns' | 'taxis') => {
+  const openPublishing = (mode: PublishingMode) => {
     setPublishingModeToOpen(mode);
     setActiveTab('sundaySchool');
   };
@@ -565,6 +565,7 @@ export function TeacherDashboard({
               { title: lang === 'ar' ? 'مكتبة الدروس' : 'Lesson library', detail: lang === 'ar' ? 'ابحث في الدروس وعاينها أو عدّلها.' : 'Find, preview, and edit lessons.', action: () => setActiveTab('lessons') },
               { title: lang === 'ar' ? 'نشر مدارس الأحد' : 'Publish Sunday School content', detail: lang === 'ar' ? 'جهّز دروس مدارس الأحد وانشرها.' : 'Prepare and publish Sunday School lessons.', action: () => openPublishing('sunday_school') },
               { title: lang === 'ar' ? 'نشر الألحان والطقس' : 'Publish hymns & Taxis', detail: lang === 'ar' ? 'افتح أدوات الألحان أو الطقس.' : 'Open the Hymns or Taxis publishing tools.', action: () => openPublishing('hymns') },
+              { title: lang === 'ar' ? 'تجهيز دفعة ملفات المنهج' : 'Import curriculum files', detail: lang === 'ar' ? 'ارفع عدة ملفات وحوّل كل ملف إلى مسودة للمراجعة.' : 'Upload multiple files and create reviewable drafts.', action: () => openPublishing('import') },
               { title: lang === 'ar' ? 'أدوات الفصل' : 'Classroom tools', detail: lang === 'ar'
                 ? (isOnlineAuth ? 'الوسائط والإشراف، والحضور متاح كتجربة محلية فقط.' : 'الوسائط والحضور والإشراف.')
                 : (isOnlineAuth ? 'Media and moderation; attendance is currently a local demo only.' : 'Media, attendance, and moderation.'),

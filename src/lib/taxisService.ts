@@ -1,5 +1,6 @@
 import { TaxisItem, TaxisUserPermissions, TaxisAudience, TaxisCategory, TaxisStatus, User } from '../types';
 import { filterTaxisItemsByLevel, parseHymnsTaxisLevel } from './hymnsTaxisLevel';
+import { markCurriculumImportDraft } from './curriculumImport';
 
 export const INITIAL_TAXIS_COLLECTION: TaxisItem[] = [
   {
@@ -431,6 +432,42 @@ export async function saveTaxisItem(
 
   saveStoredTaxisItems(list);
   return { success: true, item: finalItem };
+}
+
+export async function createTaxisDraft(
+  item: Partial<TaxisItem> & { id: string; titleAr: string; titleEn: string }
+): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
+  let token: string | null = null;
+  try {
+    token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Could not read the authentication session.' };
+  }
+  if (!token) return { success: false, error: 'Your session expired. Sign in again before creating a curriculum draft.' };
+
+  try {
+    const response = await fetch('/api/church/taxis', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(markCurriculumImportDraft(item))
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.success || !data.item) {
+      return {
+        success: false,
+        error: data?.message || data?.error || `Could not create Taxis draft (HTTP ${response.status}).`
+      };
+    }
+
+    const local = getStoredTaxisItems().filter(existing => existing.id !== data.item.id);
+    saveStoredTaxisItems([data.item, ...local]);
+    return { success: true, item: data.item };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Network error while creating Taxis draft.' };
+  }
 }
 
 /**
