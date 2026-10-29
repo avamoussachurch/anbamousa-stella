@@ -11,6 +11,7 @@ export interface CompleteSectionProgressInput {
   lessonId: string;
   versionId: string;
   sectionId: string;
+  isRead?: boolean;
   studentId?: string;
 }
 
@@ -170,13 +171,12 @@ export async function startLessonProgress(
 
 /**
  * 3. completeSectionProgress(input)
- * Idempotently completes a normalized section of the active published lesson.
- * Updates completion percentage and marks lesson complete if all sections are completed.
+ * Persists the requested read state for a section of the active published lesson.
  */
 export async function completeSectionProgress(
   input: CompleteSectionProgressInput
 ): Promise<{ data: StudentContentProgress | null; error: Error | null }> {
-  const { lessonId, versionId, sectionId, studentId } = input;
+  const { lessonId, versionId, sectionId, studentId, isRead = true } = input;
   if (!lessonId || !versionId || !sectionId) {
     return { data: null, error: new Error('lessonId, versionId, and sectionId are required') };
   }
@@ -186,7 +186,7 @@ export async function completeSectionProgress(
     const res = await fetch('/api/church/student-progress/complete-section', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ lessonId, versionId, sectionId, studentId })
+      body: JSON.stringify({ lessonId, versionId, sectionId, isRead, studentId })
     });
 
     const json = await res.json().catch(() => null);

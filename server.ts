@@ -4415,6 +4415,67 @@ async function persistLessonCompletion(
   return { pointsAwarded, totalPoints, completedAt: persistedAt };
 }
 
+function isUuidStudentId(studentId: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(studentId);
+}
+
+function getTrustedProgressClient() {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+  const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!supabaseUrl || !serviceKey) {
+    throw new Error('Trusted Supabase configuration is required to persist lesson section progress.');
+  }
+  return createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+
+async function loadPersistedLessonSections(
+  studentId: string,
+  lessonId: string,
+  versionId: string
+): Promise<string[] | null> {
+  const client = getTrustedProgressClient();
+  const { data, error } = await client
+    .from('lesson_section_progress')
+    .select('sections_completed')
+    .eq('student_id', studentId)
+    .eq('lesson_id', lessonId)
+    .eq('version_id', versionId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(`Could not load persisted lesson section progress: ${error.message}`);
+  }
+  return Array.isArray(data?.sections_completed) ? data.sections_completed : null;
+}
+
+async function persistLessonSectionRead(input: {
+  studentId: string;
+  lessonId: string;
+  versionId: string;
+  sectionId: string;
+  isRead: boolean;
+  totalSections: number;
+}): Promise<string[]> {
+  const client = getTrustedProgressClient();
+  const { data, error } = await client.rpc('set_lesson_section_read', {
+    p_student_id: input.studentId,
+    p_lesson_id: input.lessonId,
+    p_version_id: input.versionId,
+    p_section_id: input.sectionId,
+    p_is_read: input.isRead,
+    p_total_sections: input.totalSections
+  });
+  if (error) {
+    throw new Error(`Could not save lesson section progress: ${error.message}`);
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!Array.isArray(row?.sections_completed)) {
+    throw new Error('Supabase did not confirm the saved lesson section progress.');
+  }
+  return row.sections_completed;
+}
+
 // 2. Start Lesson Progress
 app.post("/api/church/student-progress/start", async (req, res) => {
   try {
@@ -4463,8 +4524,17 @@ app.post("/api/church/student-progress/start", async (req, res) => {
     const key = `${targetStudentId}_${lessonId}`;
     const existing = serverReviewState.progress[key];
     const totalSections = targetVersion.sections?.length || targetVersion.sectionsCount || 1;
+    const persistedSections = isUuidStudentId(targetStudentId)
+      ? await loadPersistedLessonSections(targetStudentId, lessonId, versionId)
+      : null;
 
     if (existing) {
+      if (isUuidStudentId(targetStudentId)) {
+        existing.sectionsCompleted = persistedSections || [];
+        existing.versionId = versionId;
+        existing.totalSections = totalSections;
+        existing.completionPercent = Math.min(100, Math.round((existing.sectionsCompleted.length / totalSections) * 100));
+      }
       return res.json({
         success: true,
         progress: existing,
@@ -4477,9 +4547,9 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       lessonId,
       versionId,
       status: 'IN_PROGRESS',
-      sectionsCompleted: [],
+      sectionsCompleted: isUuidStudentId(targetStudentId) ? (persistedSections || []) : [],
       totalSections,
-      completionPercent: 0,
+      completionPercent: Math.min(100, Math.round(((persistedSections || []).length / totalSections) * 100)),
       startedAt: new Date().toISOString(),
       completedAt: null
     };
@@ -4500,11 +4570,19 @@ app.post("/api/church/student-progress/start", async (req, res) => {
 app.post("/api/church/student-progress/complete-section", async (req, res) => {
   try {
     const { lessonId, versionId, sectionId, studentId } = req.body;
+    const isRead = req.body.isRead === undefined ? true : req.body.isRead;
     if (!lessonId || !versionId || !sectionId) {
       return res.status(400).json({
         success: false,
         error: "MISSING_PARAMS",
         message: "lessonId, versionId, and sectionId are required"
+      });
+    }
+    if (typeof isRead !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_READ_STATE",
+        message: "isRead must be a boolean."
       });
     }
 
@@ -4539,6 +4617,14 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
     const totalSections = targetVersion.sections?.length || targetVersion.sectionsCount || 1;
     let prog = serverReviewState.progress[key];
 
+    if (prog?.status === 'COMPLETED' || prog?.pointsAwarded === true) {
+      return res.status(409).json({
+        success: false,
+        error: "LESSON_ALREADY_COMPLETED",
+        message: "Completed lesson sections can no longer be changed."
+      });
+    }
+
     if (!prog) {
       prog = {
         studentId: targetStudentId,
@@ -4551,17 +4637,24 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
         startedAt: new Date().toISOString(),
         completedAt: null
       };
-      serverReviewState.progress[key] = prog;
     }
 
-    // Idempotent section completion
-    if (!prog.sectionsCompleted.includes(sectionId)) {
-      prog.sectionsCompleted.push(sectionId);
-    }
-
+    const sectionsCompleted = isUuidStudentId(targetStudentId)
+      ? await persistLessonSectionRead({
+          studentId: targetStudentId,
+          lessonId,
+          versionId,
+          sectionId,
+          isRead,
+          totalSections
+        })
+      : isRead
+        ? [...new Set([...prog.sectionsCompleted, sectionId])]
+        : prog.sectionsCompleted.filter((id: string) => id !== sectionId);
+    prog.sectionsCompleted = sectionsCompleted;
     prog.versionId = versionId;
     prog.totalSections = totalSections;
-    prog.completionPercent = Math.min(100, Math.round((prog.sectionsCompleted.length / totalSections) * 100));
+    prog.completionPercent = Math.min(100, Math.round((sectionsCompleted.length / totalSections) * 100));
 
     // Completing all sections is not final until the trusted completion transaction succeeds.
     if (prog.pointsAwarded === true) {
@@ -4573,6 +4666,7 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
       prog.completedAt = null;
     }
 
+    serverReviewState.progress[key] = prog;
     // Persist progress to server disk
     savePersistentClassState();
 
