@@ -171,8 +171,9 @@ export async function getPendingActivationRequests(
     };
   } catch (err: any) {
     return {
-      success: true,
-      requests: []
+      success: false,
+      requests: [],
+      error: err instanceof Error ? err.message : 'Network error fetching activation requests'
     };
   }
 }

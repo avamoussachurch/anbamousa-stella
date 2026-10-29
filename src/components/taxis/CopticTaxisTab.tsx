@@ -16,6 +16,8 @@ import { TaxisItem, TaxisSection, TaxisCategory, Language } from '../../types';
 import { getTaxisItems } from '../../lib/taxisService';
 import { useAuth } from '../../context/AuthContext';
 import { recordStudentSchoolActivity } from '../../lib/studentProgressService';
+import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
+import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
 
 interface CopticTaxisTabProps {
   lang?: Language;
@@ -26,6 +28,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const { userData, setUserDirectly } = useAuth();
   const [items, setItems] = useState<TaxisItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<TaxisItem | null>(null);
@@ -34,18 +37,31 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
 
   useEffect(() => {
     let isMounted = true;
-    getTaxisItems(selectedCategory).then(res => {
+    const needsLevel = userData?.role === 'student' && parseHymnsTaxisLevel(userData.hymnsTaxisLevel) === null;
+    if (needsLevel) {
+      setLoadError(null);
+      setItems([]);
+      setSelectedItem(null);
+      setLoading(false);
+      return () => { isMounted = false; };
+    }
+
+    setLoading(true);
+    setLoadError(null);
+    getTaxisItems(selectedCategory, undefined, userData).then(res => {
       if (!isMounted) return;
       if (res.success && res.items) {
         setItems(res.items);
-        if (!selectedItem && res.items.length > 0) {
-          setSelectedItem(res.items[0]);
-        }
+        setSelectedItem(current => res.items.find(item => item.id === current?.id) || res.items[0] || null);
+      } else {
+        setItems([]);
+        setSelectedItem(null);
+        setLoadError(res.error || (isAr ? 'تعذر تحميل الطقوس.' : 'Could not load Taxis lessons.'));
       }
       setLoading(false);
     });
     return () => { isMounted = false; };
-  }, [selectedCategory]);
+  }, [selectedCategory, userData?.id, userData?.role, userData?.hymnsTaxisLevel, userData?.grade]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -147,6 +163,19 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
           </p>
         </div>
       </div>
+
+      {userData?.role === 'student' && parseHymnsTaxisLevel(userData.hymnsTaxisLevel) === null && (
+        <HymnsTaxisLevelSetup
+          lang={lang}
+          onSaved={level => setUserDirectly({ ...userData, hymnsTaxisLevel: level })}
+        />
+      )}
+
+      {loadError && (
+        <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-bold text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+          {loadError}
+        </p>
+      )}
 
       {/* Filter Tabs & Search Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-[var(--mousa-border-sand)] space-y-3 shadow-xs">

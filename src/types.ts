@@ -56,6 +56,7 @@ export interface User {
   activationRequestedAt?: string;
   activationApprovedAt?: string;
   activationApprovedBy?: string;
+  hymnsTaxisLevel?: 1 | 2 | 3;
   parentPin?: string;
   requireRewardApproval?: boolean;
   pushNotificationsEnabled?: boolean;
@@ -138,6 +139,7 @@ export interface ClassRosterStudent {
   grade: string;
   classGroupId: ClassGroupId;
   avatarUrl: string;
+  hymnsTaxisLevel?: 1 | 2 | 3;
   learningSummary?: {
     latestMasteryStatus?: MasteryStatus;
     lessonsCompletedCount?: number;
@@ -867,6 +869,7 @@ export interface TaxisItem {
   titleEn: string;
   titleCopt?: string;
   category: TaxisCategory;
+  level?: 1 | 2 | 3 | null;
   audience: TaxisAudience;
   status: TaxisStatus;
   summaryAr: string;
@@ -902,4 +905,3 @@ export interface TaxisUserPermissions {
   canRestore: boolean;
   canManagePermissions: boolean;
 }
-

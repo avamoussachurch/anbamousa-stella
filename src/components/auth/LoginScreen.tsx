@@ -8,6 +8,7 @@ import { isSupabaseConfigured } from '../../lib/supabase';
 import { CLASS_GROUPS } from '../../lib/classGroups';
 import { ClassGroupId, User as AppUser, Language } from '../../types';
 import { requestAccountActivation } from '../../lib/onboardingService';
+import { parseHymnsTaxisLevel, type HymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
 import { PrivacyPolicy } from '../legal/PrivacyPolicy';
 import { FAQ } from '../legal/FAQ';
 
@@ -24,6 +25,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
   const [role, setRole] = useState<'student'|'teacher'|'parent'>('student');
   const [selectedClassGroupId, setSelectedClassGroupId] = useState<ClassGroupId>('primary_2');
   const [selectedGrade, setSelectedGrade] = useState<string>('Grade 4');
+  const [selectedHymnsTaxisLevel, setSelectedHymnsTaxisLevel] = useState<HymnsTaxisLevel | ''>('');
   const [rememberMe, setRememberMe] = useState(() => {
     return localStorage.getItem('church_remember_me') !== 'false';
   });
@@ -38,6 +40,12 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
     e.preventDefault();
     setLoading(true);
     setError('');
+    const registrationLevel = parseHymnsTaxisLevel(selectedHymnsTaxisLevel);
+    if (isRegister && role === 'student' && registrationLevel === null) {
+      setError(lang === 'ar' ? 'اختار المستوى المشترك للألحان والطقس قبل إنشاء الحساب.' : 'Choose your shared Hymns & Taxis level before registering.');
+      setLoading(false);
+      return;
+    }
 
     // If Supabase is configured, use Supabase as the primary auth backend
     if (isSupabaseConfigured) {
@@ -48,7 +56,8 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
             password, 
             fullName || 'Member', 
             role,
-            role === 'student' ? selectedGrade : undefined
+            role === 'student' ? selectedGrade : undefined,
+            registrationLevel
           );
           if (!res.success) {
             setError(res.error || (lang === 'ar' ? 'فشل إنشاء الحساب' : 'Registration failed'));
@@ -97,6 +106,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
           role: role,
           grade: studentGrade,
           requestedGrade: studentGrade,
+          hymnsTaxisLevel: role === 'student' ? registrationLevel ?? undefined : undefined,
           requestedClassGroupId: studentGroupId,
           points: 0,
           currentStreak: 0,
@@ -183,6 +193,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
             Ⲭⲏⲙⲓ
           </button>
         </div>
+
       </div>
 
       <div className="w-full max-w-md bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] rounded-3xl shadow-xl border-2 border-[var(--mousa-border-sand)] p-8 space-y-6">
@@ -326,6 +337,29 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
                   {lang === 'ar' 
                     ? 'سيتم إرسال طلب تفعيل الحساب للخادم المسؤول عن هذا الفصل لاعتماده فوراً.' 
                     : 'An account activation request will be sent to your Sunday School servant.'}
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="hymns-taxis-level" className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
+                  {lang === 'ar' ? 'المستوى المشترك للألحان والطقس:' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲛ̀ϩⲓⲙⲛⲟⲥ ⲛⲉⲙ ⲛ̀ⲧⲁⲝⲓⲥ:' : 'Shared Hymns & Taxis Level:'}
+                </label>
+                <select
+                  id="hymns-taxis-level"
+                  required
+                  value={selectedHymnsTaxisLevel}
+                  onChange={event => setSelectedHymnsTaxisLevel(parseHymnsTaxisLevel(event.target.value) || '')}
+                  className="w-full bg-white dark:bg-slate-800 text-gray-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--mousa-teal)]"
+                >
+                  <option value="">{lang === 'ar' ? 'اختار المستوى' : 'Select a level'}</option>
+                  <option value={1}>{lang === 'ar' ? 'المستوى الأول' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲛ̀ϩⲟⲩⲓⲧ' : 'Level 1'}</option>
+                  <option value={2}>{lang === 'ar' ? 'المستوى الثاني' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲙ̀ⲙⲁϩⲥⲛⲟⲩϯ' : 'Level 2'}</option>
+                  <option value={3}>{lang === 'ar' ? 'المستوى الثالث' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲙ̀ⲙⲁϩϣⲟⲙϯ' : 'Level 3'}</option>
+                </select>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                  {lang === 'ar'
+                    ? 'اختيار واحد هيتطبق على الألحان والطقس معاً، ويتحفظ في ملفك.'
+                    : 'One selection applies to both Hymns and Taxis and is saved to your profile.'}
                 </p>
               </div>
             </div>

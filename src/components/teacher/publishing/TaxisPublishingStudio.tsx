@@ -26,6 +26,7 @@ import {
   INITIAL_TAXIS_COLLECTION
 } from '../../../lib/taxisService';
 import { useAuth } from '../../../context/AuthContext';
+import { parseHymnsTaxisLevel, type HymnsTaxisLevel } from '../../../lib/hymnsTaxisLevel';
 
 interface TaxisPublishingStudioProps {
   lang?: Language;
@@ -48,6 +49,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   const [titleCopt, setTitleCopt] = useState('');
   const [category, setCategory] = useState<TaxisCategory>('liturgy');
   const [audience, setAudience] = useState<TaxisAudience>('all');
+  const [level, setLevel] = useState<HymnsTaxisLevel | ''>('');
   const [summaryAr, setSummaryAr] = useState('');
   const [summaryEn, setSummaryEn] = useState('');
   const [sections, setSections] = useState<TaxisSection[]>([]);
@@ -87,6 +89,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
     setTitleCopt(item.titleCopt || '');
     setCategory(item.category || 'liturgy');
     setAudience(item.audience || 'all');
+    setLevel(item.level || '');
     setSummaryAr(item.summaryAr || '');
     setSummaryEn(item.summaryEn || '');
     setSections(item.sections || []);
@@ -107,6 +110,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
     setTitleCopt('');
     setCategory('liturgy');
     setAudience('all');
+    setLevel('');
     setSummaryAr('');
     setSummaryEn('');
     setSections([
@@ -212,6 +216,10 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       alert(isAr ? 'برجاء كتابة عنوان الطقس بالعربية' : 'Please provide Arabic title');
       return;
     }
+    if (!level) {
+      setStatusMessage({ text: isAr ? 'اختار مستوى للطقس قبل حفظه.' : 'Select a curriculum level before saving this item.', type: 'error' });
+      return;
+    }
 
     setIsSaving(true);
     setStatusMessage(null);
@@ -222,6 +230,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       titleEn: titleEn || titleAr,
       titleCopt,
       category,
+      ...(level ? { level } : {}),
       audience,
       summaryAr,
       summaryEn,
@@ -562,6 +571,32 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
                   <option value="clergy">{isAr ? 'الكهنة والإكليروس (Clergy Only)' : 'Clergy Only'}</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                {isAr ? 'مستوى المنهج المشترك *' : 'Shared curriculum level *'}
+              </label>
+              <select
+                required={!activeItem}
+                value={level}
+                onChange={event => {
+                  const parsedLevel = parseHymnsTaxisLevel(event.target.value);
+                  setLevel(parsedLevel || '');
+                  setHasUnsavedChanges(true);
+                }}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-xs text-stone-900 dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+              >
+                <option value="">{isAr ? 'اختار مستوى' : 'Select level'}</option>
+                <option value={1}>{isAr ? 'المستوى الأول' : 'Level 1'}</option>
+                <option value={2}>{isAr ? 'المستوى الثاني' : 'Level 2'}</option>
+                <option value={3}>{isAr ? 'المستوى الثالث' : 'Level 3'}</option>
+              </select>
+              {!level && activeItem && (
+                <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
+                  {isAr ? 'الطقس ده لسه مش متصنف لمستوى؛ الطلاب مش هيشوفوه لحد ما تختار مستواه.' : 'This item is not assigned to a level, so students will not see it until a level is selected.'}
+                </p>
+              )}
             </div>
 
             <div>

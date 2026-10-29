@@ -54,10 +54,12 @@ import { StudentLearningReviewView } from './StudentLearningReviewView';
 
 interface ServantClassManagementProps {
   lang?: 'en' | 'ar';
+  isOnlineAuth?: boolean;
 }
 
 export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
-  lang = 'en'
+  lang = 'en',
+  isOnlineAuth = false
 }) => {
   const isAr = lang === 'ar';
   const { userData } = useAuth();
@@ -116,6 +118,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
   // Pending activation requests state
   const [pendingRequests, setPendingRequests] = useState<OnboardingActivationRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState<boolean>(false);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
   const [requestActionSuccess, setRequestActionSuccess] = useState<string | null>(null);
 
@@ -129,6 +132,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
   // Load pending activation requests
   const loadRequests = async (groupId?: string) => {
     setLoadingRequests(true);
+    setRequestsError(null);
     try {
       const res = await getPendingActivationRequests(groupId);
       if (res.success) {
@@ -136,8 +140,13 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
           r => !r.status || r.status === 'PENDING_APPROVAL'
         );
         setPendingRequests(pending);
+      } else {
+        setPendingRequests([]);
+        setRequestsError(res.error || (isAr ? 'تعذر تحميل طلبات الانضمام.' : 'Could not load enrollment requests.'));
       }
-    } catch (_) {
+    } catch (error) {
+      setPendingRequests([]);
+      setRequestsError(error instanceof Error ? error.message : (isAr ? 'تعذر تحميل طلبات الانضمام.' : 'Could not load enrollment requests.'));
     } finally {
       setLoadingRequests(false);
     }
@@ -165,7 +174,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
     setSwitchClassError(null);
     try {
       const [{ data, error }, churchYearRes] = await Promise.all([
-        getMyClass(overrideGroupId, overrideCode),
+        getMyClass(overrideGroupId, overrideCode, !isOnlineAuth),
         getCurrentChurchYear().catch(() => null)
       ]);
 
@@ -774,7 +783,11 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
               </button>
             </div>
 
-            {loadingRequests ? (
+            {requestsError ? (
+              <div role="alert" className="rounded-xl border border-rose-900 bg-rose-950/30 p-3 text-xs text-rose-200">
+                <p>{isAr ? 'مش قادرين نحمّل طلبات الانضمام. جرّب تحدّث القائمة.' : 'Enrollment requests could not be loaded. Please refresh the list.'}</p>
+              </div>
+            ) : loadingRequests ? (
               <div className="py-6 text-center text-xs text-stone-500 flex items-center justify-center gap-2">
                 <RefreshCw size={14} className="animate-spin text-amber-500" />
                 <span>{isAr ? 'جاري فحص الطلبات...' : 'Checking pending requests...'}</span>
@@ -1025,14 +1038,19 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                   </div>
                 ) : roster.length === 0 ? (
                   <div className="py-12 text-center text-stone-500 text-xs">
-                    {isAr ? 'لا يوجد طلاب مسجلون في هذا الفصل حالياً.' : 'No students currently enrolled in this class.'}
+                    <div className="space-y-2">
+                      <p>{isAr ? 'مفيش طلاب مسجلين في الفصل ده حالياً.' : 'No students are enrolled in this class yet.'}</p>
+                      <p className="text-[11px] leading-relaxed text-stone-400">
+                        {isAr ? 'راجع طلبات الانضمام المعلقة أو شارك كود الفصل مع الطلاب.' : 'Review pending enrollment requests or share the class join code with students.'}
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <div className="divide-y divide-stone-800/80 max-h-[520px] overflow-y-auto pr-1">
                     {roster.map((student) => {
-                      const mastery = student.learningSummary?.latestMasteryStatus;
-                      const lessonsCount = student.learningSummary?.lessonsCompletedCount ?? 0;
-                      const quizScore = student.learningSummary?.latestQuizScore ?? 0;
+                      const mastery = isOnlineAuth ? undefined : student.learningSummary?.latestMasteryStatus;
+                      const lessonsCount = isOnlineAuth ? undefined : student.learningSummary?.lessonsCompletedCount;
+                      const quizScore = isOnlineAuth ? undefined : student.learningSummary?.latestQuizScore;
 
                       return (
                         <div 
@@ -1052,6 +1070,12 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                               <div className="text-[11px] text-stone-400 flex items-center gap-2 mt-0.5">
                                 <span className="text-amber-400/90 font-medium">{student.grade}</span>
                                 <span className="text-stone-600">•</span>
+                                <span className="text-emerald-300">
+                                  {student.hymnsTaxisLevel
+                                    ? (isAr ? `مستوى الألحان والطقس ${student.hymnsTaxisLevel}` : `Hymns & Taxis Level ${student.hymnsTaxisLevel}`)
+                                    : (isAr ? 'المستوى المشترك غير محدد' : 'Shared level not set')}
+                                </span>
+                                <span className="text-stone-600">•</span>
                                 <span className="text-stone-500 font-mono">ID: {student.id}</span>
                               </div>
                             </div>
@@ -1059,6 +1083,12 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
 
                           {/* Learning Summary & Actions */}
                           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                            {isOnlineAuth ? (
+                              <span className="text-[11px] text-stone-400">
+                                {isAr ? 'ملخص التقدم والاختبارات غير متاح حالياً.' : 'Progress and quiz summary unavailable.'}
+                              </span>
+                            ) : (
+                              <>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
                               mastery === 'MASTERED'
                                 ? 'bg-emerald-950/70 border-emerald-800 text-emerald-400'
@@ -1069,16 +1099,16 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                                 : 'bg-stone-800 border-stone-700 text-stone-400'
                             }`}>
                               <Award size={10} />
-                              {mastery || 'NOT_STARTED'}
+                              {mastery || (isAr ? 'لم يبدأ' : 'Not started')}
                             </span>
 
                             <span className="text-[11px] text-stone-400 bg-stone-950 px-2 py-1 rounded-lg border border-stone-800 flex items-center gap-1">
                               <BookOpen size={11} className="text-stone-500" />
-                              <span>{lessonsCount} {isAr ? 'دروس' : 'lessons'}</span>
+                              <span>{lessonsCount ?? 0} {isAr ? 'دروس' : 'lessons'}</span>
                             </span>
 
                             <span className="text-[11px] font-mono font-medium text-stone-300 bg-stone-950 px-2 py-1 rounded-lg border border-stone-800">
-                              {quizScore}% {isAr ? 'تقييم' : 'quiz'}
+                              {quizScore ?? 0}% {isAr ? 'تقييم' : 'quiz'}
                             </span>
 
                             <button
@@ -1089,6 +1119,8 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                               <span>{isAr ? 'تقرير التعلّم' : 'Learning Review'}</span>
                               <ChevronRight size={13} className={isAr ? 'rotate-180' : ''} />
                             </button>
+                              </>
+                            )}
 
                             <button
                               type="button"
