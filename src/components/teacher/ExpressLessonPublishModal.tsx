@@ -127,13 +127,12 @@ export function ExpressLessonPublishModal({
     setUploadNote(isAr ? `جاري رفع الملف: ${file.name}...` : `Uploading ${file.name}...`);
 
     try {
-      let fileUrl = URL.createObjectURL(file);
-      if (isOnlineAuth) {
-        const res = await uploadSourceMedia(file, `express-${Date.now()}`);
-        if (res.success && res.fileUrl) {
-          fileUrl = res.fileUrl;
-        }
+      const upload = await uploadSourceMedia(file, `express-${Date.now()}`);
+      if (!upload.success || !upload.fileUrl) {
+        setErrorMessage(upload.error || (isAr ? 'تعذر حفظ الملف بشكل دائم. حاول مرة أخرى.' : 'The file could not be saved persistently. Please try again.'));
+        return;
       }
+      const fileUrl = upload.fileUrl;
 
       if (type === 'SLIDES') {
         setSlidesUrl(fileUrl);
@@ -145,11 +144,7 @@ export function ExpressLessonPublishModal({
         setVideoUrl(fileUrl);
       }
     } catch (err: any) {
-      console.warn('Media upload warning, using local path:', err);
-      if (type === 'SLIDES') {
-        setSlidesUrl(URL.createObjectURL(file));
-        setSlidesFileName(file.name);
-      }
+      setErrorMessage(err?.message || (isAr ? 'تعذر رفع الملف. حاول مرة أخرى.' : 'The file upload failed. Please try again.'));
     } finally {
       setIsUploadingMedia(false);
       setUploadNote('');

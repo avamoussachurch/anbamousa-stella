@@ -116,17 +116,14 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
       sampleContent = `Coptic Icon of Queen Helena and Constantine holding the Glorious Cross. Traditional Byzantine-Coptic iconography.`;
     }
 
-    let fileUrl = URL.createObjectURL(file);
-
-    // If online, upload to persistent local server storage (/uploads)
-    if (isOnlineAuth) {
-      const uploadRes = await uploadSourceMedia(file, session.activeLessonId || 'l-cross-01');
-      if (uploadRes.success && uploadRes.fileUrl) {
-        fileUrl = uploadRes.fileUrl;
-      } else if (uploadRes.error) {
-        console.warn('Local media upload notice:', uploadRes.error);
-      }
+    const uploadRes = await uploadSourceMedia(file, session.activeLessonId || 'l-cross-01');
+    if (!uploadRes.success || !uploadRes.fileUrl) {
+      setErrorMsg(uploadRes.error || 'The file could not be saved persistently. Please try again.');
+      setIsUploading(false);
+      e.target.value = '';
+      return;
     }
+    const fileUrl = uploadRes.fileUrl;
 
     onAddSource({
       sessionId: session.id,

@@ -1,5 +1,10 @@
 import { supabase } from './supabase';
-import { Post, Comment, Reply, User } from '../types';
+import { FeedAttachment, Post, Comment, Reply, User } from '../types';
+import { buildFeedPostAttachmentRows, mapFeedAttachmentRow, MAX_FEED_ATTACHMENTS } from './feedAttachments';
+import type { FeedPostAttachmentInput } from './feedAttachments';
+import { parseStorageReference } from './mediaStorageReference';
+
+export type { FeedPostAttachmentInput } from './feedAttachments';
 
 export interface ExtendedPost extends Post {
   isPinned?: boolean;
@@ -17,6 +22,55 @@ const MIGRATED_LOG_KEY = 'church_feed_migrated_post_ids_v1';
 
 // Known mock/fixture post ID prefixes that must NEVER be written to Supabase
 const MOCK_ID_PREFIXES = ['announcement-', 'photo-post-', 'video-post-', 'p0-', 'mock-'];
+
+function getFeedMediaUrl(value?: string | null): string | undefined {
+  if (!value) return undefined;
+  const reference = parseStorageReference(value);
+  if (!reference) return value.startsWith('supabase-storage://') ? undefined : value;
+  if (!supabase) return undefined;
+  return supabase.storage.from(reference.bucket).getPublicUrl(reference.objectPath).data.publicUrl;
+}
+
+function isTemporaryMediaUrl(value: string): boolean {
+  return value.startsWith('blob:') ||
+    /\/object\/sign\//i.test(value) ||
+    /[?&](?:access_token|token|signature|expires|x-amz-signature|x-amz-credential)=/i.test(value);
+}
+
+export async function cleanupFeedMediaReferences(references: string[]): Promise<{ error: Error | null }> {
+  const uniqueReferences = Array.from(new Set(references.filter(reference => parseStorageReference(reference))));
+  if (uniqueReferences.length === 0) return { error: null };
+  if (!supabase) return { error: new Error('Supabase client not initialized; uploaded media cleanup is unavailable.') };
+
+  try {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (sessionError || !accessToken) {
+      return { error: new Error('Your session expired. Sign in again to clean up uploaded media.') };
+    }
+
+    const response = await fetch('/api/feed-media/cleanup', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ references: uniqueReferences })
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || result?.success !== true) {
+      return { error: new Error(result?.message || `Media cleanup failed (HTTP ${response.status}).`) };
+    }
+    return { error: null };
+  } catch (error) {
+    return { error: error instanceof Error ? error : new Error('Media cleanup request failed.') };
+  }
+}
+
+function isMissingAttachmentTable(error: { code?: string; message?: string }): boolean {
+  return error.code === '42P01' || error.code === 'PGRST205' ||
+    /feed_post_attachments.*(does not exist|not found)|could not find the table/i.test(error.message || '');
+}
 
 export function isMockPostId(id: string): boolean {
   if (!id) return false;
@@ -52,6 +106,25 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
     }
 
     const postIds = postsData.map(p => p.id);
+    const { data: attachmentRows, error: attachmentError } = await supabase
+      .from('feed_post_attachments')
+      .select('id, post_id, position, media_type, storage_bucket, object_path, external_url, media_thumbnail, media_provider, original_filename, byte_size')
+      .in('post_id', postIds)
+      .order('position', { ascending: true });
+
+    if (attachmentError && !isMissingAttachmentTable(attachmentError)) {
+      return { data: null, error: new Error(attachmentError.message) };
+    }
+    const attachmentsByPost = new Map<string, FeedAttachment[]>();
+    for (const row of attachmentRows || []) {
+      const attachment = mapFeedAttachmentRow(row, (bucket, objectPath) =>
+        supabase!.storage.from(bucket).getPublicUrl(objectPath).data.publicUrl
+      );
+      if (!attachment.mediaUrl) continue;
+      const postAttachments = attachmentsByPost.get(row.post_id) || [];
+      postAttachments.push(attachment);
+      attachmentsByPost.set(row.post_id, postAttachments);
+    }
 
     // Comments and post reactions depend only on the post IDs, so request them together.
     const commentsRequest = supabase
@@ -164,14 +237,27 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
       content: p.content,
       createdAt: p.created_at,
       mediaType: p.media_type || undefined,
-      mediaUrl: p.media_url || undefined,
+      mediaUrl: getFeedMediaUrl(p.media_url),
       mediaThumbnail: p.media_thumbnail || undefined,
       mediaProvider: p.media_provider || undefined,
       isPinned: Boolean(p.is_pinned),
       isAnnouncement: Boolean(p.is_announcement),
       reactions: postReactionsMap.get(p.id) || { heart: 0, candle: 0, cross: 0 },
-      comments: commentsByPost.get(p.id) || []
+      comments: commentsByPost.get(p.id) || [],
+      attachments: attachmentsByPost.get(p.id) || undefined
     }));
+
+    for (const post of assembled) {
+      if (!post.attachments?.length && post.mediaUrl && post.mediaType) {
+        post.attachments = [{
+          id: `legacy-${post.id}`,
+          mediaType: post.mediaType,
+          mediaUrl: post.mediaUrl,
+          mediaThumbnail: post.mediaThumbnail,
+          mediaProvider: post.mediaProvider
+        }];
+      }
+    }
 
     // Cache locally for offline reading
     try {
@@ -197,6 +283,7 @@ export async function createFeedPostInSupabase(params: {
   mediaUrl?: string;
   mediaThumbnail?: string;
   mediaProvider?: string;
+  attachments?: FeedPostAttachmentInput[];
   isPinned?: boolean;
   isAnnouncement?: boolean;
 }): Promise<{ data: ExtendedPost | null; error: Error | null }> {
@@ -204,7 +291,31 @@ export async function createFeedPostInSupabase(params: {
     return { data: null, error: new Error('Supabase client not initialized') };
   }
 
+  const attachments = params.attachments || (params.mediaUrl && params.mediaType
+    ? [{
+        mediaType: params.mediaType,
+        mediaUrl: params.mediaUrl,
+        storageReference: parseStorageReference(params.mediaUrl) ? params.mediaUrl : undefined,
+        mediaThumbnail: params.mediaThumbnail,
+        mediaProvider: params.mediaProvider
+      }]
+    : []);
+  if (attachments.length > MAX_FEED_ATTACHMENTS) {
+    return { data: null, error: new Error(`A post can contain at most ${MAX_FEED_ATTACHMENTS} attachments.`) };
+  }
+  const references = attachments
+    .map(attachment => attachment.storageReference || (parseStorageReference(attachment.mediaUrl) ? attachment.mediaUrl : undefined))
+    .filter((reference): reference is string => Boolean(reference));
+  if (attachments.some(attachment =>
+    isTemporaryMediaUrl(attachment.mediaUrl) ||
+    (attachment.storageReference !== undefined && !parseStorageReference(attachment.storageReference))
+  )) {
+    return { data: null, error: new Error('Temporary or invalid media references cannot be saved to a feed post.') };
+  }
   const postId = params.id || `post_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  const firstAttachment = attachments[0];
+  const firstReference = firstAttachment?.storageReference ||
+    (firstAttachment && parseStorageReference(firstAttachment.mediaUrl) ? firstAttachment.mediaUrl : undefined);
 
   const payload = {
     id: postId,
@@ -212,10 +323,10 @@ export async function createFeedPostInSupabase(params: {
     author_name: params.authorName,
     author_avatar: params.authorAvatar || null,
     content: params.content.trim(),
-    media_type: params.mediaType || null,
-    media_url: params.mediaUrl || null,
-    media_thumbnail: params.mediaThumbnail || null,
-    media_provider: params.mediaProvider || null,
+    media_type: firstAttachment?.mediaType || params.mediaType || null,
+    media_url: firstReference || firstAttachment?.mediaUrl || params.mediaUrl || null,
+    media_thumbnail: firstAttachment?.mediaThumbnail || params.mediaThumbnail || null,
+    media_provider: firstAttachment?.mediaProvider || params.mediaProvider || null,
     is_pinned: Boolean(params.isPinned),
     is_announcement: Boolean(params.isAnnouncement)
   };
@@ -227,8 +338,44 @@ export async function createFeedPostInSupabase(params: {
     .single();
 
   if (error) {
+    const cleanup = await cleanupFeedMediaReferences(references);
+    if (cleanup.error) console.error('Unable to clean up media after feed post creation failure:', cleanup.error.message);
     return { data: null, error: new Error(error.message) };
   }
+
+  if (attachments.length > 0) {
+    const rows = buildFeedPostAttachmentRows(postId, params.authorId, attachments);
+    const { error: attachmentInsertError } = await supabase
+      .from('feed_post_attachments')
+      .insert(rows);
+    if (attachmentInsertError) {
+      const { error: rollbackError } = await supabase.from('feed_posts').delete().eq('id', postId);
+      if (rollbackError) {
+        console.error('Failed to roll back feed post after attachment insert failure:', rollbackError.message);
+      }
+      const cleanup = await cleanupFeedMediaReferences(references);
+      if (cleanup.error) console.error('Unable to clean up media after attachment persistence failure:', cleanup.error.message);
+      return { data: null, error: new Error(attachmentInsertError.message) };
+    }
+  }
+
+  const mappedAttachments = attachments.map((attachment, index) => {
+    const reference = attachment.storageReference ||
+      (parseStorageReference(attachment.mediaUrl) ? attachment.mediaUrl : undefined);
+    const storageReference = reference ? parseStorageReference(reference) : null;
+    return {
+      id: `new-${postId}-${index}`,
+      mediaType: attachment.mediaType,
+      mediaUrl: storageReference
+        ? supabase!.storage.from(storageReference.bucket).getPublicUrl(storageReference.objectPath).data.publicUrl
+        : attachment.mediaUrl,
+      mediaThumbnail: attachment.mediaThumbnail,
+      mediaProvider: attachment.mediaProvider,
+      originalFilename: attachment.originalFilename,
+      mimeType: attachment.mimeType,
+      byteSize: attachment.byteSize
+    };
+  });
 
   const createdPost: ExtendedPost = {
     id: data.id,
@@ -238,13 +385,16 @@ export async function createFeedPostInSupabase(params: {
     content: data.content,
     createdAt: data.created_at,
     mediaType: data.media_type || undefined,
-    mediaUrl: data.media_url || undefined,
+    mediaUrl: firstAttachment
+      ? mappedAttachments[0]?.mediaUrl
+      : getFeedMediaUrl(data.media_url),
     mediaThumbnail: data.media_thumbnail || undefined,
     mediaProvider: data.media_provider || undefined,
     isPinned: Boolean(data.is_pinned),
     isAnnouncement: Boolean(data.is_announcement),
     reactions: { heart: 0, candle: 0, cross: 0 },
-    comments: []
+    comments: [],
+    attachments: mappedAttachments.length ? mappedAttachments : undefined
   };
 
   return { data: createdPost, error: null };

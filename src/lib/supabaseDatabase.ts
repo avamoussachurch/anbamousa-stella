@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { User } from '../types';
+import { parsePersistentMediaUploadResponse } from './mediaUploadResponse';
 
 /**
  * Update user profile fields in Supabase using upsert
@@ -411,9 +412,8 @@ export function extractEmbedMedia(inputUrl: string): {
 }
 
 /**
- * Long-Term Production Media Upload:
- * 1. Primary: Uploads directly to `/api/upload-media` on the Node.js backend (/uploads/...).
- * 2. Fallback: Uses client-side compression and Supabase storage if server endpoint cannot be contacted.
+ * Uploads to trusted server-side Supabase Storage. mediaUrl is a stable reference;
+ * previewUrl is temporary and must never be persisted.
  */
 export async function uploadFeedMediaToSupabase(
   file: File,
@@ -422,6 +422,7 @@ export async function uploadFeedMediaToSupabase(
   success: boolean;
   mediaType: 'image' | 'video' | 'audio' | 'embed';
   mediaUrl?: string;
+  previewUrl?: string;
   provider?: string;
   sizeKb?: number;
   error?: string;
@@ -438,6 +439,10 @@ export async function uploadFeedMediaToSupabase(
     };
   }
 
+  if (!supabase) {
+    return { success: false, mediaType: 'image', error: 'Supabase is not configured; media cannot be saved persistently.' };
+  }
+
   // 1. Try High-Capacity Node.js Backend Upload Route (/api/upload-media)
   try {
     const formData = new FormData();
@@ -446,149 +451,53 @@ export async function uploadFeedMediaToSupabase(
     formData.append('type', 'feed');
     formData.append('isPublic', 'true');
 
-    const headers: Record<string, string> = {};
-    if (supabase) {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
-      } catch {}
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (sessionError || !accessToken) {
+      return {
+        success: false,
+        mediaType: isImage ? 'image' : isVideo ? 'video' : 'audio',
+        error: 'Your session expired. Sign in again before uploading media.'
+      };
     }
 
     const res = await fetch('/api/upload-media', {
       method: 'POST',
-      headers,
+      headers: { Authorization: `Bearer ${accessToken}` },
       body: formData
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.mediaUrl) {
-        return {
-          success: true,
-          mediaType: isImage ? 'image' : isVideo ? 'video' : 'audio',
-          mediaUrl: data.mediaUrl,
-          provider: data.provider || 'cloud-storage',
-          sizeKb: data.sizeKb || Math.round(file.size / 1024)
-        };
-      }
-    }
-  } catch (serverErr) {
-    console.warn('Backend upload route failed or offline, attempting client fallback:', serverErr);
-  }
-
-  // 2. Client-Side Fallback for Images (Canvas compression)
-  if (isImage) {
-    try {
-      const compressedData = await new Promise<{ dataUrl: string; blob: Blob }>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_DIM = 1600;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > MAX_DIM || height > MAX_DIM) {
-              if (width > height) {
-                height = Math.round((height * MAX_DIM) / width);
-                width = MAX_DIM;
-              } else {
-                width = Math.round((width * MAX_DIM) / height);
-                height = MAX_DIM;
-              }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-              resolve({
-                dataUrl: e.target?.result as string,
-                blob: file
-              });
-              return;
-            }
-
-            ctx.drawImage(img, 0, 0, width, height);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            canvas.toBlob((blob) => {
-              if (blob) {
-                resolve({ dataUrl, blob });
-              } else {
-                resolve({ dataUrl, blob: file });
-              }
-            }, 'image/jpeg', 0.85);
-          };
-          img.onerror = () => resolve({ dataUrl: e.target?.result as string, blob: file });
-          img.src = e.target?.result as string;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const sizeKb = Math.round(compressedData.blob.size / 1024);
-
-      if (supabase) {
-        try {
-          const safeName = `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
-          const filePath = `${userId}/${safeName}`;
-
-          const { data: uploadData, error: uploadErr } = await supabase.storage
-            .from('feed-media')
-            .upload(filePath, compressedData.blob, {
-              contentType: 'image/jpeg',
-              cacheControl: '31536000',
-              upsert: true
-            });
-
-          if (!uploadErr && uploadData) {
-            const { data: publicData } = supabase.storage
-              .from('feed-media')
-              .getPublicUrl(filePath);
-
-            if (publicData?.publicUrl) {
-              return {
-                success: true,
-                mediaType: 'image',
-                mediaUrl: publicData.publicUrl,
-                provider: 'supabase-storage',
-                sizeKb
-              };
-            }
-          }
-        } catch (storageErr) {
-          console.warn('Supabase storage upload fallback:', storageErr);
-        }
-      }
-
+    const result = await parsePersistentMediaUploadResponse(res);
+    if (result.success && result.mediaUrl && result.previewUrl) {
       return {
         success: true,
-        mediaType: 'image',
-        mediaUrl: compressedData.dataUrl,
-        provider: 'local-data-url',
-        sizeKb
+        mediaType: isImage ? 'image' : isVideo ? 'video' : 'audio',
+        mediaUrl: result.mediaUrl,
+        previewUrl: result.previewUrl,
+        provider: result.provider || 'supabase-storage',
+        sizeKb: result.sizeKb || Math.round(file.size / 1024)
       };
-    } catch (err: any) {
-      return { success: false, mediaType: 'image', error: err.message || 'Failed to process image' };
     }
+    return {
+      success: false,
+      mediaType: isImage ? 'image' : isVideo ? 'video' : 'audio',
+      error: result.error || 'Persistent media upload failed.'
+    };
+  } catch (serverErr) {
+    console.warn('Persistent media upload failed:', serverErr);
+    return {
+      success: false,
+      mediaType: isImage ? 'image' : isVideo ? 'video' : 'audio',
+      error: serverErr instanceof Error ? serverErr.message : 'Persistent media upload failed.'
+    };
   }
 
-  // 3. Client-Side Fallback for Video/Audio
-  try {
-    const objectUrl = URL.createObjectURL(file);
-    return {
-      success: true,
-      mediaType: isVideo ? 'video' : 'audio',
-      mediaUrl: objectUrl,
-      provider: 'blob-url',
-      sizeKb: Math.round(file.size / 1024)
-    };
-  } catch (err: any) {
-    return { success: false, mediaType: 'video', error: err?.message || 'Upload failed' };
-  }
+  return {
+    success: false,
+    mediaType: isImage ? 'image' : isVideo ? 'video' : 'audio',
+    error: 'The file was not saved to persistent storage.'
+  };
+
 }
 
 /**

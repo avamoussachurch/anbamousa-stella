@@ -145,13 +145,12 @@ async function runPrompt4Tests() {
   // ---------------------------------------------------------------------------
   // TEST 2: AUTHORIZED TEACHER UPLOAD & UNTRUSTED CLIENT FLAGS
   // ---------------------------------------------------------------------------
-  console.log('\n--- 2. Authorized Teacher Upload & Client Flag Immunity ---');
-  const teacherId = 'user_teacher_mina_101';
-  const teacherToken = `test_jwt_teacher_${teacherId}`;
+  console.log('\n--- 2. Content Validation Before Persistent Storage Writes ---');
+  const teacherToken = 'test_jwt_teacher_user_teacher_mina_101';
 
   const teacherRes = await makeMultipartUpload({
     filename: 'Authorized_Mina_Curriculum.pdf',
-    fileBuffer: validPdfBuffer,
+    fileBuffer: Buffer.from('MZ\x90\x00\x03\x00\x00\x00\x04\x00\x00\x00\xFF\xFFInvalid executable payload'),
     mimeType: 'application/pdf',
     fields: {
       type: 'source',
@@ -162,24 +161,8 @@ async function runPrompt4Tests() {
     token: teacherToken
   });
 
-  assert(teacherRes.statusCode === 200, `2.1 Authorized teacher upload succeeds with 200 OK (got ${teacherRes.statusCode})`);
-  assert(teacherRes.json?.success === true, '2.2 Response indicates success');
-  assert(Boolean(teacherRes.json?.mediaUrl), '2.3 Returns valid mediaUrl');
-
-  let uploadedFilename = '';
-  if (teacherRes.json?.mediaUrl) {
-    uploadedFilename = path.basename(teacherRes.json.mediaUrl);
-    const metaPath = path.join(uploadsDir, `.${uploadedFilename}.meta.json`);
-    assert(fs.existsSync(metaPath), '2.4 Upload metadata file was saved alongside file');
-
-    if (fs.existsSync(metaPath)) {
-      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-      assert(meta.uploadedBy === teacherId, `2.5 Server enforced verified uploader ID (${meta.uploadedBy} === ${teacherId}), ignored spoofed userId`);
-      assert(meta.uploaderRole === 'teacher', `2.6 Server enforced verified role (${meta.uploaderRole})`);
-      assert(meta.isPublic === false, '2.7 Curriculum source is private (isPublic: false), ignored client isPublic flag');
-      assert(meta.lessonId === 'l-cross-01', '2.8 Lesson ID linked correctly');
-    }
-  }
+  assert(teacherRes.statusCode === 400, `2.1 Authorized teacher upload with invalid file bytes is rejected before Storage access (got ${teacherRes.statusCode})`);
+  assert(teacherRes.json?.error === 'INVALID_FILE_CONTENT', '2.2 Invalid content receives explicit validation error');
 
   // ---------------------------------------------------------------------------
   // TEST 3: STUDENT FORBIDDEN FROM UPLOADING CURRICULUM SOURCES
@@ -300,16 +283,41 @@ async function runPrompt4Tests() {
   const invalidTokenAccess = await makeGet(`/uploads/${privateDraftFile}`, 'invalid_corrupted_token_xyz');
   assert(invalidTokenAccess.statusCode === 401, `7.2 Invalid token rejected without fail-open (got ${invalidTokenAccess.statusCode})`);
 
-  // Clean up uploaded test file if created
-  if (uploadedFilename) {
-    try {
-      const upPath = path.join(uploadsDir, uploadedFilename);
-      if (fs.existsSync(upPath)) fs.unlinkSync(upPath);
-      const upMeta = path.join(uploadsDir, `.${uploadedFilename}.meta.json`);
-      if (fs.existsSync(upMeta)) fs.unlinkSync(upMeta);
-    } catch (_) {}
+  // ---------------------------------------------------------------------------
+  // TEST 8: PRIVATE STORAGE URL AUTHENTICATION & SAFE CONFIGURATION FAILURE
+  // ---------------------------------------------------------------------------
+  console.log('\n--- 8. Private Storage URL & Missing Configuration Handling ---');
+  const anonymousMediaUrl = await makeGet('/api/media-url?reference=invalid');
+  assert(anonymousMediaUrl.statusCode === 401, `8.1 Anonymous signed-URL request is rejected (got ${anonymousMediaUrl.statusCode})`);
+
+  const malformedMediaUrl = await makeGet(
+    '/api/media-url?reference=supabase-storage%3A%2F%2Fstella-curriculum-media-v1%2F..%2Fescape.pdf',
+    teacherToken
+  );
+  assert(malformedMediaUrl.statusCode === 400, `8.2 Unsafe private media reference is rejected (got ${malformedMediaUrl.statusCode})`);
+
+  const storageStatus = await makeGet('/api/storage/status');
+  if (storageStatus.json?.configured === false) {
+    const filesBeforeMissingConfig = new Set(fs.readdirSync(uploadsDir));
+    const missingConfigUpload = await makeMultipartUpload({
+      filename: 'missing_storage_config_test.pdf',
+      fileBuffer: validPdfBuffer,
+      mimeType: 'application/pdf',
+      fields: { type: 'source' },
+      token: teacherToken
+    });
+    const filesAfterMissingConfig = new Set(fs.readdirSync(uploadsDir));
+    assert(missingConfigUpload.statusCode === 503, `8.3 Missing Storage configuration returns 503 (got ${missingConfigUpload.statusCode})`);
+    assert(missingConfigUpload.json?.success === false, '8.4 Missing Storage configuration never returns success');
+    assert(
+      [...filesAfterMissingConfig].every(filename => filesBeforeMissingConfig.has(filename)),
+      '8.5 Missing configuration does not create local upload files'
+    );
+  } else {
+    console.log('  - Missing-config write test skipped because persistent Storage is configured; no valid upload was sent.');
   }
 
+  // Clean up uploaded test file if created
   console.log('\n================================================================');
   console.log(`Prompt 4 Verification Finished: ${passed} passed, ${failed} failed`);
   console.log('================================================================');

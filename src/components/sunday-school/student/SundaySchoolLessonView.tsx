@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BookOpen,
   CheckCircle2,
@@ -32,6 +32,7 @@ import { SundaySchoolAudioPlayer } from '../viewers/SundaySchoolAudioPlayer';
 import { InAppDocumentViewer } from '../viewers/InAppDocumentViewer';
 import { formatStudentClassDisplay } from '../../../lib/classGroups';
 import { calculateSectionProgress, canFinishLesson } from '../../../lib/lessonReadingProgress';
+import { getAuthorizedSourceUrl } from '../../../lib/lessonSourceService';
 
 interface SundaySchoolLessonViewProps {
   lesson: Lesson;
@@ -82,6 +83,8 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState<boolean>(false);
   const [savingSectionId, setSavingSectionId] = useState<string | null>(null);
   const [sectionActionError, setSectionActionError] = useState<string | null>(null);
+  const [authorizedMediaUrls, setAuthorizedMediaUrls] = useState<Record<string, string>>({});
+  const [mediaAccessError, setMediaAccessError] = useState<string | null>(null);
 
   // Sections
   const rawSections = version.sections || [];
@@ -124,6 +127,46 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
   // 3. Slides / Documents (strictly only if provided)
   const slideDeckSource = sources.find(s => s.type === 'PPTX' || s.type === 'PDF');
   const effectiveSlidesUrl = lesson.slidesUrl || slideDeckSource?.fileUrl;
+  const mediaUrls = [effectiveVideoUrl, effectiveAudioUrl, effectiveSlidesUrl];
+  useEffect(() => {
+    let cancelled = false;
+    setMediaAccessError(null);
+    Promise.all(mediaUrls.map(url => url ? getAuthorizedSourceUrl(url) : Promise.resolve('')))
+      .then(resolved => {
+        if (cancelled) return;
+        const next = {
+          video: resolved[0],
+          audio: resolved[1],
+          slides: resolved[2]
+        };
+        setAuthorizedMediaUrls(next);
+        const blockedPrivateReference = mediaUrls.some((url, index) =>
+          url?.startsWith('supabase-storage://') && !resolved[index]
+        );
+        if (blockedPrivateReference) {
+          setMediaAccessError(isAr
+            ? 'تعذر تحميل ملف من ملفات الدرس. تأكد من تسجيل الدخول أو حاول مرة أخرى.'
+            : 'A lesson file could not be loaded. Check your sign-in and try again.');
+        }
+      })
+      .catch(error => {
+        if (cancelled) return;
+        console.error('Lesson media access resolution failed:', error);
+        setMediaAccessError(isAr
+          ? 'تعذر تحميل ملفات الدرس. حاول مرة أخرى.'
+          : 'Lesson files could not be loaded. Please try again.');
+      });
+    return () => { cancelled = true; };
+  }, [effectiveVideoUrl, effectiveAudioUrl, effectiveSlidesUrl, isAr]);
+  const displayedVideoUrl = effectiveVideoUrl?.startsWith('supabase-storage://')
+    ? authorizedMediaUrls.video || undefined
+    : authorizedMediaUrls.video || effectiveVideoUrl;
+  const displayedAudioUrl = effectiveAudioUrl?.startsWith('supabase-storage://')
+    ? authorizedMediaUrls.audio || undefined
+    : authorizedMediaUrls.audio || effectiveAudioUrl;
+  const displayedSlidesUrl = effectiveSlidesUrl?.startsWith('supabase-storage://')
+    ? authorizedMediaUrls.slides || undefined
+    : authorizedMediaUrls.slides || effectiveSlidesUrl;
   const hasSlidesOrDocument = Boolean(effectiveSlidesUrl || eligibleSlides.length > 0);
 
   // 4. Memory Verse (strictly only if provided)
@@ -181,6 +224,11 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             >
               {isAr ? 'إعادة المحاولة' : 'Retry'}
             </button>
+          )}
+          {mediaAccessError && (
+            <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100">
+              {mediaAccessError}
+            </div>
           )}
         </div>
       )}
@@ -395,7 +443,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             title={isAr ? 'شرح الخادم الصوتي في فصل مدارس الأحد' : 'Classroom Voice Explanation'}
             titleAr="شرح الخادم الصوتي في فصل مدارس الأحد"
             subTitle={isAr ? 'تسجيل صوتي حقيقي للخادم لشرح الدرس للأولاد.' : 'Real audio recorded by Sunday School servant during session.'}
-            audioUrl={effectiveAudioUrl}
+            audioUrl={displayedAudioUrl}
             durationSeconds={teacherVoiceSource?.durationSeconds || 320}
             recordedBy={lesson.approvedServantName || lesson.teacherName || (isAr ? 'خادم الفصل' : 'Sunday School Servant')}
             transcript={teacherVoiceSource?.transcript}
@@ -427,7 +475,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               />
             ) : (
               <video
-                src={effectiveVideoUrl}
+                src={displayedVideoUrl}
                 controls
                 className="w-full h-full object-contain"
               />
@@ -703,7 +751,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
       {/* Embedded In-App Document & Slide Viewer Modal (No redirects, No downloads) */}
       {showDocumentModal && (
         <InAppDocumentViewer
-          documentUrl={effectiveSlidesUrl}
+          documentUrl={displayedSlidesUrl}
           documentTitle={isAr && lesson.titleAr ? lesson.titleAr : lesson.title}
           slides={eligibleSlides}
           onClose={() => setShowDocumentModal(false)}

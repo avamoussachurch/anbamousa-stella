@@ -750,6 +750,17 @@ export interface Post {
   mediaUrl?: string;
   mediaThumbnail?: string;
   mediaProvider?: string;
+  attachments?: FeedAttachment[];
+}
+
+export interface FeedAttachment {
+  id: string;
+  mediaType: 'image' | 'video' | 'youtube' | 'audio' | 'embed';
+  mediaUrl: string;
+  mediaThumbnail?: string;
+  mediaProvider?: string;
+  originalFilename?: string;
+  byteSize?: number;
 }
 
 export interface RewardItem {

@@ -31,7 +31,7 @@ import { Lesson, ClassSession, QuizQuestion, QuestionDifficulty, PresentationSli
 import { useAuth } from '../../../context/AuthContext';
 import { isSupabaseConfigured } from '../../../lib/supabase';
 import { publishExpressLesson } from '../../../lib/lessonAuthoringService';
-import { uploadSourceMedia } from '../../../lib/lessonSourceService';
+import { getAuthorizedSourceUrl, uploadSourceMedia } from '../../../lib/lessonSourceService';
 import { InAppDocumentViewer } from '../viewers/InAppDocumentViewer';
 
 interface ManualLessonStudioProps {
@@ -103,13 +103,39 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
   // Media & Teaching Materials
   const [videoUrl, setVideoUrl] = useState<string>(initialLesson?.videoUrl || '');
   const [slidesUrl, setSlidesUrl] = useState<string>(initialLesson?.slidesUrl || '');
+  const [slidesPreviewUrl, setSlidesPreviewUrl] = useState<string>('');
   const [slidesFileName, setSlidesFileName] = useState<string>('');
   const [audioUrl, setAudioUrl] = useState<string>(initialLesson?.audioUrl || '');
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string>('');
   const [audioFileName, setAudioFileName] = useState<string>('');
   const [teacherNotes, setTeacherNotes] = useState<string>(initialLesson?.teacherNotes || '');
   const [writtenExplanation, setWrittenExplanation] = useState<string>(initialLesson?.writtenExplanation || '');
   const [imageUrl, setImageUrl] = useState<string>(initialLesson?.imageUrl || '');
   const [showPreviewDocumentModal, setShowPreviewDocumentModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (audioUrl) {
+      getAuthorizedSourceUrl(audioUrl).then(url => {
+        if (!cancelled) setAudioPreviewUrl(url);
+      });
+    } else {
+      setAudioPreviewUrl('');
+    }
+    return () => { cancelled = true; };
+  }, [audioUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (slidesUrl) {
+      getAuthorizedSourceUrl(slidesUrl).then(url => {
+        if (!cancelled) setSlidesPreviewUrl(url);
+      });
+    } else {
+      setSlidesPreviewUrl('');
+    }
+    return () => { cancelled = true; };
+  }, [slidesUrl]);
 
   // Live voice recording
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -207,29 +233,32 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
     setUploadNote(isAr ? `جاري رفع الملف: ${file.name}...` : `Uploading ${file.name}...`);
 
     try {
-      let fileUrl = URL.createObjectURL(file);
-      if (isOnlineAuth) {
-        const res = await uploadSourceMedia(file, `manual-${Date.now()}`);
-        if (res.success && res.fileUrl) {
-          fileUrl = res.fileUrl;
-        }
+      const upload = await uploadSourceMedia(file, `manual-${Date.now()}`);
+      if (!upload.success || !upload.fileUrl) {
+        setFeedbackMessage({
+          type: 'error',
+          text: upload.error || (isAr ? 'تعذر حفظ الملف بشكل دائم. حاول مرة أخرى.' : 'The file could not be saved persistently. Please try again.')
+        });
+        return;
       }
+      const fileUrl = upload.fileUrl;
 
       if (type === 'SLIDES') {
         setSlidesUrl(fileUrl);
+        setSlidesPreviewUrl(upload.previewUrl || '');
         setSlidesFileName(file.name);
       } else if (type === 'AUDIO') {
         setAudioUrl(fileUrl);
+        setAudioPreviewUrl(upload.previewUrl || '');
         setAudioFileName(file.name);
       } else if (type === 'VIDEO') {
         setVideoUrl(fileUrl);
       }
     } catch (err: any) {
-      console.warn('Media upload fallback to local URL:', err);
-      if (type === 'SLIDES') {
-        setSlidesUrl(URL.createObjectURL(file));
-        setSlidesFileName(file.name);
-      }
+      setFeedbackMessage({
+        type: 'error',
+        text: err?.message || (isAr ? 'تعذر رفع الملف. حاول مرة أخرى.' : 'The file upload failed. Please try again.')
+      });
     } finally {
       setIsUploadingMedia(false);
       setUploadNote('');
@@ -1244,7 +1273,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
                           <p className="text-[10px] text-stone-400">{isAr ? 'صوت الفصل المباشر' : 'Classroom Voice'}</p>
                         </div>
                       </div>
-                      <audio controls src={audioUrl} className="h-8 max-w-[150px]" />
+                      <audio controls src={audioPreviewUrl || undefined} className="h-8 max-w-[150px]" />
                     </div>
                   )}
 
@@ -1540,9 +1569,9 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
       </AnimatePresence>
 
       {/* In-App Document Viewer for Presentation Preview */}
-      {showPreviewDocumentModal && slidesUrl && (
+      {showPreviewDocumentModal && slidesPreviewUrl && (
         <InAppDocumentViewer
-          documentUrl={slidesUrl}
+          documentUrl={slidesPreviewUrl}
           documentTitle={isAr && titleAr ? titleAr : title}
           onClose={() => setShowPreviewDocumentModal(false)}
           lang={isAr ? 'ar' : 'en'}
