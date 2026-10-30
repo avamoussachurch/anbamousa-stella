@@ -278,21 +278,6 @@ BEGIN
 END;
 $$;
 
--- Overload for un-prefixed parameter names
-CREATE OR REPLACE FUNCTION public.publish_lesson_version(
-  lesson_id UUID,
-  version_id UUID
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-BEGIN
-  RETURN public.publish_lesson_version(p_lesson_id => lesson_id, p_version_id => version_id);
-END;
-$$;
-
 -- Revoke direct client access to privileged publishing RPC; grant to service_role
 REVOKE ALL ON FUNCTION public.publish_lesson_version(UUID, UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.publish_lesson_version(UUID, UUID) TO service_role;

@@ -1129,20 +1129,6 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.publish_lesson_version(
-  lesson_id UUID,
-  version_id UUID
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-BEGIN
-  RETURN public.publish_lesson_version(p_lesson_id => lesson_id, p_version_id => version_id);
-END;
-$$;
-
 -- RLS Enablement & Initial Policies
 ALTER TABLE public.lesson_versions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lesson_sections ENABLE ROW LEVEL SECURITY;

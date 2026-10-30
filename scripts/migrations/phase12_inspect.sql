@@ -200,12 +200,17 @@ WHERE n.nspname = 'public'
   )
 ORDER BY p.proname, identity_arguments;
 
--- The query below requires pg_cron. If cron.job is absent, pg_cron is not
--- installed or is not accessible to the SQL Editor role.
+-- Safe even when pg_cron is not installed. If cron_job_table_exists is true,
+-- the optional query below can be run to inspect the configured job.
 SELECT
-  jobname,
-  schedule,
-  command,
-  active
-FROM cron.job
-WHERE jobname = 'stella-due-lesson-publishing';
+  EXISTS (
+    SELECT 1 FROM pg_catalog.pg_extension WHERE extname = 'pg_cron'
+  ) AS pg_cron_extension_installed,
+  pg_catalog.to_regclass('cron.job') IS NOT NULL AS cron_job_table_exists,
+  pg_catalog.to_regprocedure('cron.schedule(text,text,text)') IS NOT NULL AS cron_schedule_function_exists,
+  pg_catalog.to_regprocedure('cron.unschedule(bigint)') IS NOT NULL AS cron_unschedule_function_exists;
+
+-- Optional, only after the preceding query confirms cron_job_table_exists:
+-- SELECT jobname, schedule, command, active
+-- FROM cron.job
+-- WHERE jobname = 'stella-due-lesson-publishing';
