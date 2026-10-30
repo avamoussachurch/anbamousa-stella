@@ -6,7 +6,7 @@
       "year": "2026–2027",
       "status": "ACTIVE",
       "startDate": "2026-09-01",
-      "createdAt": "2026-10-29T11:05:22.566Z",
+      "createdAt": "2026-10-30T20:29:08.698Z",
       "createdBy": "system"
     }
   },
@@ -23,7 +23,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     },
     "inst_2026-2027_primary_1": {
       "id": "inst_2026-2027_primary_1",
@@ -37,7 +37,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     },
     "inst_2026-2027_primary_2": {
       "id": "inst_2026-2027_primary_2",
@@ -51,7 +51,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     },
     "inst_2026-2027_preparatory": {
       "id": "inst_2026-2027_preparatory",
@@ -65,7 +65,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     },
     "inst_2026-2027_secondary": {
       "id": "inst_2026-2027_secondary",
@@ -79,7 +79,7 @@
         "user_teacher_other_404"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     },
     "inst_2026-2027_university": {
       "id": "inst_2026-2027_university",
@@ -93,7 +93,7 @@
         "user_teacher_mina_101"
       ],
       "status": "ACTIVE",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     }
   },
   "classMemberships": {
@@ -106,7 +106,7 @@
       "studentName": "Mark Shenouda",
       "exactGrade": "Grade 4",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-29T11:05:22.566Z",
+      "enrolledAt": "2026-10-30T20:29:08.698Z",
       "enrolledBy": "servant"
     },
     "mem_david_2026-2027": {
@@ -118,7 +118,7 @@
       "studentName": "David Emad",
       "exactGrade": "Grade 5",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-29T11:05:22.566Z",
+      "enrolledAt": "2026-10-30T20:29:08.698Z",
       "enrolledBy": "servant"
     },
     "mem_other_2026-2027": {
@@ -130,7 +130,7 @@
       "studentName": "Peter Fadi",
       "exactGrade": "Prep 1",
       "status": "ACTIVE",
-      "enrolledAt": "2026-10-29T11:05:22.566Z",
+      "enrolledAt": "2026-10-30T20:29:08.698Z",
       "enrolledBy": "servant"
     }
   },
@@ -212,31 +212,31 @@
       "parentId": "mary",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     },
     {
       "parentId": "mary",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "mark",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     },
     {
       "parentId": "user_parent_mary_301",
       "childId": "student-david",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     },
     {
       "parentId": "other_parent",
       "childId": "other",
       "relationshipType": "parent_child",
-      "createdAt": "2026-10-29T11:05:22.566Z"
+      "createdAt": "2026-10-30T20:29:08.698Z"
     }
   ],
   "activationRequests": {
@@ -250,7 +250,7 @@
       "requestedGrade": "Grade 4",
       "notes": "New student joining Sunday school with Servant Mina",
       "status": "PENDING_APPROVAL",
-      "requestedAt": "2026-10-29T10:05:22.566Z"
+      "requestedAt": "2026-10-30T19:29:08.698Z"
     }
   },
   "classServants": {
@@ -568,8 +568,26 @@
       "history": []
     }
   },
-  "progress": {},
-  "attempts": {},
+  "progress": {
+    "mark_l-test-multiversion-01": {
+      "studentId": "mark",
+      "lessonId": "l-test-multiversion-01",
+      "versionId": "v-test-multi-1",
+      "status": "IN_PROGRESS",
+      "sectionsCompleted": [
+        "sec-multi-1",
+        "sec-multi-2",
+        "sec-multi-3"
+      ],
+      "totalSections": 3,
+      "completionPercent": 100,
+      "startedAt": "2026-10-30T20:29:08.722Z",
+      "completedAt": null
+    }
+  },
+  "attempts": {
+    "mark_l-test-multiversion-01": []
+  },
   "mastery": {},
   "userPoints": {},
   "userStreaks": {},
@@ -578,10 +596,9 @@
     "l-test-draft-01": {
       "id": "l-test-draft-01",
       "createdBy": "user_teacher_mina_101",
-      "status": "published",
-      "active_version_id": "v-test-approved-1",
-      "classGroupId": "primary_2",
-      "published_at": "2026-10-29T11:05:22.570Z"
+      "status": "draft",
+      "active_version_id": null,
+      "classGroupId": "primary_2"
     },
     "l-cross-01": {
       "id": "l-cross-01",
@@ -601,9 +618,8 @@
       "id": "l-test-multiversion-01",
       "createdBy": "user_teacher_mina_101",
       "status": "published",
-      "active_version_id": "v-test-multi-2",
-      "classGroupId": "primary_2",
-      "published_at": "2026-10-29T11:05:23.187Z"
+      "active_version_id": "v-test-multi-1",
+      "classGroupId": "primary_2"
     },
     "l-prep-01": {
       "id": "l-prep-01",
@@ -627,7 +643,7 @@
       "versionNumber": 1,
       "status": "AI_DRAFT",
       "createdBy": "user_teacher_mina_101",
-      "createdAt": "2026-10-29T11:05:22.566Z",
+      "createdAt": "2026-10-30T20:29:08.698Z",
       "sectionsCount": 3,
       "sections": [
         {
@@ -675,12 +691,12 @@
       "id": "v-test-approved-1",
       "lessonId": "l-test-draft-01",
       "versionNumber": 2,
-      "status": "PUBLISHED",
+      "status": "APPROVED",
       "createdBy": "user_teacher_mina_101",
       "approvedBy": "Servant Mina",
-      "approvedAt": "2026-10-29T11:05:22.566Z",
+      "approvedAt": "2026-10-30T20:29:08.698Z",
       "approvalNote": "Theological content verified and approved.",
-      "createdAt": "2026-10-29T11:05:22.566Z",
+      "createdAt": "2026-10-30T20:29:08.698Z",
       "sectionsCount": 3,
       "sections": [
         {
@@ -722,9 +738,7 @@
             }
           }
         ]
-      },
-      "publishedAt": "2026-10-29T11:05:22.570Z",
-      "publishedBy": "mina"
+      }
     },
     "v-test-multi-1": {
       "id": "v-test-multi-1",
@@ -733,8 +747,8 @@
       "status": "PUBLISHED",
       "createdBy": "user_teacher_mina_101",
       "approvedBy": "Servant Mina",
-      "approvedAt": "2026-10-29T11:05:22.566Z",
-      "publishedAt": "2026-10-29T11:05:22.566Z",
+      "approvedAt": "2026-10-30T20:29:08.698Z",
+      "publishedAt": "2026-10-30T20:29:08.698Z",
       "sectionsCount": 3,
       "sections": [
         {
@@ -823,12 +837,12 @@
       "id": "v-test-multi-2",
       "lessonId": "l-test-multiversion-01",
       "versionNumber": 2,
-      "status": "PUBLISHED",
+      "status": "APPROVED",
       "createdBy": "user_teacher_mina_101",
       "approvedBy": "Servant Mina",
-      "approvedAt": "2026-10-29T11:05:22.566Z",
+      "approvedAt": "2026-10-30T20:29:08.698Z",
       "approvalNote": "Revised edition with improved vocabulary",
-      "createdAt": "2026-10-29T11:05:22.566Z",
+      "createdAt": "2026-10-30T20:29:08.698Z",
       "sectionsCount": 3,
       "sections": [
         {
@@ -846,9 +860,7 @@
           "order": 3,
           "titleEn": "3. Liturgical Traditions and Basil (Revised)"
         }
-      ],
-      "publishedAt": "2026-10-29T11:05:23.187Z",
-      "publishedBy": "mina"
+      ]
     },
     "v-test-other-1": {
       "id": "v-test-other-1",
@@ -856,7 +868,7 @@
       "versionNumber": 1,
       "status": "AI_DRAFT",
       "createdBy": "user_teacher_other_404",
-      "createdAt": "2026-10-29T11:05:22.566Z",
+      "createdAt": "2026-10-30T20:29:08.698Z",
       "sectionsCount": 3,
       "sections": [
         {
@@ -872,7 +884,7 @@
       "versionNumber": 1,
       "status": "PUBLISHED",
       "createdBy": "user_teacher_other_404",
-      "createdAt": "2026-10-29T11:05:22.566Z",
+      "createdAt": "2026-10-30T20:29:08.698Z",
       "sectionsCount": 2,
       "sections": [
         {
@@ -893,7 +905,7 @@
       "versionNumber": 1,
       "status": "PUBLISHED",
       "createdBy": "user_teacher_other_404",
-      "createdAt": "2026-10-29T11:05:22.566Z",
+      "createdAt": "2026-10-30T20:29:08.698Z",
       "sectionsCount": 2,
       "sections": [
         {

@@ -441,7 +441,7 @@ export function ProfileTab({
             
             <div className="md:grid md:grid-cols-[1.5fr_1fr] md:gap-8 space-y-6 md:space-y-0">
               <div className="space-y-6">
-                <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] rounded-3xl p-6 shadow-xs border-2 border-[var(--mousa-border-sand)] text-center relative">
+                <div className="bg-[var(--mousa-cream-surface)] dark:bg-[var(--surface-primary)] rounded-3xl p-6 shadow-xs border-2 border-[var(--mousa-border-sand)] text-center relative">
                   <button onClick={handleOpenEdit} className={`absolute top-4 ${lang === 'ar' ? 'left-4' : 'right-4'} text-[var(--mousa-sand-500)] hover:text-[var(--mousa-coral)] p-2 rounded-xl hover:bg-[var(--mousa-sand-100)] transition-colors cursor-pointer`} title={lang === 'ar' ? 'تعديل الملف الشخصي' : 'Edit Profile'}>
                     <Edit3 size={20} />
                   </button>
@@ -452,15 +452,15 @@ export function ProfileTab({
                   <div className="flex justify-center gap-6 md:gap-12 mt-6 pt-6 border-t border-[var(--mousa-border-sand)]/60">
                     <div>
                       <p className="text-2xl md:text-3xl font-black text-[var(--mousa-gold)] dark:text-[var(--mousa-gold-light)]">{userData.points}</p>
-                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] font-black uppercase tracking-wider">{lang === 'ar' ? 'نقاط البركة' : 'Points'}</p>
+                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--text-muted)] font-black uppercase tracking-wider">{lang === 'ar' ? 'نقاط البركة' : 'Points'}</p>
                     </div>
                     <div>
                       <p className="text-2xl md:text-3xl font-black text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)]">{userData.currentStreak}</p>
-                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] font-black uppercase tracking-wider">{lang === 'ar' ? 'شعلة الأيام' : 'Streak'}</p>
+                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--text-muted)] font-black uppercase tracking-wider">{lang === 'ar' ? 'شعلة الأيام' : 'Streak'}</p>
                     </div>
                     <div>
                       <p className="text-2xl md:text-3xl font-black text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]">{userData.longestStreak}</p>
-                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] font-black uppercase tracking-wider">{lang === 'ar' ? 'أعلى إنجاز' : 'Best'}</p>
+                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--text-muted)] font-black uppercase tracking-wider">{lang === 'ar' ? 'أعلى إنجاز' : 'Best'}</p>
                     </div>
                   </div>
 
@@ -470,14 +470,14 @@ export function ProfileTab({
                       <Clock size={15} className="text-[var(--mousa-gold)] animate-pulse" />
                       {lang === 'ar' ? 'وقت التعلم النشط اليوم' : 'Active Learning Time Today'}
                     </span>
-                    <span className="font-black text-xs md:text-sm text-[var(--mousa-teal-deep)] bg-[var(--mousa-sand-100)] px-3 py-1 rounded-full border border-[var(--mousa-border-sand)]">
+                    <span className="font-black text-xs md:text-sm text-[var(--mousa-teal-deep)] dark:text-[var(--text-primary)] bg-[var(--mousa-sand-100)] dark:bg-[var(--surface-secondary)] px-3 py-1 rounded-full border border-[var(--mousa-border-sand)] dark:border-[var(--border-default)]">
                       {formatScreenTime(userData.screenTimeSeconds || 0)}
                     </span>
                   </div>
                 </div>
 
                 {/* Achievement Badges Section */}
-                <div className="bg-white dark:bg-[#1E1914] rounded-3xl p-6 shadow-sm border border-[var(--mousa-border-sand)]">
+                <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-6 shadow-sm border border-[var(--mousa-border-sand)]">
                   <h3 className="font-bold text-lg md:text-xl text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] mb-4 flex items-center gap-2">
                     <Award size={20} className="text-[var(--mousa-gold)]" />
                     {lang === 'ar' ? 'الأوسمة والإنجازات' : 'Achievements'}
@@ -527,16 +527,16 @@ export function ProfileTab({
                     ].map(badge => (
                       <div 
                         key={badge.id} 
-                        className={`flex items-center gap-3 p-3 md:p-4 rounded-2xl border ${badge.isUnlocked ? `${badge.bg} ${badge.border}` : 'bg-gray-50 border-gray-100 opacity-60'} transition-all`}
+                        className={`flex items-center gap-3 p-3 md:p-4 rounded-2xl border ${badge.isUnlocked ? `${badge.bg} ${badge.border}` : 'bg-gray-50 dark:bg-[var(--surface-secondary)] border-gray-200 dark:border-[var(--border-default)]'} transition-all`}
                       >
-                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 ${badge.isUnlocked ? 'bg-white shadow-sm' : 'bg-gray-200'}`}>
-                          <badge.icon size={24} className={badge.isUnlocked ? badge.color : 'text-gray-400'} />
+                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 ${badge.isUnlocked ? 'bg-white shadow-sm' : 'bg-gray-200 dark:bg-[var(--surface-overlay)]'}`}>
+                          <badge.icon size={24} className={badge.isUnlocked ? badge.color : 'text-gray-500 dark:text-[var(--text-muted)]'} />
                         </div>
                         <div>
-                          <p className={`font-bold text-sm md:text-base ${badge.isUnlocked ? badge.color : 'text-gray-600'}`}>
+                          <p className={`font-bold text-sm md:text-base ${badge.isUnlocked ? badge.color : 'text-gray-700 dark:text-[var(--text-secondary)]'}`}>
                             {badge.title[lang]}
                           </p>
-                          <p className="text-xs md:text-sm text-gray-500 mt-0.5 font-medium leading-tight">{badge.description[lang]}</p>
+                          <p className="text-xs md:text-sm text-gray-600 dark:text-[var(--text-muted)] mt-0.5 font-medium leading-tight">{badge.description[lang]}</p>
                         </div>
                       </div>
                     ))}
@@ -546,7 +546,7 @@ export function ProfileTab({
 
               {/* Role-Specific Connection Card */}
               {isStudent && (
-                <div className="bg-white dark:bg-[#1E1914] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
+                <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-stone-850 text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold)] flex items-center justify-center font-bold">
@@ -565,12 +565,12 @@ export function ProfileTab({
                     </div>
 
                     {userData.isLinkedToParent || userData.parentEmail ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                         <CheckCircle2 size={13} />
                         {lang === 'ar' ? 'متصل' : 'Linked'}
                       </span>
                     ) : (
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                         {lang === 'ar' ? 'غير مرتبط' : 'Not Linked'}
                       </span>
                     )}
@@ -578,17 +578,17 @@ export function ProfileTab({
 
                   {/* Parent blessing card if exists */}
                   {userData.parentBlessingMessage && (
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50/50 border border-amber-200/80 rounded-2xl p-3.5 flex items-start gap-3">
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50/50 dark:from-amber-950/50 dark:to-orange-950/30 border border-amber-200/80 dark:border-amber-800 rounded-2xl p-3.5 flex items-start gap-3">
                       <span className="text-2xl">🕊️</span>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-amber-900 flex items-center gap-1">
+                          <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1">
                             <Sparkles size={12} className="text-amber-600" />
                             {lang === 'ar' ? 'بركة وتشجيع من ولي الأمر' : 'Parent Blessing & Encouragement'}
                           </span>
-                          <span className="text-[10px] text-amber-700 font-semibold">{lang === 'ar' ? 'اليوم' : 'Today'}</span>
+                          <span className="text-[10px] text-amber-800 dark:text-amber-300 font-semibold">{lang === 'ar' ? 'اليوم' : 'Today'}</span>
                         </div>
-                        <p className="text-xs text-amber-950 mt-1 font-medium italic">
+                        <p className="text-xs text-amber-950 dark:text-amber-100 mt-1 font-medium italic">
                           "{userData.parentBlessingMessage}"
                         </p>
                       </div>
@@ -596,9 +596,9 @@ export function ProfileTab({
                   )}
 
                   {/* Child Secret Code & Direct Link Section */}
-                  <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-2xl p-4 border border-blue-100/80 space-y-3.5">
+                  <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-[var(--surface-secondary)] dark:to-[var(--surface-secondary)] rounded-2xl p-4 border border-blue-100/80 dark:border-[var(--border-default)] space-y-3.5">
                     {/* Security Notice */}
-                    <div className="flex items-start gap-2.5 text-xs text-blue-950 bg-white p-2.5 rounded-xl border border-blue-100 shadow-2xs">
+                    <div className="flex items-start gap-2.5 text-xs text-blue-950 dark:text-[var(--text-primary)] bg-white dark:bg-[var(--surface-overlay)] p-2.5 rounded-xl border border-blue-100 dark:border-[var(--border-default)] shadow-2xs">
                       <ShieldCheck size={18} className="text-[var(--mousa-teal-deep)] shrink-0 mt-0.5" />
                       <span className="leading-relaxed">
                         {lang === 'ar'
@@ -608,13 +608,13 @@ export function ProfileTab({
                     </div>
 
                     {/* Secret Code Display & Buttons */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-gray-200">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-[var(--surface-overlay)] p-3 rounded-xl border border-gray-200 dark:border-[var(--border-default)]">
                       <div className="flex items-center gap-2.5 w-full sm:w-auto">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-[var(--mousa-teal-deep)] flex items-center justify-center shrink-0">
                           <KeyRound size={20} />
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">
+                          <span className="text-[10px] font-bold text-gray-600 dark:text-[var(--text-muted)] uppercase tracking-wider block">
                             {lang === 'ar' ? 'الرمز السري الخاص بالطفل' : 'Child Unique Secret Code'}
                           </span>
                           <span className="font-mono font-black text-lg text-[var(--mousa-teal-deep)] tracking-wider">
@@ -636,7 +636,7 @@ export function ProfileTab({
                         <button
                           type="button"
                           onClick={handleCopyLinkCode}
-                          className="flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          className="flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-gray-50 dark:bg-[var(--surface-secondary)] hover:bg-gray-100 dark:hover:bg-[var(--state-hover)] border border-gray-200 dark:border-[var(--border-default)] text-gray-800 dark:text-[var(--text-primary)] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
                           {copiedLinkCode ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
                           <span>{copiedLinkCode ? (lang === 'ar' ? 'تم نسخ الرمز!' : 'Copied!') : (lang === 'ar' ? 'نسخ الرمز' : 'Copy Code')}</span>
@@ -649,7 +649,7 @@ export function ProfileTab({
                       <button
                         type="button"
                         onClick={handleCopyDirectLink}
-                        className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-gray-50 border border-blue-200 text-[var(--mousa-teal-deep)] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                        className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-[var(--surface-overlay)] hover:bg-gray-50 dark:hover:bg-[var(--state-hover)] border border-blue-200 dark:border-[var(--border-default)] text-[var(--mousa-teal-deep)] dark:text-[var(--text-primary)] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                       >
                         {copiedDirectLink ? <Check size={14} className="text-emerald-600" /> : <LinkIcon size={14} />}
                         <span>{copiedDirectLink ? (lang === 'ar' ? 'تم نسخ الرابط!' : 'Link Copied!') : (lang === 'ar' ? 'نسخ رابط الربط المباشر' : 'Copy Direct Link')}</span>
@@ -693,7 +693,7 @@ export function ProfileTab({
 
               {/* For Students: Sunday School Class & Grade Card */}
               {isStudent && (
-                <div className="bg-white dark:bg-[#1E1914] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
+                <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-stone-850 text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold)] flex items-center justify-center font-bold">
@@ -720,24 +720,24 @@ export function ProfileTab({
                     </span>
                   </div>
 
-                  <div className="bg-gradient-to-r from-blue-50/60 to-amber-50/50 rounded-2xl p-4 border border-blue-100 space-y-3">
+                  <div className="bg-gradient-to-r from-blue-50/60 to-amber-50/50 dark:from-[var(--surface-secondary)] dark:to-[var(--surface-secondary)] rounded-2xl p-4 border border-blue-100 dark:border-[var(--border-default)] space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                       <div>
-                        <span className="text-gray-500 block mb-0.5">{lang === 'ar' ? 'العام الكنسي:' : 'Church Year:'}</span>
-                        <span className="font-bold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded text-xs inline-flex items-center gap-1">
-                          <Calendar size={11} className="text-amber-600" />
+                        <span className="text-gray-600 dark:text-[var(--text-muted)] block mb-0.5">{lang === 'ar' ? 'العام الكنسي:' : 'Church Year:'}</span>
+                        <span className="font-bold text-amber-800 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-950/60 px-2 py-0.5 rounded text-xs inline-flex items-center gap-1">
+                          <Calendar size={11} className="text-amber-700 dark:text-amber-300" />
                           <span>{studentMembership?.churchYearName || churchYear}</span>
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-500 block mb-0.5">{lang === 'ar' ? 'الصف الدراسي المحدد:' : 'Exact Grade:'}</span>
-                        <span className="font-bold text-gray-900 text-sm">
+                        <span className="text-gray-600 dark:text-[var(--text-muted)] block mb-0.5">{lang === 'ar' ? 'الصف الدراسي المحدد:' : 'Exact Grade:'}</span>
+                        <span className="font-bold text-gray-900 dark:text-[var(--text-primary)] text-sm">
                           {studentMembership?.exactGrade || userData?.requestedGrade || userData?.grade || (lang === 'ar' ? 'لم يتم التحديد بعد' : 'Not Selected')}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-500 block mb-0.5">{lang === 'ar' ? 'فصل مدارس الأحد الكنسي:' : 'Church Class Group:'}</span>
-                        <span className="font-bold text-[var(--mousa-teal-deep)] text-sm">
+                        <span className="text-gray-600 dark:text-[var(--text-muted)] block mb-0.5">{lang === 'ar' ? 'فصل مدارس الأحد الكنسي:' : 'Church Class Group:'}</span>
+                        <span className="font-bold text-[var(--mousa-teal-deep)] dark:text-[var(--text-primary)] text-sm">
                           {(() => {
                             if (!isGuest && !studentMembership?.isEnrolled) {
                               return lang === 'ar' ? 'غير مسجل في فصل بعد' : 'Not Enrolled in Class';
@@ -753,8 +753,8 @@ export function ProfileTab({
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-blue-200/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <p className="text-[11px] text-gray-600 leading-relaxed">
+                    <div className="pt-2 border-t border-blue-200/40 dark:border-[var(--border-default)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <p className="text-[11px] text-gray-700 dark:text-[var(--text-secondary)] leading-relaxed">
                         {studentMembership?.isEnrolled
                           ? (lang === 'ar'
                               ? `مسجل بنجاح في الفصل للعام الكنسي الحالي (${studentMembership.churchYearName || churchYear}).`
@@ -771,9 +771,9 @@ export function ProfileTab({
                             setJoinCodeError(null);
                             setJoinCodeSuccess(null);
                           }}
-                          className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0"
+                          className="px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0"
                         >
-                          <Key size={13} className="text-amber-700" />
+                          <Key size={13} className="text-amber-700 dark:text-amber-300" />
                           <span>{lang === 'ar' ? 'الانضمام برمز الفصل' : 'Join with Class Code'}</span>
                         </button>
                         <button
@@ -796,18 +796,18 @@ export function ProfileTab({
                           initial={{ scale: 0.95, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0.95, opacity: 0 }}
-                          className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-gray-100 space-y-4 text-xs"
+                          className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-gray-100 dark:border-[var(--border-default)] space-y-4 text-xs text-gray-900 dark:text-[var(--text-primary)]"
                         >
-                          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                          <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-[var(--border-default)]">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                              <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center">
                                 <Key size={18} />
                               </div>
                               <div>
-                                <h4 className="font-bold text-sm text-gray-900">
+                                <h4 className="font-bold text-sm text-gray-900 dark:text-[var(--text-primary)]">
                                   {lang === 'ar' ? 'الانضمام لكود الفصل للعام الحالي' : 'Join Current-Year Class Code'}
                                 </h4>
-                                <p className="text-[11px] text-gray-400">
+                                <p className="text-[11px] text-gray-600 dark:text-[var(--text-muted)]">
                                   {lang === 'ar' ? `العام الكنسي: ${churchYear}` : `Church Year: ${churchYear}`}
                                 </p>
                               </div>
@@ -815,7 +815,7 @@ export function ProfileTab({
                             <button
                               type="button"
                               onClick={() => setShowJoinCodeModal(false)}
-                              className="text-gray-400 hover:text-gray-600 p-1"
+                              className="text-gray-500 dark:text-[var(--text-muted)] hover:text-gray-800 dark:hover:text-[var(--text-primary)] p-1"
                             >
                               <X size={16} />
                             </button>
@@ -823,7 +823,7 @@ export function ProfileTab({
 
                           <form onSubmit={handleJoinWithCode} className="space-y-3">
                             <div>
-                              <label className="block text-gray-700 font-bold mb-1">
+                              <label className="block text-gray-700 dark:text-[var(--text-secondary)] font-bold mb-1">
                                 {lang === 'ar' ? 'أدخل كود الفصل (من الخادم):' : 'Enter Class Code from Servant:'}
                               </label>
                               <input
@@ -831,7 +831,7 @@ export function ProfileTab({
                                 value={inputJoinCode}
                                 onChange={(e) => setInputJoinCode(e.target.value)}
                                 placeholder="e.g. MUSA-P46B"
-                                className="w-full font-mono uppercase bg-gray-50 border border-gray-200 focus:border-[var(--mousa-teal-deep)] rounded-xl px-3.5 py-2.5 text-gray-900 outline-none font-bold text-sm"
+                                className="w-full font-mono uppercase bg-gray-50 dark:bg-[var(--surface-secondary)] border border-gray-200 dark:border-[var(--border-default)] focus:border-[var(--mousa-teal-deep)] rounded-xl px-3.5 py-2.5 text-gray-900 dark:text-[var(--text-primary)] outline-none font-bold text-sm"
                                 disabled={isJoiningCode}
                               />
                             </div>
@@ -854,7 +854,7 @@ export function ProfileTab({
                               <button
                                 type="button"
                                 onClick={() => setShowJoinCodeModal(false)}
-                                className="px-3.5 py-2 rounded-xl border border-gray-200 text-gray-600 font-semibold cursor-pointer"
+                                className="px-3.5 py-2 rounded-xl border border-gray-200 dark:border-[var(--border-default)] text-gray-700 dark:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-[var(--state-hover)] font-semibold cursor-pointer"
                               >
                                 {lang === 'ar' ? 'إلغاء' : 'Cancel'}
                               </button>
@@ -881,7 +881,7 @@ export function ProfileTab({
 
               {/* For Parents: Family Hub Card */}
               {isParent && (
-                <div className="bg-white dark:bg-[#1E1914] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
+                <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-stone-850 text-amber-700 dark:text-[var(--mousa-gold)] flex items-center justify-center font-bold">
@@ -922,7 +922,7 @@ export function ProfileTab({
 
               {/* For Teachers: Servant Studio Card */}
               {isTeacher && (
-                <div className="bg-white dark:bg-[#1E1914] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
+                <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-stone-850 text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold)] flex items-center justify-center font-bold">
@@ -960,14 +960,14 @@ export function ProfileTab({
                   {(userData.role === 'teacher' || onOpenTeacherStudio) && (
                     <button 
                       onClick={onOpenTeacherStudio} 
-                      className="w-full p-4 md:p-5 border-b border-gray-100 flex items-center gap-3 text-amber-900 bg-amber-50/50 hover:bg-amber-100/60 transition-colors text-left cursor-pointer"
+                      className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-[var(--border-default)] flex items-center gap-3 text-amber-900 dark:text-amber-100 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/60 dark:hover:bg-amber-950/60 transition-colors text-left cursor-pointer"
                     >
                       <span className="text-xl">⛪</span>
                       <div className="flex-1">
                         <span className="font-bold block md:text-lg">{lang === 'ar' ? 'استوديو الخادم ومدارس الأحد' : 'Sunday School Servant Studio'}</span>
-                        <span className="text-xs text-amber-700">{lang === 'ar' ? 'تحضير الدروس بالذكاء الاصطناعي وتعديل الاختبارات' : 'AI lesson creator, quiz editor & moderation'}</span>
+                        <span className="text-xs text-amber-700 dark:text-amber-300">{lang === 'ar' ? 'تحضير الدروس بالذكاء الاصطناعي وتعديل الاختبارات' : 'AI lesson creator, quiz editor & moderation'}</span>
                       </div>
-                      <span className="text-xs font-bold px-2 py-1 rounded-md bg-amber-200/80 text-amber-900">
+                      <span className="text-xs font-bold px-2 py-1 rounded-md bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100">
                         {lang === 'ar' ? 'فتح' : 'Open'}
                       </span>
                     </button>
@@ -977,20 +977,20 @@ export function ProfileTab({
                   {(userData.role === 'parent' || userData.role === 'teacher' || onOpenParentPortal) && (
                     <button 
                       onClick={onOpenParentPortal} 
-                      className="w-full p-4 md:p-5 border-b border-gray-100 flex items-center gap-3 text-emerald-900 bg-emerald-50/40 hover:bg-emerald-100/60 transition-colors text-left cursor-pointer"
+                      className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-[var(--border-default)] flex items-center gap-3 text-emerald-900 dark:text-emerald-100 bg-emerald-50/40 dark:bg-emerald-950/30 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/60 transition-colors text-left cursor-pointer"
                     >
                       <span className="text-xl">👨‍👩‍👧</span>
                       <div className="flex-1">
                         <span className="font-bold block md:text-lg">{lang === 'ar' ? 'بوابة ولي الأمر ومتابعة الأبناء' : 'Parent Portal & Child Monitoring'}</span>
-                        <span className="text-xs text-emerald-700">{lang === 'ar' ? 'متابعة وقت الشاشة، إتمام الدروس وموافقة الجوائز' : 'Screen time, lesson completions & reward approvals'}</span>
+                        <span className="text-xs text-emerald-700 dark:text-emerald-300">{lang === 'ar' ? 'متابعة وقت الشاشة، إتمام الدروس وموافقة الجوائز' : 'Screen time, lesson completions & reward approvals'}</span>
                       </div>
-                      <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-200/80 text-emerald-900">
+                      <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-200/80 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-100">
                         {lang === 'ar' ? 'فتح' : 'Open'}
                       </span>
                     </button>
                   )}
 
-                  <button onClick={() => setScreen('settings')} className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-stone-800 flex items-center gap-3 text-gray-700 dark:text-stone-200 hover:bg-gray-50 dark:hover:bg-stone-850 transition-colors text-left cursor-pointer">
+                  <button onClick={() => setScreen('settings')} className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-[var(--border-default)] flex items-center gap-3 text-gray-700 dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-[var(--state-hover)] transition-colors text-left cursor-pointer">
                     <Settings size={20} className="text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-light)] md:w-6 md:h-6" />
                     <span className="font-bold flex-1 md:text-lg">{lang === 'ar' ? 'الإعدادات والمظهر الكنسي' : 'Settings & Theme'}</span>
                     <span className="text-xs md:text-sm px-2.5 py-1 rounded-full font-bold bg-[var(--mousa-sand-100)] dark:bg-stone-800 text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-light)] flex items-center gap-1 border border-[var(--mousa-border-sand)]">
@@ -998,18 +998,18 @@ export function ProfileTab({
                     </span>
                   </button>
 
-                  <button onClick={() => setScreen('help')} className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-stone-800 flex items-center gap-3 text-gray-700 dark:text-stone-200 hover:bg-gray-50 dark:hover:bg-stone-850 transition-colors text-left cursor-pointer">
+                  <button onClick={() => setScreen('help')} className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-[var(--border-default)] flex items-center gap-3 text-gray-700 dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-[var(--state-hover)] transition-colors text-left cursor-pointer">
                     <HelpCircle size={20} className="text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-light)] md:w-6 md:h-6" />
                     <span className="font-bold flex-1 md:text-lg">{lang === 'ar' ? 'دليل الاستخدام والتواصل مع الكنيسة' : 'Help, FAQs & Church Contact'}</span>
                   </button>
 
-                  <button onClick={() => setScreen('privacy')} className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-stone-800 flex items-center gap-3 text-gray-700 dark:text-stone-200 hover:bg-gray-50 dark:hover:bg-stone-850 transition-colors text-left cursor-pointer">
+                  <button onClick={() => setScreen('privacy')} className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-[var(--border-default)] flex items-center gap-3 text-gray-700 dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-[var(--state-hover)] transition-colors text-left cursor-pointer">
                     <ShieldCheck size={20} className="text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-light)] md:w-6 md:h-6" />
                     <span className="font-bold flex-1 md:text-lg">{lang === 'ar' ? 'سياسة الخصوصية وحماية البيانات' : 'Privacy & Data Protection'}</span>
                   </button>
                   <button 
                     onClick={() => setShowLogoutModal(true)} 
-                    className="w-full p-4 md:p-5 flex items-center gap-3 text-[var(--color-church-burgundy)] hover:bg-red-50 transition-colors text-left"
+                    className="w-full p-4 md:p-5 flex items-center gap-3 text-[var(--color-church-burgundy)] dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors text-left"
                   >
                     <LogOut size={20} className="md:w-6 md:h-6" />
                     <span className="font-bold flex-1 md:text-lg">{lang === 'ar' ? 'تسجيل الخروج' : 'Log Out'}</span>
@@ -1023,7 +1023,7 @@ export function ProfileTab({
         {screen === 'edit' && (
           <motion.div key="edit" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 50, opacity: 0 }} className="space-y-6">
             <Header title={lang === 'ar' ? 'تعديل بيانات الحساب' : 'Edit Account Profile'} onBack={() => setScreen('main')} />
-            <div className="bg-white dark:bg-[#1E1914] rounded-3xl p-6 md:p-8 shadow-sm border border-[var(--mousa-border-sand)] space-y-6">
+            <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-6 md:p-8 shadow-sm border border-[var(--mousa-border-sand)] space-y-6">
                <div className="text-center">
                  <div className="relative inline-block">
                     <img 
@@ -1089,7 +1089,7 @@ export function ProfileTab({
                              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden shadow-2xs">
                                <img src={preset.svgDataUri} alt={lang === 'ar' ? preset.nameAr : preset.nameEn} className="w-full h-full object-cover" />
                              </div>
-                             <span className="text-[10px] font-bold text-gray-700 truncate max-w-[64px] text-center leading-tight">
+                             <span className="text-[10px] font-bold text-gray-700 dark:text-[var(--text-secondary)] truncate max-w-[64px] text-center leading-tight">
                                {lang === 'ar' ? preset.nameAr : preset.nameEn}
                              </span>
                              {avatar === preset.svgDataUri && (
@@ -1106,7 +1106,7 @@ export function ProfileTab({
                <div className="space-y-4 pt-2">
                  {/* Full Name */}
                  <div>
-                    <label className="text-xs md:text-sm font-bold text-gray-600 mb-1.5 flex items-center justify-between">
+                    <label className="text-xs md:text-sm font-bold text-gray-700 dark:text-[var(--text-secondary)] mb-1.5 flex items-center justify-between">
                       <span>{lang === 'ar' ? 'الاسم بالكامل *' : 'Full Name *'}</span>
                       {validationErrors.userName && (
                         <span className="text-xs text-red-600 font-medium flex items-center gap-1">
@@ -1122,15 +1122,15 @@ export function ProfileTab({
                         if (validationErrors.userName) setValidationErrors(prev => ({ ...prev, userName: undefined }));
                       }} 
                       placeholder={lang === 'ar' ? 'أدخل اسمك بالكامل' : 'Enter your full name'}
-                      className={`w-full bg-gray-50 border-2 rounded-xl px-4 py-3 outline-none font-bold text-gray-700 transition-colors ${
-                        validationErrors.userName ? 'border-red-400 bg-red-50/40 focus:border-red-500' : 'border-gray-100 focus:border-[var(--mousa-teal-deep)]'
+                      className={`w-full bg-gray-50 dark:bg-[var(--surface-secondary)] border-2 rounded-xl px-4 py-3 outline-none font-bold text-gray-800 dark:text-[var(--text-primary)] transition-colors ${
+                        validationErrors.userName ? 'border-red-400 dark:border-red-700 bg-red-50/40 dark:bg-red-950/30 focus:border-red-500' : 'border-gray-200 dark:border-[var(--border-default)] focus:border-[var(--mousa-teal-deep)]'
                       }`} 
                     />
                  </div>
 
                  {/* Guardian / User Email */}
                  <div>
-                    <label className="text-xs md:text-sm font-bold text-gray-600 mb-1.5 flex items-center justify-between">
+                    <label className="text-xs md:text-sm font-bold text-gray-700 dark:text-[var(--text-secondary)] mb-1.5 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Mail size={14} className="text-[var(--mousa-teal-deep)]" />
                         {isStudent 
@@ -1151,15 +1151,15 @@ export function ProfileTab({
                         if (validationErrors.email) setValidationErrors(prev => ({ ...prev, email: undefined }));
                       }} 
                       placeholder="parent.guardian@church.org"
-                      className={`w-full bg-gray-50 border-2 rounded-xl px-4 py-3 outline-none font-bold text-gray-700 transition-colors ${
-                        validationErrors.email ? 'border-red-400 bg-red-50/40 focus:border-red-500' : 'border-gray-100 focus:border-[var(--mousa-teal-deep)]'
+                      className={`w-full bg-gray-50 dark:bg-[var(--surface-secondary)] border-2 rounded-xl px-4 py-3 outline-none font-bold text-gray-800 dark:text-[var(--text-primary)] transition-colors ${
+                        validationErrors.email ? 'border-red-400 dark:border-red-700 bg-red-50/40 dark:bg-red-950/30 focus:border-red-500' : 'border-gray-200 dark:border-[var(--border-default)] focus:border-[var(--mousa-teal-deep)]'
                       }`} 
                     />
                  </div>
 
                  {/* Phone Number */}
                  <div>
-                    <label className="text-xs md:text-sm font-bold text-gray-600 mb-1.5 flex items-center justify-between">
+                    <label className="text-xs md:text-sm font-bold text-gray-700 dark:text-[var(--text-secondary)] mb-1.5 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Phone size={14} className="text-[var(--mousa-teal-deep)]" />
                         {lang === 'ar' ? 'رقم الهاتف للتواصل' : 'Contact Phone Number'}
@@ -1178,15 +1178,15 @@ export function ProfileTab({
                         if (validationErrors.phone) setValidationErrors(prev => ({ ...prev, phone: undefined }));
                       }} 
                       placeholder="+20 100 123 4567"
-                      className={`w-full bg-gray-50 border-2 rounded-xl px-4 py-3 outline-none font-bold text-gray-700 transition-colors ${
-                        validationErrors.phone ? 'border-red-400 bg-red-50/40 focus:border-red-500' : 'border-gray-100 focus:border-[var(--mousa-teal-deep)]'
+                      className={`w-full bg-gray-50 dark:bg-[var(--surface-secondary)] border-2 rounded-xl px-4 py-3 outline-none font-bold text-gray-800 dark:text-[var(--text-primary)] transition-colors ${
+                        validationErrors.phone ? 'border-red-400 dark:border-red-700 bg-red-50/40 dark:bg-red-950/30 focus:border-red-500' : 'border-gray-200 dark:border-[var(--border-default)] focus:border-[var(--mousa-teal-deep)]'
                       }`} 
                     />
                  </div>
 
                  {/* Grade / Sunday School Group */}
                  <div>
-                    <label className="text-xs md:text-sm font-bold text-gray-600 mb-1.5 flex items-center gap-1.5">
+                    <label className="text-xs md:text-sm font-bold text-gray-700 dark:text-[var(--text-secondary)] mb-1.5 flex items-center gap-1.5">
                       <GraduationCap size={14} className="text-[var(--mousa-teal-deep)]" />
                       {lang === 'ar' ? 'مرحلة مدارس الأحد' : 'Sunday School Grade / Class'}
                     </label>
@@ -1195,7 +1195,7 @@ export function ProfileTab({
                       value={grade} 
                       onChange={e => setGrade(e.target.value)} 
                       placeholder={lang === 'ar' ? 'مثال: ابتدائي - مرحلة ثالثة' : 'e.g. Primary - Grade 3'}
-                      className="w-full bg-gray-50 border-2 border-gray-100 focus:border-[var(--mousa-teal-deep)] rounded-xl px-4 py-3 outline-none font-bold text-gray-700"
+                      className="w-full bg-gray-50 dark:bg-[var(--surface-secondary)] border-2 border-gray-200 dark:border-[var(--border-default)] focus:border-[var(--mousa-teal-deep)] rounded-xl px-4 py-3 outline-none font-bold text-gray-800 dark:text-[var(--text-primary)]"
                     />
                  </div>
                </div>
@@ -1226,9 +1226,9 @@ export function ProfileTab({
         {screen === 'settings' && (
           <motion.div key="settings" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 50, opacity: 0 }} className="space-y-6">
             <Header title={lang === 'ar' ? 'الإعدادات' : 'Settings'} onBack={() => setScreen('main')} />
-            <div className="bg-white dark:bg-[#1E1914] rounded-3xl p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-6">
+            <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-6">
                {/* Dark Theme Sanctuary Mode Toggle */}
-               <div className="flex items-center justify-between p-4 bg-[var(--color-church-cream)]/60 dark:bg-stone-900/60 rounded-2xl border border-[var(--mousa-border-sand)]">
+               <div className="flex items-center justify-between p-4 bg-[var(--color-church-cream)]/60 dark:bg-[var(--surface-secondary)] rounded-2xl border border-[var(--mousa-border-sand)] dark:border-[var(--border-default)]">
                  <div className="flex items-center gap-3">
                    <div className="w-10 h-10 rounded-xl bg-[var(--mousa-gold)]/20 text-[var(--mousa-gold)] flex items-center justify-center">
                      {isDark ? <Moon size={22} className="fill-current" /> : <Sun size={22} />}

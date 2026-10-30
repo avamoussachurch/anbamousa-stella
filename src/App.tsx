@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { BottomNav } from './components/layout/BottomNav';
 import { TopBar } from './components/layout/TopBar';
 import { HomeTab } from './components/student/HomeTab';
@@ -21,6 +21,7 @@ import { useAuth } from './context/AuthContext';
 import { LessonsProvider } from './context/LessonsContext';
 import { PointsProvider } from './context/PointsContext';
 import { Language } from './types';
+import { applyLanguagePreference, getLanguageDirection } from './lib/uiPreferences';
 
 function AppContent() {
   const { userData, loading, logout } = useAuth();
@@ -36,17 +37,13 @@ function AppContent() {
     setLangState(newLang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('church_app_lang', newLang);
-      const dir = newLang === 'ar' ? 'rtl' : 'ltr';
-      document.documentElement.setAttribute('dir', dir);
-      document.documentElement.setAttribute('lang', newLang === 'copt' ? 'cop' : newLang);
+      applyLanguagePreference(document.documentElement, newLang);
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window !== 'undefined') {
-      const dir = lang === 'ar' ? 'rtl' : 'ltr';
-      document.documentElement.setAttribute('dir', dir);
-      document.documentElement.setAttribute('lang', lang === 'copt' ? 'cop' : lang);
+      applyLanguagePreference(document.documentElement, lang);
     }
   }, [lang]);
 
@@ -210,8 +207,8 @@ function AppContent() {
 
   return (
     <div 
-      dir={lang === 'ar' ? 'rtl' : 'ltr'} 
-      className="min-h-screen relative font-sans bg-[var(--color-church-cream)] pb-safe overflow-x-hidden selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
+      dir={getLanguageDirection(lang)}
+      className="min-h-screen relative bg-[var(--color-church-cream)] pb-safe overflow-x-hidden selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
     >
       <TopBar 
         lang={lang} 

@@ -10,6 +10,7 @@ interface MosesLessonProgressBarProps {
   error?: string | null;
   lang: Language;
   onExploreLessons?: () => void;
+  onRetry?: () => void;
 }
 
 /**
@@ -23,7 +24,8 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
   isLoading = false,
   error = null,
   lang,
-  onExploreLessons
+  onExploreLessons,
+  onRetry
 }) => {
   const isAr = lang === 'ar';
   const isCop = lang === 'copt' || lang === 'cop';
@@ -39,7 +41,7 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
       return isCop ? 'Ⲥⲉⲓⲛⲓ ⲛ̀ⲛⲓⲥⲃⲱ...' : isAr ? 'جاري تحميل مسيرتك الروحية...' : 'Loading your journey progress...';
     }
     if (error) {
-      return isCop ? 'Ⲡⲓⲥⲱⲣⲉⲙ ϧⲉⲛ ⲡⲓⲱϣ' : isAr ? 'حفظ التقدم متاح محلياً على جهازك' : 'Progress saved locally on your device';
+      return isCop ? 'Ⲙ̀ⲙⲟⲛ ⲥ̀ϣϫⲟⲙ ⲛ̀ϯⲛⲓ ⲛ̀ⲛⲓⲥⲃⲱ' : isAr ? 'تعذر تحميل تقدم الدروس. حاول مرة أخرى.' : 'Unable to load lesson progress. Please try again.';
     }
     if (safeTotal === 0) {
       return isCop ? 'Ⲙ̀ⲙⲟⲛ ϩⲁⲛⲥⲃⲱ ϯⲛⲟⲩ' : isAr ? 'في انتظار نشر المحطات الجديدة من الخدام' : 'Awaiting new milestones from your servants';
@@ -101,7 +103,7 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
             {error && (
               <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 px-2.5 py-1 rounded-xl flex items-center gap-1">
                 <AlertCircle size={12} />
-                <span>{isAr ? 'وضع عدم الاتصال' : 'Offline Mode'}</span>
+                <span>{isAr ? 'تعذر التحميل' : 'Load failed'}</span>
               </span>
             )}
             <div className="flex items-baseline gap-1 px-3 py-1.5 rounded-2xl bg-[var(--mousa-sand-100)] dark:bg-[#25201A] border border-[var(--mousa-border-sand)] text-xs font-black shadow-2xs">
@@ -146,7 +148,16 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
           </div>
         </div>
 
-        {onExploreLessons && (
+        {error && onRetry ? (
+          <div className="pt-2 flex justify-end border-t border-[var(--mousa-border-sand)]/60">
+            <button
+              onClick={onRetry}
+              className="px-3.5 py-1.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--mousa-teal-deep)] text-white font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
+            >
+              <span>{isAr ? 'إعادة المحاولة' : 'Retry'}</span>
+            </button>
+          </div>
+        ) : onExploreLessons ? (
           <div className="pt-2 flex justify-end border-t border-[var(--mousa-border-sand)]/60">
             <button
               onClick={onExploreLessons}
@@ -157,7 +168,7 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
               <ChevronRight size={13} className={isAr ? 'rotate-180' : ''} />
             </button>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -4,6 +4,12 @@ import { filterItemsByHymnsTaxisLevel, parseHymnsTaxisLevel } from './hymnsTaxis
 
 const TOKEN_KEY = 'church_auth_token';
 
+function notifyHymnsUpdated(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('church:hymns_updated'));
+  }
+}
+
 function getAuthHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
   return {
@@ -220,6 +226,7 @@ export async function getHymnById(id: string): Promise<{
     });
     const data = await res.json();
     if (res.ok && data.success) {
+      notifyHymnsUpdated();
       return { success: true, hymn: data.hymn };
     }
     return { success: false, error: data.message || data.error };
@@ -242,6 +249,7 @@ export async function createHymn(
     });
     const data = await res.json();
     if (res.ok && data.success) {
+      notifyHymnsUpdated();
       return { success: true, hymn: data.hymn };
     }
     return { success: false, error: data.message || data.error };
@@ -283,6 +291,7 @@ export async function unpublishHymn(id: string): Promise<{ success: boolean; hym
       headers: getAuthHeaders()
     });
     const data = await res.json();
+    if (res.ok && data.success) notifyHymnsUpdated();
     return { success: Boolean(data.success), hymn: data.hymn };
   } catch (err) {
     return { success: false };
@@ -304,6 +313,7 @@ export async function restoreHymnVersion(
     });
     const data = await res.json();
     if (res.ok && data.success) {
+      notifyHymnsUpdated();
       return { success: true, hymn: data.hymn };
     }
     return { success: false, error: data.message || data.error };

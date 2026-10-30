@@ -1,4 +1,4 @@
-import { ChildProfile, User, Language } from '../types';
+import { ChildProfile, User, Language, ChurchEventNotification } from '../types';
 import { mockChildrenProfiles } from '../components/parent/parentData';
 import { linkParentAndChildInSupabase, findStudentByLinkCodeInSupabase } from './supabaseDatabase';
 import { COPTIC_AVATARS, DEFAULT_STUDENT_AVATAR } from '../data/copticAvatars';
@@ -531,9 +531,11 @@ export async function linkChildByCodeAsync(
   inputCodeOrEmail: string,
   activeStudentUser?: User | null
 ): Promise<{ success: boolean; child?: ChildProfile; error?: string }> {
-  // 1. Try local/guest/demo/roster first
-  const localRes = linkChildByCode(parentId, parentName, parentEmail, inputCodeOrEmail, activeStudentUser);
-  if (localRes.success) return localRes;
+  const isAuthenticatedParent = activeStudentUser?.role === 'parent' && Boolean(activeStudentUser.id);
+  const localRes = isAuthenticatedParent
+    ? { success: false, error: 'Authenticated family linking is unavailable until the server-side verification endpoint is configured.' }
+    : linkChildByCode(parentId, parentName, parentEmail, inputCodeOrEmail, activeStudentUser);
+  if (!isAuthenticatedParent && localRes.success) return localRes;
 
   const normalized = extractSecretCodeFromInput(inputCodeOrEmail);
   if (!normalized) return localRes;
@@ -542,6 +544,13 @@ export async function linkChildByCodeAsync(
   try {
     const studentProfile = await findStudentByLinkCodeInSupabase(normalized);
     if (studentProfile && studentProfile.id) {
+      const relationshipResult = await linkParentAndChildInSupabase(parentId, studentProfile.id, normalized);
+      if (!relationshipResult.success) {
+        return {
+          success: false,
+          error: relationshipResult.error || 'The verified family relationship could not be saved.'
+        };
+      }
       const currentChildren = getLinkedChildren(parentId, activeStudentUser);
       const alreadyLinked = currentChildren.find(
         c => c.id === studentProfile.id || c.studentId === studentProfile.id
@@ -583,7 +592,6 @@ export async function linkChildByCodeAsync(
         saveLinkedChildren(parentEmail, updatedList);
       }
 
-      await linkParentAndChildInSupabase(parentId, newChild.id, newChild.linkCode);
       window.dispatchEvent(new CustomEvent('church:parent_linked', { detail: { parentId, parentName, child: newChild } }));
 
       return { success: true, child: newChild };
@@ -959,8 +967,7 @@ export async function getAuthoritativeParentChildren(): Promise<{
     grade: string;
     classGroupId: string;
     avatarUrl: string;
-    attendanceRate: number;
-    points: number;
+    points: number | null;
   }> | null;
   error: Error | null;
 }> {
@@ -977,9 +984,67 @@ export async function getAuthoritativeParentChildren(): Promise<{
         error: new Error(json?.message || json?.error || `HTTP ${res.status}: Failed to fetch parent children`)
       };
     }
+    if (!Array.isArray(json.children)) {
+      return { data: null, error: new Error('Parent children response was invalid') };
+    }
     return { data: json.children, error: null };
   } catch (err: any) {
     return { data: null, error: new Error(err?.message || 'Network error') };
+  }
+}
+
+export async function getAuthoritativeChurchEvents(): Promise<{
+  data: ChurchEventNotification[] | null;
+  error: Error | null;
+}> {
+  if (!supabase) return { data: null, error: new Error('Supabase is not configured') };
+  try {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) return { data: null, error: sessionError };
+    if (!sessionData.session) return { data: null, error: new Error('Sign in to view church events') };
+
+    const { data, error } = await supabase
+      .from('church_events')
+      .select('id, title_en, title_ar, type, date_time, location_en, location_ar, description_en, description_ar')
+      .gte('date_time', new Date().toISOString())
+      .order('date_time', { ascending: true });
+    if (error) return { data: null, error: new Error(`Could not load church events: ${error.message}`) };
+
+    return {
+      data: (data || []).map(event => {
+        const eventDate = new Date(event.date_time);
+        const cairoDateParts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Africa/Cairo',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).formatToParts(eventDate);
+        const cairoDate = `${cairoDateParts.find(part => part.type === 'year')?.value}-${cairoDateParts.find(part => part.type === 'month')?.value}-${cairoDateParts.find(part => part.type === 'day')?.value}`;
+        const category: ChurchEventNotification['category'] =
+          event.type === 'sunday_school' ? 'sunday_school' :
+          event.type === 'hymns' ? 'hymn' :
+          event.type === 'parent_meeting' || event.type === 'service' ? 'family' : 'liturgy';
+        return {
+          id: event.id,
+          titleEn: event.title_en,
+          titleAr: event.title_ar,
+          category,
+          date: cairoDate,
+          dateTime: eventDate.toISOString(),
+          timeEn: eventDate.toLocaleTimeString('en-EG', { timeZone: 'Africa/Cairo', hour: 'numeric', minute: '2-digit' }),
+          timeAr: eventDate.toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo', hour: 'numeric', minute: '2-digit' }),
+          locationEn: event.location_en || '',
+          locationAr: event.location_ar || '',
+          descriptionEn: event.description_en || '',
+          descriptionAr: event.description_ar || '',
+          priority: event.type === 'feast' ? 'feast' : 'normal',
+          isRead: false
+        };
+      }),
+      error: null
+    };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error('Failed to load church events') };
   }
 }
 
@@ -1016,55 +1081,6 @@ export async function getChildLearningReview(
       error: null
     };
   } catch (err: any) {
-    // Pure offline demo fallback
-    const matched = sundaySchoolRoster.find(s => s.id === studentId);
-    const demoReview: StudentLearningReviewData = {
-      student: {
-        id: studentId,
-        name: matched?.nameEn || `Child ${studentId}`,
-        grade: matched?.gradeEn || 'Grade 4',
-        classGroupId: 'primary_2',
-        avatarUrl: matched?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${studentId}`
-      },
-      summary: {
-        totalLessons: 1,
-        completedLessonsCount: 1,
-        masteredCount: 1,
-        developingCount: 0,
-        needsReviewCount: 0,
-        averageQuizScore: 85
-      },
-      lessons: [
-        {
-          lessonId: 'l-test-multiversion-01',
-          title: 'Sunday School Lesson',
-          titleAr: 'درس مدارس الأحد',
-          category: 'bible',
-          versionId: 'v-test-multi-1',
-          progressStatus: 'COMPLETED',
-          completionPercent: 100,
-          sectionsCompleted: ['sec-multi-1', 'sec-multi-2', 'sec-multi-3'],
-          totalSections: 3,
-          latestQuizScore: 2,
-          latestQuizPercentage: 100,
-          quizPassed: true,
-          quizAttemptsCount: 1,
-          masteryStatus: 'MASTERED',
-          needsReview: false,
-          lastActivityAt: new Date().toISOString()
-        }
-      ],
-      needsReviewItems: [],
-      recentActivity: [
-        {
-          type: 'lesson_completed',
-          lessonTitle: 'Sunday School Lesson',
-          description: 'Completed all required published sections',
-          timestamp: new Date().toISOString()
-        }
-      ]
-    };
-    return { data: demoReview, error: null };
+    return { data: null, error: err instanceof Error ? err : new Error('Network error loading child learning review') };
   }
 }
-

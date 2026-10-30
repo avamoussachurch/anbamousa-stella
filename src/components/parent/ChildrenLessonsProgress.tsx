@@ -71,23 +71,28 @@ export function ChildrenLessonsProgress({
 
   // Authoritative server-side learning review
   const [reviewData, setReviewData] = useState<StudentLearningReviewData | null>(null);
-  const [reviewLoading, setReviewLoading] = useState<boolean>(false);
+  const [reviewLoading, setReviewLoading] = useState<boolean>(true);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
   const fetchReview = (studentId: string) => {
     if (!studentId) return;
     setReviewLoading(true);
     setReviewError(null);
+    setReviewData(null);
     getChildLearningReview(studentId)
       .then(({ data, error }) => {
         if (error) {
-          setReviewError(error.message);
+          setReviewError(lang === 'ar'
+            ? 'تعذر تحميل سجل التقدم المحفوظ لهذا الطفل. حاول مرة أخرى.'
+            : 'Unable to load this child’s saved learning progress. Please try again.');
         } else if (data) {
           setReviewData(data);
         }
       })
-      .catch((err) => {
-        setReviewError(err?.message || 'Error loading review');
+      .catch(() => {
+        setReviewError(lang === 'ar'
+          ? 'حدث خطأ أثناء تحميل سجل التقدم. حاول مرة أخرى.'
+          : 'An error occurred while loading learning progress. Please try again.');
       })
       .finally(() => {
         setReviewLoading(false);
@@ -98,7 +103,7 @@ export function ChildrenLessonsProgress({
     if (selectedChild?.id) {
       fetchReview(selectedChild.id);
     }
-  }, [selectedChild?.id]);
+  }, [selectedChild?.id, lang]);
 
   // Category labels and icons
   const categoryConfig: Record<LessonCategory, { en: string; ar: string; icon: React.ElementType; color: string; bg: string }> = {
@@ -133,7 +138,28 @@ export function ChildrenLessonsProgress({
   };
 
   // Filter lessons
-  const lessonsList = selectedChild?.lessons || [];
+  const categoryForReview: Record<string, LessonCategory> = {
+    bible: 'bible_stories',
+    hymns: 'hymns_rituals',
+    history: 'church_history',
+    virtues: 'ethics_prayers',
+    bible_stories: 'bible_stories',
+    hymns_rituals: 'hymns_rituals',
+    church_history: 'church_history',
+    ethics_prayers: 'ethics_prayers'
+  };
+  const lessonsList: ChildLessonProgress[] = (reviewData?.lessons || []).map(lesson => ({
+    lessonId: lesson.lessonId,
+    lessonTitleEn: lesson.title,
+    lessonTitleAr: lesson.titleAr || lesson.title,
+    category: categoryForReview[lesson.category] || 'bible_stories',
+    dateCompleted: lesson.lastActivityAt || undefined,
+    status: lesson.progressStatus === 'COMPLETED' ? 'completed' : 'in_progress',
+    pointsEarned: lesson.pointsEarned || 0,
+    pointsMax: 0,
+    memoryVerseEn: '',
+    memoryVerseAr: ''
+  }));
   const filteredLessons = lessonsList.filter(lesson => {
     const matchesCategory = selectedCategory === 'all' || lesson.category === selectedCategory;
     const matchesSearch = searchQuery.trim() === '' || 
@@ -145,7 +171,7 @@ export function ChildrenLessonsProgress({
   // Calculate stats
   const completedCount = lessonsList.filter(l => l.status === 'completed').length;
   const inProgressCount = lessonsList.filter(l => l.status === 'in_progress').length;
-  const completionPercentage = Math.round((completedCount / (lessonsList.length || 1)) * 100) || 0;
+  const completionPercentage = lessonsList.length ? Math.round((completedCount / lessonsList.length) * 100) : 0;
 
   // Category completion rates
   const categoriesList: LessonCategory[] = ['bible_stories', 'hymns_rituals', 'church_history', 'ethics_prayers'];
@@ -226,19 +252,33 @@ export function ChildrenLessonsProgress({
         </div>
 
         <div className="flex items-center justify-end gap-3 px-2 text-xs font-semibold text-gray-500">
-          <span className="flex items-center gap-1 text-[var(--color-church-gold-dark)]">
+          {selectedChild.pointsKnown && <span className="flex items-center gap-1 text-[var(--color-church-gold-dark)]">
             <Star size={14} className="fill-current" />
             <strong>{selectedChild.points}</strong> {lang === 'ar' ? 'نقطة' : 'pts'}
-          </span>
-          <span>•</span>
-          <span className="text-emerald-700 font-bold">
-            {lang === 'ar' ? `نسبة الحضور ${selectedChild.attendanceRate}%` : `${selectedChild.attendanceRate}% Attendance`}
-          </span>
+          </span>}
         </div>
       </div>
 
       {/* Main Visual Progress Overview Card */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-[var(--color-church-cream-dark)] shadow-sm">
+      {reviewLoading && (
+        <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]" role="status">
+          {lang === 'ar' ? 'جارٍ تحميل سجل التعلّم...' : 'Loading learning records...'}
+        </div>
+      )}
+      {reviewError && (
+        <div className="mousa-card-sand p-6 text-center" role="alert">
+          <p className="text-[var(--feedback-error)] mb-3">{reviewError}</p>
+          <button onClick={() => fetchReview(selectedChild.id)} className="mousa-btn-quest px-4 py-2 rounded-xl">
+            {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+          </button>
+        </div>
+      )}
+      {reviewData && lessonsList.length === 0 && (
+        <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]">
+          {lang === 'ar' ? 'لا توجد سجلات دروس أو اختبارات لهذا الطفل حتى الآن.' : 'No lesson or quiz activity has been recorded for this child yet.'}
+        </div>
+      )}
+      <div hidden={!reviewData || reviewLoading || Boolean(reviewError) || lessonsList.length === 0} className="bg-white rounded-3xl p-6 md:p-8 border border-[var(--color-church-cream-dark)] shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-gray-100">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-[var(--color-church-cream)] border border-[var(--color-church-gold)]/20 p-1 flex items-center justify-center shrink-0">
@@ -253,9 +293,9 @@ export function ChildrenLessonsProgress({
                 <h3 className="text-xl md:text-2xl font-bold text-[var(--color-church-blue)]">
                   {lang === 'ar' ? selectedChild.nameAr : selectedChild.nameEn}
                 </h3>
-                <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 font-bold px-2 py-0.5 rounded-md">
+                {selectedChild.rank > 0 && <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 font-bold px-2 py-0.5 rounded-md">
                   {lang === 'ar' ? `المركز #${selectedChild.rank}` : `Rank #${selectedChild.rank}`}
-                </span>
+                </span>}
                 {selectedChild.linkCode && (
                   <span className="font-mono text-[11px] bg-blue-50 text-[var(--color-church-blue)] border border-blue-200 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                     <QrCode size={11} />
@@ -267,14 +307,10 @@ export function ChildrenLessonsProgress({
                     <Sparkles size={11} className="text-emerald-600" />
                     <span>{lang === 'ar' ? 'متزامن حياً ✓' : 'Live Synced ✓'}</span>
                   </span>
-                ) : (
-                  <span className="text-[11px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md font-medium">
-                    {lang === 'ar' ? 'حساب تجريبي' : 'Sample'}
-                  </span>
-                )}
+                ) : null}
               </div>
               <p className="text-sm text-gray-500 font-medium mt-0.5">
-                {lang === 'ar' ? selectedChild.gradeAr : selectedChild.gradeEn} • {lang === 'ar' ? `${selectedChild.age} سنوات` : `${selectedChild.age} years old`}
+                {lang === 'ar' ? selectedChild.gradeAr : selectedChild.gradeEn}
               </p>
             </div>
           </div>
@@ -286,30 +322,30 @@ export function ChildrenLessonsProgress({
                 {lang === 'ar' ? 'الدروس المنجزة' : 'Lessons Done'}
               </span>
               <span className="text-xl md:text-2xl font-bold text-[var(--color-church-blue)]">
-                {completedCount}<span className="text-xs text-gray-400 font-normal">/{selectedChild.lessons.length}</span>
+                {completedCount}<span className="text-xs text-gray-400 font-normal">/{lessonsList.length}</span>
               </span>
             </div>
             <div className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-100">
               <span className="text-xs text-gray-400 font-bold block uppercase">
-                {lang === 'ar' ? 'آيات محفوظة' : 'Verses'}
+                {lang === 'ar' ? 'محاولات الاختبار' : 'Quiz attempts'}
               </span>
               <span className="text-xl md:text-2xl font-bold text-emerald-600">
-                {selectedChild.verseMemorizedCount}
+                {reviewData?.lessons.reduce((sum, lesson) => sum + lesson.quizAttemptsCount, 0) ?? '—'}
               </span>
             </div>
             <div className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-100">
               <span className="text-xs text-gray-400 font-bold block uppercase">
-                {lang === 'ar' ? 'وقت المذاكرة' : 'Study Time'}
+                {lang === 'ar' ? 'الأقسام المقروءة' : 'Sections read'}
               </span>
               <span className="text-xl md:text-2xl font-bold text-[var(--color-church-burgundy)]">
-                {selectedChild.screenTimeMinutes}<span className="text-xs text-gray-400 font-normal">{lang === 'ar' ? 'د' : 'm'}</span>
+                {reviewData?.lessons.reduce((sum, lesson) => sum + lesson.sectionsCompleted.length, 0) ?? '—'}
               </span>
             </div>
           </div>
         </div>
 
         {/* Real-Time Parent-Child Linking & Control Bar */}
-        <div className="py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div hidden={selectedChild.isRealAccount === true} className="py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs">
           {/* Daily Screen Time Limit Controls */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-bold text-gray-600 flex items-center gap-1.5">
@@ -468,10 +504,10 @@ export function ChildrenLessonsProgress({
             <div>
               <h4 className="text-sm md:text-base font-bold text-[var(--color-church-blue)] flex items-center gap-1.5">
                 <Sparkles size={16} className="text-[var(--color-church-gold)]" />
-                {lang === 'ar' ? 'المعدل الكلي لإنجاز المنهج الكنسي' : 'Overall Sunday School Curriculum Progress'}
+                {lang === 'ar' ? 'نسبة إكمال الدروس المسجلة' : 'Completion among recorded lessons'}
               </h4>
               <p className="text-xs text-gray-400 font-medium">
-                {lang === 'ar' ? 'يشمل القصص الإنجيلية، الألحان، والطقس الأرثوذكسي' : 'Includes Biblical stories, hymns, and Orthodox church history'}
+                {lang === 'ar' ? 'يعرض الدروس التي لها سجل محفوظ فقط' : 'Only lessons with persisted activity are included'}
               </p>
             </div>
             <span className="text-2xl font-extrabold text-[var(--color-church-blue)]">
@@ -491,7 +527,7 @@ export function ChildrenLessonsProgress({
           <div className="flex justify-between items-center text-xs text-gray-500 font-medium mt-2">
             <span>{completedCount} {lang === 'ar' ? 'دروس مكتملة' : 'completed'}</span>
             <span>{inProgressCount} {lang === 'ar' ? 'قيد المذاكرة' : 'in progress'}</span>
-            <span>{selectedChild.lessons.length - completedCount - inProgressCount} {lang === 'ar' ? 'متبقي' : 'upcoming'}</span>
+            <span>{lang === 'ar' ? 'المعروض: سجل محفوظ فقط' : 'Recorded activity only'}</span>
           </div>
         </div>
 
@@ -552,17 +588,17 @@ export function ChildrenLessonsProgress({
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg md:text-xl font-bold text-[var(--color-church-blue)]">
-                    {lang === 'ar' ? 'تقرير التعلّم والإتقان الرسمي' : 'Authoritative Learning & Mastery Review'}
+                    {lang === 'ar' ? 'سجل التعلّم المحفوظ' : 'Persisted learning records'}
                   </h3>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                     <ShieldCheck size={11} />
-                    {lang === 'ar' ? 'معتمد' : 'Authoritative'}
+                    {lang === 'ar' ? 'من قاعدة البيانات' : 'Database data'}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {lang === 'ar'
-                    ? `فصل مدارس الأحد: ${reviewData.student.grade} (${reviewData.student.classGroupId})`
-                    : `Sunday School Class: ${reviewData.student.grade} (${reviewData.student.classGroupId})`}
+                    ? `الصف: ${reviewData.student.grade}`
+                    : `Grade: ${reviewData.student.grade}`}
                 </p>
               </div>
             </div>
@@ -577,54 +613,18 @@ export function ChildrenLessonsProgress({
             </button>
           </div>
 
-          {/* 5 Summary Metrics Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4">
-              <div className="flex items-center justify-between text-emerald-800 mb-1">
-                <span className="text-xs font-bold">{lang === 'ar' ? 'المُتقن' : 'Mastered'}</span>
-                <Award size={16} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: lang === 'ar' ? 'دروس مسجلة' : 'Recorded lessons', value: reviewData.summary.totalLessons },
+              { label: lang === 'ar' ? 'دروس مكتملة' : 'Completed lessons', value: reviewData.summary.completedLessonsCount },
+              { label: lang === 'ar' ? 'محاولات الاختبار' : 'Quiz attempts', value: reviewData.lessons.reduce((sum, lesson) => sum + lesson.quizAttemptsCount, 0) },
+              { label: lang === 'ar' ? 'متوسط الاختبارات' : 'Average quiz score', value: reviewData.lessons.some(lesson => lesson.quizAttemptsCount > 0) ? `${reviewData.summary.averageQuizScore}%` : '—' }
+            ].map(metric => (
+              <div key={metric.label} className="bg-[var(--surface-secondary)] border border-[var(--border-default)] rounded-2xl p-4">
+                <span className="text-xs font-bold text-[var(--text-secondary)]">{metric.label}</span>
+                <div className="text-2xl font-black text-[var(--text-primary)] mt-1">{metric.value}</div>
               </div>
-              <div className="text-2xl font-black text-emerald-900">{reviewData.summary.masteredCount}</div>
-              <p className="text-[10px] text-emerald-700 mt-0.5">{lang === 'ar' ? 'إتقان كامل للمفاهيم' : 'Fully mastered'}</p>
-            </div>
-
-            <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4">
-              <div className="flex items-center justify-between text-amber-800 mb-1">
-                <span className="text-xs font-bold">{lang === 'ar' ? 'قيد التطوير' : 'Developing'}</span>
-                <Clock size={16} />
-              </div>
-              <div className="text-2xl font-black text-amber-900">{reviewData.summary.developingCount}</div>
-              <p className="text-[10px] text-amber-700 mt-0.5">{lang === 'ar' ? 'مذاكرة قيد التقدم' : 'In progress'}</p>
-            </div>
-
-            <div className="bg-rose-50/70 border border-rose-200/80 rounded-2xl p-4">
-              <div className="flex items-center justify-between text-rose-800 mb-1">
-                <span className="text-xs font-bold">{lang === 'ar' ? 'يحتاج مراجعة' : 'Needs Review'}</span>
-                <AlertTriangle size={16} />
-              </div>
-              <div className="text-2xl font-black text-rose-900">{reviewData.summary.needsReviewCount}</div>
-              <p className="text-[10px] text-rose-700 mt-0.5">{lang === 'ar' ? 'يحتاج مراجعة عائلية' : 'Needs attention'}</p>
-            </div>
-
-            <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4">
-              <div className="flex items-center justify-between text-blue-800 mb-1">
-                <span className="text-xs font-bold">{lang === 'ar' ? 'الدروس المكتملة' : 'Completed'}</span>
-                <BookOpen size={16} />
-              </div>
-              <div className="text-2xl font-black text-blue-900">
-                {reviewData.summary.completedLessonsCount} / {reviewData.summary.totalLessons}
-              </div>
-              <p className="text-[10px] text-blue-700 mt-0.5">{lang === 'ar' ? 'منهج منشور' : 'Published'}</p>
-            </div>
-
-            <div className="bg-purple-50/70 border border-purple-200/80 rounded-2xl p-4 col-span-2 sm:col-span-1">
-              <div className="flex items-center justify-between text-purple-800 mb-1">
-                <span className="text-xs font-bold">{lang === 'ar' ? 'متوسط الاختبارات' : 'Avg. Quiz'}</span>
-                <HelpCircle size={16} />
-              </div>
-              <div className="text-2xl font-black text-purple-900">{reviewData.summary.averageQuizScore}%</div>
-              <p className="text-[10px] text-purple-700 mt-0.5">{lang === 'ar' ? 'تقييم رسمي' : 'Authoritative'}</p>
-            </div>
+            ))}
           </div>
 
           {/* Needs Review Callout */}
@@ -652,40 +652,32 @@ export function ChildrenLessonsProgress({
             </div>
           )}
 
-          {/* Published Curriculum Lessons & Deterministic Mastery List */}
+          {/* Lessons with persisted activity */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">
-              {lang === 'ar' ? 'سجل إتقان دروس المنهج المنشور' : 'Published Lessons Mastery Status'}
+              {lang === 'ar' ? 'الدروس ذات النشاط المسجل' : 'Lessons with recorded activity'}
             </h4>
             <div className="divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/40">
               {reviewData.lessons.map((lesson) => (
                 <div key={lesson.lessonId} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-[var(--color-church-blue)]">{lesson.title}</span>
+                      <span className="font-bold text-sm text-[var(--color-church-blue)]">{lang === 'ar' ? (lesson.titleAr || lesson.title) : lesson.title}</span>
                       <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
                         {lesson.category}
                       </span>
                     </div>
                     <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-3">
-                      <span>{lang === 'ar' ? `القراءة: ${lesson.completionPercent}%` : `Reading: ${lesson.completionPercent}%`}</span>
-                      <span>•</span>
-                      <span>{lang === 'ar' ? `التقييم: ${lesson.latestQuizPercentage}%` : `Quiz: ${lesson.latestQuizPercentage}%`} ({lesson.quizAttemptsCount} {lang === 'ar' ? 'محاولات' : 'attempts'})</span>
+                      <span>{lang === 'ar' ? `إكمال الأقسام: ${lesson.completionPercent}%` : `Sections complete: ${lesson.completionPercent}%`}</span>
+                      {lesson.quizAttemptsCount > 0 && <span>{lang === 'ar' ? `آخر اختبار: ${lesson.latestQuizPercentage}%` : `Latest quiz: ${lesson.latestQuizPercentage}%`}</span>}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-1 ${
-                      lesson.masteryStatus === 'MASTERED'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                        : lesson.masteryStatus === 'DEVELOPING'
-                        ? 'bg-amber-50 border-amber-200 text-amber-800'
-                        : lesson.masteryStatus === 'NEEDS_REVIEW'
-                        ? 'bg-rose-50 border-rose-200 text-rose-800'
-                        : 'bg-gray-100 border-gray-200 text-gray-600'
-                    }`}>
-                      <Award size={11} />
-                      {lesson.masteryStatus}
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-[var(--border-default)] bg-[var(--surface-secondary)] text-[var(--text-secondary)]">
+                      {lesson.progressStatus === 'COMPLETED'
+                        ? (lang === 'ar' ? 'مكتمل' : 'Completed')
+                        : (lang === 'ar' ? 'قيد التقدم' : 'In progress')}
                     </span>
                   </div>
                 </div>

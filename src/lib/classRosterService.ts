@@ -401,6 +401,7 @@ export interface StudentLessonReview {
   totalSections: number;
   latestQuizScore: number;
   latestQuizPercentage: number;
+  pointsEarned?: number;
   quizPassed: boolean;
   quizAttemptsCount: number;
   masteryStatus: 'NOT_STARTED' | 'DEVELOPING' | 'NEEDS_REVIEW' | 'MASTERED';

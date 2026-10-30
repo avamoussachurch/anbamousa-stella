@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ========================================================
    Standardized Canonical Coptic Orthodox Church Palette
    Unifies Light & Dark modes under a single semantic system
@@ -7,6 +9,29 @@
 
 :root,
 :root[data-theme="light"] {
+  color-scheme: light;
+  /* Shared semantic tokens used by every application surface. */
+  --app-bg: #F3F7F5;
+  --surface-primary: #FFFEFB;
+  --surface-secondary: #EAF1EF;
+  --surface-overlay: #FFFFFF;
+  --text-primary: #172B2F;
+  --text-secondary: #354D51;
+  --text-muted: #52666A;
+  --border-default: #CFDBD8;
+  --border-strong: #AABDB8;
+  --state-hover: #E6F0ED;
+  --state-selected: #DCECE8;
+  --action-primary: #155C64;
+  --action-primary-text: #FFFFFF;
+  --focus-ring: #167C87;
+  --feedback-success: #226B49;
+  --feedback-warning: #805500;
+  --feedback-error: #A33D35;
+  --feedback-info: #155C64;
+  --navigation-bg: #0D373F;
+  --navigation-text: #F5FAF8;
+
   /* Canonical Brand Color Tokens */
   --brand-burgundy: #6F1D2A;
   --brand-burgundy-dark: #4E111B;
@@ -15,24 +40,24 @@
   --brand-gold-dark: #7A5A1E;
   
   /* Neutral & Base Tokens */
-  --text-ink: #241F1C;
-  --text-muted-stone: #A99D8C;
-  --bg-ivory: #F7F2E8;
-  --bg-parchment: #EEE3CF;
-  --border-stone: #D8CCB8;
+  --text-ink: var(--text-primary);
+  --text-muted-stone: var(--text-muted);
+  --bg-ivory: var(--app-bg);
+  --bg-parchment: var(--surface-secondary);
+  --border-stone: var(--border-default);
 
   /* Semantic Feedback Tokens */
-  --color-success: #2F6B4F;
-  --color-warning: #8A5A00;
-  --color-danger: #A33D35;
-  --color-info: #0B2E5C;
-  --color-neutral: #6B6258;
+  --color-success: var(--feedback-success);
+  --color-warning: var(--feedback-warning);
+  --color-danger: var(--feedback-error);
+  --color-info: var(--feedback-info);
+  --color-neutral: var(--text-muted);
 
   /* Elevated Surfaces */
-  --surface-ground: #F7F2E8;
-  --surface-card: #FFFFFF;
-  --surface-elevated: #FAF6EE;
-  --surface-border: #D8CCB8;
+  --surface-ground: var(--app-bg);
+  --surface-card: var(--surface-primary);
+  --surface-elevated: var(--surface-secondary);
+  --surface-border: var(--border-default);
 
   /* Typography Tokens */
   --font-coptic-ui: 'Noto Sans Coptic', 'Segoe UI Historic', 'Antinoou', sans-serif;
@@ -47,13 +72,13 @@
   --color-church-gold: #B58A3A;
   --color-church-gold-light: #D4A84E;
   --color-church-burgundy: #6F1D2A;
-  --color-church-cream: #F7F2E8;
-  --color-church-cream-dark: #D8CCB8;
-  --color-church-card: #FFFFFF;
-  --color-church-card-hover: #FAF6EE;
-  --color-church-text-main: #241F1C;
-  --color-church-text-muted: #6B6258;
-  --color-church-input-bg: #FFFFFF;
+  --color-church-cream: var(--app-bg);
+  --color-church-cream-dark: var(--border-default);
+  --color-church-card: var(--surface-primary);
+  --color-church-card-hover: var(--state-hover);
+  --color-church-text-main: var(--text-primary);
+  --color-church-text-muted: var(--text-muted);
+  --color-church-input-bg: var(--surface-overlay);
 
   /* ========================================================
      The Journey of Moses (رحلة الأنبا موسى) Visual Identity
@@ -93,6 +118,29 @@
 
 :root[data-theme="dark"],
 .dark {
+  color-scheme: dark;
+  /* Dark is the comfortable default; light mode remains a first-class palette. */
+  --app-bg: #10191D;
+  --surface-primary: #182428;
+  --surface-secondary: #202E32;
+  --surface-overlay: #25363B;
+  --text-primary: #F2F6F4;
+  --text-secondary: #D7E2DF;
+  --text-muted: #A9BCB7;
+  --border-default: #3A4B4F;
+  --border-strong: #586D71;
+  --state-hover: #26383B;
+  --state-selected: #244447;
+  --action-primary: #58B6B8;
+  --action-primary-text: #092326;
+  --focus-ring: #83D6D5;
+  --feedback-success: #74D69A;
+  --feedback-warning: #F0C36A;
+  --feedback-error: #FF9386;
+  --feedback-info: #83D6D5;
+  --navigation-bg: #111E22;
+  --navigation-text: #F2F6F4;
+
   /* Canonical Dark Mode Palette (Standardized) */
   --brand-burgundy: #8D2938;
   --brand-burgundy-dark: #3F1118;
@@ -101,24 +149,24 @@
   --brand-gold-dark: #916F2C;
 
   /* Dark Neutral & Surface Tokens */
-  --text-ink: #F5EFE4;
-  --text-muted-stone: #C9BFAF;
-  --bg-ivory: #171411;
-  --bg-parchment: #211C18;
-  --border-stone: #3B332C;
+  --text-ink: var(--text-primary);
+  --text-muted-stone: var(--text-muted);
+  --bg-ivory: var(--app-bg);
+  --bg-parchment: var(--surface-secondary);
+  --border-stone: var(--border-default);
 
   /* Elevated Surfaces */
-  --surface-ground: #171411;
-  --surface-elevated: #211C18;
-  --surface-card: #28211C;
-  --surface-border: #3B332C;
+  --surface-ground: var(--app-bg);
+  --surface-elevated: var(--surface-secondary);
+  --surface-card: var(--surface-primary);
+  --surface-border: var(--border-default);
 
   /* Semantic Feedback Tokens */
-  --color-success: #3E8B67;
-  --color-warning: #C78B24;
-  --color-danger: #C04F46;
-  --color-info: #7093B5;
-  --color-neutral: #C9BFAF;
+  --color-success: var(--feedback-success);
+  --color-warning: var(--feedback-warning);
+  --color-danger: var(--feedback-error);
+  --color-info: var(--feedback-info);
+  --color-neutral: var(--text-muted);
 
   /* Standardized Dark Church Mappings (Old Blue in Dark: #7093B5 & #52718C) */
   --color-church-blue: #7093B5;
@@ -126,13 +174,13 @@
   --color-church-gold: #D0A85E;
   --color-church-gold-light: #E0BA41;
   --color-church-burgundy: #8D2938;
-  --color-church-cream: #171411;
-  --color-church-cream-dark: #3B332C;
-  --color-church-card: #28211C;
-  --color-church-card-hover: #332B25;
-  --color-church-text-main: #F5EFE4;
-  --color-church-text-muted: #C9BFAF;
-  --color-church-input-bg: #211C18;
+  --color-church-cream: var(--app-bg);
+  --color-church-cream-dark: var(--border-default);
+  --color-church-card: var(--surface-primary);
+  --color-church-card-hover: var(--state-hover);
+  --color-church-text-main: var(--text-primary);
+  --color-church-text-muted: var(--text-muted);
+  --color-church-input-bg: var(--surface-overlay);
 
   /* The Journey of Moses Dark Palette */
   --mousa-sand-50: #1B1713;
@@ -544,6 +592,72 @@
   }
 }
 
+.parent-portal {
+  color: var(--text-primary);
+}
+
+.parent-portal [class~="bg-white"] {
+  background-color: var(--surface-primary) !important;
+}
+
+.parent-portal [class*="bg-gray-50"],
+.parent-portal [class*="bg-gray-100"],
+.parent-portal [class*="bg-blue-50"],
+.parent-portal [class*="bg-amber-50"],
+.parent-portal [class*="bg-emerald-50"],
+.parent-portal [class*="bg-rose-50"],
+.parent-portal [class*="bg-red-50"],
+.parent-portal [class*="bg-purple-50"] {
+  background-color: var(--surface-secondary) !important;
+}
+
+.parent-portal [class~="text-gray-900"],
+.parent-portal [class~="text-gray-800"] {
+  color: var(--text-primary) !important;
+}
+
+.parent-portal [class~="text-gray-700"],
+.parent-portal [class~="text-gray-600"],
+.parent-portal [class~="text-gray-500"],
+.parent-portal [class~="text-gray-400"] {
+  color: var(--text-secondary) !important;
+}
+
+.parent-portal [class*="border-gray-100"],
+.parent-portal [class*="border-gray-200"],
+.parent-portal [class*="border-blue-200"],
+.parent-portal [class*="border-amber-200"],
+.parent-portal [class*="border-emerald-200"],
+.parent-portal [class*="border-rose-200"],
+.parent-portal [class*="border-red-200"] {
+  border-color: var(--border-default) !important;
+}
+
+.dark .parent-portal [class*="text-emerald-"],
+.dark .parent-portal [class*="text-green-"] {
+  color: var(--feedback-success) !important;
+}
+
+.dark .parent-portal [class*="text-amber-"],
+.dark .parent-portal [class*="text-yellow-"] {
+  color: var(--feedback-warning) !important;
+}
+
+.dark .parent-portal [class*="text-rose-"],
+.dark .parent-portal [class*="text-red-"] {
+  color: var(--feedback-error) !important;
+}
+
+.dark .parent-portal [class*="text-blue-"],
+.dark .parent-portal [class*="text-indigo-"],
+.dark .parent-portal [class*="text-purple-"] {
+  color: var(--feedback-info) !important;
+}
+
+.dark .parent-portal [class*="mousa-teal-deep"] {
+  color: var(--text-primary) !important;
+}
+
 @keyframes quiz-question-arrive {
   from {
     opacity: 0;
@@ -591,5 +705,215 @@
 
   .quiz-celebration-particle {
     animation: quiz-celebration-fall 3.2s ease-out both;
+  }
+}
+
+@layer base {
+  html {
+    background: var(--app-bg);
+    color: var(--text-primary);
+  }
+
+  body {
+    background: var(--app-bg);
+    color: var(--text-primary);
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  :root:dir(rtl) body {
+    font-family: var(--font-arabic-ui);
+  }
+
+  :root:dir(ltr) body {
+    font-family: var(--font-english-ui);
+  }
+
+  :where(button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.58;
+    filter: none;
+    box-shadow: none;
+  }
+
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea) {
+    color: var(--text-primary);
+    background-color: var(--surface-overlay);
+    border-color: var(--border-strong);
+  }
+
+  :where(input, textarea)::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
+  }
+
+  :where(input, select, textarea):disabled {
+    color: var(--text-muted);
+    background-color: var(--surface-secondary);
+  }
+
+  [role="dialog"],
+  [role="alertdialog"],
+  dialog {
+    color: var(--text-primary);
+    background-color: var(--surface-primary);
+    border-color: var(--border-default);
+  }
+
+  [role="tablist"] {
+    border-color: var(--border-default);
+  }
+
+  [role="tab"] {
+    color: var(--text-secondary);
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+  }
+
+  [role="tab"][aria-selected="true"] {
+    color: var(--action-primary);
+    background-color: var(--state-selected);
+    border-color: var(--action-primary);
+  }
+}
+
+@layer utilities {
+  .app-topbar {
+    color: var(--navigation-text);
+    background-color: var(--navigation-bg);
+    border-color: color-mix(in srgb, var(--mousa-gold) 40%, transparent);
+  }
+
+  .app-topbar-quick-nav {
+    color: var(--navigation-text);
+    background-color: color-mix(in srgb, var(--navigation-text) 8%, transparent);
+    border-color: color-mix(in srgb, var(--navigation-text) 18%, transparent);
+  }
+
+  .app-topbar-mobile-quick {
+    color: var(--navigation-text);
+    background-color: color-mix(in srgb, var(--navigation-text) 7%, var(--navigation-bg));
+    border-color: color-mix(in srgb, var(--navigation-text) 18%, transparent);
+  }
+
+  .app-topbar-quick-active {
+    color: var(--action-primary-text);
+    background-color: var(--action-primary);
+  }
+
+  .app-topbar-quick-idle {
+    color: color-mix(in srgb, var(--navigation-text) 88%, transparent);
+  }
+
+  .app-topbar-quick-idle:hover {
+    color: var(--navigation-text);
+    background-color: color-mix(in srgb, var(--navigation-text) 12%, transparent);
+  }
+
+  .app-bottom-nav {
+    color: var(--text-secondary);
+    background-color: var(--surface-primary);
+    border-color: var(--border-default);
+  }
+
+  .app-bottom-nav-item {
+    color: var(--text-muted);
+  }
+
+  .app-bottom-nav-item:hover {
+    color: var(--action-primary);
+    background-color: var(--state-hover);
+  }
+
+  .app-bottom-nav-item.is-active {
+    color: var(--action-primary);
+  }
+
+  .app-bottom-nav-indicator {
+    background-color: var(--action-primary);
+  }
+
+  .app-bottom-nav-icon.is-active {
+    color: var(--action-primary);
+    background-color: var(--state-selected);
+  }
+
+  .app-surface {
+    color: var(--text-primary);
+    background-color: var(--surface-primary);
+    border-color: var(--border-default);
+  }
+
+  .app-surface-subtle {
+    color: var(--text-primary);
+    background-color: var(--surface-secondary);
+    border-color: var(--border-default);
+  }
+
+  .app-text-muted {
+    color: var(--text-muted);
+  }
+
+  .app-primary-action {
+    color: var(--action-primary-text);
+    background-color: var(--action-primary);
+  }
+
+  .app-primary-action:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  .dark .bg-white,
+  .dark .bg-slate-50,
+  .dark .bg-gray-50 {
+    background-color: var(--surface-primary) !important;
+    color: var(--text-primary);
+  }
+
+  .dark .bg-gray-100,
+  .dark .bg-slate-800,
+  .dark .bg-stone-800 {
+    background-color: var(--surface-secondary) !important;
+    color: var(--text-primary);
+  }
+
+  .dark .bg-slate-900,
+  .dark .bg-slate-950 {
+    background-color: var(--app-bg) !important;
+    color: var(--text-primary);
+  }
+
+  .dark .text-gray-900,
+  .dark .text-gray-800,
+  .dark .text-slate-900,
+  .dark .text-slate-800 {
+    color: var(--text-primary) !important;
+  }
+
+  .dark .text-gray-700,
+  .dark .text-slate-700 {
+    color: var(--text-secondary) !important;
+  }
+
+  .dark .text-gray-600,
+  .dark .text-gray-500,
+  .dark .text-slate-600,
+  .dark .text-slate-500,
+  .dark .text-slate-400 {
+    color: var(--text-muted) !important;
+  }
+
+  .dark .border-gray-100,
+  .dark .border-gray-200,
+  .dark .border-slate-700,
+  .dark .border-slate-800,
+  .dark .border-stone-700 {
+    border-color: var(--border-default) !important;
   }
 }
