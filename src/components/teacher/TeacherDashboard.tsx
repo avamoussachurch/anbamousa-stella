@@ -42,6 +42,7 @@ import { EvidenceCoverageModal } from '../sunday-school/evidence/EvidenceCoverag
 import { PdfDocumentViewer } from '../sunday-school/viewers/PdfDocumentViewer';
 import { SlideDeckViewer } from '../sunday-school/viewers/SlideDeckViewer';
 import { TeacherPublishingHub, PublishingMode } from './publishing/TeacherPublishingHub';
+import { LessonPublicationManager } from './LessonPublicationManager';
 
 interface TeacherDashboardProps {
   onBackToApp?: () => void;
@@ -899,6 +900,16 @@ export function TeacherDashboard({
               ? 'ملخص تقدم الطلاب ونتائج الاختبارات مش متاح هنا لحد ما يتوصل بقراءة موثوقة من قاعدة البيانات. مش هنعرض أرقام تجريبية أو محفوظة محلياً على إنها نتائج حقيقية.'
               : 'Student progress and quiz summaries are unavailable here until a trusted database read path is connected. Demo or browser-cached values are not presented as real results.'}
           </div>
+
+          <LessonPublicationManager
+            lessons={filteredTeacherLessons}
+            lessonVersions={lessonVersions || {}}
+            lang={lang}
+            canManage={isOnlineAuth && (userData?.role === 'teacher' || userData?.role === 'admin')}
+            role={userData?.role}
+            userId={userData?.id}
+            onRefresh={refreshCurriculum}
+          />
 
           {/* Universal Grade Level Filter Bar */}
           <div className="space-y-2.5 bg-stone-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-stone-200 dark:border-slate-800">
