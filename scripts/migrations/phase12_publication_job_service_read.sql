@@ -2,6 +2,7 @@
 -- Express publishing route, which checks for an active scheduled job before
 -- calling the service-role-only immediate-publish RPC.
 --
+-- Run only after Phase 11 has completed and committed successfully.
 -- This does not grant access to anon/authenticated, change RLS, or alter any
 -- publication jobs. Run only after verifying Phase 11 is already installed.
 -- Safe to rerun: GRANT is idempotent.

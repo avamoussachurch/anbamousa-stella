@@ -135,6 +135,18 @@ async function runPrompt6Tests() {
     '1.8 Migration includes publish_lesson_version stored procedure'
   );
   assert(
+    (migrationSql.match(/CREATE OR REPLACE FUNCTION public\.publish_lesson_version\s*\(/g) || []).length === 1,
+    '1.8a Migration defines one publish_lesson_version signature with no conflicting duplicate parameter names'
+  );
+  assert(
+    (schemaSql.match(/CREATE OR REPLACE FUNCTION public\.publish_lesson_version\s*\(/g) || []).length === 1,
+    '1.8b Clean-install schema defines one publish_lesson_version signature'
+  );
+  assert(
+    /publish_lesson_version\s*\(\s*p_lesson_id\s+UUID\s*,\s*p_version_id\s+UUID\s*\)/i.test(migrationSql),
+    '1.8c Migration preserves the named RPC arguments used by the server'
+  );
+  assert(
     migrationSql.includes('SECURITY DEFINER') && migrationSql.includes('SET search_path = public, pg_temp'),
     '1.9 publish_lesson_version RPC uses safe fixed search_path and SECURITY DEFINER'
   );

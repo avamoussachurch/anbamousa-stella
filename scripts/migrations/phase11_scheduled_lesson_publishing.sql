@@ -1,7 +1,52 @@
 -- Scheduled lesson publishing.
--- Requires Supabase's managed pg_cron extension. This migration is not applied automatically.
+-- Run only after the base schema and Phases 3B, 4, and 5 are installed.
+-- Enable pg_cron in Supabase Database > Extensions before running this file.
+-- This migration is not applied automatically.
+
+BEGIN;
+
+DO $preflight$
+DECLARE
+  v_missing TEXT[] := ARRAY[]::TEXT[];
+BEGIN
+  IF pg_catalog.to_regclass('public.profiles') IS NULL THEN
+    v_missing := pg_catalog.array_append(v_missing, 'public.profiles (base schema)');
+  END IF;
+  IF pg_catalog.to_regclass('public.lessons') IS NULL THEN
+    v_missing := pg_catalog.array_append(v_missing, 'public.lessons (base schema)');
+  END IF;
+  IF pg_catalog.to_regclass('public.lesson_versions') IS NULL THEN
+    v_missing := pg_catalog.array_append(v_missing, 'public.lesson_versions (Phase 5)');
+  END IF;
+  IF pg_catalog.to_regclass('public.servant_class_assignments') IS NULL
+     OR pg_catalog.to_regclass('public.church_years') IS NULL
+     OR pg_catalog.to_regclass('public.class_instances') IS NULL THEN
+    v_missing := pg_catalog.array_append(v_missing, 'church-year/class assignment tables (Phase 3B)');
+  END IF;
+  IF pg_catalog.to_regprocedure('public.publish_lesson_version(uuid,uuid)') IS NULL THEN
+    v_missing := pg_catalog.array_append(v_missing, 'public.publish_lesson_version(uuid,uuid) (Phase 5)');
+  END IF;
+
+  IF pg_catalog.cardinality(v_missing) > 0 THEN
+    RAISE EXCEPTION
+      'Phase 11 prerequisites are missing: %. Inspect the database first; apply only the missing prerequisite migrations, then rerun Phase 11.',
+      pg_catalog.array_to_string(v_missing, ', ');
+  END IF;
+END;
+$preflight$;
 
 CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+DO $cron_preflight$
+BEGIN
+  IF pg_catalog.to_regclass('cron.job') IS NULL
+     OR pg_catalog.to_regprocedure('cron.schedule(text,text,text)') IS NULL
+     OR pg_catalog.to_regprocedure('cron.unschedule(bigint)') IS NULL THEN
+    RAISE EXCEPTION
+      'Phase 11 requires Supabase pg_cron (cron.job, cron.schedule, and cron.unschedule). Enable the pg_cron extension in Supabase Database > Extensions, then rerun this migration.';
+  END IF;
+END;
+$cron_preflight$;
 
 CREATE TABLE IF NOT EXISTS public.lesson_publication_jobs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -457,3 +502,5 @@ BEGIN
   );
 END;
 $$;
+
+COMMIT;
