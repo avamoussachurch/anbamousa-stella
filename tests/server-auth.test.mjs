@@ -14,6 +14,8 @@ let authUrl;
 let appOutput = '';
 let rpcFailure = false;
 let quizInsertFailure = false;
+let publicationTeacherAssigned = false;
+let publicationRpcCalls = 0;
 const completionWrites = new Map();
 const completionRpcCalls = [];
 const quizAttemptWrites = [];
@@ -87,6 +89,38 @@ before(async () => {
       }
       return respondJson(res, 200, [{ role }]);
     }
+    if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/lesson_versions') {
+      return respondJson(res, 200, {
+        id: 'v-publication-test',
+        lesson_id: 'l-publication-test',
+        created_by: 'user_teacher_mina_101',
+        status: 'APPROVED',
+        approved_by: 'reviewer-1',
+        approved_at: '2026-01-01T00:00:00.000Z'
+      });
+    }
+    if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/lessons') {
+      return respondJson(res, 200, { grade_level: 'Grade 4' });
+    }
+    if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/church_years') {
+      return respondJson(res, 200, { id: 'year-1' });
+    }
+    if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/class_instances') {
+      return respondJson(res, 200, { id: 'class-1' });
+    }
+    if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/servant_class_assignments') {
+      return respondJson(res, 200, publicationTeacherAssigned ? { id: 'assignment-1' } : null);
+    }
+    if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/lesson_publication_jobs') {
+      return respondJson(res, 200, null);
+    }
+    if (bearer === 'test-service-role-key' && [
+      '/rest/v1/rpc/publish_lesson_version_immediately',
+      '/rest/v1/rpc/publish_lesson_version'
+    ].includes(url.pathname)) {
+      publicationRpcCalls += 1;
+      return respondJson(res, 200, { success: true, published_at: '2026-01-01T00:00:00.000Z' });
+    }
     if (url.pathname === '/rest/v1/quiz_attempts') {
       if (bearer !== 'test-service-role-key') {
         return respondJson(res, 403, { message: 'Trusted server key required' });
@@ -139,12 +173,13 @@ before(async () => {
   await once(portProbe, 'close');
   baseUrl = `http://127.0.0.1:${appPort}`;
   const env = { ...process.env };
-  delete env.SUPABASE_URL;
   delete env.SUPABASE_ANON_KEY;
   env.NODE_ENV = 'test';
   env.PORT = String(appPort);
   env.VITE_SUPABASE_URL = authUrl;
+  env.SUPABASE_URL = authUrl;
   env.VITE_SUPABASE_ANON_KEY = 'test-anon-key';
+  env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
   env.SUPABASE_SECRET_KEY = 'test-service-role-key';
   env.ENABLE_REVIEW_TEST_RESET = 'false';
 
@@ -279,6 +314,20 @@ test('parent and teacher access requires a matching child relationship or class 
 });
 
 test('anonymous and non-owner lesson publishing is rejected, including missing ownership', async () => {
+  const anonymousApprovedRoute = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    body: { lessonId: 'l-test-multiversion-01', versionId: 'v-test-multi-1' }
+  });
+  assert.equal(anonymousApprovedRoute.status, 401);
+
+  const studentApprovedRoute = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    role: 'student',
+    userId: 'mark',
+    body: { lessonId: 'l-test-multiversion-01', versionId: 'v-test-multi-1' }
+  });
+  assert.equal(studentApprovedRoute.status, 403);
+
   const anonymous = await request('/api/church/publish-lesson-version', {
     method: 'POST',
     body: { lessonId: 'l-test-multiversion-01', versionId: 'v-test-multi-1' }
@@ -308,6 +357,31 @@ test('anonymous and non-owner lesson publishing is rejected, including missing o
     body: { lessonId: 'l-test-multiversion-01', versionId: 'toString' }
   });
   assert.equal(missingOwner.status, 403);
+});
+
+test('lesson publishing requires the teacher class assignment and succeeds for an assigned teacher', async () => {
+  const body = { lessonId: 'l-publication-test', versionId: 'v-publication-test' };
+  publicationTeacherAssigned = false;
+  const initialRpcCalls = publicationRpcCalls;
+  const unassigned = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    role: 'teacher',
+    userId: 'user_teacher_mina_101',
+    body
+  });
+  assert.equal(unassigned.status, 403, await unassigned.text());
+  assert.equal(publicationRpcCalls, initialRpcCalls, 'unassigned teacher must not reach the publication RPC');
+
+  publicationTeacherAssigned = true;
+  const assigned = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    role: 'teacher',
+    userId: 'user_teacher_mina_101',
+    body
+  });
+  assert.equal(assigned.status, 200, await assigned.text());
+  assert.equal(publicationRpcCalls, initialRpcCalls + 1);
+  publicationTeacherAssigned = false;
 });
 
 test('unauthorized progress writes and disabled reset endpoint do not proceed', async () => {

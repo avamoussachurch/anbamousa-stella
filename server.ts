@@ -3879,6 +3879,177 @@ app.post("/api/church/approve-version", async (req, res) => {
 // Authoritative publication boundary connecting APPROVED versions to active_version_id
 // ==============================================================================
 
+app.post("/api/church/publish-approved-lesson-version", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Authentication is required." });
+    }
+    if (authContext.role !== "teacher" && authContext.role !== "admin") {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers and administrators may publish lessons." });
+    }
+
+    const { lessonId, versionId } = req.body || {};
+    if (typeof lessonId !== "string" || typeof versionId !== "string" || !lessonId || !versionId) {
+      return res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "lessonId and versionId are required." });
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
+    if (!supabaseUrl || !serviceKey) {
+      return res.status(503).json({
+        success: false,
+        error: "PUBLISHING_NOT_CONFIGURED",
+        message: "Trusted lesson publishing is unavailable; configure the server-side Supabase service key."
+      });
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+    const { data: version, error: versionError } = await adminClient
+      .from("lesson_versions")
+      .select("id, lesson_id, created_by, status, approved_by, approved_at")
+      .eq("id", versionId)
+      .eq("lesson_id", lessonId)
+      .maybeSingle();
+
+    if (versionError) {
+      return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: versionError.message });
+    }
+    if (!version) {
+      return res.status(404).json({ success: false, error: "VERSION_NOT_FOUND", message: "The lesson version was not found." });
+    }
+    if (authContext.role === "teacher" && version.created_by !== authContext.userId) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Teachers may publish only their own approved lesson versions." });
+    }
+    if (version.status !== "APPROVED" || !version.approved_by || !version.approved_at) {
+      return res.status(409).json({
+        success: false,
+        error: "VERSION_NOT_ELIGIBLE",
+        message: "Only approved versions with approval metadata can be published."
+      });
+    }
+    if (authContext.role === "teacher") {
+      const { data: lesson, error: lessonError } = await adminClient
+        .from("lessons")
+        .select("grade_level")
+        .eq("id", lessonId)
+        .maybeSingle();
+      if (lessonError) {
+        return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: lessonError.message });
+      }
+
+      const grade = String(lesson?.grade_level || "");
+      const classGroup = grade === "KG1" || grade === "KG2" ? "angels"
+        : ["Grade 1", "Grade 2", "Grade 3"].includes(grade) ? "primary_1"
+        : ["Grade 4", "Grade 5", "Grade 6"].includes(grade) ? "primary_2"
+        : ["Prep 1", "Prep 2", "Prep 3"].includes(grade) ? "preparatory"
+        : ["Secondary 1", "Secondary 2", "Secondary 3"].includes(grade) ? "secondary"
+        : ["University", "Youth"].includes(grade) ? "university"
+        : null;
+      if (!classGroup) {
+        return res.status(403).json({ success: false, error: "FORBIDDEN", message: "This lesson grade has no assigned teacher class." });
+      }
+
+      const { data: activeYear, error: yearError } = await adminClient
+        .from("church_years")
+        .select("id")
+        .eq("is_active", true)
+        .maybeSingle();
+      if (yearError) {
+        return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: yearError.message });
+      }
+      if (!activeYear) {
+        return res.status(403).json({ success: false, error: "FORBIDDEN", message: "No active church year is configured." });
+      }
+
+      const { data: classInstance, error: classError } = await adminClient
+        .from("class_instances")
+        .select("id")
+        .eq("church_year_id", activeYear.id)
+        .eq("class_group_id", classGroup)
+        .maybeSingle();
+      if (classError) {
+        return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: classError.message });
+      }
+      if (!classInstance) {
+        return res.status(403).json({ success: false, error: "FORBIDDEN", message: "No active class matches this lesson grade." });
+      }
+
+      const { data: assignment, error: assignmentError } = await adminClient
+        .from("servant_class_assignments")
+        .select("id")
+        .eq("servant_id", authContext.userId)
+        .eq("church_year_id", activeYear.id)
+        .eq("class_instance_id", classInstance.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (assignmentError) {
+        return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: assignmentError.message });
+      }
+      if (!assignment) {
+        return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Teacher is not assigned to a class for this lesson grade." });
+      }
+    }
+
+    const { data: activePublication, error: scheduleLookupError } = await adminClient
+      .from("lesson_publication_jobs")
+      .select("id")
+      .eq("lesson_id", lessonId)
+      .in("status", ["scheduled", "processing"])
+      .maybeSingle();
+    const scheduleTableMissing = scheduleLookupError?.code === "42P01" || scheduleLookupError?.code === "PGRST205";
+    if (scheduleLookupError && !scheduleTableMissing) {
+      return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: scheduleLookupError.message });
+    }
+    if (!scheduleLookupError && activePublication) {
+      return res.status(409).json({
+        success: false,
+        error: "PUBLICATION_ALREADY_SCHEDULED",
+        message: "Cancel the scheduled publication before publishing this lesson immediately."
+      });
+    }
+
+    let { data: published, error: publishError } = await adminClient.rpc("publish_lesson_version_immediately", {
+      p_lesson_id: lessonId,
+      p_version_id: versionId,
+      p_actor_id: authContext.userId
+    });
+    if (publishError?.code === "PGRST202" || publishError?.code === "42883") {
+      const fallbackResult = await adminClient.rpc("publish_lesson_version", {
+        p_lesson_id: lessonId,
+        p_version_id: versionId
+      });
+      published = fallbackResult.data;
+      publishError = fallbackResult.error;
+    }
+    if (publishError) {
+      return res.status(409).json({ success: false, error: "PUBLICATION_REJECTED", message: publishError.message });
+    }
+    if (!published?.success) {
+      return res.status(500).json({ success: false, error: "PUBLICATION_UNCONFIRMED", message: "The database did not confirm publication." });
+    }
+
+    return res.json({
+      success: true,
+      lessonId,
+      versionId,
+      status: "PUBLISHED",
+      activeVersionId: versionId,
+      lessonStatus: "published",
+      publishedAt: published.published_at
+    });
+  } catch (error) {
+    console.error("Approved lesson publication failed:", error);
+    return res.status(500).json({
+      success: false,
+      error: "SERVER_ERROR",
+      message: error instanceof Error ? error.message : "Lesson publication failed."
+    });
+  }
+});
+
 // 1. Publish Lesson Version (APPROVED -> PUBLISHED)
 app.post("/api/church/publish-lesson-version", async (req, res) => {
   try {
