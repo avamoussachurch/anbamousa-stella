@@ -13,6 +13,7 @@ interface DuneHeroBannerProps {
   avatarUrl?: string;
   streakDays: number;
   totalPoints: number;
+  onNavigatePoints?: () => void;
 }
 
 /**
@@ -28,7 +29,8 @@ export const MosesDuneHeroBanner: React.FC<DuneHeroBannerProps> = ({
   lang,
   avatarUrl,
   streakDays,
-  totalPoints
+  totalPoints,
+  onNavigatePoints
 }) => {
   const isAr = lang === 'ar';
   const isCop = lang === 'copt' || lang === 'cop';
@@ -173,7 +175,36 @@ export const MosesDuneHeroBanner: React.FC<DuneHeroBannerProps> = ({
         </div>
 
         {/* Student Avatar with Desert Golden Aura */}
-        <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-end md:self-center">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="min-w-[82px] rounded-xl border border-[var(--mousa-coral)]/30 bg-white/70 dark:bg-[#1A1713]/75 px-2.5 py-2 text-center">
+              <span className="flex items-center justify-center gap-1 text-[10px] font-bold text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)]">
+                <Flame size={12} />
+                {isCop ? 'Ⲭⲣⲱⲙ ⲛ̀ⲥⲃⲱ' : isAr ? 'المواظبة' : 'Streak'}
+              </span>
+              <span className="mt-0.5 block text-lg font-black leading-tight text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
+                {streakDays} <span className="text-[10px] font-bold">{isCop ? 'Ⲛ̀ⲉϩⲟⲟⲩ' : isAr ? 'يوم' : 'days'}</span>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={onNavigatePoints}
+              className="min-w-[82px] rounded-xl border border-[var(--mousa-gold)]/40 bg-white/70 dark:bg-[#1A1713]/75 px-2.5 py-2 text-center transition-colors hover:bg-[var(--mousa-gold-soft)] dark:hover:bg-[#30271A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mousa-gold)]"
+              aria-label={isCop
+                ? `Ⲛⲁⲕ ${totalPoints} ⲧⲁⲓⲟ`
+                : isAr
+                  ? `رصيدك ${totalPoints} نقطة، افتح النقاط والمكافآت`
+                  : `You have ${totalPoints} points. Open points and rewards`}
+            >
+              <span className="flex items-center justify-center gap-1 text-[10px] font-bold text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)]">
+                <Star size={12} />
+                {isCop ? 'Ⲡⲓⲧⲁⲓⲟ' : isAr ? 'النقاط' : 'Points'}
+              </span>
+              <span className="mt-0.5 block text-lg font-black leading-tight text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
+                {totalPoints}{isCop && <span className="text-[10px]"> ⲧⲁⲓⲟ</span>}
+              </span>
+            </button>
+          </div>
           <div className="relative group">
             <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-[var(--mousa-gold)] via-[var(--mousa-coral)] to-[var(--mousa-teal)] opacity-70 blur-xs group-hover:opacity-100 transition-opacity"></div>
             <img

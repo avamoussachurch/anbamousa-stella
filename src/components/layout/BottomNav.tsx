@@ -1,6 +1,6 @@
 import React from 'react';
 import { Home, Trophy, MessageCircle, User, Sparkles, Users } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { playSound } from '../../utils/audio';
 import { mockLessons } from '../../data';
 import { useLessons } from '../../context/LessonsContext';
@@ -15,6 +15,7 @@ interface BottomNavProps {
 
 export function BottomNav({ activeTab, setActiveTab, lang, userRole }: BottomNavProps) {
   const { lessons } = useLessons();
+  const reduceMotion = useReducedMotion();
 
   const currentLessons = lessons || mockLessons;
   const hasNewLessons = currentLessons.some(l => l.status === 'published' && !l.isCompleted);
@@ -43,76 +44,41 @@ export function BottomNav({ activeTab, setActiveTab, lang, userRole }: BottomNav
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] border-t-2 border-[var(--mousa-border-sand)] dark:border-[#3A3026] pb-safe shadow-[0_-4px_25px_-8px_rgba(40,30,20,0.15)] z-50 transition-colors">
+    <nav aria-label={lang === 'ar' ? 'التنقل الرئيسي' : 'Main navigation'} className="app-bottom-nav fixed bottom-0 w-full border-t pb-safe shadow-[0_-4px_25px_-8px_rgba(10,30,35,0.18)] z-50 transition-colors">
       <div className="flex justify-around items-center h-16 sm:h-20 max-w-lg md:max-w-4xl lg:max-w-6xl mx-auto px-0.5 sm:px-4 md:px-6 relative overflow-x-auto scrollbar-none">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <button
+              type="button"
               key={item.id}
               onClick={() => { playSound('click'); setActiveTab(item.id); }}
-              className={`flex flex-col items-center justify-center flex-1 min-w-[48px] h-full relative z-10 transition-colors cursor-pointer px-0.5 ${
-                isActive 
-                  ? 'text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-glow)] font-black' 
-                  : item.highlight 
-                    ? 'text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)] hover:opacity-100 font-bold' 
-                    : 'text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal)] dark:hover:text-[#FAF5EB]'
-              }`}
+              aria-current={isActive ? 'page' : undefined}
+              className={`app-bottom-nav-item flex flex-col items-center justify-center flex-1 min-w-[48px] h-full relative z-10 transition-colors cursor-pointer px-0.5 ${isActive ? 'is-active' : ''}`}
             >
               {isActive && (
-                <>
-                  {/* Glowing Moses Gold & Sunrise Coral Strip hovering over the open tab */}
-                  <motion.div 
-                    layoutId="bottom-nav-indicator"
-                    className="absolute top-0 inset-x-2 sm:inset-x-3.5 h-[3.5px] bg-gradient-to-r from-[var(--mousa-gold)] via-[var(--mousa-coral-glow)] to-[var(--mousa-gold)] rounded-b-full shadow-[0_0_12px_rgba(198,139,35,0.85),0_2px_8px_rgba(217,93,57,0.5)] z-30 pointer-events-none"
-                    transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                  />
-                  {/* Subtle warm desert sunrise glow radiating down from the strip */}
-                  <motion.div 
-                    layoutId="bottom-nav-active-glow"
-                    className="absolute top-0 inset-x-1 h-6 bg-gradient-to-b from-[var(--mousa-gold)]/20 via-[var(--mousa-coral)]/5 to-transparent rounded-t-lg pointer-events-none -z-0"
-                    transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                  />
-                </>
+                <span aria-hidden="true" className="app-bottom-nav-indicator absolute top-0 inset-x-2 sm:inset-x-3.5 h-[3px] rounded-b-full" />
               )}
               
               <div className="relative">
-                <motion.div 
-                  animate={isActive ? { y: -2, scale: 1.1 } : { y: 0, scale: 1 }}
-                  className={`p-1 sm:p-1.5 rounded-full transition-colors ${
-                    isActive 
-                      ? 'bg-[var(--mousa-gold)]/20 dark:bg-[var(--mousa-gold)]/25 text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-glow)]' 
-                      : item.highlight 
-                        ? 'bg-[var(--mousa-coral-soft)] dark:bg-[#2A1D17]' 
-                        : ''
-                  }`}
-                >
+                <span className={`app-bottom-nav-icon inline-flex rounded-full p-1 sm:p-1.5 transition-colors ${isActive ? 'is-active' : ''}`}>
                   <Icon 
                     size={20} 
                     strokeWidth={isActive ? 2.5 : 2} 
-                    className={`sm:w-5 sm:h-5 ${
-                      isActive 
-                        ? 'text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-glow)]' 
-                        : item.highlight 
-                          ? 'text-[var(--mousa-coral)] dark:text-[var(--mousa-coral-glow)]' 
-                          : ''
-                    }`} 
+                    className="sm:w-5 sm:h-5"
                   />
-                </motion.div>
+                </span>
                 {item.hasBadge && (
-                  <span className="absolute top-1 right-1 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-[var(--mousa-coral)] rounded-full border-2 border-white dark:border-[#1C1712] shadow-xs" />
+                  <span className="absolute top-1 end-1 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-[var(--feedback-error)] rounded-full border-2 border-[var(--surface-primary)] shadow-xs" />
                 )}
               </div>
               
-              <motion.span 
-                animate={isActive ? { y: 0, opacity: 1 } : { y: 1, opacity: 0.85 }}
+              <motion.span
+                animate={isActive ? { y: 0, opacity: 1 } : { y: reduceMotion ? 0 : 1, opacity: 0.9 }}
+                transition={{ duration: reduceMotion ? 0 : 0.12 }}
                 className={`text-[9px] sm:text-[10px] md:text-xs mt-0.5 font-bold tracking-tight truncate max-w-full ${
-                  isActive 
-                    ? 'text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-glow)]' 
-                    : item.highlight 
-                      ? 'text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)] font-extrabold' 
-                      : ''
+                  isActive ? 'font-black' : ''
                 }`}
               >
                 {item.label}

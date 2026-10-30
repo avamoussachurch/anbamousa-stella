@@ -156,6 +156,7 @@ interface LessonsContextType {
   // Normalized Curriculum Online Status
   curriculumLoading?: boolean;
   curriculumError?: string | null;
+  curriculumLoadedForUserId?: string | null;
   refreshCurriculum?: () => Promise<void>;
   refreshProgressSummary?: () => Promise<void>;
 
@@ -289,6 +290,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
   const { userData, isGuest, syncAuthoritativeProgress } = useAuth();
   const [curriculumLoading, setCurriculumLoading] = useState<boolean>(false);
   const [curriculumError, setCurriculumError] = useState<string | null>(null);
+  const [curriculumLoadedForUserId, setCurriculumLoadedForUserId] = useState<string | null>(null);
 
   const loadOnlineCurriculum = React.useCallback(async () => {
     // Only attempt online fetch if user is authenticated and not in guest/demo mode
@@ -298,6 +300,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
     setCurriculumLoading(true);
     setCurriculumError(null);
+    setCurriculumLoadedForUserId(null);
 
     try {
       const isTeacher = userData.role === 'teacher' || userData.role === 'admin';
@@ -307,8 +310,9 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
       if (result.error) {
         console.warn('Online curriculum load note from Supabase:', result.error);
+        setCurriculumError(result.error.message || 'Failed to load online curriculum');
+        setLessons([]);
         setCurriculumLoading(false);
-        setLessons(prev => (prev && prev.length > 0 ? prev : mockLessons));
         return;
       }
 
@@ -346,13 +350,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
           isCompleted: hasAuthoritativeSummary ? completedSet.has(l.id) : Boolean(l.isCompleted)
         })));
       } else {
-        setLessons(prev => {
-          const base = (prev && prev.length > 0) ? prev : mockLessons;
-          return base.map(l => ({
-            ...l,
-            isCompleted: hasAuthoritativeSummary ? completedSet.has(l.id) : Boolean(l.isCompleted)
-          }));
-        });
+        setLessons([]);
       }
 
       // Hydrate version map and sources from normalized database
@@ -411,6 +409,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       setCurriculumError(e?.message || 'Failed to load online curriculum');
     } finally {
       setCurriculumLoading(false);
+      setCurriculumLoadedForUserId(userData.id);
     }
   }, [userData?.id, userData?.role, isGuest]);
 
@@ -1347,6 +1346,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       },
       curriculumLoading,
       curriculumError,
+      curriculumLoadedForUserId,
       refreshCurriculum: loadOnlineCurriculum,
       refreshProgressSummary: async () => {
         if (!userData) return;

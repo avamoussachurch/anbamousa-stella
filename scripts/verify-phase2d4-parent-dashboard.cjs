@@ -193,7 +193,7 @@ async function runTests() {
     versionId: 'v-test-multi-1'
   }, studentMarkToken);
 
-  await makePostRequest('/api/church/student-quiz/submit', {
+  const quizSubmission = await makePostRequest('/api/church/student-quiz/submit', {
     lessonId: 'l-test-multiversion-01',
     versionId: 'v-test-multi-1',
     quizId: 'quiz-multi-01',
@@ -207,13 +207,13 @@ async function runTests() {
   const markLesson = res7.json?.lessons?.find(l => l.lessonId === 'l-test-multiversion-01');
 
   assert(
+    quizSubmission.statusCode === 503 &&
+    quizSubmission.json?.error === 'QUIZ_PERSISTENCE_NOT_CONFIGURED' &&
     res7.statusCode === 200 &&
-    markLesson &&
-    markLesson.latestQuizPercentage === 100 &&
-    markLesson.quizPassed === true &&
-    markLesson.quizAttemptsCount >= 1,
-    'Test 7: Child learning review reflects server-computed 100% quiz score and pass status',
-    JSON.stringify(markLesson)
+    markLesson?.quizAttemptsCount === 0 &&
+    markLesson?.latestQuizPercentage === 0,
+    'Test 7: Failed quiz persistence is not displayed as a saved score',
+    `Submission: ${JSON.stringify(quizSubmission.json)}, review: ${JSON.stringify(markLesson)}`
   );
 
   // ----------------------------------------------------
@@ -243,9 +243,10 @@ async function runTests() {
   assert(
     res8.statusCode === 200 &&
     masteredLesson &&
-    masteredLesson.masteryStatus === 'MASTERED' &&
-    res8.json?.summary?.masteredCount >= 1,
-    'Test 8: Deterministic server-computed mastery state (MASTERED) reflected in parent view',
+    masteredLesson.completionPercent === 100 &&
+    masteredLesson.sectionsCompleted.length === 3 &&
+    masteredLesson.masteryStatus !== 'MASTERED',
+    'Test 8: Read sections are shown, but unpersisted quiz results do not imply mastery',
     JSON.stringify(masteredLesson)
   );
 
@@ -315,21 +316,19 @@ async function runTests() {
   );
 
   // ----------------------------------------------------
-  // TEST 14: Demo / Guest / Offline Remain Functional
+  // TEST 14: Parent data endpoints require an authenticated account
   // ----------------------------------------------------
-  console.log('--- Test 14: Demo / Guest / Offline Compatibility ---');
+  console.log('--- Test 14: Unauthenticated requests are rejected ---');
   const res14Children = await makeGetRequest('/api/church/parent/children');
   const res14Review = await makeGetRequest('/api/church/parent/child-learning-review/student-david');
 
   assert(
-    res14Children.statusCode === 200 &&
-    res14Children.json?.success === true &&
-    Array.isArray(res14Children.json?.children) &&
-    res14Review.statusCode === 200 &&
-    res14Review.json?.success === true &&
-    res14Review.json?.student?.id === 'student-david',
-    'Test 14: Unauthenticated / Demo mode returns children and learning review safely without Supabase requirement',
-    `Children count: ${res14Children.json?.children?.length}`
+    res14Children.statusCode === 401 &&
+    res14Children.json?.error === 'UNAUTHORIZED' &&
+    res14Review.statusCode === 401 &&
+    res14Review.json?.error === 'UNAUTHORIZED',
+    'Test 14: Unauthenticated requests cannot receive parent or child demo data',
+    `Children: ${res14Children.statusCode}, review: ${res14Review.statusCode}`
   );
 
   // ----------------------------------------------------

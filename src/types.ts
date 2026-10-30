@@ -672,6 +672,7 @@ export interface ChildProfile {
   gradeAr: string;
   avatarUrl: string;
   points: number;
+  pointsKnown?: boolean;
   rank: number;
   attendanceRate: number; // e.g. 96 (%)
   screenTimeMinutes: number;
@@ -696,6 +697,7 @@ export interface ChurchEventNotification {
   titleAr: string;
   category: 'liturgy' | 'sunday_school' | 'family' | 'hymn';
   date: string;
+  dateTime?: string;
   timeEn: string;
   timeAr: string;
   locationEn: string;

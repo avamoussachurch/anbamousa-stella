@@ -1,37 +1,25 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-
-type Theme = 'light' | 'dark';
+import React, { createContext, useContext, useLayoutEffect, useState } from 'react';
+import { AppTheme, applyThemePreference, resolveInitialTheme } from '../lib/uiPreferences';
 
 interface ThemeContextType {
-  theme: Theme;
+  theme: AppTheme;
   isDark: boolean;
   toggleTheme: () => void;
-  setTheme: (t: Theme) => void;
+  setTheme: (t: AppTheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
+  const [theme, setThemeState] = useState<AppTheme>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('church_theme') as Theme | null;
-      if (saved === 'light' || saved === 'dark') return saved;
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+      return resolveInitialTheme(localStorage.getItem('church_theme'));
     }
-    return 'light';
+    return 'dark';
   });
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      root.setAttribute('data-theme', 'dark');
-      root.style.colorScheme = 'dark';
-    } else {
-      root.classList.remove('dark');
-      root.setAttribute('data-theme', 'light');
-      root.style.colorScheme = 'light';
-    }
+  useLayoutEffect(() => {
+    applyThemePreference(document.documentElement, theme);
     localStorage.setItem('church_theme', theme);
   }, [theme]);
 
@@ -39,7 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const setTheme = (t: Theme) => {
+  const setTheme = (t: AppTheme) => {
     setThemeState(t);
   };
 

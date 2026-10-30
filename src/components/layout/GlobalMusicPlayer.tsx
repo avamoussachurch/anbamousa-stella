@@ -1,15 +1,67 @@
-import React, { useState } from 'react';
-import { Music, Play, Pause, Volume2, VolumeX, X, Settings2 } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Music, Play, Pause, Volume2, VolumeX, X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGlobalAudio } from '../../context/AudioContext';
-import { mockHymns } from '../../data';
+import { useAuth } from '../../context/AuthContext';
+import { getHymns } from '../../lib/hymnsService';
+import type { CopticHymnItem } from '../../data/hymnsData';
 
 export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const { currentTrackUrl, isPlaying, volume, playTrack, togglePlay, setVolume } = useGlobalAudio();
+  const { userData, isGuest } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
+  const [hymns, setHymns] = useState<CopticHymnItem[]>([]);
+  const [isLoadingHymns, setIsLoadingHymns] = useState(false);
+  const [hymnsError, setHymnsError] = useState<string | null>(null);
+  const hymnRequestId = useRef(0);
 
-  const currentHymn = mockHymns.find(h => h.audioUrl === currentTrackUrl);
+  const refreshHymns = useCallback(async () => {
+    const requestId = ++hymnRequestId.current;
+    setIsLoadingHymns(true);
+    setHymnsError(null);
+    try {
+      const viewer = userData && !isGuest
+        ? { role: userData.role, hymnsTaxisLevel: userData.hymnsTaxisLevel }
+        : undefined;
+      const result = await getHymns(undefined, undefined, userData && !isGuest ? 'published' : undefined, viewer);
+      if (requestId !== hymnRequestId.current) return;
+      if (!result.success) {
+        setHymnsError(result.error || (lang === 'ar' ? 'تعذر تحميل الألحان.' : 'Unable to load hymns.'));
+        setHymns([]);
+        return;
+      }
+      setHymns(result.items.filter(hymn =>
+        Boolean(hymn.audioUrl?.trim()) &&
+        (hymn.status === 'published' || ((!userData || isGuest) && hymn.status == null))
+      ));
+    } catch {
+      if (requestId !== hymnRequestId.current) return;
+      setHymnsError(lang === 'ar' ? 'تعذر تحميل الألحان. حاول مرة أخرى.' : 'Unable to load hymns. Please try again.');
+      setHymns([]);
+    } finally {
+      if (requestId === hymnRequestId.current) setIsLoadingHymns(false);
+    }
+  }, [isGuest, lang, userData?.id, userData?.role, userData?.hymnsTaxisLevel]);
+
+  useEffect(() => {
+    setHymns([]);
+    setHymnsError(null);
+  }, [userData?.id, userData?.role, userData?.hymnsTaxisLevel]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    void refreshHymns();
+    const refreshInterval = window.setInterval(() => void refreshHymns(), 45_000);
+    const handleHymnsUpdated = () => void refreshHymns();
+    window.addEventListener('church:hymns_updated', handleHymnsUpdated);
+    return () => {
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('church:hymns_updated', handleHymnsUpdated);
+    };
+  }, [isOpen, refreshHymns]);
+
+  const currentHymn = hymns.find(h => h.audioUrl === currentTrackUrl);
 
   return (
     <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end">
@@ -32,8 +84,29 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
             </div>
 
             <div className="space-y-2 max-h-60 overflow-y-auto pr-2 mb-4">
-              {mockHymns.map((hymn) => (
+              {isLoadingHymns && hymns.length === 0 ? (
+                <p className="py-5 text-center text-sm text-[var(--text-secondary)]" role="status">
+                  {lang === 'ar' ? 'جارٍ تحميل الألحان...' : 'Loading hymns...'}
+                </p>
+              ) : hymnsError ? (
+                <div className="py-4 text-center" role="alert">
+                  <p className="text-sm text-[var(--feedback-error)]">{hymnsError}</p>
+                  <button
+                    type="button"
+                    onClick={() => void refreshHymns()}
+                    className="mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-[var(--mousa-teal)] hover:bg-[var(--mousa-sand-100)]"
+                  >
+                    <RefreshCw size={13} />
+                    {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+                  </button>
+                </div>
+              ) : hymns.length === 0 ? (
+                <p className="py-5 text-center text-sm text-[var(--text-secondary)]">
+                  {lang === 'ar' ? 'لا توجد ألحان منشورة بها تسجيل صوتي بعد.' : 'No published hymns with audio are available yet.'}
+                </p>
+              ) : hymns.map((hymn) => (
                 <button
+                  type="button"
                   key={hymn.id}
                   onClick={() => playTrack(hymn.audioUrl)}
                   className={`w-full text-left p-3 rounded-xl flex justify-between items-center transition-colors ${
@@ -46,7 +119,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
                     <p className={`font-bold text-sm ${currentTrackUrl === hymn.audioUrl ? 'text-[var(--color-church-burgundy)]' : 'text-gray-800'}`}>
                       {lang === 'ar' ? hymn.titleAr : hymn.titleEn}
                     </p>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">{lang === 'ar' ? hymn.season : hymn.season}</p>
+                    <p className="text-xs text-gray-500 font-medium mt-0.5">{lang === 'ar' ? hymn.seasonAr : hymn.seasonEn}</p>
                   </div>
                   {currentTrackUrl === hymn.audioUrl && isPlaying ? (
                     <Pause size={16} className="text-[var(--color-church-burgundy)]" />
@@ -55,6 +128,18 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
                   )}
                 </button>
               ))}
+            </div>
+
+            <div className="flex justify-end -mt-2 mb-3">
+              <button
+                type="button"
+                onClick={() => void refreshHymns()}
+                disabled={isLoadingHymns}
+                aria-label={lang === 'ar' ? 'تحديث قائمة الألحان' : 'Refresh hymn list'}
+                className="rounded-full p-1.5 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={isLoadingHymns ? 'animate-spin' : ''} />
+              </button>
             </div>
 
             {currentHymn && (
@@ -71,7 +156,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
                         {lang === 'ar' ? currentHymn.titleAr : currentHymn.titleEn}
                      </p>
                      <p className="text-[10px] text-gray-500 truncate">
-                        {lang === 'ar' ? currentHymn.titleCopt : currentHymn.titleCopt}
+                        {currentHymn.titleCoptic}
                      </p>
                   </div>
                   <div className="relative flex items-center">
@@ -107,6 +192,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
       </AnimatePresence>
 
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-14 h-14 bg-white rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] border-2 border-[var(--color-church-cream-dark)] flex items-center justify-center text-[var(--color-church-blue)] hover:scale-105 transition-transform"
       >

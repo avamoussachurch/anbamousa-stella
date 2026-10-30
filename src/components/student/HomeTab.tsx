@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Flame, Medal, ChevronRight, Play, Cross, Sparkles, BookOpen, Compass, MapPin, Award, Trophy } from 'lucide-react';
+import { ChevronRight, Play, Cross, Sparkles, BookOpen, Compass, MapPin, Trophy } from 'lucide-react';
 import { motion } from 'motion/react';
 import { mockLessons } from '../../data';
 import { BibleVerseCard } from '../shared/BibleVerseCard';
-import { FamilyAltarCard } from './FamilyAltarCard';
 import { useAuth } from '../../context/AuthContext';
 import { useLessons } from '../../context/LessonsContext';
 import { useStage } from '../../context/StageContext';
@@ -13,8 +12,6 @@ import { getClassGroupForGrade } from '../../lib/classGroups';
 import { Language, Lesson } from '../../types';
 import {
   MosesDuneHeroBanner,
-  MosesStreakCard,
-  MosesPointsTreasuryCard,
   MosesJourneyBadge
 } from './JourneyOfMosesVisuals';
 import { MosesLessonProgressBar } from './MosesLessonProgressBar';
@@ -29,7 +26,7 @@ interface HomeTabProps {
 
 export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, lang }: HomeTabProps) {
   const { userData, isGuest } = useAuth();
-  const { lessons, curriculumLoading, curriculumError, refreshCurriculum, contentProgress, refreshProgressSummary } = useLessons();
+  const { lessons, curriculumLoading, curriculumError, curriculumLoadedForUserId, refreshCurriculum, contentProgress, refreshProgressSummary } = useLessons();
   const { currentStage } = useStage();
   const [badgeDismissed, setBadgeDismissed] = useState(false);
 
@@ -40,6 +37,7 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
   }, [userData?.id]);
 
   const isOnlineAuth = Boolean(!isGuest && userData && isSupabaseConfigured);
+  const curriculumReadyForUser = !isOnlineAuth || curriculumLoadedForUserId === userData?.id;
 
   // Fallback Rule (Phase 2A.2 correction):
   // mockLessons are used as fallback ONLY for Demo, Guest, or Offline/local mode.
@@ -62,15 +60,19 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
   const studentGrade = userData?.requestedGrade || userData?.grade;
   const studentGroupId = userData?.requestedClassGroupId || (studentGrade ? getClassGroupForGrade(studentGrade)?.id : null) || 'primary_2';
 
-  const rawLessons = (lessons && lessons.length > 0) ? lessons : mockLessons;
-  const activeLessonsList = isTeacher 
-    ? rawLessons 
+  const rawLessons = isOnlineAuth
+    ? (curriculumLoading || !curriculumReadyForUser || curriculumError ? [] : lessons)
+    : ((lessons && lessons.length > 0) ? lessons : mockLessons);
+  const activeLessonsList = (isTeacher
+    ? rawLessons
     : rawLessons.filter(l => {
         const lessonGroupId = l.classGroupId || (l.grade ? getClassGroupForGrade(l.grade)?.id : null);
         return !lessonGroupId || lessonGroupId === studentGroupId;
-      });
+      }))
+    .map(lesson => ({ ...lesson, isCompleted: isLessonFinished(lesson) }))
+    .sort((a, b) => a.date && b.date ? a.date.localeCompare(b.date) : 0);
 
-  const nextLesson = activeLessonsList.find(l => !isLessonFinished(l)) || activeLessonsList[0] || null;
+  const nextLesson = activeLessonsList.find(l => !isLessonFinished(l)) || null;
   const completedLessons = activeLessonsList.filter(isLessonFinished);
   const lastCompleted = completedLessons[completedLessons.length - 1];
   const hasCompletedMilestone = completedLessons.length > 0 || (userData?.points ?? 0) >= 100;
@@ -109,6 +111,7 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
           avatarUrl={userData.avatarUrl}
           streakDays={userData.currentStreak}
           totalPoints={userData.points}
+          onNavigatePoints={() => onNavigate('points')}
         />
       </motion.div>
 
@@ -121,10 +124,11 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
         <MosesLessonProgressBar
           totalLessons={totalLessonsCount}
           completedLessons={completedCount}
-          isLoading={isOnlineAuth && curriculumLoading}
+          isLoading={isOnlineAuth && (curriculumLoading || !curriculumReadyForUser)}
           error={isOnlineAuth ? curriculumError : null}
           lang={lang}
           onExploreLessons={() => onNavigate('lessons')}
+          onRetry={() => { void refreshCurriculum?.(); }}
         />
       </motion.div>
 
@@ -152,26 +156,7 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
         </motion.div>
       )}
 
-      {/* 3. Streak & Points Row: Desert Flame & Blessing Treasury */}
-      <motion.div 
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96 }}
-        transition={{ duration: 0.25, delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-      >
-        <MosesStreakCard
-          streakDays={userData.currentStreak}
-          lang={lang}
-        />
-        <MosesPointsTreasuryCard
-          points={userData.points}
-          onNavigatePoints={() => onNavigate('points')}
-          lang={lang}
-        />
-      </motion.div>
-
-      {/* 4. The Journey of Moses: Live Journey Responsive Landscape (Time-of-day & Progress linked) */}
+      {/* 3. The Journey of Moses: Live Journey Responsive Landscape (Time-of-day & Progress linked) */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -253,22 +238,11 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
         <BibleVerseCard lang={lang} />
       </motion.div>
 
-      {/* Weekly Family Altar Prompt */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.25, delay: 0.22 }}
-        className="rounded-3xl border-2 border-[var(--mousa-border-sand)] overflow-hidden bg-[var(--mousa-cream-surface)] shadow-xs"
-      >
-        <FamilyAltarCard lang={lang} />
-      </motion.div>
-
       {/* Main Grid: Today's Quest (Lesson) + Weekly Caravan Leaderboard */}
       <div className="md:grid md:grid-cols-2 md:gap-8 space-y-6 md:space-y-0 items-stretch">
         {/* Main Action - Today's Desert Milestone Quest */}
         {isOnlineAuth ? (
-          curriculumLoading ? (
+          curriculumLoading || !curriculumReadyForUser ? (
             <div className="mousa-quest-card p-6 md:p-8 flex flex-col justify-center items-center text-center space-y-3 min-h-[260px]">
               <div className="w-10 h-10 border-4 border-[var(--mousa-gold)] border-t-transparent rounded-full animate-spin"></div>
               <p className="text-sm font-bold text-[var(--mousa-teal)] dark:text-[var(--mousa-sand-400)]">

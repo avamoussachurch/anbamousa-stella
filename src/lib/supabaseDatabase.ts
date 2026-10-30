@@ -152,7 +152,12 @@ export async function linkParentAndChildInSupabase(
   childId: string,
   childCode: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!supabase) return { success: true }; // offline fallback handled by localStorage
+  if (!supabase) {
+    return {
+      success: false,
+      error: 'Supabase is not configured; the family relationship was not saved.'
+    };
+  }
 
   void parentId;
   void childId;
