@@ -788,6 +788,33 @@ REVOKE ALL ON FUNCTION public.join_class_by_code(TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.enroll_student_in_class(UUID, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.remove_student_from_class(TEXT, TEXT) FROM PUBLIC;
 
+-- 10.5 Create Hymns School Curriculum
+CREATE TABLE IF NOT EXISTS public.hymns (
+  id TEXT PRIMARY KEY,
+  title_ar TEXT NOT NULL,
+  title_en TEXT NOT NULL,
+  title_coptic TEXT NOT NULL,
+  season_ar TEXT NOT NULL,
+  season_en TEXT NOT NULL,
+  occasion_tag TEXT NOT NULL CHECK (occasion_tag IN ('annual', 'kiahk', 'lent', 'pascha', 'resurrection', 'st_mary')),
+  difficulty TEXT NOT NULL CHECK (difficulty IN ('easy', 'medium', 'advanced')),
+  level INTEGER NOT NULL CHECK (level IN (1, 2, 3)),
+  audio_url TEXT,
+  duration_sec INTEGER NOT NULL DEFAULT 0,
+  hazat_explanation_ar TEXT,
+  hazat_explanation_en TEXT,
+  lines JSONB NOT NULL DEFAULT '[]'::jsonb,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+  version INTEGER NOT NULL DEFAULT 1,
+  created_by TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_hymns_level ON public.hymns(level);
+CREATE INDEX IF NOT EXISTS idx_hymns_status ON public.hymns(status);
+ALTER TABLE public.hymns ENABLE ROW LEVEL SECURITY;
+
 -- 11. Create Hymns School Roster Memberships Table
 CREATE TABLE IF NOT EXISTS public.hymns_memberships (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -843,6 +870,7 @@ CREATE TABLE IF NOT EXISTS public.coptic_taxis_items (
   title_coptic TEXT,
   category TEXT NOT NULL CHECK (category IN ('LITURGY', 'SACRAMENT', 'FEAST', 'FASTING', 'DEACON_SERVICE', 'CLERICAL', 'PRAYER_CANON')),
   season TEXT NOT NULL,
+  level INTEGER CHECK (level IN (1, 2, 3)),
   target_audience TEXT NOT NULL CHECK (target_audience IN ('ALL', 'DEACONS', 'SERVANTS', 'CONGREGATION')),
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'under_review', 'approved', 'published', 'unpublished', 'archived')),
   sections JSONB NOT NULL DEFAULT '[]'::jsonb,
