@@ -1,4 +1,5 @@
-import { TaxisAttachment } from '../types';
+import { TaxisAttachment, Role } from '../types';
+import { hasRole } from './workspaces';
 
 export type CurriculumImportCategory = 'sunday_school' | 'hymns' | 'taxis';
 export type CurriculumImportStage = 'ready' | 'creating' | 'uploading' | 'saving' | 'success' | 'error';
@@ -20,6 +21,14 @@ export interface CurriculumImportResult {
   error?: string;
 }
 
+export interface CurriculumImportBatchCandidate {
+  id: string;
+  title: string;
+  file: Pick<File, 'name' | 'size'>;
+  duplicate?: boolean;
+  completed?: boolean;
+}
+
 const ACCEPTED_EXTENSIONS = new Set([
   '.pdf', '.docx', '.pptx', '.doc', '.ppt',
   '.jpg', '.jpeg', '.png', '.webp', '.gif',
@@ -30,7 +39,7 @@ const ACCEPTED_EXTENSIONS = new Set([
 const HYMN_EXTENSIONS = new Set(['.pdf', '.mp3', '.wav', '.m4a', '.aac', '.ogg']);
 
 export function isAuthorizedCurriculumImporter(
-  user: { role?: string } | null | undefined,
+  user: { roles: Role[] } | null | undefined,
   isGuest: boolean,
   isSupabaseConfigured: boolean
 ): boolean {
@@ -38,7 +47,7 @@ export function isAuthorizedCurriculumImporter(
     user &&
     !isGuest &&
     isSupabaseConfigured &&
-    (user.role === 'teacher' || user.role === 'admin')
+    (hasRole(user, 'teacher') || hasRole(user, 'admin'))
   );
 }
 
@@ -79,6 +88,47 @@ export function isDuplicateImportTitle(
   const normalizedTitle = normalizeImportTitle(title);
   return existingTitles.has(normalizedTitle) ||
     Array.from(batchTitles).some(candidate => normalizeImportTitle(candidate) === normalizedTitle);
+}
+
+export function validateCurriculumImportBatch(
+  category: CurriculumImportCategory,
+  candidates: CurriculumImportBatchCandidate[],
+  existingTitles: ReadonlySet<string>,
+  options: { hasGrade: boolean; hasLevel: boolean; isAr: boolean }
+): Map<string, string> {
+  const pending = candidates.filter(candidate => !candidate.completed);
+  const errors = new Map<string, string>();
+  for (const candidate of pending) {
+    let error = candidate.duplicate
+      ? (options.isAr ? 'هذا الملف مضاف بالفعل في الدفعة.' : 'This file is already in this batch.')
+      : validateImportFile(category, candidate.file);
+    if (!error && !candidate.title.trim()) {
+      error = options.isAr ? 'اكتب عنواناً واضحاً للعنصر.' : 'Enter a clear title for this item.';
+    }
+    if (!error && category === 'sunday_school' && !options.hasGrade) {
+      error = options.isAr ? 'اختار الصف الدراسي.' : 'Choose a Sunday School grade.';
+    }
+    if (!error && category !== 'sunday_school' && !options.hasLevel) {
+      error = options.isAr ? 'اختار المستوى.' : 'Choose a level.';
+    }
+    const normalizedTitle = normalizeImportTitle(candidate.title);
+    if (!error && existingTitles.has(normalizedTitle)) {
+      error = options.isAr
+        ? 'يوجد عنصر بهذا العنوان بالفعل في المكتبة.'
+        : 'An item with this title already exists in the library.';
+    }
+    if (!error && isDuplicateImportTitle(
+      candidate.title,
+      new Set(),
+      pending.filter(other => other.id !== candidate.id).map(other => other.title)
+    )) {
+      error = options.isAr
+        ? 'يوجد عنصر آخر في الدفعة بنفس العنوان.'
+        : 'Another item in the batch has the same title.';
+    }
+    if (error) errors.set(candidate.id, error);
+  }
+  return errors;
 }
 
 export function markCurriculumImportDraft<T extends object>(item: T): T & { status: 'draft' } {

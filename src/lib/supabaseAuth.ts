@@ -67,6 +67,8 @@ export async function registerWithSupabase(
     const profile: User = {
       id: userId,
       fullName: fullName,
+      email: authData.user.email || undefined,
+      roles: [],
       role: 'student',
       grade: normalizedGrade,
       hymnsTaxisLevel: parsedLevel,
@@ -120,7 +122,7 @@ export async function loginWithSupabase(
     // Fetch user profile from public.profiles table
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('name, grade, avatar, points, current_streak, longest_streak, require_reward_approval, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, screen_time_seconds, hymns_taxis_level')
       .eq('id', userId)
       .single();
 
@@ -134,12 +136,15 @@ export async function loginWithSupabase(
     const user: User = {
       id: userId,
       fullName: profileData.name || authData.user.user_metadata?.full_name || 'User',
-      role: profileData.role,
+      email: authData.user.email || undefined,
+      roles: [],
+      role: 'student',
       grade: profileData.grade || undefined,
       avatarUrl: profileData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
       points: profileData.points ?? 0,
       currentStreak: profileData.current_streak ?? 0,
       longestStreak: profileData.longest_streak ?? 0,
+      progressKnown: Number.isFinite(profileData.points) && Number.isFinite(profileData.current_streak),
       requireRewardApproval: profileData.require_reward_approval ?? true,
       pushNotificationsEnabled: profileData.push_notifications_enabled ?? true,
       notifyLessonCompletion: profileData.notify_lesson_completion ?? true,

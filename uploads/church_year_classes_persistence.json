@@ -249,8 +249,11 @@
       "requestedClassGroupId": "primary_2",
       "requestedGrade": "Grade 4",
       "notes": "New student joining Sunday school with Servant Mina",
-      "status": "PENDING_APPROVAL",
-      "requestedAt": "2026-10-30T19:29:08.698Z"
+      "status": "REJECTED",
+      "requestedAt": "2026-10-30T19:29:08.698Z",
+      "reviewedBy": "Servant Mina",
+      "reviewedAt": "2026-10-31T13:06:36.957Z",
+      "reviewNotes": "Dismissed by servant"
     }
   },
   "classServants": {

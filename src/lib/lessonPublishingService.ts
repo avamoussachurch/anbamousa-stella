@@ -32,6 +32,13 @@ export interface ScheduledLessonPublication {
   created_at: string;
 }
 
+export interface PublicationCalendarDay {
+  dateKey: string;
+  label: string;
+  isToday: boolean;
+  jobs: ScheduledLessonPublication[];
+}
+
 export interface BulkPublishResult {
   lessonId: string;
   versionId: string;
@@ -214,6 +221,54 @@ export function formatPublicationTime(
     timeStyle: 'short',
     timeZone: timezone
   }).format(new Date(timestamp));
+}
+
+export function getPublicationCalendarDays(
+  jobs: ScheduledLessonPublication[],
+  timezone = getPublicationTimezone(),
+  now = new Date(),
+  dayCount = 14,
+  locale = 'en'
+): PublicationCalendarDay[] {
+  const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const localDateKey = (date: Date) => {
+    const parts = Object.fromEntries(
+      dateFormatter.formatToParts(date)
+        .filter(part => part.type !== 'literal')
+        .map(part => [part.type, part.value])
+    );
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  };
+  const todayKey = localDateKey(now);
+  const [year, month, day] = todayKey.split('-').map(Number);
+  const startOfLocalDay = Date.UTC(year, month - 1, day);
+
+  return Array.from({ length: Math.max(0, dayCount) }, (_, index) => {
+    const date = new Date(startOfLocalDay + index * 24 * 60 * 60 * 1000);
+    const key = [
+      date.getUTCFullYear(),
+      String(date.getUTCMonth() + 1).padStart(2, '0'),
+      String(date.getUTCDate()).padStart(2, '0')
+    ].join('-');
+    return {
+      dateKey: key,
+      label: new Intl.DateTimeFormat(locale, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC'
+      }).format(date),
+      isToday: key === todayKey,
+      jobs: jobs
+        .filter(job => localDateKey(new Date(job.scheduled_at)) === key)
+        .sort((left, right) => left.scheduled_at.localeCompare(right.scheduled_at))
+    };
+  });
 }
 
 export async function listScheduledLessonPublications(): Promise<{

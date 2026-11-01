@@ -38,6 +38,7 @@ interface SundaySchoolQuizViewProps {
   lang?: Language;
   previousAttempts?: StudentQuizAttempt[];
   onBackToLesson: () => void;
+  previewMode?: boolean;
   onSubmitAttempt: (attempt: Omit<StudentQuizAttempt, 'id' | 'attemptedAt'>) => Promise<{
     success: boolean;
     data?: StudentQuizAttempt | null;
@@ -63,6 +64,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   lang = 'ar',
   previousAttempts = [],
   onBackToLesson,
+  previewMode = false,
   onSubmitAttempt,
   onReviewSection
 }) => {
@@ -131,7 +133,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   };
 
   const handleFinalSubmission = async () => {
-    if (isSubmitting || isSubmitted) return;
+    if (previewMode || isSubmitting || isSubmitted) return;
 
     // Check for incomplete questions
     const unansweredIndices: number[] = [];
@@ -286,7 +288,11 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
           <span>{isAr ? 'تثبيت المفاهيم الإيمانية والكنسية' : 'Comprehension & Milestone Practice'}</span>
         </div>
         <p className="leading-relaxed">
-          {isAr
+        {previewMode
+          ? (isAr
+            ? 'دي تجربة مؤقتة للاختبار. إجاباتك والدرجة والنقاط مش هتتحفظ على أي حساب.'
+            : 'This is a temporary quiz simulation. Answers, scores, and points will not be saved to any account.')
+          : isAr
             ? 'يقيس هذا الاختبار استيعابك للنقاط الجوهرية في الدرس. الإجابات والدرجة تُحفظ تلقائياً على الخادم.'
             : 'This review quiz checks your understanding of the lesson taught. Answers and scores are saved to the backend.'}
         </p>
@@ -539,10 +545,12 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
               ) : (
                 <button
                   onClick={handleFinalSubmission}
-                  disabled={isSubmitting}
+                  disabled={previewMode || isSubmitting}
                   className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer min-h-[44px]"
                 >
-                  {isSubmitting ? (
+                  {previewMode ? (
+                    <span>{isAr ? 'الإرسال غير متاح في المعاينة' : 'Submission disabled in preview'}</span>
+                  ) : isSubmitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       <span>{isAr ? 'جاري تسجيل الإجابات...' : 'Submitting Quiz...'}</span>
@@ -581,9 +589,11 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
             </div>
           )}
 
-          <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200" role="status" data-testid="quiz-saved-outcome">
+          <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200" role="status" data-testid={previewMode ? 'quiz-preview-outcome' : 'quiz-saved-outcome'}>
             <CheckCircle2 className="h-5 w-5 shrink-0" />
-            <span>{isAr ? 'النتيجة اتحفظت واتأكدت بنجاح' : 'Result saved and confirmed'}</span>
+            <span>{previewMode
+              ? (isAr ? 'نتيجة تجريبية — لم يتم حفظها' : 'Simulated result — not saved')
+              : (isAr ? 'النتيجة اتحفظت واتأكدت بنجاح' : 'Result saved and confirmed')}</span>
           </div>
 
           {/* Duplicate Submission Recovery Notice */}

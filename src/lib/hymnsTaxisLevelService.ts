@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { parseHymnsTaxisLevel, type HymnsTaxisLevel } from './hymnsTaxisLevel';
 
-export async function initializeMyHymnsTaxisLevel(
+export async function updateMyHymnsTaxisLevel(
   level: HymnsTaxisLevel
 ): Promise<{ success: boolean; level?: HymnsTaxisLevel; error?: string }> {
   if (!supabase) {
@@ -43,3 +43,5 @@ export async function initializeMyHymnsTaxisLevel(
     };
   }
 }
+
+export const initializeMyHymnsTaxisLevel = updateMyHymnsTaxisLevel;

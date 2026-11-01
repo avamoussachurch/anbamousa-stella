@@ -1,730 +1,408 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Users, 
-  Shield, 
-  Clock, 
-  Settings, 
-  Bell, 
-  BellRing,
-  BellOff,
-  BookOpen, 
-  Calendar, 
-  TrendingUp,
-  QrCode,
-  X
-} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AlertCircle, Check, Plus, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { updateSupabaseProfile } from '../../lib/supabaseDatabase';
-import { 
-  getAuthoritativeParentChildren,
+import { hasRole } from '../../lib/workspaces';
+import {
   getAuthoritativeChurchEvents,
+  getAuthoritativeParentChildren,
+  getParentRewardRequests,
+  reviewParentRewardRequest,
+  type ParentChildRecord,
+  type ParentRewardRequest
 } from '../../lib/parentChildService';
+import { fetchFeedPostsFromSupabase, type ExtendedPost } from '../../lib/feedService';
+import type { ChurchEventNotification, ChildProfile, User } from '../../types';
 import { AddChildModal } from './AddChildModal';
-import { ChildProfile } from '../../types';
-import { ChildrenLessonsProgress } from './ChildrenLessonsProgress';
 import { ChurchEventNotifications } from './ChurchEventNotifications';
-import { ParentSettings } from './ParentSettings';
-import { WeeklyProgressView } from './WeeklyProgressView';
+import { ParentLearningJourney } from './ParentLearningJourney';
+import { ParentHomeDashboard } from './ParentHomeDashboard';
+
+type ParentSection = 'home' | 'children' | 'journey' | 'family' | 'events';
 
 interface ParentDashboardProps {
   lang: 'en' | 'ar';
-  onBackToApp?: () => void;
-  onOpenTeacherStudio?: () => void;
+  activeTab: string;
+  onNavigate: (tab: string) => void;
   initialChildCode?: string;
 }
 
-export function ParentDashboard({ lang, onBackToApp, onOpenTeacherStudio, initialChildCode }: ParentDashboardProps) {
-  const { userData, currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'weekly' | 'events' | 'approvals' | 'settings'>('overview');
-  const [addChildInitialTab, setAddChildInitialTab] = useState<'qr' | 'code' | 'link'>('qr');
-  
-  // Consistent parent key across all operations
-  const parentKey = userData?.id || currentUser?.uid || '';
+function asChildProfile(child: ParentChildRecord): ChildProfile {
+  return {
+    id: child.id,
+    studentId: child.id,
+    nameEn: child.name,
+    nameAr: child.name,
+    age: 0,
+    gradeEn: child.grade,
+    gradeAr: child.grade,
+    avatarUrl: child.avatarUrl,
+    points: child.points ?? 0,
+    pointsKnown: child.points !== null,
+    rank: 0,
+    attendanceRate: 0,
+    screenTimeMinutes: 0,
+    completedLessonsCount: 0,
+    totalLessonsCount: 0,
+    verseMemorizedCount: 0,
+    pendingRewardsCount: 0,
+    lessons: [],
+    isRealAccount: true
+  };
+}
 
-  // Dynamic linked children from parentChildService
-  const [linkedChildren, setLinkedChildren] = useState<ChildProfile[]>([]);
+export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode }: ParentDashboardProps) {
+  const { userData, currentUser, updateUserProfile } = useAuth();
+  const isArabic = lang === 'ar';
+  const isParent = hasRole(userData, 'parent');
+  const [section, setSection] = useState<ParentSection>(
+    activeTab === 'children' || activeTab === 'journey' || activeTab === 'family' || activeTab === 'events' ? activeTab : 'home'
+  );
+  const [children, setChildren] = useState<ParentChildRecord[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState('');
   const [childrenLoading, setChildrenLoading] = useState(true);
   const [childrenError, setChildrenError] = useState<string | null>(null);
-  const [churchEvents, setChurchEvents] = useState<import('../../types').ChurchEventNotification[]>([]);
+  const [events, setEvents] = useState<ChurchEventNotification[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
+  const [announcements, setAnnouncements] = useState<ExtendedPost[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(true);
+  const [announcementsError, setAnnouncementsError] = useState<string | null>(null);
+  const [rewardRequests, setRewardRequests] = useState<ParentRewardRequest[]>([]);
+  const [rewardsLoading, setRewardsLoading] = useState(true);
+  const [rewardsError, setRewardsError] = useState<string | null>(null);
+  const [reviewingRequestId, setReviewingRequestId] = useState<string | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [savingSetting, setSavingSetting] = useState<string | null>(null);
   const [isAddChildModalOpen, setIsAddChildModalOpen] = useState(Boolean(initialChildCode));
-  const [selectedChildId, setSelectedChildId] = useState('');
+  const [addChildInitialTab, setAddChildInitialTab] = useState<'qr' | 'code' | 'link'>(initialChildCode ? 'code' : 'qr');
 
-  const refreshChildren = async () => {
+  const selectedChild = children.find(child => child.id === selectedChildId) || children[0] || null;
+  const parentName = userData?.fullName || (isArabic ? 'ولي الأمر' : 'Parent');
+  const sectionTitles: Record<ParentSection, { ar: string; en: string }> = {
+    home: { ar: 'نظرة عامة', en: 'Overview' },
+    children: { ar: 'أولادي', en: 'My children' },
+    journey: { ar: 'رحلة التعلّم', en: 'Learning journey' },
+    family: { ar: 'إعدادات الأسرة', en: 'Family settings' },
+    events: { ar: 'الأخبار والفعاليات', en: 'News & events' }
+  };
+  const navigateSection = (nextSection: ParentSection) => {
+    setSection(nextSection);
+    onNavigate(nextSection);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'children' || activeTab === 'journey' || activeTab === 'family' || activeTab === 'events') {
+      setSection(activeTab);
+    } else if (activeTab === 'home') {
+      setSection('home');
+    }
+  }, [activeTab]);
+
+  const refreshChildren = useCallback(async () => {
+    if (!isParent) {
+      setChildren([]);
+      setChildrenLoading(false);
+      setChildrenError(null);
+      return;
+    }
     setChildrenLoading(true);
     setChildrenError(null);
     const result = await getAuthoritativeParentChildren();
     if (result.error || !result.data) {
-      setLinkedChildren([]);
-      setChildrenError(lang === 'ar'
-        ? 'تعذر تحميل بيانات الأبناء. تأكد من تسجيل الدخول بحساب ولي أمر مرتبط، ثم أعد المحاولة.'
-        : 'Unable to load linked children. Sign in with a linked parent account and try again.');
+      setChildren([]);
+      setChildrenError(result.error?.message || (isArabic ? 'تعذر تحميل الأبناء المرتبطين.' : 'Unable to load linked children.'));
       setChildrenLoading(false);
       return;
     }
-    const updated: ChildProfile[] = result.data.map(child => ({
-      id: child.id,
-      studentId: child.id,
-      nameEn: child.name,
-      nameAr: child.name,
-      age: 0,
-      gradeEn: child.grade,
-      gradeAr: child.grade,
-      avatarUrl: child.avatarUrl,
-      points: child.points ?? 0,
-      pointsKnown: child.points !== null,
-      rank: 0,
-      attendanceRate: 0,
-      screenTimeMinutes: 0,
-      completedLessonsCount: 0,
-      totalLessonsCount: 0,
-      verseMemorizedCount: 0,
-      pendingRewardsCount: 0,
-      lessons: [],
-      isRealAccount: true
-    }));
-    setLinkedChildren(updated);
-    setSelectedChildId(current => updated.some(child => child.id === current) ? current : (updated[0]?.id || ''));
+    setChildren(result.data);
+    setSelectedChildId(current => result.data?.some(child => child.id === current) ? current : (result.data?.[0]?.id || ''));
     setChildrenLoading(false);
-  };
+  }, [isParent, isArabic]);
+
+  const refreshEvents = useCallback(async () => {
+    setEventsLoading(true);
+    setEventsError(null);
+    const result = await getAuthoritativeChurchEvents();
+    setEvents(result.data || []);
+    setEventsError(result.error?.message || null);
+    setEventsLoading(false);
+  }, []);
+
+  const refreshAnnouncements = useCallback(async () => {
+    setAnnouncementsLoading(true);
+    setAnnouncementsError(null);
+    const result = await fetchFeedPostsFromSupabase();
+    if (result.error || !result.data) {
+      setAnnouncements([]);
+      setAnnouncementsError(result.error?.message || (isArabic ? 'تعذر تحميل الإعلانات.' : 'Unable to load announcements.'));
+    } else {
+      setAnnouncements(result.data.filter(post => post.isAnnouncement).slice(0, 8));
+    }
+    setAnnouncementsLoading(false);
+  }, [isArabic]);
+
+  const refreshRewards = useCallback(async () => {
+    if (!isParent) {
+      setRewardRequests([]);
+      setRewardsLoading(false);
+      return;
+    }
+    setRewardsLoading(true);
+    setRewardsError(null);
+    const result = await getParentRewardRequests();
+    setRewardRequests(result.data || []);
+    setRewardsError(result.error?.message || null);
+    setRewardsLoading(false);
+  }, [isParent]);
 
   useEffect(() => {
     void refreshChildren();
-    void getAuthoritativeChurchEvents().then(({ data, error }) => {
-      setEventsLoading(false);
-      setEventsError(error
-        ? (lang === 'ar' ? 'تعذر تحميل فعاليات الكنيسة. حاول مرة أخرى.' : 'Unable to load church events. Please try again.')
-        : null);
-      setChurchEvents(data || []);
-    });
-
-    // Listen for cross-component linking events
-    const handleChildrenUpdated = () => {
-      refreshChildren();
-    };
-    window.addEventListener('church:children_updated', handleChildrenUpdated);
-    window.addEventListener('church:parent_linked', handleChildrenUpdated);
-
+    if (isParent) {
+      void refreshEvents();
+      void refreshAnnouncements();
+      void refreshRewards();
+    }
+    const onChildrenUpdated = () => void refreshChildren();
+    window.addEventListener('church:children_updated', onChildrenUpdated);
+    window.addEventListener('church:parent_linked', onChildrenUpdated);
     return () => {
-      window.removeEventListener('church:children_updated', handleChildrenUpdated);
-      window.removeEventListener('church:parent_linked', handleChildrenUpdated);
+      window.removeEventListener('church:children_updated', onChildrenUpdated);
+      window.removeEventListener('church:parent_linked', onChildrenUpdated);
     };
-  }, [parentKey]);
+  }, [isParent, refreshChildren, refreshEvents, refreshAnnouncements, refreshRewards]);
 
-  // Firestore parental approval toggle
-  const [requireApproval, setRequireApproval] = useState<boolean>(
-    userData?.requireRewardApproval ?? true
-  );
+  const pendingRewards = useMemo(() => rewardRequests.filter(request => request.status === 'pending'), [rewardRequests]);
 
-  // Real-time Push notification preferences
-  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState<boolean>(() => {
-    if (userData?.pushNotificationsEnabled !== undefined) return userData.pushNotificationsEnabled;
-    const saved = localStorage.getItem('church_parent_push_enabled');
-    return saved !== null ? saved === 'true' : true;
-  });
-
-  const [notifyLessonCompletion, setNotifyLessonCompletion] = useState<boolean>(() => {
-    if (userData?.notifyLessonCompletion !== undefined) return userData.notifyLessonCompletion;
-    const saved = localStorage.getItem('church_parent_notify_lessons');
-    return saved !== null ? saved === 'true' : true;
-  });
-
-  const [notifyEventReminders, setNotifyEventReminders] = useState<boolean>(() => {
-    if (userData?.notifyEventReminders !== undefined) return userData.notifyEventReminders;
-    const saved = localStorage.getItem('church_parent_notify_events');
-    return saved !== null ? saved === 'true' : true;
-  });
-
-  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'default' | 'unsupported'>('default');
-
-  // Interactive in-app push alert toast for live preview and real-time alerts
-  const [activePushToast, setActivePushToast] = useState<{
-    id: string;
-    title: string;
-    body: string;
-    icon: string;
-    badge: string;
-    timestamp: string;
-  } | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setPermissionStatus(Notification.permission);
+  const handleRewardDecision = async (request: ParentRewardRequest, decision: 'approved' | 'rejected') => {
+    setReviewingRequestId(request.id);
+    setReviewError(null);
+    const result = await reviewParentRewardRequest(request.id, decision);
+    if (result.error) {
+      setReviewError(result.error.message);
     } else {
-      setPermissionStatus('unsupported');
+      await refreshRewards();
     }
-  }, []);
-
-  // Auto-dismiss push toast after 5 seconds
-  useEffect(() => {
-    if (activePushToast) {
-      const timer = setTimeout(() => {
-        setActivePushToast(null);
-      }, 5500);
-      return () => clearTimeout(timer);
-    }
-  }, [activePushToast]);
-
-  const toggleApproval = async () => {
-    const newValue = !requireApproval;
-    setRequireApproval(newValue);
-    if (currentUser) {
-      await updateSupabaseProfile(currentUser.uid, {
-        require_reward_approval: newValue
-      });
-    }
+    setReviewingRequestId(null);
   };
 
-  const togglePushNotifications = async () => {
-    const nextVal = !pushNotificationsEnabled;
-    setPushNotificationsEnabled(nextVal);
-    try {
-      localStorage.setItem('church_parent_push_enabled', String(nextVal));
-    } catch (e) {}
-
-    // If enabling, request permission if available in browser
-    if (nextVal && typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'default') {
-        try {
-          const perm = await Notification.requestPermission();
-          setPermissionStatus(perm);
-        } catch (e) {
-          console.warn("Notification request permission warning:", e);
-        }
-      }
-    }
-
-    if (currentUser) {
-      await updateSupabaseProfile(currentUser.uid, {
-        push_notifications_enabled: nextVal
-      });
-    }
-
-    // Show temporary feedback toast
-    setActivePushToast({
-      id: 'toggle-' + Date.now(),
-      title: nextVal 
-        ? (lang === 'ar' ? 'تم تفعيل التنبيهات الفورية 🔔' : 'Real-Time Alerts Enabled 🔔')
-        : (lang === 'ar' ? 'تم إيقاف التنبيهات الفورية 🔕' : 'Real-Time Alerts Disabled 🔕'),
-      body: nextVal
-        ? (lang === 'ar' ? 'ستصلك إشعارات فورية لتقارير إتمام الدروس وتذكيرات فعاليات الكنيسة.' : 'You will receive real-time alerts for lesson completions and church event reminders.')
-        : (lang === 'ar' ? 'لن تستلم تنبيهات منبثقة فورية بعد الآن.' : 'Push notifications are now muted.'),
-      icon: nextVal ? '🔔' : '🔕',
-      badge: nextVal ? (lang === 'ar' ? 'نشط' : 'Active') : (lang === 'ar' ? 'متوقف' : 'Muted'),
-      timestamp: lang === 'ar' ? 'الآن' : 'Just now'
-    });
+  const handleSettingChange = async (
+    field: 'pushNotificationsEnabled' | 'notifyLessonCompletion' | 'notifyEventReminders' | 'requireRewardApproval'
+  ) => {
+    if (!userData) return;
+    const value = !userData[field];
+    setSavingSetting(field);
+    setSettingsError(null);
+    const result = await updateUserProfile({ [field]: value } as Partial<User>);
+    if (!result.success) setSettingsError(result.error || (isArabic ? 'ماقدرناش نحفظ الإعداد.' : 'Could not save this setting.'));
+    setSavingSetting(null);
   };
 
-  const toggleLessonCompletion = async () => {
-    const nextVal = !notifyLessonCompletion;
-    setNotifyLessonCompletion(nextVal);
-    try {
-      localStorage.setItem('church_parent_notify_lessons', String(nextVal));
-    } catch (e) {}
-    if (currentUser) {
-      await updateSupabaseProfile(currentUser.uid, {
-        notify_lesson_completion: nextVal
-      });
-    }
+  const openAddChild = (tab: 'qr' | 'code' | 'link' = 'code') => {
+    setAddChildInitialTab(tab);
+    setIsAddChildModalOpen(true);
   };
 
-  const toggleEventReminders = async () => {
-    const nextVal = !notifyEventReminders;
-    setNotifyEventReminders(nextVal);
-    try {
-      localStorage.setItem('church_parent_notify_events', String(nextVal));
-    } catch (e) {}
-    if (currentUser) {
-      await updateSupabaseProfile(currentUser.uid, {
-        notify_event_reminders: nextVal
-      });
-    }
-  };
+  if (!isParent) {
+    return (
+      <main className="mx-auto max-w-3xl p-6" dir={isArabic ? 'rtl' : 'ltr'}>
+        <div className="mousa-card-sand p-8 text-center" role="alert">
+          <ShieldCheck className="mx-auto mb-3 text-[var(--action-primary)]" size={28} />
+          <h1 className="text-xl font-black text-[var(--text-primary)]">{isArabic ? 'مساحة ولي الأمر' : 'Parent workspace'}</h1>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            {isArabic ? 'المساحة دي متاحة للحسابات المعيّن لها دور ولي أمر.' : 'This workspace is available only to accounts assigned the parent role.'}
+          </p>
+        </div>
+      </main>
+    );
+  }
 
-  const handleSendTestNotification = (type: 'lesson' | 'event') => {
-    const isLesson = type === 'lesson';
-    const title = isLesson
-      ? (lang === 'ar' ? '🎉 إتمام درس جديد: مينا عماد' : '🎉 New Lesson Completed: Mina Emad')
-      : (lang === 'ar' ? '⛪ تذكير كنسي: قداس عيد الصليب' : '⛪ Church Reminder: Feast of the Cross Liturgy');
-    const body = isLesson
-      ? (lang === 'ar' ? 'أتم مينا درس "الشهيد العظيم مارمينا العجائبي" بدرجة ١٠٠٪ في الاختبار وحفظ الآية (+١٥٠ نقطة).' : 'Mina completed "St. Mina the Wonder-Worker" with 100% quiz score and memorized the Scripture verse (+150 pts).')
-      : (lang === 'ar' ? 'القداس الإلهي غداً الجمعة ٦:٣٠ ص بكنيسة القديس الأنبا موسى الأسود، يليه إفطار محبة.' : 'Divine Liturgy tomorrow Friday at 6:30 AM at St. Moses Church, followed by agape fellowship.');
-
-    // Native browser notification if permitted
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification(title, {
-          body,
-          icon: 'https://api.dicebear.com/7.x/bottts/svg?seed=church_bell'
-        });
-      } catch (err) {
-        console.warn('Native notification failed:', err);
-      }
-    }
-
-    // In-app floating push alert toast
-    setActivePushToast({
-      id: 'test-' + Date.now(),
-      title,
-      body,
-      icon: isLesson ? '📖' : '⛪',
-      badge: isLesson ? (lang === 'ar' ? 'تقرير درس' : 'Lesson Report') : (lang === 'ar' ? 'تذكير كنسي' : 'Event Reminder'),
-      timestamp: lang === 'ar' ? 'الآن' : 'Just now'
-    });
+  const renderChildrenCards = () => {
+    if (childrenLoading) return <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]" role="status">{isArabic ? 'بنحمّل بيانات الأسرة...' : 'Loading family records…'}</div>;
+    if (childrenError) return (
+      <div className="mousa-card-sand p-6 text-center" role="alert">
+        <p className="mb-3 text-[var(--feedback-error)]">{childrenError}</p>
+        <button type="button" onClick={() => void refreshChildren()} className="mousa-btn-quest rounded-xl px-4 py-2">{isArabic ? 'حاول تاني' : 'Retry'}</button>
+      </div>
+    );
+    if (children.length === 0) return (
+      <div className="mousa-card-sand p-8 text-center">
+        <Users className="mx-auto mb-3 text-[var(--action-primary)]" size={30} />
+        <h2 className="font-black text-[var(--text-primary)]">{isArabic ? 'لسه مفيش أطفال مرتبطين بالحساب' : 'No children are linked to this account yet'}</h2>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب الطفل بكود التوصيل الموثّق عشان تتابع بياناته الحقيقية.' : 'Connect a child with a verified connection code to see their real records.'}</p>
+        <button type="button" onClick={() => openAddChild('code')} className="mousa-btn-quest mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2"><Plus size={16} />{isArabic ? 'ربط طفل' : 'Connect a child'}</button>
+      </div>
+    );
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {children.map(child => (
+          <article key={child.id} className={`mousa-card-sand p-5 text-start ${selectedChild?.id === child.id ? 'ring-2 ring-[var(--action-primary)]' : ''}`}>
+            <button type="button" onClick={() => { setSelectedChildId(child.id); navigateSection('journey'); }} className="flex w-full items-center gap-3 text-start">
+              <img src={child.avatarUrl || undefined} alt="" className="h-14 w-14 rounded-2xl bg-white object-cover" />
+              <span className="min-w-0">
+                <span className="block truncate font-black text-[var(--text-primary)]">{child.name}</span>
+                <span className="mt-1 block text-sm text-[var(--text-secondary)]">{child.grade || (isArabic ? 'الصف غير مسجل' : 'Grade not recorded')}</span>
+              </span>
+            </button>
+            <dl className="mt-4 space-y-2 border-t border-[var(--border-default)] pt-3 text-sm">
+              <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'فصل مدارس الأحد' : 'Sunday School class'}</dt><dd className="font-semibold text-[var(--text-primary)]">{isArabic ? child.classNameAr || 'غير مسجل' : child.className || 'Not recorded'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'مستوى الألحان والطقس' : 'Hymns & Taxis level'}</dt><dd className="font-semibold text-[var(--text-primary)]">{child.hymnsTaxisLevel ? (isArabic ? `المستوى ${child.hymnsTaxisLevel}` : `Level ${child.hymnsTaxisLevel}`) : (isArabic ? 'غير متاح' : 'Not available')}</dd></div>
+            </dl>
+            {child.points !== null && <p className="mt-3 text-xs font-bold text-[var(--text-secondary)]">{isArabic ? `النقاط الحالية المسجلة: ${child.points}` : `Recorded current points: ${child.points}`}</p>}
+          </article>
+        ))}
+        <button type="button" onClick={() => openAddChild('code')} className="mousa-card-sand flex min-h-40 flex-col items-center justify-center gap-2 border-dashed p-5 text-sm font-bold text-[var(--action-primary)]">
+          <Plus size={24} />{isArabic ? 'ربط طفل تاني' : 'Connect another child'}
+        </button>
+      </div>
+    );
   };
 
   return (
-    <div className="parent-portal max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-28 pt-4 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Floating Real-Time Push Notification Toast */}
-      <AnimatePresence>
-        {activePushToast && (
-          <motion.div
-            key={activePushToast.id}
-            initial={{ opacity: 0, y: -40, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -30, scale: 0.95 }}
-            className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-lg bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border-2 border-[var(--color-church-blue)]/20 p-4"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-2xl flex items-center justify-center shrink-0 border border-blue-100 shadow-2xs">
-                {activePushToast.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <h5 className="font-bold text-sm text-[var(--color-church-blue)] truncate">
-                      {activePushToast.title}
-                    </h5>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-church-cream)] text-[var(--color-church-gold-dark)] border border-[var(--color-church-gold)]/30">
-                      {activePushToast.badge}
-                    </span>
-                  </div>
-                  <button 
-                    onClick={() => setActivePushToast(null)}
-                    className="text-gray-400 hover:text-gray-600 p-1 rounded-lg transition-colors"
-                  >
-                    <X size={15} />
-                  </button>
-                </div>
-                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                  {activePushToast.body}
-                </p>
-                <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-100 text-[10px] text-gray-400 font-medium">
-                  <span className="flex items-center gap-1">
-                    <BellRing size={11} className="text-[var(--color-church-gold)]" />
-                    <span>{lang === 'ar' ? 'إشعار فوري حقيقي' : 'Real-time Push Notification'}</span>
-                  </span>
-                  <span>{activePushToast.timestamp}</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Top Welcome Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-[var(--mousa-cream-surface)] rounded-3xl p-6 md:p-8 shadow-xs border-2 border-[var(--mousa-border-sand)] mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
-      >
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[var(--mousa-gold-soft)] border border-[var(--mousa-gold)]/30 p-2 flex items-center justify-center text-3xl shadow-xs">
-            👨‍👩‍👧‍👦
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-black text-[var(--mousa-teal-deep)]">
-                {lang === 'ar' ? 'بوابة أولياء الأمور' : 'Parent Portal'}
-              </h1>
-              <span className="text-xs bg-[var(--mousa-sand-100)] text-[var(--mousa-teal-deep)] border border-[var(--mousa-border-sand)] font-bold px-2.5 py-0.5 rounded-full">
-                {lang === 'ar' ? 'رحلة القديس الأنبا موسى' : 'The Journey of Moses'}
-              </span>
-            </div>
-            <p className="text-sm text-[var(--mousa-sand-500)] font-bold mt-1">
-              {lang === 'ar' 
-                ? `أهلاً بك يا ${userData?.fullName || 'ولي الأمر'}، متابعة نمو أطفالك في مسيرة مدارس الأحد` 
-                : `Welcome, ${userData?.fullName || 'Parent'} — Track your children's Sunday School journey`}
+    <main className="parent-portal mx-auto w-full max-w-7xl px-4 pb-28 pt-5 sm:px-6 lg:px-8" dir={isArabic ? 'rtl' : 'ltr'}>
+      {section !== 'home' && (
+        <header className="mb-4 border-b border-[var(--border-default)] pb-3">
+          <p className="text-xs font-black uppercase tracking-[.14em] text-[var(--action-primary)]">
+            {isArabic ? 'مساحة الأسرة' : 'Family workspace'}
+          </p>
+          <h1 className="mt-1 text-xl font-black text-[var(--text-primary)] sm:text-2xl">
+            {isArabic ? sectionTitles[section].ar : sectionTitles[section].en}
+          </h1>
+          {section === 'journey' && selectedChild && (
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              {isArabic ? `رحلة التعلّم لـ ${selectedChild.name}` : `Learning records for ${selectedChild.name}`}
             </p>
+          )}
+        </header>
+      )}
+
+      {section === 'home' && (
+        <ParentHomeDashboard
+          lang={lang}
+          parentName={parentName}
+          children={children}
+          childrenLoading={childrenLoading}
+          childrenError={childrenError}
+          onRefreshChildren={() => void refreshChildren()}
+          selectedChildId={selectedChild?.id || selectedChildId}
+          onSelectChild={setSelectedChildId}
+          onOpenJourney={childId => {
+            setSelectedChildId(childId);
+            navigateSection('journey');
+          }}
+          onAddChild={() => openAddChild('code')}
+          events={events}
+          eventsLoading={eventsLoading}
+          eventsError={eventsError}
+          announcements={announcements}
+          announcementsLoading={announcementsLoading}
+          announcementsError={announcementsError}
+          rewardRequests={rewardRequests}
+          rewardsLoading={rewardsLoading}
+          rewardsError={rewardsError}
+          onOpenFamily={() => navigateSection('family')}
+          onOpenEvents={() => navigateSection('events')}
+        />
+      )}
+
+      {section === 'children' && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <p className="text-sm text-[var(--text-secondary)]">{isArabic ? 'بيانات الأبناء المرتبطين بعلاقة موثّقة.' : 'Children connected through a verified family relationship.'}</p>
+            <div className="flex gap-2"><button type="button" onClick={() => openAddChild('code')} className="mousa-btn-quest inline-flex items-center gap-2 rounded-xl px-4 py-2"><Plus size={16} />{isArabic ? 'إدخال كود' : 'Enter code'}</button><button type="button" onClick={() => openAddChild('qr')} className="rounded-xl border border-[var(--border-default)] px-4 py-2 text-sm font-bold text-[var(--text-primary)]">{isArabic ? 'مسح QR' : 'Scan QR'}</button></div>
           </div>
-        </div>
+          {renderChildrenCards()}
+        </section>
+      )}
 
-        {/* Quick Controls, Family Stats, Notification Toggle & Logout */}
-        <div className="flex items-center flex-wrap gap-2.5 w-full md:w-auto justify-between md:justify-end">
-          {onOpenTeacherStudio && (
-            <button
-              type="button"
-              onClick={onOpenTeacherStudio}
-              className="px-3.5 py-2 rounded-2xl bg-[var(--mousa-sand-100)] hover:bg-[var(--mousa-sand-200)] text-[var(--mousa-teal-deep)] border border-[var(--mousa-border-sand)] text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
-            >
-              <span>⛪</span>
-              <span>{lang === 'ar' ? 'استوديو الخادم' : 'Servant Studio'}</span>
-            </button>
-          )}
-
-          {onBackToApp && (
-            <button
-              type="button"
-              onClick={onBackToApp}
-              className="px-3.5 py-2 rounded-2xl bg-[var(--mousa-cream-surface)] hover:bg-[var(--mousa-sand-100)] text-[var(--mousa-sand-600)] text-xs font-bold transition-all cursor-pointer border border-[var(--mousa-border-sand)]"
-            >
-              {lang === 'ar' ? 'تطبيق الكنيسة' : 'Church App'}
-            </button>
-          )}
-
-          {/* Quick Notification Toggle Button */}
-          <button
-            type="button"
-            onClick={togglePushNotifications}
-            title={lang === 'ar' ? 'تبديل التنبيهات الفورية' : 'Toggle Real-Time Push Alerts'}
-            className={`px-3 py-2 rounded-2xl border-2 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs ${
-              pushNotificationsEnabled
-                ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
-                : 'bg-[var(--mousa-cream-surface)] hover:bg-[var(--mousa-sand-100)] text-stone-500 border-[var(--mousa-border-sand)]'
-            }`}
-          >
-            {pushNotificationsEnabled ? (
-              <BellRing size={15} className="text-emerald-700" />
-            ) : (
-              <BellOff size={15} className="text-gray-400" />
-            )}
-            <span>
-              {pushNotificationsEnabled 
-                ? (lang === 'ar' ? 'التنبيهات: مفعّلة' : 'Push: On') 
-                : (lang === 'ar' ? 'التنبيهات: معطلة' : 'Push: Off')}
-            </span>
-          </button>
-
-          {/* Quick Scan Child QR Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setAddChildInitialTab('qr');
-              setIsAddChildModalOpen(true);
-            }}
-            title={lang === 'ar' ? 'مسح رمز QR للطفل لربط حسابه فورياً' : 'Scan child QR code to link instantly'}
-            className="px-3.5 py-2 rounded-2xl bg-[var(--mousa-teal)] hover:bg-[var(--mousa-teal-deep)] text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-          >
-            <QrCode size={15} className="text-[var(--mousa-gold)]" />
-            <span>{lang === 'ar' ? 'مسح كود QR' : 'Scan Child QR'}</span>
-          </button>
-
-          <div className="flex items-center gap-2 bg-[var(--mousa-sand-100)] px-3.5 py-2 rounded-2xl border border-[var(--mousa-border-sand)] text-xs font-bold text-[var(--mousa-teal-deep)]">
-            <Users size={16} className="text-[var(--mousa-gold)]" />
-            <span>
-              {childrenLoading ? '…' : linkedChildren.length} {lang === 'ar' ? 'أطفال مرتبطون' : 'linked children'}
-            </span>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Main Navigation Tabs */}
-      <div className="flex gap-2 sm:gap-4 mb-8 overflow-x-auto pb-1">
-        {/* Tab 1: Lessons Progress */}
-        <button 
-          onClick={() => setActiveTab('overview')}
-          className={`flex-1 min-w-[140px] py-3.5 px-3.5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer ${
-            activeTab === 'overview' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs' 
-              : 'bg-[var(--mousa-cream-surface)] text-[var(--mousa-sand-600)] hover:bg-[var(--mousa-sand-100)] border-2 border-[var(--mousa-border-sand)]'
-          }`}
-        >
-          <BookOpen size={18} className={activeTab === 'overview' ? 'text-[var(--mousa-gold)]' : 'text-stone-400'} />
-          <span>{lang === 'ar' ? 'تقدم الدروس' : 'Lessons & Progress'}</span>
-        </button>
-
-        {/* Tab 2: Weekly Aggregated Progress */}
-        <button 
-          onClick={() => setActiveTab('weekly')}
-          className={`flex-1 min-w-[140px] py-3.5 px-3.5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer ${
-            activeTab === 'weekly' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs' 
-              : 'bg-[var(--mousa-cream-surface)] text-[var(--mousa-sand-600)] hover:bg-[var(--mousa-sand-100)] border-2 border-[var(--mousa-border-sand)]'
-          }`}
-        >
-          <TrendingUp size={18} className={activeTab === 'weekly' ? 'text-[var(--mousa-gold)]' : 'text-stone-400'} />
-          <span>{lang === 'ar' ? 'التقرير الأسبوعي' : 'Weekly Progress'}</span>
-        </button>
-
-        {/* Tab 3: Church Events Feed */}
-        <button 
-          onClick={() => setActiveTab('events')}
-          className={`flex-1 min-w-[140px] py-3.5 px-3.5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 relative shadow-xs cursor-pointer ${
-            activeTab === 'events' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs' 
-              : 'bg-[var(--mousa-cream-surface)] text-[var(--mousa-sand-600)] hover:bg-[var(--mousa-sand-100)] border-2 border-[var(--mousa-border-sand)]'
-          }`}
-        >
-          <Calendar size={18} className={activeTab === 'events' ? 'text-[var(--mousa-gold)]' : 'text-stone-400'} />
-          <span>{lang === 'ar' ? 'فعاليات الكنيسة' : 'Church Events'}</span>
-        </button>
-
-        {/* Tab 4: Reward Approvals */}
-        <button 
-          onClick={() => setActiveTab('approvals')}
-          className={`flex-1 min-w-[140px] py-3.5 px-3.5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 relative shadow-xs cursor-pointer ${
-            activeTab === 'approvals' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs' 
-              : 'bg-[var(--mousa-cream-surface)] text-[var(--mousa-sand-600)] hover:bg-[var(--mousa-sand-100)] border-2 border-[var(--mousa-border-sand)]'
-          }`}
-        >
-          <Shield size={18} className={activeTab === 'approvals' ? 'text-[var(--mousa-gold)]' : 'text-stone-400'} />
-          <span>{lang === 'ar' ? 'موافقات المكافآت' : 'Reward Approvals'}</span>
-        </button>
-
-        {/* Tab 5: Settings & Notifications */}
-        <button 
-          id="parent-settings-tab-btn"
-          onClick={() => setActiveTab('settings')}
-          className={`flex-1 min-w-[140px] py-3.5 px-3.5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 relative shadow-xs cursor-pointer ${
-            activeTab === 'settings' 
-              ? 'bg-[var(--mousa-teal)] text-white shadow-xs' 
-              : 'bg-[var(--mousa-cream-surface)] text-[var(--mousa-sand-600)] hover:bg-[var(--mousa-sand-100)] border-2 border-[var(--mousa-border-sand)]'
-          }`}
-        >
-          <Settings size={18} className={activeTab === 'settings' ? 'text-[var(--mousa-gold)]' : 'text-stone-400'} />
-          <span>{lang === 'ar' ? 'الإعدادات والتنبيهات' : 'Settings & Alerts'}</span>
-          {pushNotificationsEnabled && (
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Notifications active"></span>
-          )}
-        </button>
-      </div>
-
-      {/* Tab Content Rendering */}
-      <AnimatePresence mode="wait">
-        {activeTab === 'overview' && (
-          <motion.div
-            key="overview-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {childrenLoading ? (
-              <div className="mousa-card-sand p-8 text-center text-[var(--text-secondary)]" role="status">
-                {lang === 'ar' ? 'جارٍ تحميل بيانات الأبناء...' : 'Loading linked children...'}
-              </div>
-            ) : childrenError ? (
-              <div className="mousa-card-sand p-8 text-center" role="alert">
-                <p className="text-[var(--feedback-error)] mb-4">{childrenError}</p>
-                <button onClick={() => void refreshChildren()} className="mousa-btn-quest px-4 py-2 rounded-xl">
-                  {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
-                </button>
-              </div>
-            ) : linkedChildren.length === 0 ? (
-              <div className="mousa-card-sand p-8 text-center text-[var(--text-secondary)]">
-                <p className="font-bold text-[var(--text-primary)]">{lang === 'ar' ? 'لا يوجد أبناء مرتبطون بالحساب حتى الآن.' : 'No children are linked to this account yet.'}</p>
-                <p className="mt-2 text-sm">{lang === 'ar' ? 'اربط حساب الطفل لعرض بياناته الحقيقية.' : 'Link a student account to see its verified information.'}</p>
-                <button onClick={() => setIsAddChildModalOpen(true)} className="mousa-btn-quest px-4 py-2 rounded-xl mt-4">
-                  {lang === 'ar' ? 'ربط طفل' : 'Link a child'}
-                </button>
-              </div>
-            ) : (
-              <ChildrenLessonsProgress 
-                childrenProfiles={linkedChildren}
-                selectedChildId={selectedChildId}
-                onSelectChild={setSelectedChildId}
-                onOpenAddChildModal={() => {
-                  setAddChildInitialTab('code');
-                  setIsAddChildModalOpen(true);
-                }}
-                onOpenQrScanner={() => {
-                  setAddChildInitialTab('qr');
-                  setIsAddChildModalOpen(true);
-                }}
-                lang={lang}
-              />
-            )}
-          </motion.div>
-        )}
-
-        {activeTab === 'weekly' && (
-          <motion.div
-            key="weekly-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {childrenLoading ? (
-              <div className="mousa-card-sand p-8 text-center text-[var(--text-secondary)]" role="status">
-                {lang === 'ar' ? 'جارٍ تحميل بيانات الأبناء...' : 'Loading linked children...'}
-              </div>
-            ) : childrenError ? (
-              <div className="mousa-card-sand p-8 text-center" role="alert">
-                <p className="text-[var(--feedback-error)] mb-4">{childrenError}</p>
-                <button onClick={() => void refreshChildren()} className="mousa-btn-quest px-4 py-2 rounded-xl">
-                  {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
-                </button>
-              </div>
-            ) : (
-              <WeeklyProgressView 
-                childrenProfiles={linkedChildren}
-                lang={lang}
-                onOpenAddChildModal={() => {
-                  setAddChildInitialTab('code');
-                  setIsAddChildModalOpen(true);
-                }}
-                onOpenQrScanner={() => {
-                  setAddChildInitialTab('qr');
-                  setIsAddChildModalOpen(true);
-                }}
-              />
-            )}
-          </motion.div>
-        )}
-
-        {activeTab === 'events' && (
-          <motion.div
-            key="events-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {eventsLoading ? (
-              <div className="mousa-card-sand p-8 text-center text-[var(--text-secondary)]" role="status">
-                {lang === 'ar' ? 'جارٍ تحميل فعاليات الكنيسة...' : 'Loading church events...'}
-              </div>
-            ) : eventsError ? (
-              <div className="mousa-card-sand p-8 text-center" role="alert">
-                <p className="text-[var(--feedback-error)] mb-4">{eventsError}</p>
-                <button onClick={() => {
-                  setEventsLoading(true);
-                  void getAuthoritativeChurchEvents().then(({ data, error }) => {
-                    setEventsLoading(false);
-                    setEventsError(error
-                      ? (lang === 'ar' ? 'تعذر تحميل فعاليات الكنيسة. حاول مرة أخرى.' : 'Unable to load church events. Please try again.')
-                      : null);
-                    setChurchEvents(data || []);
-                  });
-                }} className="mousa-btn-quest px-4 py-2 rounded-xl">
-                  {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
-                </button>
-              </div>
-            ) : (
-              <ChurchEventNotifications events={churchEvents} lang={lang} />
-            )}
-          </motion.div>
-        )}
-
-        {activeTab === 'approvals' && (
-          <motion.div
-            key="approvals-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-6"
-          >
-            {/* Control & Toggle Banner */}
-            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-[var(--mousa-border-sand)]">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
-                    <Shield size={22} />
-                  </div>
-                  <div>
-                    <h2 className="text-lg md:text-xl font-bold text-[var(--mousa-teal-deep)]">
-                      {lang === 'ar' ? 'نظام التحكم والموافقة الأبوية' : 'Parental Approval & Reward Safety'}
-                    </h2>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {lang === 'ar' 
-                        ? 'عند التفعيل، لن يتمكن الطفل من استبدال نقاطه بهدايا إلا بعد موافقتك الصريحة' 
-                        : 'When enabled, points can only be redeemed for gifts with your explicit confirmation'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 self-end sm:self-center">
-                  <span className="text-xs font-bold text-gray-600">
-                    {requireApproval 
-                      ? (lang === 'ar' ? 'الموافقة مطلوبة دائماً' : 'Approval Required') 
-                      : (lang === 'ar' ? 'استبدال مباشر بدون موافقة' : 'Instant Redeem')}
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
-                      checked={requireApproval}
-                      onChange={toggleApproval}
-                    />
-                    <div className="w-12 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--mousa-teal-deep)]"></div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-4 flex items-center gap-2">
-                  <Clock size={16} />
-                  {lang === 'ar' ? 'طلبات المكافآت' : 'Reward requests'}
-                </h3>
-                <div className="bg-[var(--surface-secondary)] rounded-2xl p-8 text-center border border-[var(--border-default)] text-[var(--text-secondary)] font-medium text-sm">
-                  {lang === 'ar' ? 'لا يعرض هذا القسم طلبات حقيقية حالياً؛ يلزم ربطه بخدمة المكافآت.' : 'Reward requests are not connected to a persisted service yet.'}
-                </div>
-              </div>
+      {section === 'journey' && (
+        childrenLoading ? <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]" role="status">{isArabic ? 'بنحمّل بيانات الأسرة...' : 'Loading family records…'}</div>
+          : childrenError ? <div className="mousa-card-sand p-6 text-center text-[var(--feedback-error)]" role="alert">{childrenError}</div>
+            : selectedChild ? <div className="space-y-4">
+              {children.length > 1 && <label className="mousa-card-sand flex items-center gap-3 p-4 text-sm font-bold text-[var(--text-primary)]">{isArabic ? 'اختار ابنك:' : 'Select child:'}<select value={selectedChild.id} onChange={event => setSelectedChildId(event.target.value)} className="min-w-48 rounded-lg border border-[var(--border-default)] bg-white px-3 py-2">{children.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label>}
+              <ParentLearningJourney child={selectedChild} lang={lang} />
             </div>
-          </motion.div>
-        )}
+              : <div className="mousa-card-sand p-8 text-center"><p className="text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك عشان تقدر تتابع رحلة التعلّم.' : 'Connect a child account to view their learning journey.'}</p><button type="button" onClick={() => openAddChild('code')} className="mousa-btn-quest mt-4 rounded-xl px-4 py-2">{isArabic ? 'ربط طفل' : 'Connect a child'}</button></div>
+      )}
 
-        {activeTab === 'settings' && (
-          <motion.div
-            key="settings-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ParentSettings 
-              lang={lang}
-              requireApproval={requireApproval}
-              onToggleApproval={toggleApproval}
-              pushNotificationsEnabled={pushNotificationsEnabled}
-              onTogglePushNotifications={togglePushNotifications}
-              notifyLessonCompletion={notifyLessonCompletion}
-              onToggleLessonCompletion={toggleLessonCompletion}
-              notifyEventReminders={notifyEventReminders}
-              onToggleEventReminders={toggleEventReminders}
-              onSendTestNotification={handleSendTestNotification}
-              permissionStatus={permissionStatus}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {section === 'family' && (
+        <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
+          <section className="mousa-card-sand p-5 sm:p-6">
+            <h2 className="text-lg font-black text-[var(--text-primary)]">{isArabic ? 'تفضيلات حساب ولي الأمر' : 'Parent account preferences'}</h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">{isArabic ? 'الإعدادات دي محفوظة على حسابك، ومش بتغيّر بيانات الطفل.' : 'These settings are saved on your own account and do not modify a child’s records.'}</p>
+            <div className="mt-5 space-y-4">
+              {[
+                { field: 'pushNotificationsEnabled' as const, label: isArabic ? 'تفضيل التنبيهات' : 'Notification preference', detail: isArabic ? 'اختيارك لاستقبال التنبيهات داخل الخدمات المتاحة.' : 'Your preference for notifications in supported services.' },
+                { field: 'notifyLessonCompletion' as const, label: isArabic ? 'تنبيهات إتمام الدروس' : 'Lesson completion alerts', detail: isArabic ? 'تفضيل مرتبط بحسابك؛ وصول التنبيه يعتمد على دعم الخدمة.' : 'An account preference; delivery depends on service support.' },
+                { field: 'notifyEventReminders' as const, label: isArabic ? 'تذكيرات الفعاليات' : 'Event reminders', detail: isArabic ? 'تفضيل مرتبط بحسابك؛ لا يعني وجود تنبيه مجدول.' : 'An account preference; it does not mean a reminder is scheduled.' },
+                { field: 'requireRewardApproval' as const, label: isArabic ? 'طلب موافقتي على المكافآت' : 'Require my reward approval', detail: isArabic ? 'تفضيل محفوظ في حسابك؛ طلبات المكافآت نفسها تظهر أدناه لو كانت مسجلة.' : 'A preference saved on your account; recorded reward requests appear below.' }
+              ].map(item => (
+                <label key={item.field} className="flex items-start justify-between gap-4 border-b border-[var(--border-default)] pb-4 last:border-0">
+                  <span><span className="block font-bold text-[var(--text-primary)]">{item.label}</span><span className="mt-1 block text-xs text-[var(--text-secondary)]">{item.detail}</span></span>
+                  <input type="checkbox" checked={Boolean(userData?.[item.field])} disabled={savingSetting === item.field} onChange={() => void handleSettingChange(item.field)} className="mt-1 h-5 w-5 accent-[var(--action-primary)]" />
+                </label>
+              ))}
+            </div>
+            {settingsError && <p className="mt-3 text-sm text-[var(--feedback-error)]" role="alert">{settingsError}</p>}
+          </section>
 
-      {/* Add / Link Child Modal */}
+          <section className="mousa-card-sand p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div><h2 className="text-lg font-black text-[var(--text-primary)]">{isArabic ? 'طلبات موافقة المكافآت' : 'Reward approval requests'}</h2><p className="mt-1 text-sm text-[var(--text-secondary)]">{isArabic ? 'طلبات فعلية مرتبطة بالأبناء الموثقين فقط.' : 'Persisted requests for verified linked children only.'}</p></div>
+              <button type="button" onClick={() => void refreshRewards()} aria-label={isArabic ? 'تحديث الطلبات' : 'Refresh requests'} className="rounded-xl border border-[var(--border-default)] p-2 text-[var(--text-primary)]"><RefreshCw size={17} /></button>
+            </div>
+            {rewardsLoading ? <p className="mt-5 text-sm text-[var(--text-secondary)]" role="status">{isArabic ? 'بنحمّل الطلبات...' : 'Loading requests…'}</p>
+              : rewardsError ? <div className="mt-5 text-sm text-[var(--feedback-error)]" role="alert"><AlertCircle className="me-2 inline" size={16} />{rewardsError}</div>
+                : rewardRequests.length === 0 ? <p className="mt-5 rounded-xl bg-white/70 p-5 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'مفيش طلبات مكافآت مسجلة للأبناء المرتبطين.' : 'No reward requests are recorded for linked children.'}</p>
+                  : <div className="mt-4 space-y-3">{rewardRequests.map(request => {
+                    const child = children.find(item => item.id === request.student_id);
+                    return <article key={request.id} className="rounded-xl border border-[var(--border-default)] bg-white/70 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-bold text-[var(--text-primary)]">{isArabic ? request.reward_name_ar : request.reward_name_en}</p><p className="mt-1 text-xs text-[var(--text-secondary)]">{child?.name || (isArabic ? 'ابن مرتبط' : 'Linked child')} · {request.cost_points} {isArabic ? 'نقطة' : 'points'} · {new Date(request.created_at).toLocaleDateString(isArabic ? 'ar-EG' : 'en-EG')}</p></div><span className="rounded-full bg-[var(--surface-secondary)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]">{request.status === 'pending' ? (isArabic ? 'بانتظار القرار' : 'Pending') : request.status === 'approved' ? (isArabic ? 'موافق عليه' : 'Approved') : (isArabic ? 'مرفوض' : 'Rejected')}</span></div>{request.status === 'pending' && <div className="mt-3 flex gap-2"><button type="button" disabled={reviewingRequestId === request.id} onClick={() => void handleRewardDecision(request, 'approved')} className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"><Check size={14} />{isArabic ? 'موافقة' : 'Approve'}</button><button type="button" disabled={reviewingRequestId === request.id} onClick={() => void handleRewardDecision(request, 'rejected')} className="inline-flex items-center gap-1 rounded-lg border border-[var(--border-default)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] disabled:opacity-50"><X size={14} />{isArabic ? 'رفض' : 'Reject'}</button></div>}</article>;
+                  })}</div>}
+            {reviewError && <p className="mt-3 text-sm text-[var(--feedback-error)]" role="alert">{reviewError}</p>}
+            <p className="mt-4 border-t border-[var(--border-default)] pt-4 text-xs text-[var(--text-secondary)]">{isArabic ? 'إعدادات وقت الشاشة غير متاحة حالياً؛ مش هنظهر أو نغيّر حدود غير محفوظة على الخادم.' : 'Screen-time controls are not available; no unsaved local limits are shown or changed.'}</p>
+          </section>
+        </div>
+      )}
+
+      {section === 'events' && (
+        <div className="space-y-5">
+          <section className="mousa-card-sand p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div><h2 className="text-lg font-black text-[var(--text-primary)]">{isArabic ? 'إعلانات الكنيسة' : 'Church announcements'}</h2><p className="mt-1 text-sm text-[var(--text-secondary)]">{isArabic ? 'منشورات معلّمة كإعلان في موجز الكنيسة.' : 'Posts marked as announcements in the church feed.'}</p></div>
+              <button type="button" onClick={() => void refreshAnnouncements()} aria-label={isArabic ? 'تحديث الإعلانات' : 'Refresh announcements'} className="rounded-xl border border-[var(--border-default)] p-2 text-[var(--text-primary)]"><RefreshCw size={17} /></button>
+            </div>
+            {announcementsLoading ? <p className="mt-4 text-sm text-[var(--text-secondary)]" role="status">{isArabic ? 'بنحمّل الإعلانات...' : 'Loading announcements…'}</p>
+              : announcementsError ? <p className="mt-4 text-sm text-[var(--feedback-error)]" role="alert">{announcementsError}</p>
+                : announcements.length === 0 ? <p className="mt-4 text-sm text-[var(--text-secondary)]">{isArabic ? 'مفيش إعلانات منشورة حالياً.' : 'No published announcements right now.'}</p>
+                  : <div className="mt-3 divide-y divide-[var(--border-default)]">{announcements.map(post => <article key={post.id} className="py-4"><p className="whitespace-pre-wrap text-sm text-[var(--text-primary)]">{post.content}</p><p className="mt-2 text-xs text-[var(--text-secondary)]">{post.authorName} · {new Date(post.createdAt).toLocaleString(isArabic ? 'ar-EG' : 'en-EG')}</p></article>)}</div>}
+          </section>
+          <section>
+            {eventsLoading ? <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]" role="status">{isArabic ? 'بنحمّل الفعاليات...' : 'Loading events…'}</div>
+              : eventsError ? <div className="mousa-card-sand p-6 text-center text-[var(--feedback-error)]" role="alert">{eventsError}<button type="button" onClick={() => void refreshEvents()} className="ms-3 underline">{isArabic ? 'حاول تاني' : 'Retry'}</button></div>
+                : <ChurchEventNotifications events={events} lang={lang} />}
+          </section>
+        </div>
+      )}
+
       <AddChildModal
         isOpen={isAddChildModalOpen}
         initialCode={initialChildCode}
         initialTab={addChildInitialTab}
         onClose={() => {
           setIsAddChildModalOpen(false);
-          refreshChildren();
+          void refreshChildren();
         }}
-        onChildLinked={(newChild) => {
-          setLinkedChildren(prev => {
-            const filtered = prev.filter(c => c.id !== newChild.id && c.linkCode !== newChild.linkCode);
-            return [newChild, ...filtered];
-          });
-          setSelectedChildId(newChild.id);
-          refreshChildren();
-          setActivePushToast({
-            id: 'linked-' + Date.now(),
-            title: lang === 'ar' ? 'تم ربط الطفل بنجاح' : 'Child Linked Successfully',
-            body: lang === 'ar' ? `تم ربط حساب ${newChild.nameAr} بنجاح وتفعيل المزامنة المباشرة` : `${newChild.nameEn} is now linked and live synced`,
-            icon: '👨‍👧',
-            badge: lang === 'ar' ? 'ربط عائلي' : 'Family Linked',
-            timestamp: lang === 'ar' ? 'الآن' : 'Just now'
-          });
+        onChildLinked={child => {
+          setSelectedChildId(child.id);
+          navigateSection('children');
+          void refreshChildren();
         }}
         parentEmail={userData?.email || currentUser?.email || ''}
-        parentId={parentKey}
-        parentName={userData?.fullName || (lang === 'ar' ? 'ولي الأمر' : 'Parent Guardian')}
-        existingChildren={linkedChildren}
+        parentId={userData?.id || currentUser?.uid || ''}
+        parentName={parentName}
+        existingChildren={children.map(asChildProfile)}
         lang={lang}
       />
-    </div>
+    </main>
   );
 }

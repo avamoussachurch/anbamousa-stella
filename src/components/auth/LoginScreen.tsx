@@ -103,6 +103,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
         const newUser: AppUser = {
           id: 'user_' + Date.now(),
           fullName: fullName.trim() || (email.split('@')[0] || 'User'),
+          roles: [role],
           role: role,
           grade: studentGrade,
           requestedGrade: studentGrade,

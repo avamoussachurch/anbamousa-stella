@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { hasRole } from '../lib/workspaces';
 import { LeaderboardEntry, StreakLeaderboardEntry } from '../types';
 import { 
   getLeaderboard, 
@@ -73,7 +74,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         userData && (
           entry.studentId === userData.id ||
           (isGuest && (entry.studentId === 'u1' || entry.studentId.startsWith('guest_'))) ||
-          (userData.role === 'student' && !userData.id.startsWith('s-') && entry.studentId === 'u1')
+          (hasRole(userData, 'student') && !userData.id.startsWith('s-') && entry.studentId === 'u1')
         )
       );
 
@@ -106,7 +107,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         userData && (
           entry.studentId === userData.id ||
           (isGuest && (entry.studentId === 'u1' || entry.studentId.startsWith('guest_'))) ||
-          (userData.role === 'student' && !userData.id.startsWith('s-') && entry.studentId === 'u1')
+          (hasRole(userData, 'student') && !userData.id.startsWith('s-') && entry.studentId === 'u1')
         )
       );
 

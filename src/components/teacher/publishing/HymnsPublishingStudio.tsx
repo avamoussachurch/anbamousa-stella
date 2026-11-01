@@ -18,7 +18,8 @@ import {
   Sliders,
   ChevronRight,
   ShieldCheck,
-  FolderOpen
+  FolderOpen,
+  Search
 } from 'lucide-react';
 import { CopticHymnItem, HymnLyricLine } from '../../../data/hymnsData';
 import { HYMNS_LEVEL_DEFINITIONS } from '../../../lib/hymnsEnrollmentService';
@@ -36,9 +37,13 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
   const [hymns, setHymns] = useState<CopticHymnItem[]>([]);
   const [selectedHymnId, setSelectedHymnId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [libraryQuery, setLibraryQuery] = useState('');
+  const [libraryStatus, setLibraryStatus] = useState<'all' | 'draft' | 'published'>('all');
+  const [libraryLevel, setLibraryLevel] = useState<'all' | '1' | '2' | '3'>('all');
 
   // Form Fields for Active Hymn
   const [titleAr, setTitleAr] = useState('');
@@ -84,12 +89,15 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
   // Load Hymns Library
   const loadLibrary = async () => {
     setLoading(true);
+    setLibraryError(null);
     const res = await getHymns();
     if (res.success && res.items) {
       setHymns(res.items);
       if (!selectedHymnId && res.items.length > 0) {
         populateForm(res.items[0]);
       }
+    } else {
+      setLibraryError(res.error || (isAr ? 'تعذر تحميل مكتبة الألحان.' : 'The Hymns library could not be loaded.'));
     }
     setLoading(false);
   };
@@ -97,6 +105,19 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
   useEffect(() => {
     loadLibrary();
   }, []);
+  const filteredHymns = hymns.filter(hymn => {
+    const query = libraryQuery.trim().toLocaleLowerCase();
+    const matchesQuery = !query || [
+      hymn.titleAr,
+      hymn.titleEn,
+      hymn.seasonAr,
+      hymn.seasonEn,
+      hymn.occasionTag
+    ].some(value => String(value || '').toLocaleLowerCase().includes(query));
+    const matchesStatus = libraryStatus === 'all' || (hymn as any).status === libraryStatus;
+    const matchesLevel = libraryLevel === 'all' || hymn.level === Number(libraryLevel);
+    return matchesQuery && matchesStatus && matchesLevel;
+  });
 
   const populateForm = (h: CopticHymnItem) => {
     setSelectedHymnId(h.id);
@@ -422,8 +443,32 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
             </span>
           </div>
 
+          <label className="relative block">
+            <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-stone-400" />
+            <input
+              type="search"
+              value={libraryQuery}
+              onChange={event => setLibraryQuery(event.target.value)}
+              placeholder={isAr ? 'بحث بالعنوان أو الموسم' : 'Search title or season'}
+              aria-label={isAr ? 'بحث في الألحان' : 'Search hymns'}
+              className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2 ps-9 pe-3 text-xs dark:border-stone-700 dark:bg-stone-800"
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <select value={libraryStatus} onChange={event => setLibraryStatus(event.target.value as typeof libraryStatus)} aria-label={isAr ? 'تصفية حسب الحالة' : 'Filter by status'} className="min-w-0 rounded-lg border border-stone-200 bg-white p-2 text-[11px] dark:border-stone-700 dark:bg-stone-800">
+              <option value="all">{isAr ? 'كل الحالات' : 'All statuses'}</option>
+              <option value="draft">{isAr ? 'مسودة' : 'Draft'}</option>
+              <option value="published">{isAr ? 'منشور' : 'Published'}</option>
+            </select>
+            <select value={libraryLevel} onChange={event => setLibraryLevel(event.target.value as typeof libraryLevel)} aria-label={isAr ? 'تصفية حسب المستوى' : 'Filter by level'} className="min-w-0 rounded-lg border border-stone-200 bg-white p-2 text-[11px] dark:border-stone-700 dark:bg-stone-800">
+              <option value="all">{isAr ? 'كل المستويات' : 'All levels'}</option>
+              <option value="1">{isAr ? 'المستوى ١' : 'Level 1'}</option>
+              <option value="2">{isAr ? 'المستوى ٢' : 'Level 2'}</option>
+              <option value="3">{isAr ? 'المستوى ٣' : 'Level 3'}</option>
+            </select>
+          </div>
           <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">
-            {hymns.map((h) => {
+            {filteredHymns.map((h) => {
               const isSelected = h.id === selectedHymnId;
               const isHymnDraft = (h as any).status === 'draft';
               return (
@@ -458,6 +503,19 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
                 </div>
               );
             })}
+            {libraryError && (
+              <div role="alert" className="space-y-2 rounded-xl border border-red-300 bg-red-50 p-3 text-xs text-red-800">
+                <p>{libraryError}</p>
+                <button type="button" onClick={() => void loadLibrary()} disabled={loading} className="font-black underline disabled:opacity-50">
+                  {isAr ? 'إعادة المحاولة' : 'Retry'}
+                </button>
+              </div>
+            )}
+            {!loading && !libraryError && filteredHymns.length === 0 && (
+              <p className="rounded-xl bg-stone-50 p-3 text-xs text-stone-500 dark:bg-stone-800">
+                {isAr ? 'لا توجد ألحان تطابق عوامل التصفية.' : 'No hymns match these filters.'}
+              </p>
+            )}
           </div>
         </div>
 

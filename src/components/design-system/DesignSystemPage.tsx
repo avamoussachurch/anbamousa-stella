@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Palette, Type, Layout, Volume2, ShieldCheck, Check, Sparkles, RefreshCw } from 'lucide-react';
+import { Palette, Type, Layout, Volume2, ShieldCheck, Check, Sparkles, RefreshCw, BookOpenCheck, CalendarDays, Flame, UsersRound } from 'lucide-react';
 import { Language } from '../../types';
 import { t } from '../../localization/i18n';
 import { CopticButton } from './CopticButton';
@@ -7,6 +7,22 @@ import { CopticCard } from './CopticCard';
 import { CopticBadge } from './CopticBadge';
 import { TrilingualReader, TrilingualVerse } from './TrilingualReader';
 import { CopticAudioPlayer } from './CopticAudioPlayer';
+import {
+  StellaCard,
+  StellaBarChart,
+  StellaErrorState,
+  StellaEmptyState,
+  StellaFormField,
+  StellaInput,
+  StellaMetricCard,
+  StellaPageHeader,
+  StellaProgressBar,
+  StellaProgressRing,
+  StellaSelect,
+  StellaSectionTitle,
+  StellaStatusLabel,
+  StellaTimeline,
+} from './StellaVisualFoundation';
 
 interface DesignSystemPageProps {
   lang: Language;
@@ -239,6 +255,178 @@ export const DesignSystemPage: React.FC<DesignSystemPageProps> = ({ lang, setLan
       {/* TAB 3: COMPONENTS */}
       {activeTab === 'components' && (
         <div className="space-y-6">
+          <StellaCard variant="feature" padding="md" className="sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <StellaPageHeader
+                eyebrow={lang === 'ar' ? 'هوية ستيلا • الأساس المشترك' : 'Stella identity • shared foundation'}
+                title={lang === 'ar' ? 'واجهة دافئة وواضحة' : 'Warm, clear, and expressive'}
+                description={lang === 'ar'
+                  ? 'أسطح كحلية عميقة، لمسات ذهبية، وتفاصيل تركوازية هادئة؛ مصممة للعربية والإنجليزية.'
+                  : 'Deep ink surfaces, warm gold highlights, and calm teal accents—designed for Arabic and English.'}
+                icon={BookOpenCheck}
+              />
+              <StellaStatusLabel tone="gold" dot>
+                {lang === 'ar' ? 'معاينة للمكوّنات' : 'Component preview'}
+              </StellaStatusLabel>
+            </div>
+            <p className="mb-4 text-xs text-[var(--text-muted)]">
+              {lang === 'ar' ? 'القيم التالية توضيحية لعرض المكوّنات وليست بيانات حقيقية.' : 'Illustrative component values—not live account data.'}
+            </p>
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <StellaMetricCard
+                label={lang === 'ar' ? 'محطات مكتملة' : 'Milestones complete'}
+                value="8 / 12"
+                detail={lang === 'ar' ? 'رحلة تعليمية توضيحية' : 'Illustrative learning journey'}
+                icon={BookOpenCheck}
+                tone="teal"
+              />
+              <StellaMetricCard
+                label={lang === 'ar' ? 'أيام المواظبة' : 'Learning streak'}
+                value={lang === 'ar' ? '٥ أيام' : '5 days'}
+                detail={lang === 'ar' ? 'تقدّم ثابت كل أسبوع' : 'A steady rhythm each week'}
+                icon={Flame}
+                tone="gold"
+              />
+              <StellaMetricCard
+                label={lang === 'ar' ? 'لقاء الفصل القادم' : 'Next class gathering'}
+                value={lang === 'ar' ? 'الأحد' : 'Sunday'}
+                detail={lang === 'ar' ? 'موعد توضيحي' : 'Sample schedule'}
+                icon={CalendarDays}
+                tone="coral"
+              />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
+              <StellaCard variant="subtle" padding="md">
+                <StellaSectionTitle
+                  title={lang === 'ar' ? 'رحلة التعلّم' : 'Learning journey'}
+                  description={lang === 'ar' ? 'مؤشرات مفهومة دون ازدحام بصري' : 'Progress at a glance, without visual clutter'}
+                  action={<StellaStatusLabel tone="success" dot>{lang === 'ar' ? 'مستمر' : 'On track'}</StellaStatusLabel>}
+                />
+                <div className="space-y-4">
+                  <StellaProgressBar label={lang === 'ar' ? 'دروس مدارس الأحد' : 'Sunday School lessons'} value={67} tone="teal" />
+                  <StellaProgressBar label={lang === 'ar' ? 'الألحان والطقس' : 'Hymns & Taxis'} value={42} tone="gold" />
+                </div>
+              </StellaCard>
+              <StellaCard variant="subtle" padding="md" className="flex items-center justify-center gap-4">
+                <StellaProgressRing
+                  label={lang === 'ar' ? 'التقدّم التوضيحي' : 'Illustrative progress'}
+                  value={72}
+                  tone="gold"
+                />
+                <div>
+                  <p className="mb-1 text-sm font-extrabold text-[var(--text-primary)]">
+                    {lang === 'ar' ? 'خطوة بخطوة' : 'One step at a time'}
+                  </p>
+                  <p className="m-0 max-w-36 text-xs leading-relaxed text-[var(--text-muted)]">
+                    {lang === 'ar' ? 'المخططات واضحة ومتوافقة مع اتجاه اللغة.' : 'Charts stay clear in either reading direction.'}
+                  </p>
+                </div>
+              </StellaCard>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <StellaEmptyState
+                title={lang === 'ar' ? 'المكان جاهز لخطوتك القادمة' : 'Ready for your next step'}
+                description={lang === 'ar' ? 'حالات الفراغ تشجّع وتوجّه، بدل أن تبدو كخطأ.' : 'Empty states guide the next action instead of feeling like an error.'}
+                icon={UsersRound}
+              />
+              <div className="stella-card stella-card--subtle flex items-center p-5" aria-label={lang === 'ar' ? 'معاينة تحميل' : 'Loading preview'}>
+                <div className="w-full space-y-3">
+                  <StellaSectionTitle
+                    title={lang === 'ar' ? 'تحميل هادئ' : 'Calm loading'}
+                    description={lang === 'ar' ? 'مساحة تحفظ شكل المحتوى أثناء التحميل' : 'Reserved space keeps the layout steady while content loads'}
+                  />
+                  <div className="stella-skeleton" aria-hidden="true">
+                    <span className="stella-skeleton__block stella-skeleton__block--hero" />
+                    <span className="stella-skeleton__block" />
+                    <span className="stella-skeleton__block" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <StellaCard variant="subtle" padding="md">
+                <StellaSectionTitle
+                  title={lang === 'ar' ? 'مخطط النشاط' : 'Activity chart'}
+                  description={lang === 'ar' ? 'مثال توضيحي — اربطه ببيانات موثوقة عند الاستخدام' : 'Illustrative only—connect to verified data in product screens'}
+                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                />
+                <StellaBarChart
+                  label={lang === 'ar' ? 'نشاط تعليمي توضيحي' : 'Illustrative learning activity'}
+                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  formatValue={value => lang === 'ar' ? `${value} درس` : `${value} lessons`}
+                  data={[
+                    { id: 'sunday-school-demo', label: lang === 'ar' ? 'مدارس الأحد' : 'Sunday School', value: 4, tone: 'teal' },
+                    { id: 'hymns-demo', label: lang === 'ar' ? 'الألحان' : 'Hymns', value: 2, tone: 'gold' },
+                    { id: 'taxis-demo', label: lang === 'ar' ? 'الطقس' : 'Taxis', value: 3, tone: 'coral' }
+                  ]}
+                />
+              </StellaCard>
+              <StellaCard variant="subtle" padding="md">
+                <StellaSectionTitle
+                  title={lang === 'ar' ? 'خط زمني' : 'Timeline'}
+                  description={lang === 'ar' ? 'المواعيد هنا أمثلة وليست أحداثاً حقيقية' : 'Example dates only—not live events'}
+                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                />
+                <StellaTimeline
+                  label={lang === 'ar' ? 'خط زمني توضيحي' : 'Illustrative timeline'}
+                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  items={[
+                    {
+                      id: 'gathering-demo',
+                      title: lang === 'ar' ? 'اجتماع مدارس الأحد' : 'Sunday School gathering',
+                      dateLabel: lang === 'ar' ? 'الأحد • ٩:٠٠ ص' : 'Sunday • 9:00 AM',
+                      dateTime: '2026-11-01T09:00:00',
+                      description: lang === 'ar' ? 'موعد تجريبي لعرض تنسيق الخط الزمني.' : 'A sample date to demonstrate timeline layout.',
+                      tone: 'gold'
+                    },
+                    {
+                      id: 'lesson-demo',
+                      title: lang === 'ar' ? 'مراجعة الدرس' : 'Lesson review',
+                      dateLabel: lang === 'ar' ? 'الأسبوع القادم' : 'Next week',
+                      description: lang === 'ar' ? 'تفاصيل إضافية تظهر عند توفر البيانات.' : 'Additional detail appears when available.',
+                      tone: 'teal'
+                    }
+                  ]}
+                />
+              </StellaCard>
+            </div>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <StellaCard variant="subtle" padding="md">
+                <StellaSectionTitle
+                  title={lang === 'ar' ? 'حقول النماذج' : 'Form controls'}
+                  description={lang === 'ar' ? 'تسميات وحالات تركيز وأخطاء متوافقة مع الاتجاه' : 'Labeled controls with direction-aware focus and validation'}
+                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <StellaFormField
+                    id="stella-demo-name"
+                    label={lang === 'ar' ? 'الاسم' : 'Display name'}
+                    hint={lang === 'ar' ? 'اكتب الاسم الظاهر للحساب.' : 'Enter the account display name.'}
+                    dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  >
+                    <StellaInput id="stella-demo-name" hintId="stella-demo-name-hint" placeholder={lang === 'ar' ? 'الاسم' : 'Name'} />
+                  </StellaFormField>
+                  <StellaFormField
+                    id="stella-demo-grade"
+                    label={lang === 'ar' ? 'الصف' : 'Grade'}
+                    dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  >
+                    <StellaSelect id="stella-demo-grade" defaultValue="primary">
+                      <option value="primary">{lang === 'ar' ? 'ابتدائي' : 'Primary'}</option>
+                      <option value="prep">{lang === 'ar' ? 'إعدادي' : 'Preparatory'}</option>
+                    </StellaSelect>
+                  </StellaFormField>
+                </div>
+              </StellaCard>
+              <StellaErrorState
+                title={lang === 'ar' ? 'تعذر تحميل هذا القسم' : 'This section could not load'}
+                description={lang === 'ar' ? 'اعرض الخطأ بوضوح وأتح للمستخدم المحاولة مرة أخرى.' : 'Explain the problem and provide a clear recovery action.'}
+                dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                action={<CopticButton variant="secondary" size="sm" lang={lang}>{lang === 'ar' ? 'إعادة المحاولة' : 'Try again'}</CopticButton>}
+              />
+            </div>
+          </StellaCard>
+
           {/* Buttons */}
           <CopticCard variant="default" padding="md">
             <h2 className="text-base font-bold text-[var(--brand-burgundy)] dark:text-[var(--brand-gold)] mb-3">

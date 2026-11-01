@@ -18,6 +18,8 @@ import { useAuth } from '../../context/AuthContext';
 import { recordStudentSchoolActivity } from '../../lib/studentProgressService';
 import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
 import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
+import { hasRole } from '../../lib/workspaces';
+import { useActiveWorkspace } from '../../context/WorkspaceContext';
 
 interface CopticTaxisTabProps {
   lang?: Language;
@@ -26,6 +28,7 @@ interface CopticTaxisTabProps {
 export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const isAr = lang === 'ar';
   const { userData, setUserDirectly } = useAuth();
+  const workspace = useActiveWorkspace();
   const [items, setItems] = useState<TaxisItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -37,7 +40,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
 
   useEffect(() => {
     let isMounted = true;
-    const needsLevel = userData?.role === 'student' && parseHymnsTaxisLevel(userData.hymnsTaxisLevel) === null;
+    const needsLevel = workspace === 'student' && hasRole(userData, 'student') && parseHymnsTaxisLevel(userData.hymnsTaxisLevel) === null;
     if (needsLevel) {
       setLoadError(null);
       setItems([]);
@@ -48,7 +51,10 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
 
     setLoading(true);
     setLoadError(null);
-    getTaxisItems(selectedCategory, undefined, userData).then(res => {
+    const studentViewer = workspace === 'student' && hasRole(userData, 'student') && userData
+      ? { ...userData, roles: ['student'] as const, role: 'student' as const }
+      : userData;
+    getTaxisItems(selectedCategory, undefined, studentViewer).then(res => {
       if (!isMounted) return;
       if (res.success && res.items) {
         setItems(res.items);
@@ -61,7 +67,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
       setLoading(false);
     });
     return () => { isMounted = false; };
-  }, [selectedCategory, userData?.id, userData?.role, userData?.hymnsTaxisLevel, userData?.grade]);
+  }, [selectedCategory, userData?.id, userData?.roles, userData?.hymnsTaxisLevel, userData?.grade, workspace]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -164,7 +170,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
         </div>
       </div>
 
-      {userData?.role === 'student' && parseHymnsTaxisLevel(userData.hymnsTaxisLevel) === null && (
+      {workspace === 'student' && hasRole(userData, 'student') && parseHymnsTaxisLevel(userData.hymnsTaxisLevel) === null && (
         <HymnsTaxisLevelSetup
           lang={lang}
           onSaved={level => setUserDirectly({ ...userData, hymnsTaxisLevel: level })}

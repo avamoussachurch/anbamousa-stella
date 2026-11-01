@@ -26,11 +26,13 @@ import { getHymns } from '../../lib/hymnsService';
 import { recordStudentSchoolActivity } from '../../lib/studentProgressService';
 import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
 import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
+import { useActiveWorkspace } from '../../context/WorkspaceContext';
 
 export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isAr = lang === 'ar';
   const { userData, setUserDirectly } = useAuth();
-  const isTeacherOrAdmin = userData?.role === 'teacher' || userData?.role === 'admin';
+  const workspace = useActiveWorkspace();
+  const isTeacherOrAdmin = workspace === 'teacher' || workspace === 'admin';
 
   // Live Hymns & Enrollment State
   const [hymnsList, setHymnsList] = useState<CopticHymnItem[]>(COPTIC_HYMNS_COLLECTION);
@@ -72,7 +74,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     }
     const reqLevel = isTeacherOrAdmin && levelFilter !== 'all' ? levelFilter : undefined;
     setHymnsLoadError(null);
-    getHymns(reqLevel, seasonFilter, undefined, userData ? { role: userData.role, hymnsTaxisLevel: userData.hymnsTaxisLevel } : undefined).then(res => {
+    getHymns(reqLevel, seasonFilter, undefined, userData ? { roles: userData.roles, hymnsTaxisLevel: userData.hymnsTaxisLevel } : undefined).then(res => {
       if (!isMounted) return;
       if (res.success && res.items) {
         setHymnsList(res.items);
@@ -86,7 +88,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     });
 
     return () => { isMounted = false; };
-  }, [levelFilter, seasonFilter, isTeacherOrAdmin, assignedLevel, userData?.id, userData?.role, lang]);
+  }, [levelFilter, seasonFilter, isTeacherOrAdmin, assignedLevel, userData?.id, userData?.roles, lang]);
 
   // Read mastered hymns
   useEffect(() => {

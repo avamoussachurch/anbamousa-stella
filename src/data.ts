@@ -63,6 +63,7 @@ export const mockHymns: Hymn[] = [
 export const mockUser: User = {
   id: 'u1',
   fullName: 'Youssef Mina',
+  roles: ['student'],
   role: 'student',
   avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Youssef',
   points: 850,

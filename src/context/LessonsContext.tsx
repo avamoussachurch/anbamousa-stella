@@ -27,6 +27,7 @@ import {
   mockStudentMastery 
 } from '../data';
 import { useAuth } from './AuthContext';
+import { useActiveWorkspace } from './WorkspaceContext';
 import { 
   getPublishedLessonsForCurrentUser, 
   getTeacherLessonVersions,
@@ -288,6 +289,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
   // 12. Online Normalized Curriculum State
   const { userData, isGuest, syncAuthoritativeProgress } = useAuth();
+  const activeWorkspace = useActiveWorkspace();
   const [curriculumLoading, setCurriculumLoading] = useState<boolean>(false);
   const [curriculumError, setCurriculumError] = useState<string | null>(null);
   const [curriculumLoadedForUserId, setCurriculumLoadedForUserId] = useState<string | null>(null);
@@ -303,7 +305,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
     setCurriculumLoadedForUserId(null);
 
     try {
-      const isTeacher = userData.role === 'teacher' || userData.role === 'admin';
+      const isTeacher = activeWorkspace === 'teacher';
       const result = isTeacher 
         ? await getTeacherCurriculumLessons()
         : await getPublishedLessonsForCurrentUser();
@@ -411,7 +413,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       setCurriculumLoading(false);
       setCurriculumLoadedForUserId(userData.id);
     }
-  }, [userData?.id, userData?.role, isGuest]);
+  }, [userData?.id, userData?.roles, isGuest, activeWorkspace]);
 
   useEffect(() => {
     loadOnlineCurriculum();

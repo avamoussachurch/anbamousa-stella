@@ -560,7 +560,7 @@ export function ExpressLessonPublishModal({
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2 text-rose-400 font-bold text-xs">
                   <Mic size={16} />
-                  <span>{isAr ? 'تسجيل الشرح الصوتي للخادم' : 'Teacher Voice & Audio Sermon'}</span>
+                  <span>{isAr ? 'تسجيل الشرح الصوتي للخادم' : 'Servant Voice & Audio Lesson'}</span>
                 </div>
                 {audioFileName && (
                   <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">

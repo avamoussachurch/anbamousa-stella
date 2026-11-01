@@ -1,4 +1,6 @@
 import { User, Lesson } from '../types';
+import type { Workspace } from './workspaces';
+import { hasRole } from './workspaces';
 import { getPendingActivationRequests } from './onboardingService';
 
 export interface ChurchNotification {
@@ -67,7 +69,8 @@ export async function requestBrowserNotificationPermission(): Promise<boolean> {
  */
 export async function getLiveNotificationsForUser(
   currentUser: User | null,
-  lessons: Lesson[]
+  lessons: Lesson[],
+  workspace?: Workspace | null
 ): Promise<ChurchNotification[]> {
   if (!currentUser) return [];
 
@@ -92,7 +95,7 @@ export async function getLiveNotificationsForUser(
 
   // 2. Prayer Tracker Reminder (Daily Agpeya)
   const prayerNotifId = `prayer_${todayDateStr}`;
-  notifications.push({
+  if (!workspace || workspace === 'student') notifications.push({
     id: prayerNotifId,
     type: 'PRAYER_REMINDER',
     titleAr: 'تذكير صلوات الأجبية اليومية',
@@ -106,7 +109,7 @@ export async function getLiveNotificationsForUser(
   });
 
   // 3. Streak Activity Notice
-  if (currentUser.role === 'student') {
+  if ((!workspace || workspace === 'student') && hasRole(currentUser, 'student')) {
     const streakNotifId = `streak_${todayDateStr}_${currentUser.currentStreak}`;
     if (currentUser.currentStreak > 0) {
       notifications.push({
@@ -143,7 +146,8 @@ export async function getLiveNotificationsForUser(
   }
 
   // 5. Servants: Student Roster Approval Requests
-  if (currentUser.role === 'teacher' || currentUser.role === 'admin') {
+  if ((!workspace || workspace === 'teacher' || workspace === 'admin') &&
+      (hasRole(currentUser, 'teacher') || hasRole(currentUser, 'admin'))) {
     try {
       const reqRes = await getPendingActivationRequests();
       const pendingCount = (reqRes.requests || []).length;
@@ -158,7 +162,7 @@ export async function getLiveNotificationsForUser(
           bodyEn: `${pendingCount} student(s) require roster activation approval.`,
           timestamp: new Date().toISOString(),
           isRead: readIds.includes(rosterNotifId),
-          actionTab: 'studio',
+          actionTab: workspace === 'admin' ? 'home' : 'studio',
           icon: '📋'
         });
       }

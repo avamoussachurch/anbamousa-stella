@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { getFeedDisplayState } from '../../lib/feedDisplayState';
 import { uploadFeedMediaToSupabase, extractEmbedMedia, checkStorageBackendStatus } from '../../lib/supabaseDatabase';
 import {
@@ -41,6 +42,7 @@ type ComposerAttachment = UploadedFeedAttachment & {
 
 export function FeedTab({ lang }: { lang: Language }) {
   const { userData } = useAuth();
+  const workspace = useActiveWorkspace();
   const isCop = lang === 'copt' || lang === 'cop';
   
   const [posts, setPosts] = useState<ExtendedPost[]>([]);
@@ -175,7 +177,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     });
   }, []);
 
-  const isTeacher = userData?.role === 'teacher';
+  const isTeacher = workspace === 'teacher';
 
   // 3. Sorting logic
   const sortedPosts = useMemo(() => {

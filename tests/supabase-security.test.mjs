@@ -7,6 +7,7 @@ const read = path => readFile(new URL(path, root), 'utf8');
 
 test('clean-install schema and additive hardening migration contain the same security block', async () => {
   const marker = '-- BEGIN PHASE 4 SECURITY HARDENING';
+  const multiRoleMarker = '-- Phase 13: normalized multi-role accounts and audited role changes.';
   const [schema, migration] = await Promise.all([
     read('supabase_schema.sql'),
     read('scripts/migrations/phase4_security_hardening.sql')
@@ -14,9 +15,89 @@ test('clean-install schema and additive hardening migration contain the same sec
   assert.notEqual(schema.indexOf(marker), -1);
   assert.notEqual(migration.indexOf(marker), -1);
   assert.equal(
-    schema.slice(schema.indexOf(marker)).trimEnd(),
-    migration.slice(migration.indexOf(marker)).trimEnd()
+    schema.slice(schema.indexOf(marker), schema.indexOf(multiRoleMarker)).replace(/\r\n/g, '\n').trimEnd(),
+    migration.slice(migration.indexOf(marker)).replace(/\r\n/g, '\n').trimEnd()
   );
+});
+
+test('multi-role clean-install schema matches additive migration and enforces trusted role changes', async () => {
+  const [schema, migration] = await Promise.all([
+    read('supabase_schema.sql'),
+    read('scripts/migrations/phase13_multi_role_accounts.sql')
+  ]);
+  const marker = '-- Phase 13: normalized multi-role accounts and audited role changes.';
+  assert.notEqual(schema.indexOf(marker), -1);
+  const phase14Marker = '-- Phase 14: append-only audit history for administrative and support actions.';
+  assert.equal(
+    schema.slice(schema.indexOf(marker), schema.indexOf(phase14Marker, schema.indexOf(marker))).replace(/\r\n/g, '\n').trimEnd(),
+    migration.replace(/\r\n/g, '\n').trimEnd()
+  );
+  assert.match(migration, /CREATE UNIQUE INDEX IF NOT EXISTS profile_role_assignments_one_active_role/);
+  assert.match(migration, /SELECT p\.id, p\.role, 'backfill'/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.role_promotion_requests/);
+  assert.match(migration, /requested_role TEXT NOT NULL CHECK \(requested_role IN \('student', 'parent', 'teacher'\)\)/);
+  assert.match(migration, /auth\.role\(\) IS DISTINCT FROM 'authenticated'/);
+  assert.match(migration, /auth\.role\(\) IS DISTINCT FROM 'service_role'/);
+  assert.match(migration, /v_request\.requester_id = p_actor_id/);
+  assert.match(migration, /The last active admin role cannot be revoked/);
+  assert.match(migration, /The last active admin account cannot be deleted/);
+  assert.match(migration, /CREATE TRIGGER guard_last_admin_profile_delete/);
+  assert.match(migration, /Administrators cannot change their own role assignments/);
+  assert.match(migration, /CREATE TRIGGER role_change_audit_immutable/);
+  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.request_role_promotion\(TEXT, TEXT\) TO authenticated/);
+  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.manage_profile_role\(UUID, TEXT, TEXT, UUID, TEXT\) TO service_role/);
+  assert.doesNotMatch(migration, /GRANT EXECUTE ON FUNCTION public\.grant_profile_role_internal/);
+});
+
+test('admin action audit schema is append-only, RLS protected, and matches clean install', async () => {
+  const [schema, migration] = await Promise.all([
+    read('supabase_schema.sql'),
+    read('scripts/migrations/phase14_admin_action_audit.sql')
+  ]);
+  const marker = '-- Phase 14: append-only audit history for administrative and support actions.';
+  assert.notEqual(schema.indexOf(marker), -1);
+  const schemaBlock = schema.slice(schema.indexOf(marker) + marker.length).replace(/\r\n/g, '\n').trim();
+  const migrationBlock = migration
+    .slice(migration.indexOf('CREATE TABLE IF NOT EXISTS public.admin_action_audit'))
+    .replace(/\nCOMMIT;\s*$/, '')
+    .replace(/\r\n/g, '\n')
+    .trim();
+  assert.equal(schemaBlock, migrationBlock);
+  assert.match(migration, /actor_id UUID NOT NULL/);
+  assert.match(migration, /target_user_id UUID/);
+  assert.match(migration, /operation TEXT NOT NULL/);
+  assert.match(migration, /details JSONB NOT NULL/);
+  assert.match(migration, /ALTER TABLE public\.admin_action_audit ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /REVOKE ALL ON TABLE public\.admin_action_audit FROM PUBLIC, anon, authenticated/);
+  assert.match(migration, /CREATE TRIGGER admin_action_audit_immutable/);
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.admin_action_audit/);
+});
+
+test('admin class management RPCs authorize assigned roles and preserve roster history', async () => {
+  const [schema, migration] = await Promise.all([
+    read('supabase_schema.sql'),
+    read('scripts/migrations/phase15_admin_class_role_authorization.sql')
+  ]);
+  for (const sql of [schema, migration]) {
+    const enrollStart = sql.lastIndexOf('CREATE OR REPLACE FUNCTION public.enroll_student_in_class');
+    const removeStart = sql.lastIndexOf('CREATE OR REPLACE FUNCTION public.remove_student_from_class');
+    assert.notEqual(enrollStart, -1);
+    assert.notEqual(removeStart, -1);
+    const enroll = sql.slice(enrollStart, removeStart);
+    const remove = sql.slice(removeStart, sql.indexOf('$$;', removeStart) + 3);
+    assert.match(enroll, /profile_role_assignments/);
+    assert.match(enroll, /ra\.role = 'admin'/);
+    assert.match(enroll, /ra\.role = 'teacher'/);
+    assert.match(enroll, /ra\.role = 'student'/);
+    assert.doesNotMatch(enroll, /SELECT role INTO v_caller_role FROM public\.profiles/);
+    assert.match(enroll, /v_class_group_id = 'primary_2'/);
+    assert.match(remove, /profile_role_assignments/);
+    assert.match(remove, /ra\.role = 'admin'/);
+    assert.match(remove, /ra\.role = 'teacher'/);
+    assert.doesNotMatch(remove, /SELECT role INTO v_caller_role FROM public\.profiles/);
+    assert.match(remove, /SET status = 'inactive'/);
+    assert.match(remove, /removal_reason/);
+  }
 });
 
 test('SQL hardening provisions elevated roles and family links only through service role', async () => {
@@ -44,6 +125,75 @@ test('lesson publishing and grade changes cannot bypass trusted authorization', 
   assert.match(checks, /privileged lesson approval or publishing RPC/);
   assert.match(checks, /Lesson-version policies require explicit review/);
   assert.doesNotMatch(churchYearService, /\.from\('profiles'\)\s*\.update\(\{\s*grade/);
+});
+
+test('scheduled publishing migration replaces legacy profile-role checks with assigned-role checks', async () => {
+  const migration = await read('scripts/migrations/phase16_curriculum_operations_multi_role.sql');
+  for (const functionName of [
+    'publish_lesson_version_immediately',
+    'schedule_lesson_publication',
+    'reschedule_lesson_publication',
+    'cancel_lesson_publication',
+    'list_lesson_publications',
+    'process_due_lesson_publications'
+  ]) {
+    assert.match(migration, new RegExp(`pg_get_functiondef\\([\\s\\S]*?${functionName}`));
+  }
+  assert.equal((migration.match(/public\.profile_role_assignments ra/g) || []).length, 12);
+  assert.match(migration, /ra\.role = ''admin'' AND ra\.revoked_at IS NULL/);
+  assert.match(migration, /ra\.role = ''teacher'' AND ra\.revoked_at IS NULL/);
+  assert.match(migration, /IF v_definition = v_original THEN/);
+  assert.match(migration, /Phase 11 and Phase 13/);
+});
+
+test('assigned-role authorization migration hardens database policies and preserves scoped access', async () => {
+  const [migration, verification] = await Promise.all([
+    read('scripts/migrations/phase17_assigned_role_authorization.sql'),
+    read('scripts/migrations/phase17_assigned_role_authorization_verify.sql')
+  ]);
+  for (const helper of [
+    'is_church_admin',
+    'is_church_servant_or_admin',
+    'get_current_student_level',
+    'can_access_student_data',
+    'can_read_profile'
+  ]) {
+    assert.match(migration, new RegExp(`FUNCTION public\\.${helper}`));
+  }
+  for (const legacyAuthorization of [
+    'profiles\\.role',
+    'p\\.role =',
+    'p\\.role IN',
+    'SELECT role INTO v_caller_role FROM public\\.profiles'
+  ]) {
+    assert.doesNotMatch(migration, new RegExp(legacyAuthorization));
+  }
+  assert.match(migration, /profile_role_assignments AS assigned_role/);
+  assert.match(migration, /public\.has_role\('student'\)/);
+  assert.match(migration, /public\.has_role\('teacher'\)/);
+  assert.match(migration, /public\.has_role\('admin'\)/);
+  assert.match(migration, /CREATE POLICY hymns_select_assigned_level/);
+  assert.match(migration, /CREATE POLICY taxis_items_select_assigned_level/);
+  assert.match(migration, /verified_at IS NOT NULL/);
+  assert.match(migration, /sca\.is_active = true/);
+  assert.match(migration, /cy\.is_active = true/);
+  assert.match(migration, /cm\.status = 'active'/);
+  assert.match(migration, /public\.has_role\('teacher'\)\s+AND EXISTS/);
+  assert.match(migration, /Phase 17 could not identify/);
+  assert.match(verification, /authorization functions no longer read profiles\.role/);
+  assert.match(verification, /role assignment writes unavailable to browser roles/);
+});
+
+test('servant student preview cannot submit quizzes or award simulated points', async () => {
+  const [preview, quiz] = await Promise.all([
+    read('src/components/teacher/StudentExperiencePreview.tsx'),
+    read('src/components/sunday-school/student/SundaySchoolQuizView.tsx')
+  ]);
+  assert.match(quiz, /if \(previewMode \|\| isSubmitting \|\| isSubmitted\) return/);
+  assert.match(quiz, /disabled=\{previewMode \|\| isSubmitting\}/);
+  assert.doesNotMatch(preview, /createLocalPreviewQuizAttempt|simulatedPoints|awardedPoints/);
+  assert.match(preview, /Quiz submissions are disabled in preview mode/);
+  assert.match(preview, /Student achievement records are not loaded or changed in preview mode/);
 });
 
 test('lesson progress and point persistence use only the trusted completion RPC', async () => {

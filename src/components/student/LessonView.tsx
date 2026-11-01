@@ -19,8 +19,9 @@ import { getClassGroupForGrade, getClassGroupLabel, getClassGroupById } from '..
 import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../../lib/pointsService';
 import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 import { calculateSectionProgress, toggleReadSection } from '../../lib/lessonReadingProgress';
+import { hasRole } from '../../lib/workspaces';
 
-export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string; onBack: () => void; lang?: Language }) {
+export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: { lessonId: string; onBack: () => void; lang?: Language; readOnly?: boolean }) {
   const { userData, isGuest, setUserDirectly } = useAuth();
   const { 
     lessons, 
@@ -178,7 +179,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
   }
 
   // Priority 1B: Class-based lesson access authorization
-  const isStudent = userData?.role === 'student';
+  const isStudent = !readOnly && hasRole(userData, 'student');
   const studentGrade = userData?.requestedGrade || userData?.grade;
   const studentClass = userData?.requestedClassGroupId 
     ? getClassGroupById(userData.requestedClassGroupId) 
@@ -220,9 +221,9 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
 
   const activeSources = (lessonSources || []).filter(s => s.lessonId === lessonId);
   const userProgressKey = `${currentStudentId}_${lessonId}`;
-  const currentProgress = studentProgress ? studentProgress[userProgressKey] : undefined;
-  const userQuizAttempts = (quizAttempts && quizAttempts[userProgressKey]) || [];
-  const currentMastery = studentMasteries ? studentMasteries[userProgressKey] : undefined;
+  const currentProgress = !readOnly && studentProgress ? studentProgress[userProgressKey] : undefined;
+  const userQuizAttempts = readOnly ? [] : (quizAttempts && quizAttempts[userProgressKey]) || [];
+  const currentMastery = !readOnly && studentMasteries ? studentMasteries[userProgressKey] : undefined;
 
   const [isFinishing, setIsFinishing] = useState<boolean>(false);
   const [finishError, setFinishError] = useState<string | null>(null);
@@ -231,7 +232,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
   const completionInFlightRef = useRef(false);
 
   useEffect(() => {
-    if (activePublishedVersion && userData) {
+    if (activePublishedVersion && userData && !readOnly) {
       startLessonProgress({
         lessonId,
         versionId: activePublishedVersion.id,
@@ -267,9 +268,10 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
         }
       });
     }
-  }, [lessonId, activePublishedVersion?.id, userData?.id, currentStudentId]);
+  }, [lessonId, activePublishedVersion?.id, userData?.id, currentStudentId, readOnly]);
 
   const handleFinishLesson = async () => {
+    if (readOnly) return;
     if (completionInFlightRef.current || isFinishing || !activePublishedVersion) return;
     completionInFlightRef.current = true;
     setIsFinishing(true);
@@ -374,7 +376,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
   };
 
   // Quiz View Mode: Render Tiered Sunday School Quiz View
-  if (isTakingQuiz && activePublishedVersion?.quizDraft) {
+  if (!readOnly && isTakingQuiz && activePublishedVersion?.quizDraft) {
     return (
       <div className="px-4 pt-4 pb-20">
         <SundaySchoolQuizView
@@ -482,6 +484,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
         onBack={onBack}
         lang={lang}
         isOnlineAuth={isOnlineAuth}
+        readOnly={readOnly}
         targetSectionId={targetSectionId}
         onFinishLesson={handleFinishLesson}
         isFinishing={isFinishing}
@@ -490,6 +493,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
         finishSuccess={finishSuccess}
         onNavigateHome={onBack}
         onMarkSectionRead={async sectionId => {
+          if (readOnly) return;
           const existingSections = currentProgress?.sectionsCompleted || [];
           const isRead = !existingSections.includes(sectionId);
           setSectionProgressError(null);
@@ -526,6 +530,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar' }: { lessonId: string
           updateStudentContentProgress(currentStudentId, lessonId, newSections, completionPercent);
         }}
         onStartQuiz={() => {
+          if (readOnly) return;
           setTargetSectionId(undefined);
           setIsTakingQuiz(true);
         }}

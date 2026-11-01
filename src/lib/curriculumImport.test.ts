@@ -5,6 +5,7 @@ import {
   isDuplicateImportTitle,
   markCurriculumImportDraft,
   runCurriculumImport,
+  validateCurriculumImportBatch,
   validateImportFile
 } from './curriculumImport';
 
@@ -18,11 +19,11 @@ test('allows supported curriculum files and rejects unsupported, empty, oversize
 });
 
 test('allows only authenticated teacher and admin users when Supabase is configured', () => {
-  assert.equal(isAuthorizedCurriculumImporter({ role: 'teacher' }, false, true), true);
-  assert.equal(isAuthorizedCurriculumImporter({ role: 'admin' }, false, true), true);
-  assert.equal(isAuthorizedCurriculumImporter({ role: 'student' }, false, true), false);
-  assert.equal(isAuthorizedCurriculumImporter({ role: 'teacher' }, true, true), false);
-  assert.equal(isAuthorizedCurriculumImporter({ role: 'teacher' }, false, false), false);
+  assert.equal(isAuthorizedCurriculumImporter({ roles: ['teacher'] }, false, true), true);
+  assert.equal(isAuthorizedCurriculumImporter({ roles: ['admin'] }, false, true), true);
+  assert.equal(isAuthorizedCurriculumImporter({ roles: ['student'] }, false, true), false);
+  assert.equal(isAuthorizedCurriculumImporter({ roles: ['teacher'] }, true, true), false);
+  assert.equal(isAuthorizedCurriculumImporter({ roles: ['teacher'] }, false, false), false);
 });
 
 test('detects existing-title and same-batch duplicates independent of whitespace and case', () => {
@@ -30,6 +31,21 @@ test('detects existing-title and same-batch duplicates independent of whitespace
   assert.equal(isDuplicateImportTitle('  درس   المحبة ', existingTitles, []), true);
   assert.equal(isDuplicateImportTitle('درس جديد', existingTitles, ['درس جديد']), true);
   assert.equal(isDuplicateImportTitle('درس مختلف', existingTitles, ['درس جديد']), false);
+});
+
+test('batch preflight rejects every invalid or duplicate item before importing any draft', () => {
+  const errors = validateCurriculumImportBatch('sunday_school', [
+    { id: 'valid', title: 'درس جديد', file: { name: 'lesson.pdf', size: 1024 } },
+    { id: 'existing', title: 'درس موجود', file: { name: 'existing.pdf', size: 1024 } },
+    { id: 'same-a', title: 'عنوان مكرر', file: { name: 'one.pdf', size: 1024 } },
+    { id: 'same-b', title: ' عنوان   مكرر ', file: { name: 'two.pdf', size: 1024 } },
+    { id: 'invalid-file', title: 'ملف غير مدعوم', file: { name: 'archive.zip', size: 1024 } }
+  ], new Set(['درس موجود']), { hasGrade: true, hasLevel: true, isAr: false });
+
+  assert.deepEqual([...errors.keys()].sort(), ['existing', 'invalid-file', 'same-a', 'same-b']);
+  assert.match(errors.get('existing') || '', /already exists/);
+  assert.match(errors.get('same-a') || '', /same title/);
+  assert.match(errors.get('invalid-file') || '', /نوع الملف/);
 });
 
 test('forces Taxis import payloads to remain drafts', () => {

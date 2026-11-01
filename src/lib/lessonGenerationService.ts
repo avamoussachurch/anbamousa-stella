@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import { getVerifiedServantAccount } from './roleService';
+import { hasRole } from './workspaces';
 import { 
   LessonOutline, 
   OutlineSection, 
@@ -106,29 +108,13 @@ function generateUuid(): string {
  * Validates the current authenticated user and ensures they possess teacher or admin privileges.
  */
 async function getAuthenticatedServant(): Promise<{
-  user: { id: string; role?: string } | null;
+  user: { id: string; roles: import('../types').Role[]; role?: string } | null;
   error: Error | null;
 }> {
-  if (!supabase) {
-    return { user: null, error: new Error('Supabase client is not configured') };
-  }
-
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    return { user: null, error: new Error('Authentication required for curriculum generation operations') };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  const finalRole = profile?.role || 'student';
-  if (finalRole !== 'teacher' && finalRole !== 'admin') {
-    return { user: null, error: new Error('Only servants, teachers, and administrators may generate curriculum drafts') };
-  }
-
-  return { user: { id: user.id, role: finalRole }, error: null };
+  return getVerifiedServantAccount(
+    'Authentication required for curriculum generation operations',
+    'Only servants, teachers, and administrators may generate curriculum drafts'
+  );
 }
 
 /**
@@ -184,7 +170,7 @@ export async function buildLessonOutline(
           if (verRow.status === 'PUBLISHED' || verRow.status === 'APPROVED') {
             return { data: null, error: new Error(`Cannot generate outline for version ${verRow.version_number}: It is ${verRow.status}. Published versions are immutable.`) };
           }
-          if (verRow.created_by && verRow.created_by !== servantCheck.user.id && servantCheck.user.role !== 'admin') {
+          if (verRow.created_by && verRow.created_by !== servantCheck.user.id && !hasRole(servantCheck.user, 'admin')) {
             return { data: null, error: new Error('Cannot generate into another teacher\'s draft lesson') };
           }
         }
@@ -339,7 +325,7 @@ export async function saveLessonOutline(
       return { data: null, error: new Error('Target lesson not found') };
     }
 
-    if (lessonRow.created_by && lessonRow.created_by !== currentUserId && servantCheck.user.role !== 'admin') {
+    if (lessonRow.created_by && lessonRow.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return { data: null, error: new Error('Cannot save outline for another teacher\'s draft lesson') };
     }
 
@@ -547,7 +533,7 @@ export async function generateLessonDraft(
           if (verRow.status === 'PUBLISHED' || verRow.status === 'APPROVED') {
             return { data: null, error: new Error(`Cannot generate into version ${verRow.version_number}: It is ${verRow.status}. Published versions are immutable.`) };
           }
-          if (verRow.created_by && verRow.created_by !== servantCheck.user.id && servantCheck.user.role !== 'admin') {
+          if (verRow.created_by && verRow.created_by !== servantCheck.user.id && !hasRole(servantCheck.user, 'admin')) {
             return { data: null, error: new Error('Cannot generate into another teacher\'s draft lesson') };
           }
         }
@@ -735,7 +721,6 @@ export async function saveLessonDraft(
       return { data: null, error: servantCheck.error };
     }
     const currentUserId = servantCheck.user.id;
-    const currentUserRole = servantCheck.user.role;
 
     // 1. Fetch current draft version record to verify editable state & immutability
     const { data: verRow, error: verErr } = await supabase
@@ -761,7 +746,7 @@ export async function saveLessonDraft(
     }
 
     // Ownership check: Teacher cannot edit another teacher's draft
-    if (verRow.created_by !== currentUserId && currentUserRole !== 'admin') {
+    if (verRow.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return { data: null, error: new Error('Cannot modify another teacher\'s draft version') };
     }
 

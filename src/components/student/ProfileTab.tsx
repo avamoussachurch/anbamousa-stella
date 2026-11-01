@@ -1,16 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, LogOut, Shield, Info, Edit3, ArrowLeft, Save, HelpCircle, FileText, Camera, Moon, Sun, Award, BookOpen, Heart, Flame, CheckCircle2, AlertCircle, Loader2, Mail, Phone, GraduationCap, X, Clock, QrCode, Copy, Check, HeartHandshake, Link as LinkIcon, Users, Sparkles, KeyRound, Share2, ShieldCheck, Upload, UserCheck, Calendar, Key, Cross } from 'lucide-react';
+import { Settings, LogOut, Shield, Info, Edit3, ArrowLeft, Save, HelpCircle, FileText, Camera, Moon, Sun, Award, BookOpen, Heart, Flame, CheckCircle2, AlertCircle, Loader2, GraduationCap, X, Clock, QrCode, Copy, Check, HeartHandshake, Link as LinkIcon, Users, Sparkles, KeyRound, Share2, ShieldCheck, Upload, UserCheck, Calendar, Key, Cross } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { updateSupabaseProfile, uploadAvatarToSupabase } from '../../lib/supabaseDatabase';
-import { syncStudentSessionToParent, getShareableChildLink, getWhatsAppShareUrl, getOrCreateChildLinkCode } from '../../lib/parentChildService';
+import { getShareableChildLink, getWhatsAppShareUrl, getOrCreateChildLinkCode } from '../../lib/parentChildService';
 import { ChildQrCodeModal } from '../common/ChildQrCodeModal';
 import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { CLASS_GROUPS, getClassGroupForGrade } from '../../lib/classGroups';
 import { COPTIC_AVATARS, DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
 import { getCurrentChurchYear, joinClassWithCode, getStudentActiveMembership } from '../../lib/churchYearService';
-import { Language, ClassGroupId } from '../../types';
+import { Language, ClassGroupId, Role } from '../../types';
+import { hasRole } from '../../lib/workspaces';
+import { LanguageSettings } from '../shared/LanguageSettings';
+import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
+import { updateMyHymnsTaxisLevel } from '../../lib/hymnsTaxisLevelService';
 
 type ProfileScreen = 'main' | 'edit' | 'settings' | 'help' | 'privacy';
 
@@ -19,33 +23,36 @@ export function ProfileTab({
   onOpenTeacherStudio,
   onOpenParentPortal,
   onNavigate,
-  lang 
+  workspaceRole,
+  lang,
+  setLang
 }: { 
   onLogout: () => void;
   onOpenTeacherStudio?: () => void;
   onOpenParentPortal?: () => void;
   onNavigate?: (tab: string) => void;
+  workspaceRole?: Role;
   lang: Language;
+  setLang: (lang: Language) => void;
 }) {
-  const { userData, updateUserProfile, isGuest } = useAuth();
+  const { userData, updateUserProfile, setUserDirectly, isGuest } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
   const [screen, setScreen] = useState<ProfileScreen>('main');
   const [userName, setUserName] = useState(userData?.fullName || '');
   const [avatar, setAvatar] = useState(userData?.avatarUrl || DEFAULT_STUDENT_AVATAR);
-  const [email, setEmail] = useState(userData?.parentEmail || userData?.email || '');
-  const [phone, setPhone] = useState(userData?.phone || '');
-  const [grade, setGrade] = useState(userData?.grade || '');
+  const [hymnsTaxisLevel, setHymnsTaxisLevel] = useState('');
+  const [isSavingHymnsTaxisLevel, setIsSavingHymnsTaxisLevel] = useState(false);
+  const [hymnsTaxisLevelError, setHymnsTaxisLevelError] = useState<string | null>(null);
+  const [hymnsTaxisLevelMessage, setHymnsTaxisLevelMessage] = useState<string | null>(null);
   const [helpSubTab, setHelpSubTab] = useState<'guide' | 'faq' | 'contact'>('guide');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{ userName?: string; email?: string; phone?: string; grade?: string }>({});
+  const [validationErrors, setValidationErrors] = useState<{ userName?: string }>({});
   const [toast, setToast] = useState<{ show: boolean; type: 'success' | 'error'; message: string } | null>(null);
   const [copiedLinkCode, setCopiedLinkCode] = useState(false);
   const [copiedDirectLink, setCopiedDirectLink] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
-  const [manualParentEmail, setManualParentEmail] = useState('');
-  const [isLinkingParent, setIsLinkingParent] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   // Church Year & Student Join Code state
@@ -71,7 +78,7 @@ export function ProfileTab({
   } | null>(null);
   const [loadingMembership, setLoadingMembership] = useState<boolean>(false);
 
-  const isStudent = !userData?.role || userData?.role === 'student';
+  const isStudent = workspaceRole ? workspaceRole === 'student' : hasRole(userData, 'student');
 
   const loadMembership = async () => {
     if (!isStudent) return;
@@ -187,8 +194,8 @@ export function ProfileTab({
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isParent = userData?.role === 'parent';
-  const isTeacher = userData?.role === 'teacher';
+  const isParent = workspaceRole ? workspaceRole === 'parent' : hasRole(userData, 'parent');
+  const isTeacher = workspaceRole ? workspaceRole === 'teacher' : hasRole(userData, 'teacher');
 
   // Only students have unique child codes for parents to link them
   const studentLinkCode = isStudent ? getOrCreateChildLinkCode(userData) : '';
@@ -225,40 +232,11 @@ export function ProfileTab({
     }
   };
 
-  const handleLinkParent = async () => {
-    if (!manualParentEmail.trim() || !manualParentEmail.includes('@')) {
-      showToast('error', lang === 'ar' ? 'يرجى إدخال بريد إلكتروني صالح لولي الأمر' : 'Please enter a valid parent email');
-      return;
-    }
-    setIsLinkingParent(true);
-    try {
-      await updateUserProfile({
-        parentEmail: manualParentEmail.trim(),
-        parentId: 'parent-' + manualParentEmail.replace(/[^a-zA-Z0-9]/g, ''),
-        parentName: lang === 'ar' ? 'ولي الأمر' : 'Parent / Guardian',
-        isLinkedToParent: true
-      });
-      syncStudentSessionToParent({
-        ...userData!,
-        parentEmail: manualParentEmail.trim(),
-        isLinkedToParent: true
-      });
-      showToast('success', lang === 'ar' ? 'تم ربط الحساب بولي الأمر بنجاح!' : 'Linked with parent successfully!');
-      setManualParentEmail('');
-    } catch (e) {
-      showToast('error', lang === 'ar' ? 'حدث خطأ أثناء ربط الحساب' : 'Error linking parent');
-    } finally {
-      setIsLinkingParent(false);
-    }
-  };
-
   const handleOpenEdit = () => {
     if (userData) {
       setUserName(userData.fullName || '');
       setAvatar(userData.avatarUrl || DEFAULT_STUDENT_AVATAR);
-      setEmail(isStudent ? (userData.parentEmail || '') : (userData.email || ''));
-      setPhone(userData.phone || '');
-      setGrade(userData.grade || '');
+      setHymnsTaxisLevel(String(parseHymnsTaxisLevel(userData.hymnsTaxisLevel) ?? ''));
       setValidationErrors({});
     }
     setScreen('edit');
@@ -272,11 +250,9 @@ export function ProfileTab({
       prevUserIdRef.current = userData.id;
       setUserName(userData.fullName || '');
       setAvatar(userData.avatarUrl || DEFAULT_STUDENT_AVATAR);
-      setEmail(isStudent ? (userData.parentEmail || '') : (userData.email || ''));
-      setPhone(userData.phone || '');
-      setGrade(userData.grade || '');
+      setHymnsTaxisLevel(String(parseHymnsTaxisLevel(userData.hymnsTaxisLevel) ?? ''));
     }
-  }, [userData?.id, screen, isStudent]);
+  }, [userData?.id, userData?.hymnsTaxisLevel, screen, isStudent]);
 
   if (!userData) return null;
 
@@ -288,26 +264,10 @@ export function ProfileTab({
   };
 
   const validateForm = () => {
-    const errors: { userName?: string; email?: string; phone?: string; grade?: string } = {};
+    const errors: { userName?: string } = {};
 
-    if (!userName.trim() || userName.trim().length < 2) {
-      errors.userName = lang === 'ar' ? 'الاسم يجب أن يحتوي على حرفين على الأقل' : 'Full Name must be at least 2 characters';
-    }
-
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // For parents and teachers, email is required. For students, it's optional guardian contact
-    if (!isStudent) {
-      if (!email.trim()) {
-        errors.email = lang === 'ar' ? 'البريد الإلكتروني مطلوب' : 'Email address is required';
-      } else if (!emailPattern.test(email.trim())) {
-        errors.email = lang === 'ar' ? 'يرجى إدخال بريد إلكتروني صالح (مثال: name@example.com)' : 'Please enter a valid email address';
-      }
-    } else if (email.trim() && !emailPattern.test(email.trim())) {
-      errors.email = lang === 'ar' ? 'يرجى إدخال بريد إلكتروني صالح (مثال: name@example.com)' : 'Please enter a valid email address';
-    }
-
-    if (phone.trim() && !/^[0-9+() -]{7,20}$/.test(phone.trim())) {
-      errors.phone = lang === 'ar' ? 'رقم الهاتف غير صالح (٧ أرقام على الأقل)' : 'Please enter a valid phone number (at least 7 digits)';
+    if (!userName.trim() || userName.trim().length < 2 || userName.trim().length > 100) {
+      errors.userName = lang === 'ar' ? 'الاسم يجب أن يحتوي على حرفين إلى ١٠٠ حرف' : 'Name must contain 2 to 100 characters';
     }
 
     setValidationErrors(errors);
@@ -322,16 +282,10 @@ export function ProfileTab({
 
     setIsSaving(true);
     try {
-      const updates = {
+      const result = await updateUserProfile({
         fullName: userName.trim(),
         avatarUrl: avatar,
-        parentEmail: isStudent ? email.trim() : undefined,
-        email: !isStudent ? email.trim() : (userData.email || undefined),
-        phone: phone.trim(),
-        grade: grade.trim()
-      };
-
-      const result = await updateUserProfile(updates);
+      });
 
       if (result.success) {
         showToast('success', lang === 'ar' ? 'تم حفظ التعديلات بنجاح في قاعدة البيانات! ✝️' : 'Profile successfully saved to the database! ✝️');
@@ -347,6 +301,34 @@ export function ProfileTab({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleUpdateHymnsTaxisLevel = async () => {
+    const level = parseHymnsTaxisLevel(hymnsTaxisLevel);
+    if (level === null) {
+      setHymnsTaxisLevelError(lang === 'ar' ? 'اختر مستوى صحيحًا من ١ إلى ٣.' : 'Select a supported level from 1 to 3.');
+      setHymnsTaxisLevelMessage(null);
+      return;
+    }
+
+    setIsSavingHymnsTaxisLevel(true);
+    setHymnsTaxisLevelError(null);
+    setHymnsTaxisLevelMessage(null);
+    if (isGuest && userData) {
+      setUserDirectly({ ...userData, hymnsTaxisLevel: level });
+      setHymnsTaxisLevelMessage(lang === 'ar' ? 'تم حفظ المستوى في الحساب التجريبي.' : 'Level saved for this demo account.');
+      setIsSavingHymnsTaxisLevel(false);
+      return;
+    }
+
+    const result = await updateMyHymnsTaxisLevel(level);
+    if (result.success && result.level !== undefined && userData) {
+      setUserDirectly({ ...userData, hymnsTaxisLevel: result.level });
+      setHymnsTaxisLevelMessage(lang === 'ar' ? 'تم حفظ المستوى.' : 'Level saved.');
+    } else {
+      setHymnsTaxisLevelError(result.error || (lang === 'ar' ? 'تعذر حفظ المستوى.' : 'Could not save the level.'));
+    }
+    setIsSavingHymnsTaxisLevel(false);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -666,26 +648,12 @@ export function ProfileTab({
                     </div>
                   </div>
 
-                  {/* If not linked yet, allow quick linking via parent email */}
+                  {/* Parents must verify a child code or QR from their authenticated workspace. */}
                   {(!userData.isLinkedToParent && !userData.parentEmail) && (
-                    <div className="pt-1">
-                      <div className="flex gap-2">
-                        <input
-                          type="email"
-                          value={manualParentEmail}
-                          onChange={(e) => setManualParentEmail(e.target.value)}
-                          placeholder={lang === 'ar' ? 'أدخل إيميل ولي الأمر للربط...' : 'Enter parent email to link...'}
-                          className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[var(--mousa-teal-deep)]"
-                        />
-                        <button
-                          onClick={handleLinkParent}
-                          disabled={isLinkingParent}
-                          className="px-4 py-2 rounded-xl bg-[var(--mousa-teal-deep)] text-white text-xs font-bold hover:bg-blue-800 disabled:opacity-50 flex items-center gap-1.5 transition-all shadow-2xs shrink-0"
-                        >
-                          {isLinkingParent ? <Loader2 size={13} className="animate-spin" /> : <LinkIcon size={13} />}
-                          <span>{lang === 'ar' ? 'ربط الآن' : 'Link Now'}</span>
-                        </button>
-                      </div>
+                    <div className="rounded-xl border border-blue-200/70 bg-blue-50/60 p-3 text-xs leading-relaxed text-blue-900 dark:border-[var(--border-default)] dark:bg-[var(--surface-secondary)] dark:text-[var(--text-secondary)]">
+                      {lang === 'ar'
+                        ? 'لربط ولي الأمر، شارك الرمز أو QR أعلاه. يجب على ولي الأمر تسجيل الدخول وإتمام الربط من مساحة الأسرة.'
+                        : 'To link a parent, share the code or QR above. The parent must sign in and complete linking from the Family workspace.'}
                     </div>
                   )}
                 </div>
@@ -957,7 +925,7 @@ export function ProfileTab({
               <div>
                 <div className="bg-white dark:bg-[#1E1914] rounded-3xl shadow-sm border border-[var(--mousa-border-sand)] overflow-hidden">
                   {/* Servant Studio (for teachers) */}
-                  {(userData.role === 'teacher' || onOpenTeacherStudio) && (
+                  {onOpenTeacherStudio && (
                     <button 
                       onClick={onOpenTeacherStudio} 
                       className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-[var(--border-default)] flex items-center gap-3 text-amber-900 dark:text-amber-100 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/60 dark:hover:bg-amber-950/60 transition-colors text-left cursor-pointer"
@@ -974,7 +942,7 @@ export function ProfileTab({
                   )}
 
                   {/* Parent Portal (for parents or teachers who have children) */}
-                  {(userData.role === 'parent' || userData.role === 'teacher' || onOpenParentPortal) && (
+                  {onOpenParentPortal && (
                     <button 
                       onClick={onOpenParentPortal} 
                       className="w-full p-4 md:p-5 border-b border-gray-100 dark:border-[var(--border-default)] flex items-center gap-3 text-emerald-900 dark:text-emerald-100 bg-emerald-50/40 dark:bg-emerald-950/30 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/60 transition-colors text-left cursor-pointer"
@@ -1116,7 +1084,9 @@ export function ProfileTab({
                     </label>
                     <input 
                       type="text" 
+                      required
                       value={userName} 
+                      maxLength={100}
                       onChange={e => {
                         setUserName(e.target.value);
                         if (validationErrors.userName) setValidationErrors(prev => ({ ...prev, userName: undefined }));
@@ -1126,77 +1096,79 @@ export function ProfileTab({
                         validationErrors.userName ? 'border-red-400 dark:border-red-700 bg-red-50/40 dark:bg-red-950/30 focus:border-red-500' : 'border-gray-200 dark:border-[var(--border-default)] focus:border-[var(--mousa-teal-deep)]'
                       }`} 
                     />
+                    <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{lang === 'ar' ? 'الاسم من حرفين إلى ١٠٠ حرف. معلومات الفصل تُعدّل من خلال طلب اعتماد.' : 'Use 2–100 characters. Grade and class changes use the approval request workflow.'}</p>
                  </div>
 
-                 {/* Guardian / User Email */}
-                 <div>
-                    <label className="text-xs md:text-sm font-bold text-gray-700 dark:text-[var(--text-secondary)] mb-1.5 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Mail size={14} className="text-[var(--mousa-teal-deep)]" />
-                        {isStudent 
-                          ? (lang === 'ar' ? 'إيميل ولي الأمر (اختياري)' : 'Guardian Email (Optional)') 
-                          : (lang === 'ar' ? 'البريد الإلكتروني *' : 'Email Address *')}
-                      </span>
-                      {validationErrors.email && (
-                        <span className="text-xs text-red-600 font-medium flex items-center gap-1">
-                          <AlertCircle size={12} /> {validationErrors.email}
-                        </span>
-                      )}
-                    </label>
-                    <input 
-                      type="email" 
-                      value={email} 
-                      onChange={e => {
-                        setEmail(e.target.value);
-                        if (validationErrors.email) setValidationErrors(prev => ({ ...prev, email: undefined }));
-                      }} 
-                      placeholder="parent.guardian@church.org"
-                      className={`w-full bg-gray-50 dark:bg-[var(--surface-secondary)] border-2 rounded-xl px-4 py-3 outline-none font-bold text-gray-800 dark:text-[var(--text-primary)] transition-colors ${
-                        validationErrors.email ? 'border-red-400 dark:border-red-700 bg-red-50/40 dark:bg-red-950/30 focus:border-red-500' : 'border-gray-200 dark:border-[var(--border-default)] focus:border-[var(--mousa-teal-deep)]'
-                      }`} 
-                    />
+                 <div className="grid gap-4 rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--surface-secondary)]/50 p-4 sm:grid-cols-2">
+                   <div>
+                     <p className="text-xs font-bold text-[var(--text-secondary)]">{lang === 'ar' ? 'بريد تسجيل الدخول' : 'Sign-in email'}</p>
+                     <p className="mt-1 break-all text-sm font-semibold text-[var(--text-primary)]">{userData.email || (lang === 'ar' ? 'غير متاح' : 'Not available')}</p>
+                     <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{lang === 'ar' ? 'البريد يُدار من مزود تسجيل الدخول.' : 'Email is managed by the sign-in provider.'}</p>
+                   </div>
+                   <div>
+                     <p className="text-xs font-bold text-[var(--text-secondary)]">{lang === 'ar' ? 'الصف والفصل' : 'Grade and class group'}</p>
+                     <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                       {studentMembership?.exactGrade || userData.grade || (lang === 'ar' ? 'غير محدد' : 'Not selected')}
+                       {' · '}
+                       {lang === 'ar'
+                         ? studentMembership?.classGroupNameAr || getClassGroupForGrade(userData.grade || '')?.name.ar || 'الفصل غير متاح'
+                         : studentMembership?.classGroupNameEn || getClassGroupForGrade(userData.grade || '')?.name.en || 'Class group unavailable'}
+                     </p>
+                     <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+                       {lang === 'ar' ? 'يُحسب الفصل من الصف؛ التعديل يرسل طلب اعتماد للخدام.' : 'The class group is derived from grade; changes are submitted for servant approval.'}
+                     </p>
+                     <button type="button" onClick={() => setShowOnboardingModal(true)} className="mt-2 text-xs font-black text-[var(--action-primary)] hover:underline">
+                       {lang === 'ar' ? 'طلب تعديل الصف أو التسجيل' : 'Request a grade or enrollment change'}
+                     </button>
+                   </div>
                  </div>
 
-                 {/* Phone Number */}
-                 <div>
-                    <label className="text-xs md:text-sm font-bold text-gray-700 dark:text-[var(--text-secondary)] mb-1.5 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Phone size={14} className="text-[var(--mousa-teal-deep)]" />
-                        {lang === 'ar' ? 'رقم الهاتف للتواصل' : 'Contact Phone Number'}
-                      </span>
-                      {validationErrors.phone && (
-                        <span className="text-xs text-red-600 font-medium flex items-center gap-1">
-                          <AlertCircle size={12} /> {validationErrors.phone}
-                        </span>
-                      )}
-                    </label>
-                    <input 
-                      type="tel" 
-                      value={phone} 
-                      onChange={e => {
-                        setPhone(e.target.value);
-                        if (validationErrors.phone) setValidationErrors(prev => ({ ...prev, phone: undefined }));
-                      }} 
-                      placeholder="+20 100 123 4567"
-                      className={`w-full bg-gray-50 dark:bg-[var(--surface-secondary)] border-2 rounded-xl px-4 py-3 outline-none font-bold text-gray-800 dark:text-[var(--text-primary)] transition-colors ${
-                        validationErrors.phone ? 'border-red-400 dark:border-red-700 bg-red-50/40 dark:bg-red-950/30 focus:border-red-500' : 'border-gray-200 dark:border-[var(--border-default)] focus:border-[var(--mousa-teal-deep)]'
-                      }`} 
-                    />
-                 </div>
-
-                 {/* Grade / Sunday School Group */}
-                 <div>
-                    <label className="text-xs md:text-sm font-bold text-gray-700 dark:text-[var(--text-secondary)] mb-1.5 flex items-center gap-1.5">
-                      <GraduationCap size={14} className="text-[var(--mousa-teal-deep)]" />
-                      {lang === 'ar' ? 'مرحلة مدارس الأحد' : 'Sunday School Grade / Class'}
-                    </label>
-                    <input 
-                      type="text" 
-                      value={grade} 
-                      onChange={e => setGrade(e.target.value)} 
-                      placeholder={lang === 'ar' ? 'مثال: ابتدائي - مرحلة ثالثة' : 'e.g. Primary - Grade 3'}
-                      className="w-full bg-gray-50 dark:bg-[var(--surface-secondary)] border-2 border-gray-200 dark:border-[var(--border-default)] focus:border-[var(--mousa-teal-deep)] rounded-xl px-4 py-3 outline-none font-bold text-gray-800 dark:text-[var(--text-primary)]"
-                    />
+                 <div className="rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                   <label htmlFor="student-hymns-school-level" className="text-sm font-black text-[var(--text-primary)]">
+                     {lang === 'ar' ? 'مستوى مدرسة الألحان' : 'Hymns School Level'}
+                   </label>
+                   <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
+                     {lang === 'ar'
+                       ? 'يحدد محتوى الألحان المناسب لك. في النظام الحالي هذا المستوى مشترك أيضًا مع الطقس القبطي، لذا سيؤدي تغييره إلى تحديث محتوى الطقس.'
+                       : 'Controls the Hymns content shown to you. Stella currently shares this setting with Coptic Taxis, so changing it also changes your Taxis content level.'}
+                   </p>
+                   <p className="mt-1 text-xs leading-relaxed text-[var(--text-tertiary)]">
+                   {lang === 'ar'
+                     ? 'هذا لا يغيّر تسجيلك الرسمي في كشف مدرسة الألحان؛ ذلك التسجيل يظل خاضعًا للمراجعة.'
+                     : 'This does not change your approved Hymns School roster enrollment, which remains subject to review.'}
+                   </p>
+                   <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                     <select
+                       id="student-hymns-school-level"
+                       value={hymnsTaxisLevel}
+                       onChange={event => {
+                         setHymnsTaxisLevel(event.target.value);
+                         setHymnsTaxisLevelError(null);
+                         setHymnsTaxisLevelMessage(null);
+                       }}
+                       className="min-h-11 flex-1 rounded-xl border border-[var(--border-default)] bg-[var(--surface-primary)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--action-primary)]"
+                     >
+                       <option value="">{lang === 'ar' ? 'اختر المستوى' : 'Select a level'}</option>
+                       {[1, 2, 3].map(level => (
+                         <option key={level} value={level}>
+                           {lang === 'ar' ? `المستوى ${['الأول', 'الثاني', 'الثالث'][level - 1]}` : `Level ${level}`}
+                         </option>
+                       ))}
+                     </select>
+                     <button
+                       type="button"
+                       onClick={() => void handleUpdateHymnsTaxisLevel()}
+                       disabled={isSavingHymnsTaxisLevel || parseHymnsTaxisLevel(hymnsTaxisLevel) === null}
+                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--action-primary)] px-4 py-2 text-sm font-black text-[var(--action-primary-text)] disabled:cursor-not-allowed disabled:opacity-50"
+                     >
+                       {isSavingHymnsTaxisLevel ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                       {isSavingHymnsTaxisLevel
+                         ? (lang === 'ar' ? 'جارٍ الحفظ...' : 'Saving…')
+                         : (lang === 'ar' ? 'حفظ المستوى' : 'Save level')}
+                     </button>
+                   </div>
+                   {hymnsTaxisLevelError && <p role="alert" className="mt-2 text-xs font-semibold text-[var(--feedback-error)]">{hymnsTaxisLevelError}</p>}
+                   {hymnsTaxisLevelMessage && <p role="status" className="mt-2 text-xs font-semibold text-[var(--brand-teal)]">{hymnsTaxisLevelMessage}</p>}
                  </div>
                </div>
 
@@ -1227,6 +1199,7 @@ export function ProfileTab({
           <motion.div key="settings" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 50, opacity: 0 }} className="space-y-6">
             <Header title={lang === 'ar' ? 'الإعدادات' : 'Settings'} onBack={() => setScreen('main')} />
             <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-6">
+               <LanguageSettings lang={lang} setLang={setLang} />
                {/* Dark Theme Sanctuary Mode Toggle */}
                <div className="flex items-center justify-between p-4 bg-[var(--color-church-cream)]/60 dark:bg-[var(--surface-secondary)] rounded-2xl border border-[var(--mousa-border-sand)] dark:border-[var(--border-default)]">
                  <div className="flex items-center gap-3">

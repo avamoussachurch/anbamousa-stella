@@ -1,6 +1,7 @@
-import { HymnsRosterMembership, HymnsEnrollmentRequestPayload, Language } from '../types';
+import { HymnsRosterMembership, HymnsEnrollmentRequestPayload, Language, User } from '../types';
 import { CopticHymnItem, COPTIC_HYMNS_COLLECTION } from '../data/hymnsData';
 import { filterItemsByHymnsTaxisLevel, parseHymnsTaxisLevel } from './hymnsTaxisLevel';
+import { hasRole } from './workspaces';
 
 const TOKEN_KEY = 'church_auth_token';
 
@@ -142,7 +143,7 @@ export async function getHymns(
   level?: number,
   season?: string,
   status?: string,
-  viewer?: { role: string; hymnsTaxisLevel?: number }
+  viewer?: Pick<User, 'roles' | 'hymnsTaxisLevel'>
 ): Promise<{
   success: boolean;
   items: CopticHymnItem[];
@@ -167,8 +168,8 @@ export async function getHymns(
     if (res.ok) {
       const data = await res.json();
       if (data.success && Array.isArray(data.items)) {
-        const items = viewer?.role === 'student'
-          ? filterItemsByHymnsTaxisLevel(data.items, viewer.hymnsTaxisLevel)
+        const items = hasRole(viewer, 'student')
+          ? filterItemsByHymnsTaxisLevel(data.items, viewer!.hymnsTaxisLevel)
           : data.items;
         return {
           success: true,
@@ -187,8 +188,8 @@ export async function getHymns(
     }
   }
 
-  if (viewer?.role === 'student') {
-    const assignedLevel = parseHymnsTaxisLevel(viewer.hymnsTaxisLevel);
+  if (hasRole(viewer, 'student')) {
+    const assignedLevel = parseHymnsTaxisLevel(viewer!.hymnsTaxisLevel);
     if (assignedLevel === null) {
       return { success: false, items: [], error: 'Choose your shared Hymns and Taxis level to view lessons.' };
     }

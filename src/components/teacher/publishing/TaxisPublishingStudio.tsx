@@ -15,7 +15,9 @@ import {
   FileText,
   Upload,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Search,
+  CheckSquare
 } from 'lucide-react';
 import { TaxisItem, TaxisSection, TaxisCategory, TaxisAudience, TaxisStatus, TaxisAttachment, Language } from '../../../types';
 import {
@@ -25,6 +27,7 @@ import {
   computeTaxisPermissions,
   INITIAL_TAXIS_COLLECTION
 } from '../../../lib/taxisService';
+import { publishApprovedTaxisItems, type TaxisBulkPublishResult } from '../../../lib/taxisBulkPublishing';
 import { useAuth } from '../../../context/AuthContext';
 import { parseHymnsTaxisLevel, type HymnsTaxisLevel } from '../../../lib/hymnsTaxisLevel';
 
@@ -39,9 +42,17 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   const [items, setItems] = useState<TaxisItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [libraryQuery, setLibraryQuery] = useState('');
+  const [libraryStatus, setLibraryStatus] = useState<'all' | TaxisStatus>('all');
+  const [libraryCategory, setLibraryCategory] = useState<'all' | TaxisCategory>('all');
+  const [libraryLevel, setLibraryLevel] = useState<'all' | '1' | '2' | '3'>('all');
+  const [selectedPublishIds, setSelectedPublishIds] = useState<Set<string>>(new Set());
+  const [isBulkPublishing, setIsBulkPublishing] = useState(false);
+  const [bulkPublishResults, setBulkPublishResults] = useState<TaxisBulkPublishResult[]>([]);
 
   // Form Fields
   const [titleAr, setTitleAr] = useState('');
@@ -65,15 +76,21 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   // Active Item Permissions
   const activeItem = items.find(i => i.id === selectedItemId);
   const permissions = computeTaxisPermissions(userData, activeItem);
+  const canEditCurrentItem = permissions.canEdit && (
+    !activeItem || activeItem.status === 'draft' || activeItem.status === 'unpublished'
+  );
 
   const loadItems = async () => {
     setLoading(true);
+    setLibraryError(null);
     const res = await getTaxisItems();
     if (res.success && res.items) {
       setItems(res.items);
       if (!selectedItemId && res.items.length > 0) {
         populateForm(res.items[0]);
       }
+    } else {
+      setLibraryError(res.error || (isAr ? 'تعذر تحميل مكتبة الطقوس.' : 'The Taxis library could not be loaded.'));
     }
     setLoading(false);
   };
@@ -81,6 +98,63 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   useEffect(() => {
     loadItems();
   }, []);
+  const filteredItems = items.filter(item => {
+    const query = libraryQuery.trim().toLocaleLowerCase();
+    const matchesQuery = !query || [
+      item.titleAr,
+      item.titleEn,
+      item.summaryAr,
+      item.summaryEn,
+      item.category
+    ].some(value => String(value || '').toLocaleLowerCase().includes(query));
+    const matchesStatus = libraryStatus === 'all' || item.status === libraryStatus;
+    const matchesCategory = libraryCategory === 'all' || item.category === libraryCategory;
+    const matchesLevel = libraryLevel === 'all' || item.level === Number(libraryLevel);
+    return matchesQuery && matchesStatus && matchesCategory && matchesLevel;
+  });
+  const selectedPublishItems = items.filter(item => selectedPublishIds.has(item.id));
+  const getPublishBlockReason = (item: TaxisItem) => {
+    if (item.status !== 'approved') return isAr ? 'يجب اعتماد العنصر أولاً.' : 'The item must be approved first.';
+    if (!computeTaxisPermissions(userData, item).canPublish) return isAr ? 'لا تملك صلاحية نشر هذا العنصر.' : 'You are not authorized to publish this item.';
+    if (parseHymnsTaxisLevel(item.level) === null) return isAr ? 'يجب تعيين مستوى منهج صالح.' : 'A valid curriculum level is required.';
+    return null;
+  };
+
+  const handleBulkPublish = async () => {
+    if (!selectedPublishItems.length || selectedPublishItems.some(item => getPublishBlockReason(item)) || isBulkPublishing) return;
+    const confirmationItems = selectedPublishItems.map(item =>
+      `${item.titleEn || item.titleAr} — ${item.status} · Level ${item.level}`
+    );
+    const confirmation = isAr
+      ? `سيتم نشر العناصر المعتمدة التالية:\n${confirmationItems.join('\n')}\n\nسيعيد الخادم التحقق من الاعتماد والصلاحية لكل عنصر. هل تريد المتابعة؟`
+      : `The following approved items will be published:\n${confirmationItems.join('\n')}\n\nThe server will re-check approval and permissions for each item. Continue?`;
+    if (!window.confirm(confirmation)) return;
+
+    setIsBulkPublishing(true);
+    setBulkPublishResults([]);
+    try {
+      const results = await publishApprovedTaxisItems(items, selectedPublishIds, itemId =>
+        executeTaxisStatusAction(itemId, 'PUBLISH')
+      );
+      setBulkPublishResults(results);
+      setSelectedPublishIds(new Set());
+      const failures = results.filter(result => !result.success).length;
+      setStatusMessage({
+        text: failures
+          ? (isAr ? `تمت معالجة العناصر مع ${failures} خطأ. راجع النتائج أدناه.` : `Publishing finished with ${failures} error(s). Review the results below.`)
+          : (isAr ? `تم نشر ${results.length} عنصر بنجاح.` : `${results.length} items published successfully.`),
+        type: failures ? 'error' : 'success'
+      });
+      await loadItems();
+    } catch (error) {
+      setStatusMessage({
+        text: error instanceof Error ? error.message : (isAr ? 'تعذر إكمال النشر الجماعي.' : 'Bulk publishing could not be completed.'),
+        type: 'error'
+      });
+    } finally {
+      setIsBulkPublishing(false);
+    }
+  };
 
   const populateForm = (item: TaxisItem) => {
     setSelectedItemId(item.id);
@@ -103,7 +177,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
 
   const startNewRitual = () => {
     if (hasUnsavedChanges && !window.confirm(isAr ? 'تجاهل التعديلات غير المحفوظة؟' : 'Discard unsaved changes?')) return;
-    const newId = `taxis_${Date.now()}`;
+    const newId = `new_taxis_${Date.now()}`;
     setSelectedItemId(newId);
     setTitleAr('');
     setTitleEn('');
@@ -212,6 +286,13 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
 
   // Save changes
   const handleSaveDraft = async () => {
+    if (!canEditCurrentItem) {
+      setStatusMessage({
+        text: isAr ? 'يجب إعادة العنصر إلى مسودة قبل تعديله حتى تظل المراجعة والاعتماد صالحين.' : 'Return this item to draft before editing so its review and approval remain valid.',
+        type: 'error'
+      });
+      return;
+    }
     if (!titleAr.trim()) {
       alert(isAr ? 'برجاء كتابة عنوان الطقس بالعربية' : 'Please provide Arabic title');
       return;
@@ -259,8 +340,9 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   };
 
   // Workflow Action (Submit for review, Approve, Publish, Unpublish, Restore)
-  const handleAction = async (action: 'SUBMIT_REVIEW' | 'APPROVE' | 'PUBLISH' | 'UNPUBLISH' | 'RESTORE', vNum?: number) => {
+  const handleAction = async (action: 'SUBMIT_REVIEW' | 'APPROVE' | 'REQUEST_CHANGES' | 'PUBLISH' | 'UNPUBLISH' | 'RESTORE', vNum?: number) => {
     if (!selectedItemId) return;
+    if (action === 'REQUEST_CHANGES' && !window.confirm(isAr ? 'إعادة هذا العنصر إلى المسودة للسماح بتعديله؟' : 'Return this item to draft so it can be edited?')) return;
     setIsSaving(true);
     setStatusMessage(null);
 
@@ -272,6 +354,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       const actionLabels: Record<string, string> = {
         SUBMIT_REVIEW: isAr ? 'تم إرسال الطقس للمراجعة والاعتماد الكنسي.' : 'Ritual submitted for review.',
         APPROVE: isAr ? 'تم اعتماد مراجعة الطقس بنجاح (جاهز للنشر).' : 'Ritual approved for publishing.',
+        REQUEST_CHANGES: isAr ? 'أُعيد العنصر إلى المسودة للمراجعة والتعديل.' : 'Item returned to draft for revision.',
         PUBLISH: isAr ? 'تم نشر الطقس رسمياً للرعية والشمامسة!' : 'Ritual published successfully!',
         UNPUBLISH: isAr ? 'تم إلغاء نشر الطقس وإعادته لمسودة خاصة.' : 'Ritual unpublished to draft.',
         RESTORE: isAr ? `تم استرجاع النسخة ${vNum} بنجاح.` : `Restored version ${vNum}.`
@@ -348,7 +431,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
             <span>{isAr ? 'معاينة' : 'Preview'}</span>
           </button>
 
-          {permissions.canEdit && (
+          {canEditCurrentItem && (
             <button
               type="button"
               onClick={handleSaveDraft}
@@ -385,7 +468,19 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
             </button>
           )}
 
-          {status !== 'published' && permissions.canPublish && (
+          {(status === 'under_review' || status === 'approved') && permissions.canApprove && (
+            <button
+              type="button"
+              onClick={() => handleAction('REQUEST_CHANGES')}
+              disabled={isSaving}
+              className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <AlertCircle size={14} />
+              <span>{isAr ? 'إعادة للمسودة' : 'Request changes'}</span>
+            </button>
+          )}
+
+          {status === 'approved' && parseHymnsTaxisLevel(activeItem?.level) !== null && permissions.canPublish && (
             <button
               type="button"
               onClick={() => handleAction('PUBLISH')}
@@ -419,7 +514,8 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
           </div>
           <button
             onClick={handleSaveDraft}
-            className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-[11px] font-black cursor-pointer"
+            disabled={!canEditCurrentItem}
+            className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-[11px] font-black cursor-pointer disabled:opacity-50"
           >
             {isAr ? 'حفظ الآن' : 'Save Now'}
           </button>
@@ -439,6 +535,13 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       )}
 
       {/* Editor Grid */}
+      {!canEditCurrentItem && activeItem && (
+        <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+          {isAr
+            ? 'هذا الإصدار مقفل أثناء المراجعة أو بعد الاعتماد أو النشر. اطلب إعادته للمسودة قبل تعديل المحتوى.'
+            : 'This version is locked while under review, approved, or published. Request a return to draft before editing.'}
+        </p>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Column: Taxis Library */}
         <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-4 rounded-3xl border border-[var(--mousa-border-sand)] space-y-3 shadow-xs">
@@ -452,8 +555,110 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
             </span>
           </div>
 
+          <label className="relative block">
+            <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-stone-400" />
+            <input
+              type="search"
+              value={libraryQuery}
+              onChange={event => setLibraryQuery(event.target.value)}
+              placeholder={isAr ? 'بحث بالعنوان أو الملخص' : 'Search title or summary'}
+              aria-label={isAr ? 'بحث في الطقوس' : 'Search Taxis'}
+              className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2 ps-9 pe-3 text-xs dark:border-stone-700 dark:bg-stone-800"
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <select value={libraryStatus} onChange={event => setLibraryStatus(event.target.value as typeof libraryStatus)} aria-label={isAr ? 'تصفية حسب الحالة' : 'Filter by status'} className="min-w-0 rounded-lg border border-stone-200 bg-white p-2 text-[11px] dark:border-stone-700 dark:bg-stone-800">
+              <option value="all">{isAr ? 'كل الحالات' : 'All statuses'}</option>
+              <option value="draft">{isAr ? 'مسودة' : 'Draft'}</option>
+              <option value="under_review">{isAr ? 'قيد المراجعة' : 'Under review'}</option>
+              <option value="approved">{isAr ? 'معتمد' : 'Approved'}</option>
+              <option value="published">{isAr ? 'منشور' : 'Published'}</option>
+              <option value="unpublished">{isAr ? 'غير منشور' : 'Unpublished'}</option>
+            </select>
+            <select value={libraryCategory} onChange={event => setLibraryCategory(event.target.value as typeof libraryCategory)} aria-label={isAr ? 'تصفية حسب التصنيف' : 'Filter by category'} className="min-w-0 rounded-lg border border-stone-200 bg-white p-2 text-[11px] dark:border-stone-700 dark:bg-stone-800">
+              <option value="all">{isAr ? 'كل التصنيفات' : 'All categories'}</option>
+              <option value="liturgy">{isAr ? 'القداس' : 'Liturgy'}</option>
+              <option value="incense">{isAr ? 'البخور' : 'Incense'}</option>
+              <option value="sacraments">{isAr ? 'الأسرار' : 'Sacraments'}</option>
+              <option value="feasts">{isAr ? 'الأعياد' : 'Feasts'}</option>
+              <option value="pascha">{isAr ? 'البصخة' : 'Pascha'}</option>
+              <option value="occasions">{isAr ? 'مناسبات' : 'Occasions'}</option>
+            </select>
+            <select value={libraryLevel} onChange={event => setLibraryLevel(event.target.value as typeof libraryLevel)} aria-label={isAr ? 'تصفية حسب المستوى' : 'Filter by level'} className="col-span-2 min-w-0 rounded-lg border border-stone-200 bg-white p-2 text-[11px] dark:border-stone-700 dark:bg-stone-800">
+              <option value="all">{isAr ? 'كل المستويات' : 'All levels'}</option>
+              <option value="1">{isAr ? 'المستوى ١' : 'Level 1'}</option>
+              <option value="2">{isAr ? 'المستوى ٢' : 'Level 2'}</option>
+              <option value="3">{isAr ? 'المستوى ٣' : 'Level 3'}</option>
+            </select>
+          </div>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h3 className="text-xs font-black text-emerald-900 dark:text-emerald-200">
+                  {isAr ? 'النشر الجماعي' : 'Bulk publishing'}
+                </h3>
+                <p className="mt-0.5 text-[10px] text-stone-600 dark:text-stone-400">
+                  {isAr ? 'العناصر المعتمدة فقط، مع إعادة التحقق من الخادم.' : 'Approved items only; the server revalidates every item.'}
+                </p>
+              </div>
+              <CheckSquare size={17} className="shrink-0 text-emerald-700 dark:text-emerald-300" />
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold text-stone-600 dark:text-stone-300">
+                {isAr ? `${selectedPublishIds.size} محدد` : `${selectedPublishIds.size} selected`}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedPublishIds(new Set(filteredItems.filter(item =>
+                  item.status === 'approved' && !getPublishBlockReason(item)
+                ).map(item => item.id)))}
+                disabled={isBulkPublishing}
+                className="text-[10px] font-black text-emerald-800 underline disabled:opacity-50 dark:text-emerald-300"
+              >
+                {isAr ? 'تحديد المعتمد والمؤهل' : 'Select eligible approved'}
+              </button>
+            </div>
+            {selectedPublishItems.length > 0 && (
+              <div className="mt-2 space-y-2 border-t border-emerald-200 pt-2 dark:border-emerald-900/60">
+                <ul className="max-h-32 space-y-1 overflow-auto text-[10px]">
+                  {selectedPublishItems.map(item => {
+                    const reason = getPublishBlockReason(item);
+                    return (
+                      <li key={item.id} className="flex items-start justify-between gap-2">
+                        <span className="min-w-0 truncate font-bold text-stone-800 dark:text-stone-200">
+                          {item.titleAr || item.titleEn} · {item.status}
+                        </span>
+                        {reason && <span className="shrink-0 text-red-700 dark:text-red-300">{reason}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => void handleBulkPublish()}
+                  disabled={isBulkPublishing || selectedPublishItems.some(item => getPublishBlockReason(item))}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-[11px] font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isBulkPublishing ? <RotateCcw size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                  {isAr ? 'تأكيد نشر العناصر المحددة' : 'Confirm publish selected'}
+                </button>
+              </div>
+            )}
+          </div>
+          {bulkPublishResults.length > 0 && (
+            <div role="status" className="space-y-1 rounded-xl border border-stone-200 p-2 text-[10px] dark:border-stone-700">
+              {bulkPublishResults.map(result => {
+                const item = items.find(candidate => candidate.id === result.itemId);
+                return (
+                  <p key={result.itemId} className={result.success ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}>
+                    {item?.titleAr || item?.titleEn || result.itemId}: {result.success ? (isAr ? 'تم النشر' : 'Published') : (result.error || (isAr ? 'فشل النشر' : 'Publish failed'))}
+                  </p>
+                );
+              })}
+            </div>
+          )}
           <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">
-            {items.map((item) => {
+            {filteredItems.map((item) => {
               const isSelected = item.id === selectedItemId;
               return (
                 <div
@@ -468,6 +673,25 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
                       : 'bg-stone-50 dark:bg-stone-800/60 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200 border-stone-200 dark:border-stone-700'
                   }`}
                 >
+                  {item.status === 'approved' && (
+                    <label className="mb-1 flex items-center gap-1.5 text-[10px] font-bold" onClick={event => event.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedPublishIds.has(item.id)}
+                        disabled={isBulkPublishing}
+                        onChange={() => {
+                          setSelectedPublishIds(current => {
+                            const next = new Set(current);
+                            if (next.has(item.id)) next.delete(item.id);
+                            else next.add(item.id);
+                            return next;
+                          });
+                        }}
+                        aria-label={isAr ? `تحديد ${item.titleAr} للنشر الجماعي` : `Select ${item.titleEn || item.titleAr} for bulk publishing`}
+                      />
+                      {isAr ? 'تحديد للنشر' : 'Select for publishing'}
+                    </label>
+                  )}
                   <div className="flex items-center justify-between font-bold mb-1">
                     <span className="truncate max-w-[170px]">{item.titleAr || item.titleEn}</span>
                     <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
@@ -483,11 +707,25 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
                 </div>
               );
             })}
+            {libraryError && (
+              <div role="alert" className="space-y-2 rounded-xl border border-red-300 bg-red-50 p-3 text-xs text-red-800">
+                <p>{libraryError}</p>
+                <button type="button" onClick={() => void loadItems()} disabled={loading} className="font-black underline disabled:opacity-50">
+                  {isAr ? 'إعادة المحاولة' : 'Retry'}
+                </button>
+              </div>
+            )}
+            {!loading && !libraryError && filteredItems.length === 0 && (
+              <p className="rounded-xl bg-stone-50 p-3 text-xs text-stone-500 dark:bg-stone-800">
+                {isAr ? 'لا توجد عناصر تطابق عوامل التصفية.' : 'No Taxis items match these filters.'}
+              </p>
+            )}
           </div>
         </div>
 
         {/* Right Column: Taxis Form */}
         <div className="lg:col-span-3 space-y-6">
+          <fieldset disabled={!canEditCurrentItem} className="contents">
           {/* Metadata Card */}
           <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-[var(--mousa-border-sand)] space-y-4 shadow-xs">
             <h3 className="font-black text-sm text-[var(--mousa-teal-deep)] dark:text-amber-300 flex items-center gap-2">
@@ -567,7 +805,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
                   <option value="all">{isAr ? 'كافة الشعب والطلاب (General Parish)' : 'All Congregation'}</option>
                   <option value="deacons">{isAr ? 'مدرسة الشمامسة والمرتلين (Deacons)' : 'Deacons'}</option>
                   <option value="preparatory">{isAr ? 'مرحلة إعدادي فما فوق (Preparatory+)' : 'Preparatory+'}</option>
-                  <option value="servants">{isAr ? 'الخدام والمعلمون فقط (Servants Only)' : 'Servants Only'}</option>
+                  <option value="servants">{isAr ? 'الخدام فقط' : 'Servants Only'}</option>
                   <option value="clergy">{isAr ? 'الكهنة والإكليروس (Clergy Only)' : 'Clergy Only'}</option>
                 </select>
               </div>
@@ -775,6 +1013,8 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
             </div>
           </div>
 
+          </fieldset>
+
           {/* Version History & Restoration */}
           {history && history.length > 0 && (
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-[var(--mousa-border-sand)] space-y-3 shadow-xs">
@@ -798,7 +1038,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
                         {snap.savedAt ? new Date(snap.savedAt).toLocaleString(isAr ? 'ar-EG' : 'en-US') : ''} • {snap.savedByName}
                       </span>
                     </div>
-                    {permissions.canRestore && (
+                    {permissions.canRestore && (status === 'draft' || status === 'unpublished') && (
                       <button
                         type="button"
                         onClick={() => handleAction('RESTORE', snap.version)}

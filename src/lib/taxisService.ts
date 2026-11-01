@@ -1,6 +1,7 @@
 import { TaxisItem, TaxisUserPermissions, TaxisAudience, TaxisCategory, TaxisStatus, User } from '../types';
 import { filterTaxisItemsByLevel, parseHymnsTaxisLevel } from './hymnsTaxisLevel';
 import { markCurriculumImportDraft } from './curriculumImport';
+import { hasRole } from './workspaces';
 
 export const INITIAL_TAXIS_COLLECTION: TaxisItem[] = [
   {
@@ -214,9 +215,8 @@ export function computeTaxisPermissions(
     };
   }
 
-  const role = user.role;
-  const isSuperAdmin = role === 'admin';
-  const isTeacher = role === 'teacher';
+  const isSuperAdmin = hasRole(user, 'admin');
+  const isTeacher = hasRole(user, 'teacher');
   const isAuthor = Boolean(item && item.createdBy === user.id);
   const isAssignedEditor = Boolean(item && item.assignedEditors?.includes(user.id));
   const isAssignedReviewer = Boolean(item && item.assignedReviewers?.includes(user.id));
@@ -285,7 +285,7 @@ export async function getTaxisItems(category?: string, audience?: string, viewer
 }> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
   const filterForStudent = (items: TaxisItem[], checkAudience = true) => {
-    if (viewer?.role !== 'student') return items;
+    if (!hasRole(viewer, 'student')) return items;
     const level = parseHymnsTaxisLevel(viewer.hymnsTaxisLevel);
     if (level === null) return [];
     const grade = (viewer.grade || '').toLowerCase();
@@ -323,7 +323,7 @@ export async function getTaxisItems(category?: string, audience?: string, viewer
     if (token) return { success: false, items: [], error: error instanceof Error ? error.message : 'Network error while loading Taxis lessons.' };
   }
 
-  if (viewer?.role === 'student' && parseHymnsTaxisLevel(viewer.hymnsTaxisLevel) === null) {
+  if (hasRole(viewer, 'student') && parseHymnsTaxisLevel(viewer.hymnsTaxisLevel) === null) {
     return { success: false, items: [], error: 'Choose your shared Hymns and Taxis level to view lessons.' };
   }
 
@@ -475,7 +475,7 @@ export async function createTaxisDraft(
  */
 export async function executeTaxisStatusAction(
   itemId: string,
-  action: 'SUBMIT_REVIEW' | 'APPROVE' | 'PUBLISH' | 'UNPUBLISH' | 'RESTORE',
+  action: 'SUBMIT_REVIEW' | 'APPROVE' | 'REQUEST_CHANGES' | 'PUBLISH' | 'UNPUBLISH' | 'RESTORE',
   params?: { restoreVersion?: number; notes?: string }
 ): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
   let token: string | null = null;
@@ -484,6 +484,9 @@ export async function executeTaxisStatusAction(
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Could not read the authentication session.' };
   }
+  if (!token) {
+    return { success: false, error: 'Your session expired. Sign in again before changing a Taxis workflow status.' };
+  }
 
   try {
     let endpoint = '';
@@ -491,9 +494,9 @@ export async function executeTaxisStatusAction(
 
     if (action === 'SUBMIT_REVIEW') {
       endpoint = `/api/church/taxis/${encodeURIComponent(itemId)}/submit-review`;
-    } else if (action === 'APPROVE') {
+    } else if (action === 'APPROVE' || action === 'REQUEST_CHANGES') {
       endpoint = `/api/church/taxis/${encodeURIComponent(itemId)}/review`;
-      payload = { action: 'APPROVE', notes: params?.notes };
+      payload = { action, notes: params?.notes };
     } else if (action === 'PUBLISH') {
       endpoint = `/api/church/taxis/${encodeURIComponent(itemId)}/publish`;
     } else if (action === 'UNPUBLISH') {
@@ -523,38 +526,11 @@ export async function executeTaxisStatusAction(
           return { success: false, error: data.message || data.error };
         }
       }
-      if (token) return { success: false, error: `Could not update Taxis item (HTTP ${res.status}).` };
+      return { success: false, error: `Could not update Taxis item (HTTP ${res.status}).` };
     }
   } catch (error) {
-    if (token) return { success: false, error: error instanceof Error ? error.message : 'Network error while updating Taxis item.' };
+    return { success: false, error: error instanceof Error ? error.message : 'Network error while updating Taxis item.' };
   }
 
-  // Local fallback
-  const list = getStoredTaxisItems();
-  const idx = list.findIndex(i => i.id === itemId);
-  if (idx < 0) return { success: false, error: 'Taxis item not found' };
-
-  const item = { ...list[idx] };
-  if (action === 'PUBLISH' && parseHymnsTaxisLevel(item.level) === null) {
-    return { success: false, error: 'Assign this item to a valid curriculum level before publishing.' };
-  }
-  const now = new Date().toISOString();
-  item.updatedAt = now;
-
-  if (action === 'SUBMIT_REVIEW') item.status = 'under_review';
-  else if (action === 'APPROVE') item.status = 'approved';
-  else if (action === 'PUBLISH') { item.status = 'published'; item.publishedAt = now; }
-  else if (action === 'UNPUBLISH') { item.status = 'unpublished'; item.unpublishedAt = now; }
-  else if (action === 'RESTORE' && params?.restoreVersion) {
-    const target = item.history?.find(h => h.version === params.restoreVersion);
-    if (target) {
-      item.titleAr = target.titleAr;
-      item.titleEn = target.titleEn;
-      item.version = (item.version || 1) + 1;
-    }
-  }
-
-  list[idx] = item;
-  saveStoredTaxisItems(list);
-  return { success: true, item };
+  return { success: false, error: 'Taxis workflow status could not be updated.' };
 }

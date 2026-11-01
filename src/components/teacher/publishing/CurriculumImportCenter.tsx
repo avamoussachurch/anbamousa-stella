@@ -33,6 +33,7 @@ import {
   isAuthorizedCurriculumImporter,
   normalizeImportTitle,
   runCurriculumImport,
+  validateCurriculumImportBatch,
   validateImportFile
 } from '../../../lib/curriculumImport';
 
@@ -108,7 +109,8 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
   const counts = useMemo(() => ({
     success: items.filter(item => item.stage === 'success').length,
     failed: items.filter(item => item.stage === 'error').length,
-    ready: items.filter(item => item.stage === 'ready').length
+    ready: items.filter(item => item.stage === 'ready').length,
+    active: items.filter(item => ['creating', 'uploading', 'saving'].includes(item.stage)).length
   }), [items]);
 
   useEffect(() => {
@@ -218,6 +220,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
     }
     return null;
   };
+  const invalidItems = items.filter(item => item.stage !== 'success' && validationMessage(item));
 
   const removeItem = (item: ImportItem) => {
     if (item.stage === 'success' || isImporting || item.checkpoint.recordId || item.checkpoint.mediaReference) return;
@@ -481,6 +484,30 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
       setNotice(isAr ? 'تعذر التحقق من العناصر الموجودة. أعد المحاولة قبل الاستيراد.' : 'Existing items could not be checked. Retry before importing.');
       return;
     }
+    const invalidById = validateCurriculumImportBatch(
+      category,
+      items.map(item => ({
+        id: item.id,
+        title: item.titleAr,
+        file: item.file,
+        duplicate: item.duplicate,
+        completed: item.stage === 'success'
+      })),
+      existingTitles,
+      { hasGrade: Boolean(grade), hasLevel: Boolean(level), isAr }
+    );
+    if (invalidById.size > 0) {
+      setItems(current => current.map(item => {
+        const validationError = invalidById.get(item.id);
+        return validationError
+          ? { ...item, stage: 'error', error: validationError }
+          : item;
+      }));
+      setNotice(isAr
+        ? 'لم يبدأ الاستيراد. أصلح كل العناصر غير الصالحة أو المكررة ثم راجع الدفعة مجدداً.'
+        : 'Import did not start. Fix every invalid or duplicate item, then review the batch again.');
+      return;
+    }
     setIsImporting(true);
     setNotice(null);
     try {
@@ -512,7 +539,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
           <AlertCircle className="mt-1 shrink-0" />
           <div>
             <h2 className="font-black">{isAr ? 'مركز تجهيز المنهج' : 'Curriculum Import Center'}</h2>
-            <p className="mt-1 text-sm">{isAr ? 'الاستيراد متاح للخادم أو المسؤول بعد تسجيل الدخول والاتصال الآمن.' : 'Importing is available to authenticated teachers and administrators when secure storage is configured.'}</p>
+            <p className="mt-1 text-sm">{isAr ? 'الاستيراد متاح للخادم أو المسؤول بعد تسجيل الدخول والاتصال الآمن.' : 'Importing is available to authenticated Servants and administrators when secure storage is configured.'}</p>
           </div>
         </div>
       </section>
@@ -607,6 +634,11 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
           </button>
         </div>
       </div>
+      <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-100">
+        {isAr
+          ? 'تُرفق الملفات كما هي ولا يُستخرج نص المستند تلقائياً. الصف أو المستوى يطبّق على الدفعة كلها؛ راجع العنوان العربي والإنجليزي والملاحظة لكل ملف قبل إنشاء المسودات.'
+          : 'Files are attached as-is; document text is not extracted automatically. The selected grade or level applies to the whole batch. Review each file’s Arabic and English titles and servant note before creating drafts.'}
+      </p>
 
       {category === 'hymns' && (
         <p className="rounded-2xl border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
@@ -636,8 +668,8 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-stone-100 p-3 text-sm dark:bg-slate-800">
             <p className="font-bold text-stone-700 dark:text-stone-200">
               {isAr
-                ? `${items.length} ملف · ${counts.success} تم · ${counts.failed} يحتاج مراجعة`
-                : `${items.length} files · ${counts.success} complete · ${counts.failed} need attention`}
+                    ? `${items.length} ملف · ${counts.success} تم · ${invalidItems.length} غير صالح أو مكرر`
+                    : `${items.length} files · ${counts.success} complete · ${invalidItems.length} invalid or duplicate`}
             </p>
             <div className="flex gap-2">
               {counts.success > 0 && (
@@ -648,12 +680,39 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
               <button
                 type="button"
                 onClick={() => void handleImportBatch()}
-                disabled={isImporting || isCheckingDuplicates || items.every(item => item.stage === 'success') || Boolean(duplicateCheckError)}
+                disabled={isImporting || isCheckingDuplicates || items.every(item => item.stage === 'success') || Boolean(duplicateCheckError) || invalidItems.length > 0}
                 className="flex items-center gap-2 rounded-xl bg-[var(--mousa-coral)] px-4 py-2.5 text-xs font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isImporting ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
                 {isAr ? 'استيراد كمسودات' : 'Import as drafts'}
               </button>
+            </div>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="font-black text-stone-700 dark:text-stone-200">
+                {isAr
+                  ? `${counts.success} من ${items.length} مسودة مكتملة`
+                  : `${counts.success} of ${items.length} drafts completed`}
+              </span>
+              <span className="text-stone-500">
+                {isAr
+                  ? `${counts.active} قيد التنفيذ · ${counts.ready} جاهز · ${counts.failed} يحتاج معالجة`
+                  : `${counts.active} in progress · ${counts.ready} ready · ${counts.failed} needs attention`}
+              </span>
+            </div>
+            <div
+              role="progressbar"
+              aria-label={isAr ? 'تقدم استيراد المسودات' : 'Draft import progress'}
+              aria-valuemin={0}
+              aria-valuemax={items.length}
+              aria-valuenow={counts.success}
+              className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-slate-700"
+            >
+              <div
+                className="h-full rounded-full bg-emerald-600 transition-[width]"
+                style={{ width: `${items.length ? (counts.success / items.length) * 100 : 0}%` }}
+              />
             </div>
           </div>
 

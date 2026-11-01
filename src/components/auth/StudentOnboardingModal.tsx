@@ -92,9 +92,19 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
     setSubmitting(true);
 
     try {
+      const submittedName = fullName.trim() || userData.fullName || 'Student';
+      if (submittedName !== userData.fullName) {
+        const profileResult = await updateUserProfile({ fullName: submittedName });
+        if (!profileResult.success) {
+          setErrorMessage(profileResult.error || (isAr ? 'تعذر حفظ الاسم.' : 'Could not save your name.'));
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const res = await requestAccountActivation({
         studentId: userData.id,
-        studentName: fullName.trim() || userData.fullName || 'Student',
+        studentName: submittedName,
         email: userData.parentEmail || (userData as any).email || '',
         phone: phone.trim(),
         requestedClassGroupId: derivedClassGroupId,
@@ -107,17 +117,6 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
         setSubmitting(false);
         return;
       }
-
-      // Update local auth context
-      await updateUserProfile({
-        fullName: fullName.trim() || userData.fullName,
-        phone: phone.trim(),
-        grade: selectedGradeCode,
-        activationStatus: 'PENDING_APPROVAL',
-        requestedClassGroupId: derivedClassGroupId,
-        requestedGrade: selectedGradeCode,
-        activationRequestedAt: new Date().toISOString()
-      });
 
       setExistingRequest(res.request);
       setIsEditing(false);

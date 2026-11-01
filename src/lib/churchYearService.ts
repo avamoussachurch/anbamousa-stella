@@ -8,6 +8,8 @@ import {
   StudentClassAssociation 
 } from '../types';
 import { CLASS_GROUPS, getClassGroupForGrade } from './classGroups';
+import { getVerifiedClientAccount } from './roleService';
+import { hasRole } from './workspaces';
 
 export function resolveClassGroupId(classInstanceId?: string, exactGrade?: string): ClassGroupId {
   if (classInstanceId) {
@@ -748,12 +750,12 @@ export async function enrollStudentInClass(
 
         // Look up student profile in database safely without casting non-UUID to uuid
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmedId);
-        let studentProfile: { id: string; name: string; role: string; grade?: string } | null = null;
+        let studentProfile: { id: string; name: string; grade?: string } | null = null;
 
         if (isUuid) {
           const { data } = await supabase
             .from('profiles')
-            .select('id, name, role, grade')
+            .select('id, name, grade')
             .eq('id', trimmedId)
             .maybeSingle();
           if (data) studentProfile = data;
@@ -769,7 +771,7 @@ export async function enrollStudentInClass(
           if (relMatch?.child_id) {
             const { data: profByRel } = await supabase
               .from('profiles')
-              .select('id, name, role, grade')
+              .select('id, name, grade')
               .eq('id', relMatch.child_id)
               .maybeSingle();
             if (profByRel) studentProfile = profByRel;
@@ -778,7 +780,7 @@ export async function enrollStudentInClass(
           if (!studentProfile && trimmedId.includes('@')) {
             const { data: profByEmail } = await supabase
               .from('profiles')
-              .select('id, name, role, grade')
+              .select('id, name, grade')
               .ilike('email', trimmedId)
               .limit(1)
               .maybeSingle();
@@ -788,7 +790,7 @@ export async function enrollStudentInClass(
           if (!studentProfile) {
             const { data: profByName } = await supabase
               .from('profiles')
-              .select('id, name, role, grade')
+              .select('id, name, grade')
               .ilike('name', trimmedId)
               .limit(1)
               .maybeSingle();
@@ -805,7 +807,7 @@ export async function enrollStudentInClass(
             if (known) {
               const { data: profByKnown } = await supabase
                 .from('profiles')
-                .select('id, name, role, grade')
+                .select('id, name, grade')
                 .ilike('name', known.nameEn)
                 .limit(1)
                 .maybeSingle();
@@ -816,13 +818,6 @@ export async function enrollStudentInClass(
 
         // If student profile was found in Supabase tables, proceed with live RPC
         if (studentProfile) {
-          if (studentProfile.role !== 'student') {
-            return {
-              success: false,
-              error: `NOT_A_STUDENT: Target user "${studentProfile.name || trimmedId}" does not hold the student role (role: ${studentProfile.role}).`
-            };
-          }
-
           if (grade && studentProfile.grade !== grade) {
             return {
               success: false,
@@ -837,16 +832,15 @@ export async function enrollStudentInClass(
 
           // If not provided directly, query class_instances for active year
           if (!targetInstanceId) {
-            // Check caller role in profiles
-            const { data: callerProfile } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', user.id)
-              .maybeSingle();
+            const caller = await getVerifiedClientAccount();
+            if (!caller.user || caller.user.id !== user.id) {
+              return {
+                success: false,
+                error: caller.error?.message || 'Could not verify assigned roles.'
+              };
+            }
 
-            const callerRole = callerProfile?.role || '';
-
-            if (callerRole === 'admin') {
+            if (hasRole(caller.user, 'admin')) {
               const { data: inst } = await supabase
                 .from('class_instances')
                 .select('id')
@@ -854,7 +848,7 @@ export async function enrollStudentInClass(
                 .eq('class_group_id', classGroupId || 'primary_2')
                 .maybeSingle();
               targetInstanceId = inst?.id;
-            } else {
+            } else if (hasRole(caller.user, 'teacher')) {
               // For teacher, query servant_class_assignments
               const { data: assignment } = await supabase
                 .from('servant_class_assignments')
@@ -864,6 +858,11 @@ export async function enrollStudentInClass(
                 .eq('is_active', true)
                 .maybeSingle();
               targetInstanceId = assignment?.class_instance_id;
+            } else {
+              return {
+                success: false,
+                error: 'Only assigned servants or administrators can enroll a student.'
+              };
             }
           }
 
