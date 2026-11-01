@@ -14,6 +14,16 @@ BEGIN
   IF pg_catalog.to_regprocedure('public.has_role(text)') IS NULL THEN
     v_missing := pg_catalog.array_append(v_missing, 'public.has_role(text) (Phase 13)');
   END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+      AND column_name = 'hymns_taxis_level'
+      AND data_type = 'integer'
+  ) THEN
+    v_missing := pg_catalog.array_append(v_missing, 'public.profiles.hymns_taxis_level (Phase 7 or 8)');
+  END IF;
   IF pg_catalog.to_regprocedure('public.activate_new_church_year(text,text,date,date)') IS NULL
      OR pg_catalog.to_regprocedure('public.join_class_by_code(text)') IS NULL
      OR pg_catalog.to_regprocedure('public.provision_verified_family_relationship(uuid,uuid,text)') IS NULL
@@ -23,9 +33,41 @@ BEGIN
   IF pg_catalog.to_regclass('public.lesson_publication_jobs') IS NULL THEN
     v_missing := pg_catalog.array_append(v_missing, 'public.lesson_publication_jobs (Phase 11)');
   END IF;
-  IF pg_catalog.to_regclass('public.hymns') IS NULL
-     OR pg_catalog.to_regclass('public.coptic_taxis_items') IS NULL THEN
-    v_missing := pg_catalog.array_append(v_missing, 'public.hymns and public.coptic_taxis_items');
+  IF pg_catalog.to_regclass('public.hymns') IS NULL THEN
+    v_missing := pg_catalog.array_append(v_missing, 'public.hymns (scripts/migrations/phase17_curriculum_table_prerequisites.sql)');
+  END IF;
+  IF pg_catalog.to_regclass('public.coptic_taxis_items') IS NULL THEN
+    v_missing := pg_catalog.array_append(v_missing, 'public.coptic_taxis_items (scripts/migrations/phase17_curriculum_table_prerequisites.sql)');
+  END IF;
+  IF pg_catalog.to_regclass('public.hymns') IS NOT NULL
+     AND (
+       NOT EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'hymns' AND column_name = 'level' AND data_type = 'integer'
+       )
+       OR NOT EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'hymns' AND column_name = 'status'
+       )
+     ) THEN
+    v_missing := pg_catalog.array_append(v_missing, 'required public.hymns columns (inspect before applying the curriculum prerequisite script)');
+  END IF;
+  IF pg_catalog.to_regclass('public.coptic_taxis_items') IS NOT NULL
+     AND (
+       NOT EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'coptic_taxis_items' AND column_name = 'level' AND data_type = 'integer'
+       )
+       OR NOT EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'coptic_taxis_items' AND column_name = 'status'
+       )
+       OR NOT EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'coptic_taxis_items' AND column_name = 'target_audience'
+       )
+     ) THEN
+    v_missing := pg_catalog.array_append(v_missing, 'required public.coptic_taxis_items columns (inspect before applying the curriculum prerequisite script)');
   END IF;
   IF pg_catalog.to_regprocedure('public.publish_lesson_version_immediately(uuid,uuid,uuid)') IS NULL
      OR pg_catalog.to_regprocedure('public.schedule_lesson_publication(uuid,uuid,timestamp with time zone)') IS NULL
@@ -355,20 +397,31 @@ CREATE POLICY "hymns_memberships_insert_student_pending"
   );
 
 DROP POLICY IF EXISTS hymns_select_assigned_level ON public.hymns;
+DROP POLICY IF EXISTS "Servants read all hymns" ON public.hymns;
+DROP POLICY IF EXISTS "Authors read own hymn drafts" ON public.hymns;
+DROP POLICY IF EXISTS "Public read level 1 hymns" ON public.hymns;
+DROP POLICY IF EXISTS "Students read approved level hymns" ON public.hymns;
 CREATE POLICY hymns_select_assigned_level
   ON public.hymns FOR SELECT TO authenticated
   USING (
-    status = 'published'
-    AND public.has_role('student')
-    AND EXISTS (
-      SELECT 1
-      FROM public.profiles AS p
-      WHERE p.id = auth.uid()
-        AND p.hymns_taxis_level = public.hymns.level
+    (
+      status = 'published'
+      AND public.has_role('student')
+      AND EXISTS (
+        SELECT 1
+        FROM public.profiles AS p
+        WHERE p.id = auth.uid()
+          AND p.hymns_taxis_level = public.hymns.level
+      )
     )
+    OR public.has_role('teacher')
+    OR public.has_role('admin')
   );
 
 DROP POLICY IF EXISTS taxis_items_select_assigned_level ON public.coptic_taxis_items;
+DROP POLICY IF EXISTS "Anyone authenticated can view published taxis rituals" ON public.coptic_taxis_items;
+DROP POLICY IF EXISTS "Servants and Admins can view draft and in-review taxis rituals" ON public.coptic_taxis_items;
+DROP POLICY IF EXISTS "Servants and Admins can manage taxis items" ON public.coptic_taxis_items;
 CREATE POLICY taxis_items_select_assigned_level
   ON public.coptic_taxis_items FOR SELECT TO authenticated
   USING (

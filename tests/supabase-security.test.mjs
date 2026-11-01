@@ -184,6 +184,31 @@ test('assigned-role authorization migration hardens database policies and preser
   assert.match(verification, /role assignment writes unavailable to browser roles/);
 });
 
+test('Phase 17 curriculum prerequisites exist in clean schema and preserve safe role-scoped access', async () => {
+  const [schema, migration, phase17, inspect, verify] = await Promise.all([
+    read('supabase_schema.sql'),
+    read('scripts/migrations/phase17_curriculum_table_prerequisites.sql'),
+    read('scripts/migrations/phase17_assigned_role_authorization.sql'),
+    read('scripts/migrations/phase17_curriculum_table_prerequisites_inspect.sql'),
+    read('scripts/migrations/phase17_curriculum_table_prerequisites_verify.sql')
+  ]);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS public\.hymns/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS public\.coptic_taxis_items[\s\S]*?level INTEGER CHECK \(level IN \(1, 2, 3\)\)/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.hymns/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.coptic_taxis_items/);
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS level INTEGER/);
+  assert.match(migration, /public\.has_role\('student'\)/);
+  assert.match(migration, /public\.has_role\('teacher'\)/);
+  assert.match(migration, /public\.has_role\('admin'\)/);
+  assert.match(migration, /REVOKE ALL PRIVILEGES ON TABLE public\.hymns FROM PUBLIC, anon, authenticated/);
+  assert.match(migration, /REVOKE ALL PRIVILEGES ON TABLE public\.coptic_taxis_items FROM PUBLIC, anon, authenticated/);
+  assert.match(phase17, /phase17_curriculum_table_prerequisites\.sql/);
+  assert.match(phase17, /DROP POLICY IF EXISTS "Public read level 1 hymns"/);
+  assert.match(phase17, /OR public\.has_role\('teacher'\)\s+OR public\.has_role\('admin'\)/);
+  assert.match(inspect, /pg_catalog\.pg_policies/);
+  assert.match(verify, /Both curriculum tables have RLS enabled/);
+});
+
 test('servant student preview cannot submit quizzes or award simulated points', async () => {
   const [preview, quiz] = await Promise.all([
     read('src/components/teacher/StudentExperiencePreview.tsx'),
