@@ -54,6 +54,8 @@ interface SundaySchoolLessonViewProps {
   targetSectionId?: string;
   lang?: Language;
   isOnlineAuth?: boolean;
+  readOnly?: boolean;
+  previewMode?: boolean;
 }
 
 export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
@@ -74,7 +76,9 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
   onStartQuiz,
   targetSectionId,
   lang = 'ar' as Language,
-  isOnlineAuth
+  isOnlineAuth,
+  readOnly = false,
+  previewMode = false
 }) => {
   const isAr = lang === 'ar';
 
@@ -216,7 +220,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             <span className="text-base">⚠️</span>
             <span className="font-bold">{finishError}</span>
           </div>
-          {canFinish && (
+          {canFinish && !readOnly && (
             <button
               onClick={handleFinish}
               disabled={isFinishing}
@@ -311,7 +315,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             {/* Metric 3 */}
             <div className="p-3 bg-[var(--mousa-sand-50)] dark:bg-stone-900/60 rounded-2xl border border-[var(--mousa-border-sand)] text-xs space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] font-bold">{isAr ? 'تقييم الخادم' : 'Teacher Mastery'}</span>
+                <span className="text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] font-bold">{isAr ? 'تقييم الخادم' : 'Servant review'}</span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${
                   mastery?.status === 'MASTERED' ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300' :
                   mastery?.status === 'DEVELOPING' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300' :
@@ -527,7 +531,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                   aria-label={isAr
                     ? `${section.titleAr || section.titleEn}، ${isCompleted ? 'مقروء، اضغط للتحديد كغير مقروء' : 'غير مقروء، اضغط للتحديد كمقروء'}`
                     : `${section.titleEn}, ${isCompleted ? 'read, activate to mark unread' : 'unread, activate to mark read'}`}
-                  disabled={Boolean(savingSectionId) || isContentCompleted}
+                  disabled={(readOnly && !previewMode) || Boolean(savingSectionId) || isContentCompleted}
                   onClick={async () => {
                     setSectionActionError(null);
                     setSavingSectionId(section.id);
@@ -536,8 +540,8 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                     } catch {
                       setSectionActionError(
                         isAr
-                          ? 'مش قادرين نحفظ التغيير. جرّب تاني.'
-                          : 'We could not save that change. Please try again.'
+                          ? (previewMode ? 'التغيير ده مؤقت في المعاينة.' : 'مش قادرين نحفظ التغيير. جرّب تاني.')
+                          : (previewMode ? 'This change is temporary in the preview.' : 'We could not save that change. Please try again.')
                       );
                     } finally {
                       setSavingSectionId(null);
@@ -615,10 +619,14 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                   </div>
                   <span className="mt-4 inline-flex text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-light)]">
                     {isSaving
-                      ? (isAr ? 'جاري الحفظ...' : 'Saving...')
+                      ? (previewMode ? (isAr ? 'جاري تحديث المعاينة...' : 'Updating preview...') : (isAr ? 'جاري الحفظ...' : 'Saving...'))
                       : isCompleted
-                        ? (isAr ? 'مقروءة — اضغط للتراجع' : 'Read — tap to mark unread')
-                        : (isAr ? 'اضغط هنا بعد ما تخلص القراية' : 'Tap here when you finish reading')}
+                        ? (previewMode
+                          ? (isAr ? 'مقروءة في المعاينة — اضغط للتراجع' : 'Read in preview — tap to undo')
+                          : (isAr ? 'مقروءة — اضغط للتراجع' : 'Read — tap to mark unread'))
+                        : (previewMode
+                          ? (isAr ? 'اضغط بعد القراية لتجربة التقدم المؤقت' : 'Tap after reading to simulate progress')
+                          : (isAr ? 'اضغط هنا بعد ما تخلص القراية' : 'Tap here when you finish reading'))}
                   </span>
                 </button>
               );
@@ -629,7 +637,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               {sectionProgressError || sectionActionError}
             </p>
           )}
-          {canFinish && (
+          {canFinish && !readOnly && (
             <button
               type="button"
               onClick={handleFinish}
@@ -716,7 +724,11 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               ? (isAr 
                   ? 'تم تسجيل إنجازك وحفظ النقاط بأمان. يمكنك مراجعة الأقسام أو العودة للرئيسية.' 
                   : 'Your progress is reliably saved and points awarded. You can return home or take the review quiz.')
-              : (isAr 
+              : previewMode
+                  ? (isAr
+                    ? 'التقدم هنا تجريبي ومؤقت، ومش بيتسجل على حساب أي تلميذ.'
+                    : 'Progress here is simulated and temporary; it is not recorded on any student account.')
+                  : (isAr
                   ? 'لما تخلص كل قسم، دوس عليه عشان تحفظ قرايته. زر إنهاء الدرس هيظهر بعد ما تكمّل كل الأقسام.'
                   : 'Tap each section when you finish reading it. The finish button appears after every section is complete.')}
           </p>
@@ -734,14 +746,14 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           )}
 
           {/* Review Quiz button: ONLY IF QUIZ EXISTS */}
-          {hasQuiz && (
+          {hasQuiz && (!readOnly || previewMode) && (
             <button
               onClick={onStartQuiz}
               data-testid="lesson-footer-start-quiz-button"
               className="px-6 py-3 bg-gradient-to-r from-amber-500 via-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-110 text-white border-2 border-amber-300/40 rounded-2xl text-xs sm:text-sm font-black shadow-md ring-2 ring-amber-400/30 flex items-center gap-2 transition-all active:scale-95 cursor-pointer min-h-[48px]"
             >
               <Sparkles className="w-4 h-4 text-yellow-200" />
-              <span>{isAr ? 'ابدأ اختبار المراجعة ⚡' : 'Start Review Quiz'}</span>
+              <span>{previewMode ? (isAr ? 'عاين اختبار المراجعة ⚡' : 'Preview Review Quiz') : (isAr ? 'ابدأ اختبار المراجعة ⚡' : 'Start Review Quiz')}</span>
               {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
           )}

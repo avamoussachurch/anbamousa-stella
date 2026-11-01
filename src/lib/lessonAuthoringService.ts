@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import { getVerifiedServantAccount } from './roleService';
+import { hasRole } from './workspaces';
 import { 
   Lesson, 
   LessonVersion, 
@@ -123,29 +125,13 @@ function generateUuid(): string {
  * Validates the current authenticated user and ensures they possess teacher or admin privileges.
  */
 async function getAuthenticatedServant(): Promise<{
-  user: { id: string; role?: string } | null;
+  user: { id: string; roles: import('../types').Role[]; role?: string } | null;
   error: Error | null;
 }> {
-  if (!supabase) {
-    return { user: null, error: new Error('Supabase client is not configured') };
-  }
-
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    return { user: null, error: new Error('Authentication required for online lesson authoring') };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  const finalRole = profile?.role || 'student';
-  if (finalRole !== 'teacher' && finalRole !== 'admin') {
-    return { user: null, error: new Error('Only servants, teachers, and administrators may author curriculum lessons') };
-  }
-
-  return { user: { id: user.id, role: finalRole }, error: null };
+  return getVerifiedServantAccount(
+    'Authentication required for online lesson authoring',
+    'Only servants, teachers, and administrators may author curriculum lessons'
+  );
 }
 
 /**
@@ -370,7 +356,6 @@ export async function getEditableLessonVersion(
       return { data: null, error: servantCheck.error };
     }
     const currentUserId = servantCheck.user.id;
-    const currentUserRole = servantCheck.user.role;
 
     // Fetch all versions for this lesson
     const { data: dbVersions, error: verErr } = await supabase!
@@ -392,7 +377,7 @@ export async function getEditableLessonVersion(
 
     if (editableDraft) {
       // Check authoring authorization (Requirement 10.F)
-      if (editableDraft.created_by !== currentUserId && currentUserRole !== 'admin') {
+      if (editableDraft.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
         return {
           data: null,
           error: new Error('Teacher cannot edit another teacher\'s draft')
@@ -595,7 +580,6 @@ export async function updateLessonDraft(
       return { data: null, error: servantCheck.error };
     }
     const currentUserId = servantCheck.user.id;
-    const currentUserRole = servantCheck.user.role;
 
     // PUBLICATION PROTECTION: Reject direct publishing
     if ((updates as any).status === 'published' || (updates as any).lesson_status === 'published') {
@@ -669,7 +653,7 @@ export async function updateLessonDraft(
     }
 
     // AUTHORIZATION CHECK (Requirement 10.F)
-    if (targetVersion.created_by !== currentUserId && currentUserRole !== 'admin') {
+    if (targetVersion.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return {
         data: null,
         error: new Error('Teacher cannot edit another teacher\'s draft')
@@ -773,7 +757,6 @@ export async function saveLessonSections(
       return { data: null, error: servantCheck.error };
     }
     const currentUserId = servantCheck.user.id;
-    const currentUserRole = servantCheck.user.role;
 
     // Verify version status & ownership
     const { data: versionRow, error: verErr } = await supabase!
@@ -793,7 +776,7 @@ export async function saveLessonSections(
       };
     }
 
-    if (versionRow.created_by !== currentUserId && currentUserRole !== 'admin') {
+    if (versionRow.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return {
         data: null,
         error: new Error('Teacher cannot edit another teacher\'s draft sections')
@@ -862,7 +845,6 @@ export async function updateLessonSection(
       return { data: null, error: servantCheck.error };
     }
     const currentUserId = servantCheck.user.id;
-    const currentUserRole = servantCheck.user.role;
 
     // Fetch section to verify parent version
     const { data: sectionRow, error: secErr } = await supabase!
@@ -893,7 +875,7 @@ export async function updateLessonSection(
       };
     }
 
-    if (versionRow.created_by !== currentUserId && currentUserRole !== 'admin') {
+    if (versionRow.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return {
         data: null,
         error: new Error('Teacher cannot edit another teacher\'s draft section')

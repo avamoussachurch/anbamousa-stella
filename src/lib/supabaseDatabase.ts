@@ -2,6 +2,48 @@ import { supabase } from './supabase';
 import { User } from '../types';
 import { parsePersistentMediaUploadResponse } from './mediaUploadResponse';
 
+export interface OwnAccountProfileUpdates {
+  name?: string;
+  avatar?: string;
+  push_notifications_enabled?: boolean;
+  notify_lesson_completion?: boolean;
+  notify_event_reminders?: boolean;
+  require_reward_approval?: boolean;
+}
+
+export async function updateOwnAccountProfile(updates: OwnAccountProfileUpdates) {
+  if (!supabase) return { data: null, error: 'Supabase client not configured' };
+
+  try {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (sessionError) return { data: null, error: `Could not verify your session: ${sessionError.message}` };
+    if (!session?.access_token || !session.user.id) return { data: null, error: 'Sign in to update your profile.' };
+
+    const response = await fetch('/api/account/profile', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(updates),
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.success || !payload.profile) {
+      return {
+        data: null,
+        error: payload?.message || payload?.error || `Could not update your profile (HTTP ${response.status}).`,
+      };
+    }
+    return { data: payload.profile, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : 'Could not update your profile.',
+    };
+  }
+}
+
 /**
  * Update user profile fields in Supabase using upsert
  */
@@ -107,35 +149,50 @@ export async function uploadAvatarToSupabase(
     // 2. If Supabase is connected, attempt upload to storage bucket
     if (supabase) {
       try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) return { success: false, error: `Could not verify your session: ${sessionError.message}` };
+        const session = sessionData.session;
+        if (session && session.user.id !== userId) {
+          return { success: false, error: 'You can only update the avatar for your own account.' };
+        }
         const fileExt = file instanceof File ? file.name.split('.').pop() : 'jpg';
         const fileName = `${userId}/avatar_${Date.now()}.${fileExt || 'jpg'}`;
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        if (!uploadError && uploadData) {
-          const { data: publicUrlData } = supabase.storage
+        if (session) {
+          const { data: uploadData, error: uploadError } = await supabase.storage
             .from('avatars')
-            .getPublicUrl(fileName);
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: true
+            });
 
-          if (publicUrlData?.publicUrl) {
-            // Update profile with public URL
-            await updateSupabaseProfile(userId, { avatar: publicUrlData.publicUrl });
-            return { success: true, url: publicUrlData.publicUrl };
+          if (!uploadError && uploadData) {
+            const { data: publicUrlData } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+
+            if (publicUrlData?.publicUrl) {
+              const profileSave = await updateOwnAccountProfile({ avatar: publicUrlData.publicUrl });
+              if (profileSave.error) return { success: false, error: profileSave.error };
+              return { success: true, url: publicUrlData.publicUrl };
+            }
           }
         }
       } catch (storageErr) {
-        console.warn('Supabase storage upload fallback to local high-res data URL:', storageErr);
+        console.warn('Avatar upload failed before profile update:', storageErr);
       }
     }
 
-    // Fallback: return compressed high-res data URL
-    if (userId) {
-      await updateSupabaseProfile(userId, { avatar: compressedDataUrl }).catch(() => {});
+    if (supabase) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) return { success: false, error: `Could not verify your session: ${sessionError.message}` };
+      if (sessionData.session && sessionData.session.user.id !== userId) {
+        return { success: false, error: 'You can only update the avatar for your own account.' };
+      }
+      if (sessionData.session) {
+        const profileSave = await updateOwnAccountProfile({ avatar: compressedDataUrl });
+        if (profileSave.error) return { success: false, error: profileSave.error };
+      }
     }
     return { success: true, url: compressedDataUrl };
   } catch (err: any) {

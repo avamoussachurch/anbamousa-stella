@@ -6,6 +6,7 @@ import {
   canModifyScheduledPublication,
   canPublishVersion,
   formatPublicationTime,
+  getPublicationCalendarDays,
   getPublicationTimezone,
   isPublicationDue,
   parsePublicationLocalDateTime,
@@ -147,4 +148,36 @@ test('local schedule input converts to the selected timezone and rejects malform
     '2026-01-15T10:00:00.000Z'
   );
   assert.equal(parsePublicationLocalDateTime('not-a-date', 'Africa/Cairo'), null);
+});
+
+test('publication calendar groups upcoming jobs by the configured local timezone', () => {
+  const now = new Date('2026-10-29T22:30:00.000Z');
+  const jobs = [
+    {
+      id: 'job-cairo-today',
+      lesson_id: 'lesson-1',
+      version_id: 'version-1',
+      scheduled_at: '2026-10-29T23:30:00.000Z',
+      status: 'scheduled' as const,
+      error_message: null,
+      created_at: '2026-10-29T00:00:00.000Z'
+    },
+    {
+      id: 'job-cairo-next-day',
+      lesson_id: 'lesson-2',
+      version_id: 'version-2',
+      scheduled_at: '2026-10-30T22:30:00.000Z',
+      status: 'failed' as const,
+      error_message: 'Approval changed',
+      created_at: '2026-10-29T00:00:00.000Z'
+    }
+  ];
+
+  const days = getPublicationCalendarDays(jobs, 'Etc/GMT-2', now, 3);
+  assert.equal(days[0].dateKey, '2026-10-30');
+  assert.equal(days[0].isToday, true);
+  assert.deepEqual(days[0].jobs.map(job => job.id), ['job-cairo-today']);
+  assert.equal(days[1].dateKey, '2026-10-31');
+  assert.deepEqual(days[1].jobs.map(job => job.id), ['job-cairo-next-day']);
+  assert.equal(days[2].jobs.length, 0);
 });

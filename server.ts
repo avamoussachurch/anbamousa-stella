@@ -5,7 +5,7 @@ import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
-import { canInitializeHymnsTaxisLevel, parseHymnsTaxisLevel } from "./src/lib/hymnsTaxisLevel";
+import { isValidSundaySchoolGrade, parseHymnsTaxisLevel } from "./src/lib/hymnsTaxisLevel";
 import { createStorageReference, parseStorageReference } from "./src/lib/mediaStorageReference";
 import { randomUUID } from "crypto";
 
@@ -19,111 +19,974 @@ if (!fs.existsSync(uploadsDir)) {
 
 app.use(express.json({ limit: '20mb' }));
 
+type ServerRole = 'student' | 'teacher' | 'admin' | 'parent';
 type ServerAuthContext =
   | {
       userId: string;
-      role: 'student' | 'teacher' | 'admin' | 'parent' | null;
+      roles: ServerRole[];
       isAuthenticated: true;
     }
   | {
       userId: null;
-      role: null;
+      roles: [];
       isAuthenticated: false;
     };
+
+function getTrustedRoleClient() {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!supabaseUrl || !serviceKey) {
+    throw new Error('Trusted role authorization is not configured on the server.');
+  }
+  return createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+
+function hasServerRole(authContext: ServerAuthContext, role: ServerRole): boolean {
+  return authContext.isAuthenticated && authContext.roles.includes(role);
+}
+
+function hasAnyServerRole(authContext: ServerAuthContext, roles: ServerRole[]): boolean {
+  return authContext.isAuthenticated && roles.some(role => authContext.roles.includes(role));
+}
+
+function isAuthUserSuspended(user: { banned_until?: string }): boolean {
+  return Boolean(user.banned_until && Date.parse(user.banned_until) > Date.now());
+}
+
+interface AdminAuthAccount {
+  id: string;
+  banned_until?: string;
+  invited_at?: string;
+  last_sign_in_at?: string;
+}
+
+async function listAllAuthUsers(client: ReturnType<typeof getTrustedRoleClient>) {
+  const users: AdminAuthAccount[] = [];
+  for (let page = 1; ; page += 1) {
+    const { data, error } = await client.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw new Error(`Could not load Auth account status: ${error.message}`);
+    for (const user of data.users) {
+      users.push({
+        id: user.id,
+        banned_until: user.banned_until,
+        invited_at: 'invited_at' in user && typeof user.invited_at === 'string' ? user.invited_at : undefined,
+        last_sign_in_at: user.last_sign_in_at || undefined,
+      });
+    }
+    if (data.users.length < 1000) return users;
+  }
+}
+
+async function hasAssignedRoleForUser(userId: string, role: ServerRole): Promise<boolean> {
+  const { data, error } = await getTrustedRoleClient()
+    .from('profile_role_assignments')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', role)
+    .is('revoked_at', null)
+    .maybeSingle();
+  if (error) throw new Error(`Could not verify assigned ${role} role: ${error.message}`);
+  return Boolean(data);
+}
+
+async function getActiveAdminAccountIds(): Promise<Set<string>> {
+  const client = getTrustedRoleClient();
+  const { data: assignments, error: assignmentError } = await client
+    .from('profile_role_assignments')
+    .select('user_id')
+    .eq('role', 'admin')
+    .is('revoked_at', null);
+  if (assignmentError) throw new Error(`Could not verify active administrators: ${assignmentError.message}`);
+  const activeAssignmentIds = new Set((assignments || []).map((assignment: { user_id: string }) => assignment.user_id));
+  const activeUsers = new Set<string>();
+  const users = await listAllAuthUsers(client);
+  for (const user of users) {
+    if (activeAssignmentIds.has(user.id) && !isAuthUserSuspended(user)) {
+      activeUsers.add(user.id);
+    }
+  }
+  return activeUsers;
+}
+
+function getPrimaryRoleForLegacyResponse(authContext: ServerAuthContext): ServerRole | null {
+  if (!authContext.isAuthenticated) return null;
+  return authContext.roles.includes('admin') ? 'admin' :
+    authContext.roles.includes('teacher') ? 'teacher' :
+    authContext.roles.includes('parent') ? 'parent' :
+    authContext.roles.includes('student') ? 'student' : null;
+}
+
+function requireAssignedRoles(allowedRoles?: ServerRole[]) {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'A verified account is required.' });
+    }
+    if (allowedRoles && !hasAnyServerRole(authContext, allowedRoles)) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'An assigned role is not authorized for this operation.' });
+    }
+    (req as any).verifiedAuth = authContext;
+    return next();
+  };
+}
+
+function getBearerToken(req: express.Request): string {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) return authHeader.slice(7).trim();
+  return typeof req.query.token === 'string' ? req.query.token : '';
+}
+
+function hasLiveSupabaseSession(req: express.Request): boolean {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+  const token = getBearerToken(req);
+  return Boolean(supabaseUrl && supabaseAnonKey && token &&
+    !token.startsWith('test_jwt_') && !token.startsWith('test_token_'));
+}
 
 /**
  * Server-side helper to verify JWT authentication token from Bearer header or query parameter
  */
 async function verifyServerRequestAuth(req: express.Request): Promise<ServerAuthContext> {
-  let token = "";
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    token = authHeader.slice(7).trim();
-  } else if (typeof req.query.token === "string" && req.query.token) {
-    token = req.query.token;
-  }
+  const token = getBearerToken(req);
+  if (!token) return { userId: null, roles: [], isAuthenticated: false };
 
-  if (!token) {
-    return { userId: null, role: null, isAuthenticated: false };
-  }
-
-  // Handle deterministic verified test tokens for isolated test suites
+  let verifiedUserId: string | null = null;
   if (
     process.env.NODE_ENV !== 'production' &&
-    (token.startsWith("test_jwt_") || token.startsWith("test_token_"))
+    (token.startsWith('test_jwt_') || token.startsWith('test_token_'))
   ) {
-    const raw = token.replace(/^(test_jwt_|test_token_)/, "");
-    let role: ServerAuthContext['role'] = null;
-    let userId = raw;
-    if (raw.startsWith("student_")) {
-      role = "student";
-      userId = raw.slice("student_".length);
-    } else if (raw.startsWith("teacher_")) {
-      role = "teacher";
-      userId = raw.slice("teacher_".length);
-    } else if (raw.startsWith("admin_")) {
-      role = "admin";
-      userId = raw.slice("admin_".length);
-    } else if (raw.startsWith("parent_")) {
-      role = "parent";
-      userId = raw.slice("parent_".length);
-    } else {
-      if (raw.includes("student")) role = "student";
-      else if (raw.includes("teacher") || raw.includes("mina")) role = "teacher";
-      else if (raw.includes("admin")) role = "admin";
-      else if (raw.includes("parent")) role = "parent";
+    const raw = token.replace(/^(test_jwt_|test_token_)/, '');
+    const tokenParts = raw.split('|');
+    verifiedUserId = tokenParts.length > 1 ? tokenParts.slice(1).join('|') : raw;
+  } else {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return { userId: null, roles: [], isAuthenticated: false };
     }
-    return { userId, role, isAuthenticated: true };
+
+    try {
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      });
+      const { data: userData, error: userError } = await authClient.auth.getUser(token);
+      if (userError || !userData?.user) {
+        return { userId: null, roles: [], isAuthenticated: false };
+      }
+      verifiedUserId = userData.user.id;
+    } catch (error) {
+      console.error('Auth verification error:', error);
+      return { userId: null, roles: [], isAuthenticated: false };
+    }
   }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+  if (!verifiedUserId) return { userId: null, roles: [], isAuthenticated: false };
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return { userId: null, role: null, isAuthenticated: false };
+  try {
+    const trustedClient = getTrustedRoleClient();
+    const { data: profile, error: profileError } = await trustedClient
+      .from('profiles')
+      .select('id')
+      .eq('id', verifiedUserId)
+      .maybeSingle();
+    if (profileError || !profile?.id) {
+      if (profileError) console.error('Could not verify account profile:', profileError.message);
+      return { userId: null, roles: [], isAuthenticated: false };
+    }
+
+    const { data: assignments, error: assignmentsError } = await trustedClient
+      .from('profile_role_assignments')
+      .select('role')
+      .eq('user_id', verifiedUserId)
+      .is('revoked_at', null);
+    if (assignmentsError || !Array.isArray(assignments) || assignments.length === 0) {
+      if (assignmentsError) console.error('Could not load assigned account roles:', assignmentsError.message);
+      return { userId: null, roles: [], isAuthenticated: false };
+    }
+
+    const allowedRoles: ServerRole[] = ['student', 'parent', 'teacher', 'admin'];
+    const roles = assignments.map((assignment: { role: string }) => assignment.role);
+    if (roles.some(role => !allowedRoles.includes(role as ServerRole))) {
+      console.error('Invalid role assignment found for account:', verifiedUserId);
+      return { userId: null, roles: [], isAuthenticated: false };
+    }
+
+    return { userId: verifiedUserId, roles: roles as ServerRole[], isAuthenticated: true };
+  } catch (error) {
+    console.error('Role authorization lookup error:', error);
+    return { userId: null, roles: [], isAuthenticated: false };
+  }
+}
+
+function getRoleRequestClient(req: express.Request) {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+  const token = getBearerToken(req);
+  if (!supabaseUrl || !supabaseAnonKey || !token) {
+    throw new Error('Authenticated role-request access is not configured.');
+  }
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+
+function sendRoleManagementError(
+  res: express.Response,
+  error: { code?: string; message?: string },
+  operation: string
+) {
+  const code = error?.code || '';
+  const status = code === '23505' ? 409 :
+    code === '22023' || code === '22P02' ? 400 :
+    code === '42501' ? 403 :
+    code === 'P0002' || code === 'PGRST116' ? 404 : 500;
+  if (status === 500) console.error(`${operation} failed:`, error?.message || error);
+  return res.status(status).json({
+    success: false,
+    error: status === 409 ? 'CONFLICT' :
+      status === 400 ? 'INVALID_REQUEST' :
+      status === 403 ? 'FORBIDDEN' :
+      status === 404 ? 'NOT_FOUND' : 'ROLE_DATABASE_ERROR',
+    message: status === 500 ? 'Role management is temporarily unavailable.' : error?.message || 'Role request was rejected.'
+  });
+}
+
+const requireRoleAdmin = requireAssignedRoles(['admin']);
+
+const adminAuditedMutationPrefixes = [
+  '/api/church/lessons',
+  '/api/church/sources',
+  '/api/church/hymns',
+  '/api/church/taxis',
+  '/api/church/publish-lesson-version',
+  '/api/church/publish-approved-lesson-version',
+  '/api/church/resolve-source-conflict',
+];
+
+app.use(async (req, res, next) => {
+  const isMutation = !['GET', 'HEAD', 'OPTIONS'].includes(req.method.toUpperCase());
+  const isCurriculumMutation = adminAuditedMutationPrefixes.some(
+    prefix => req.path === prefix || req.path.startsWith(`${prefix}/`)
+  );
+  if (!isMutation || !isCurriculumMutation) return next();
+
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!hasServerRole(authContext, 'admin')) return next();
+
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim().slice(0, 1000) : null;
+    const resourceId = ['lessonId', 'versionId', 'sourceId', 'hymnId', 'taxisId']
+      .map(key => req.body?.[key])
+      .find(value => typeof value === 'string' && value.length > 0 && value.length <= 256);
+    const { error } = await getTrustedRoleClient().from('admin_action_audit').insert({
+      actor_id: authContext.userId,
+      operation: `curriculum_${req.method.toLowerCase()}`,
+      reason,
+      details: { path: req.path, ...(resourceId ? { resourceId } : {}) }
+    });
+    if (error) {
+      console.error('Admin curriculum audit failed:', error.message);
+      return res.status(500).json({
+        success: false,
+        error: 'ADMIN_AUDIT_FAILED',
+        message: 'Curriculum change was not attempted because its audit record could not be written.'
+      });
+    }
+    return next();
+  } catch (error: any) {
+    console.error('Admin curriculum audit failed:', error?.message || error);
+    return res.status(500).json({
+      success: false,
+      error: 'ADMIN_AUDIT_FAILED',
+      message: 'Curriculum change was not attempted because its audit record could not be written.'
+    });
+  }
+});
+
+app.get('/api/church/me/roles', requireAssignedRoles(), async (req, res) => {
+  const authContext = (req as any).verifiedAuth as ServerAuthContext;
+  return res.json({ success: true, roles: authContext.roles });
+});
+
+app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
+  const authContext = (req as any).verifiedAuth as ServerAuthContext;
+  const body = req.body;
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return res.status(400).json({ success: false, error: 'INVALID_PROFILE', message: 'A profile update object is required.' });
+  }
+
+  const allowedFields = new Set([
+    'name',
+    'avatar',
+    'push_notifications_enabled',
+    'notify_lesson_completion',
+    'notify_event_reminders',
+    'require_reward_approval',
+  ]);
+  const unexpectedField = Object.keys(body).find(field => !allowedFields.has(field));
+  if (unexpectedField) {
+    return res.status(400).json({
+      success: false,
+      error: 'PROFILE_FIELD_NOT_EDITABLE',
+      message: `Profile field "${unexpectedField}" cannot be updated here.`
+    });
+  }
+
+  const profileUpdates: Record<string, string | boolean> = {};
+  if (Object.prototype.hasOwnProperty.call(body, 'name')) {
+    if (typeof body.name !== 'string' || body.name.trim().length < 2 || body.name.trim().length > 100) {
+      return res.status(400).json({ success: false, error: 'INVALID_NAME', message: 'Name must contain 2 to 100 characters.' });
+    }
+    profileUpdates.name = body.name.trim();
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'avatar')) {
+    if (typeof body.avatar !== 'string' || body.avatar.length > 1_000_000) {
+      return res.status(400).json({ success: false, error: 'INVALID_AVATAR', message: 'Avatar must be a supported image URL or image data under 1 MB.' });
+    }
+    const isHttpsUrl = (() => {
+      try {
+        return new URL(body.avatar).protocol === 'https:';
+      } catch {
+        return false;
+      }
+    })();
+    const isImageData = /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(body.avatar);
+    if (!isHttpsUrl && !isImageData) {
+      return res.status(400).json({ success: false, error: 'INVALID_AVATAR', message: 'Avatar must be an HTTPS image URL or supported image data.' });
+    }
+    profileUpdates.avatar = body.avatar;
+  }
+  for (const field of [
+    'push_notifications_enabled',
+    'notify_lesson_completion',
+    'notify_event_reminders',
+    'require_reward_approval',
+  ]) {
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      if (typeof body[field] !== 'boolean') {
+        return res.status(400).json({ success: false, error: 'INVALID_PREFERENCE', message: `${field} must be a boolean.` });
+      }
+      profileUpdates[field] = body[field];
+    }
+  }
+  if (Object.keys(profileUpdates).length === 0) {
+    return res.status(400).json({ success: false, error: 'EMPTY_PROFILE_UPDATE', message: 'Provide at least one editable profile field.' });
   }
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      },
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false
+    const trustedClient = getTrustedRoleClient();
+    const { data, error } = await trustedClient
+      .from('profiles')
+      .update(profileUpdates)
+      .eq('id', authContext.userId)
+      .select('id, name, avatar, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, require_reward_approval')
+      .maybeSingle();
+    if (error) throw new Error(`Could not save your profile: ${error.message}`);
+    if (!data) {
+      return res.status(404).json({ success: false, error: 'PROFILE_NOT_FOUND', message: 'Your account profile was not found.' });
+    }
+    return res.json({ success: true, profile: data });
+  } catch (error: any) {
+    console.error('Own-account profile update failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'PROFILE_UPDATE_FAILED', message: 'Could not save your profile changes.' });
+  }
+});
+
+app.post('/api/church/role-requests', requireAssignedRoles(), async (req, res) => {
+  const authContext = (req as any).verifiedAuth as ServerAuthContext;
+  const requestedRole = req.body?.role;
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : null;
+  if (!['student', 'parent', 'teacher'].includes(requestedRole)) {
+    return res.status(400).json({
+      success: false,
+      error: 'INVALID_ROLE',
+      message: 'Only student, parent, or teacher roles may be requested.'
+    });
+  }
+  if (reason && reason.length > 1000) {
+    return res.status(400).json({ success: false, error: 'INVALID_REASON', message: 'Reason must be 1000 characters or fewer.' });
+  }
+  if (hasServerRole(authContext, requestedRole as ServerRole)) {
+    return res.status(409).json({ success: false, error: 'ROLE_ALREADY_ASSIGNED', message: 'That role is already assigned.' });
+  }
+
+  try {
+    const userClient = getRoleRequestClient(req);
+    const { data: requestId, error } = await userClient.rpc('request_role_promotion', {
+      p_requested_role: requestedRole,
+      p_reason: reason
+    });
+    if (error) return sendRoleManagementError(res, error, 'Role request submission');
+    return res.status(201).json({
+      success: true,
+      request: { id: requestId, requesterId: authContext.userId, requestedRole, status: 'pending' }
+    });
+  } catch (error: any) {
+    return sendRoleManagementError(res, error, 'Role request submission');
+  }
+});
+
+app.get('/api/church/role-requests/me', requireAssignedRoles(), async (req, res) => {
+  const authContext = (req as any).verifiedAuth as ServerAuthContext;
+  try {
+    const trustedClient = getTrustedRoleClient();
+    const { data, error } = await trustedClient
+      .from('role_promotion_requests')
+      .select('id, requested_role, status, reason, requested_at, reviewed_by, reviewed_at, review_reason')
+      .eq('requester_id', authContext.userId)
+      .order('requested_at', { ascending: false })
+      .limit(100);
+    if (error) return sendRoleManagementError(res, error, 'Role request history');
+    return res.json({ success: true, requests: data || [] });
+  } catch (error: any) {
+    return sendRoleManagementError(res, error, 'Role request history');
+  }
+});
+
+app.get('/api/church/admin/role-requests', requireRoleAdmin, async (_req, res) => {
+  try {
+    const trustedClient = getTrustedRoleClient();
+    const { data, error } = await trustedClient
+      .from('role_promotion_requests')
+      .select('id, requester_id, requested_role, status, reason, requested_at')
+      .eq('status', 'pending')
+      .order('requested_at', { ascending: true })
+      .limit(100);
+    if (error) return sendRoleManagementError(res, error, 'Pending role request listing');
+    return res.json({ success: true, requests: data || [] });
+  } catch (error: any) {
+    return sendRoleManagementError(res, error, 'Pending role request listing');
+  }
+});
+
+app.post('/api/church/admin/role-requests/:requestId/review', requireRoleAdmin, async (req, res) => {
+  const authContext = (req as any).verifiedAuth as ServerAuthContext;
+  const decision = req.body?.decision;
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : null;
+  if (decision !== 'approve' && decision !== 'reject') {
+    return res.status(400).json({ success: false, error: 'INVALID_DECISION', message: 'Decision must be approve or reject.' });
+  }
+  if (reason && reason.length > 1000) {
+    return res.status(400).json({ success: false, error: 'INVALID_REASON', message: 'Reason must be 1000 characters or fewer.' });
+  }
+
+  try {
+    const trustedClient = getTrustedRoleClient();
+    const { data, error } = await trustedClient.rpc('review_role_promotion_request', {
+      p_request_id: req.params.requestId,
+      p_actor_id: authContext.userId,
+      p_approve: decision === 'approve',
+      p_review_reason: reason
+    });
+    if (error) return sendRoleManagementError(res, error, 'Role request review');
+    return res.json({ success: true, request: data });
+  } catch (error: any) {
+    return sendRoleManagementError(res, error, 'Role request review');
+  }
+});
+
+app.post('/api/church/admin/role-assignments', requireRoleAdmin, async (req, res) => {
+  const authContext = (req as any).verifiedAuth as ServerAuthContext;
+  const targetUserId = typeof req.body?.targetUserId === 'string' ? req.body.targetUserId : '';
+  const role = req.body?.role;
+  const action = req.body?.action;
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : null;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId)) {
+    return res.status(400).json({ success: false, error: 'INVALID_TARGET', message: 'A valid target account ID is required.' });
+  }
+  if (!['student', 'parent', 'teacher', 'admin'].includes(role) || !['grant', 'revoke'].includes(action)) {
+    return res.status(400).json({ success: false, error: 'INVALID_ROLE_ACTION', message: 'A valid role and grant/revoke action are required.' });
+  }
+  if (targetUserId === authContext.userId) {
+    return res.status(403).json({ success: false, error: 'SELF_ROLE_CHANGE_FORBIDDEN', message: 'Administrators cannot change their own roles.' });
+  }
+  if (reason && reason.length > 1000) {
+    return res.status(400).json({ success: false, error: 'INVALID_REASON', message: 'Reason must be 1000 characters or fewer.' });
+  }
+
+  try {
+    const trustedClient = getTrustedRoleClient();
+    if (action === 'revoke' && role === 'admin' && await hasAssignedRoleForUser(targetUserId, 'admin')) {
+      const activeAdmins = await getActiveAdminAccountIds();
+      if (activeAdmins.has(targetUserId) && activeAdmins.size <= 1) {
+        return res.status(409).json({ success: false, error: 'LAST_ACTIVE_ADMIN', message: 'The last active administrator cannot be demoted.' });
+      }
+    }
+    const { data, error } = await trustedClient.rpc('manage_profile_role', {
+      p_target_user_id: targetUserId,
+      p_role: role,
+      p_action: action,
+      p_actor_id: authContext.userId,
+      p_reason: reason
+    });
+    if (error) return sendRoleManagementError(res, error, 'Direct role assignment');
+    return res.json({ success: true, changed: Boolean(data), targetUserId, role, action });
+  } catch (error: any) {
+    return sendRoleManagementError(res, error, 'Direct role assignment');
+  }
+});
+
+app.get('/api/church/admin/role-audit', requireRoleAdmin, async (req, res) => {
+  const targetUserId = typeof req.query.targetUserId === 'string' ? req.query.targetUserId : '';
+  if (targetUserId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId)) {
+    return res.status(400).json({ success: false, error: 'INVALID_TARGET', message: 'Target account ID is invalid.' });
+  }
+  try {
+    const trustedClient = getTrustedRoleClient();
+    let query = trustedClient
+      .from('role_change_audit')
+      .select('id, actor_id, actor_type, target_user_id, action, previous_role, new_role, requested_role, request_id, occurred_at, reason')
+      .order('occurred_at', { ascending: false })
+      .limit(100);
+    if (targetUserId) query = query.eq('target_user_id', targetUserId);
+    const { data, error } = await query;
+    if (error) return sendRoleManagementError(res, error, 'Role audit listing');
+    return res.json({ success: true, audit: data || [] });
+  } catch (error: any) {
+    return sendRoleManagementError(res, error, 'Role audit listing');
+  }
+});
+
+app.get('/api/church/admin/overview', requireRoleAdmin, async (_req, res) => {
+  try {
+    const client = getTrustedRoleClient();
+    const [{ data: activeAssignments, error: roleError }, authUsers, accountCount, pendingCount, activeYear, lessonCount, publishedCount, draftCount] = await Promise.all([
+      client.from('profile_role_assignments').select('user_id, role').is('revoked_at', null),
+      listAllAuthUsers(client),
+      client.from('profiles').select('id', { count: 'exact', head: true }),
+      client.from('role_promotion_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      client.from('church_years').select('id, name').eq('is_active', true).maybeSingle(),
+      client.from('lessons').select('id', { count: 'exact', head: true }),
+      client.from('lessons').select('id', { count: 'exact', head: true }).eq('lesson_status', 'published'),
+      client.from('lessons').select('id', { count: 'exact', head: true }).eq('lesson_status', 'draft'),
+    ]);
+    if (roleError) throw roleError;
+    for (const result of [accountCount, pendingCount, activeYear, lessonCount, publishedCount, draftCount]) {
+      if (result.error) throw result.error;
+    }
+    const activeAuthIds = new Set(authUsers
+      .filter(user => !isAuthUserSuspended(user)).map(user => user.id));
+    const roleCounts: Record<ServerRole, number> = { student: 0, parent: 0, teacher: 0, admin: 0 };
+    for (const assignment of activeAssignments || []) {
+      if (activeAuthIds.has(assignment.user_id) && assignment.role in roleCounts) {
+        roleCounts[assignment.role as ServerRole] += 1;
+      }
+    }
+    let classCount = 0;
+    if (activeYear.data?.id) {
+      const classes = await client.from('class_instances')
+        .select('id', { count: 'exact', head: true }).eq('church_year_id', activeYear.data.id);
+      if (classes.error) throw classes.error;
+      classCount = classes.count || 0;
+    }
+    return res.json({
+      success: true,
+      overview: {
+        accounts: accountCount.count || 0,
+        roles: roleCounts,
+        pendingRoleRequests: pendingCount.count || 0,
+        activeChurchYear: activeYear.data || null,
+        classes: classCount,
+        curriculumItems: lessonCount.count || 0,
+        publishedLessons: publishedCount.count || 0,
+        draftLessons: draftCount.count || 0,
+        dataSource: 'supabase',
+        checkedAt: new Date().toISOString(),
       }
     });
-
-    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-    if (userErr || !userData?.user) {
-      return { userId: null, role: null, isAuthenticated: false };
-    }
-
-    const userId = userData.user.id;
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .maybeSingle();
-    const profileRole = !profileError ? profile?.role : null;
-    const role: ServerAuthContext['role'] =
-      profileRole === 'student' || profileRole === 'teacher' ||
-      profileRole === 'admin' || profileRole === 'parent'
-        ? profileRole
-        : null;
-
-    return {
-      userId,
-      role,
-      isAuthenticated: true
-    };
-  } catch (err) {
-    console.error("Auth verification error:", err);
-    return { userId: null, role: null, isAuthenticated: false };
+  } catch (error: any) {
+    console.error('Admin overview failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'ADMIN_OVERVIEW_FAILED', message: 'Could not load authoritative overview data.' });
   }
-}
+});
+
+app.get('/api/church/admin/accounts', requireRoleAdmin, async (req, res) => {
+  const search = typeof req.query.search === 'string' ? req.query.search.trim().toLocaleLowerCase() : '';
+  try {
+    const client = getTrustedRoleClient();
+    const safeSearch = search.replace(/[^\p{L}\p{N}@._+\s-]/gu, '');
+    let profileQuery = client.from('profiles').select('id, name, email, role, grade, created_at')
+      .order('created_at', { ascending: false }).limit(500);
+    if (safeSearch) {
+      profileQuery = profileQuery.or(`name.ilike.%${safeSearch}%,email.ilike.%${safeSearch}%,id.eq.${safeSearch}`);
+    }
+    const [{ data: profiles, error: profileError }, authUsers] = await Promise.all([
+      profileQuery,
+      listAllAuthUsers(client),
+    ]);
+    if (profileError) throw profileError;
+    const profileRows = profiles || [];
+    const ids = profileRows.map(profile => profile.id);
+    const { data: assignments, error: assignmentError } = ids.length
+      ? await client.from('profile_role_assignments').select('user_id, role, granted_at, granted_by, revoked_at').in('user_id', ids).is('revoked_at', null)
+      : { data: [], error: null };
+    if (assignmentError) throw assignmentError;
+    const authUsersById = new Map<string, AdminAuthAccount>(authUsers.map(user => [user.id, user] as const));
+    const rolesByUser = new Map<string, Array<{ role: string; granted_at: string; granted_by: string | null }>>();
+    for (const assignment of assignments || []) {
+      const roles = rolesByUser.get(assignment.user_id) || [];
+      roles.push({ role: assignment.role, granted_at: assignment.granted_at, granted_by: assignment.granted_by });
+      rolesByUser.set(assignment.user_id, roles);
+    }
+    const accounts = profileRows.map(profile => {
+      const authUser = authUsersById.get(profile.id);
+      const suspended = authUser ? isAuthUserSuspended(authUser) : false;
+      return {
+        ...profile,
+        roles: rolesByUser.get(profile.id) || [],
+        status: !authUser ? 'unknown' : suspended ? 'suspended' : authUser.invited_at && !authUser.last_sign_in_at ? 'invited' : 'active',
+      };
+    });
+    return res.json({ success: true, accounts, limited: profileRows.length === 500 });
+  } catch (error: any) {
+    console.error('Admin account listing failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'ADMIN_ACCOUNTS_FAILED', message: 'Could not load account data.' });
+  }
+});
+
+app.post('/api/church/admin/accounts/invite', requireRoleAdmin, async (req, res) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : null;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ success: false, error: 'INVALID_EMAIL', message: 'A valid email address is required.' });
+  }
+  if (reason && reason.length > 1000) {
+    return res.status(400).json({ success: false, error: 'INVALID_REASON', message: 'Reason must be 1000 characters or fewer.' });
+  }
+  try {
+    const authContext = (req as any).verifiedAuth as ServerAuthContext;
+    const client = getTrustedRoleClient();
+    const { error: requestAuditError } = await client.from('admin_action_audit').insert({
+      actor_id: authContext.userId,
+      operation: 'account_invitation_requested',
+      reason,
+      details: { email }
+    });
+    if (requestAuditError) throw requestAuditError;
+    const { data, error } = await client.auth.admin.inviteUserByEmail(email);
+    if (error) throw error;
+    const { error: auditError } = await client.from('admin_action_audit').insert({
+      actor_id: authContext.userId,
+      target_user_id: data.user?.id || null,
+      operation: 'account_invited',
+      reason,
+      details: { email }
+    });
+    if (auditError) throw auditError;
+    return res.status(201).json({ success: true, invited: true, userId: data.user?.id || null });
+  } catch (error: any) {
+    console.error('Admin account invitation failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'ACCOUNT_INVITE_FAILED', message: 'Could not complete and audit the account invitation.' });
+  }
+});
+
+app.post('/api/church/admin/accounts/:userId/status', requireRoleAdmin, async (req, res) => {
+  const targetUserId = req.params.userId;
+  const action = req.body?.action;
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : null;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId) ||
+      !['suspend', 'reactivate'].includes(action)) {
+    return res.status(400).json({ success: false, error: 'INVALID_ACCOUNT_ACTION', message: 'A valid account ID and suspend/reactivate action are required.' });
+  }
+  if (reason && reason.length > 1000) {
+    return res.status(400).json({ success: false, error: 'INVALID_REASON', message: 'Reason must be 1000 characters or fewer.' });
+  }
+  try {
+    const authContext = (req as any).verifiedAuth as ServerAuthContext;
+    if (targetUserId === authContext.userId) {
+      return res.status(403).json({ success: false, error: 'SELF_SUSPENSION_FORBIDDEN', message: 'Administrators cannot suspend their own account.' });
+    }
+    const client = getTrustedRoleClient();
+    const { data: target, error: lookupError } = await client.auth.admin.getUserById(targetUserId);
+    if (lookupError) throw lookupError;
+    if (!target.user) return res.status(404).json({ success: false, error: 'ACCOUNT_NOT_FOUND', message: 'Account was not found.' });
+    if (action === 'suspend' && await hasAssignedRoleForUser(targetUserId, 'admin')) {
+      const activeAdmins = await getActiveAdminAccountIds();
+      if (activeAdmins.has(targetUserId) && activeAdmins.size <= 1) {
+        return res.status(409).json({ success: false, error: 'LAST_ACTIVE_ADMIN', message: 'The last active administrator cannot be suspended.' });
+      }
+    }
+    const operation = action === 'suspend' ? 'account_suspension_requested' : 'account_reactivation_requested';
+    const { error: requestAuditError } = await client.from('admin_action_audit').insert({
+      actor_id: authContext.userId, target_user_id: targetUserId,
+      operation, reason, details: {}
+    });
+    if (requestAuditError) throw requestAuditError;
+    const { error: updateError } = await client.auth.admin.updateUserById(targetUserId, {
+      ban_duration: action === 'suspend' ? '876000h' : 'none'
+    });
+    if (updateError) throw updateError;
+    const { error: auditError } = await client.from('admin_action_audit').insert({
+      actor_id: authContext.userId,
+      target_user_id: targetUserId,
+      operation: action === 'suspend' ? 'account_suspended' : 'account_reactivated',
+      reason,
+      details: { previousBannedUntil: target.user.banned_until || null }
+    });
+    if (auditError) throw auditError;
+    return res.json({ success: true, userId: targetUserId, status: action === 'suspend' ? 'suspended' : 'active' });
+  } catch (error: any) {
+    console.error('Admin account status update failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'ACCOUNT_STATUS_FAILED', message: 'Could not complete and audit the account status change.' });
+  }
+});
+
+app.get('/api/church/admin/families', requireRoleAdmin, async (_req, res) => {
+  try {
+    const client = getTrustedRoleClient();
+    const { data: relationships, error } = await client.from('user_relationships')
+      .select('id, parent_id, child_id, relationship_type, created_at')
+      .order('created_at', { ascending: false }).limit(200);
+    if (error) throw error;
+    const ids = [...new Set((relationships || []).flatMap(row => [row.parent_id, row.child_id]))];
+    const { data: profiles, error: profileError } = ids.length
+      ? await client.from('profiles').select('id, name, email').in('id', ids)
+      : { data: [], error: null };
+    if (profileError) throw profileError;
+    const byId = new Map((profiles || []).map(profile => [profile.id, profile]));
+    return res.json({
+      success: true,
+      relationships: (relationships || []).map(row => ({
+        ...row, parent: byId.get(row.parent_id) || null, child: byId.get(row.child_id) || null
+      }))
+    });
+  } catch (error: any) {
+    console.error('Admin family listing failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'ADMIN_FAMILIES_FAILED', message: 'Could not load family relationship data.' });
+  }
+});
+
+app.get('/api/church/admin/classes', requireRoleAdmin, async (_req, res) => {
+  try {
+    const client = getTrustedRoleClient();
+    const { data: year, error: yearError } = await client.from('church_years')
+      .select('id, name').eq('is_active', true).maybeSingle();
+    if (yearError) throw yearError;
+    if (!year) return res.json({ success: true, year: null, classes: [] });
+    const [{ data: classes, error: classError }, { data: assignments, error: assignmentError }, { data: members, error: memberError }] = await Promise.all([
+      client.from('class_instances').select('id, class_group_id, name_en, name_ar').eq('church_year_id', year.id),
+      client.from('servant_class_assignments').select('id, class_instance_id, servant_id, is_active, assigned_at').eq('church_year_id', year.id).eq('is_active', true),
+      client.from('class_memberships').select('class_instance_id, student_id').eq('church_year_id', year.id).eq('status', 'active'),
+    ]);
+    if (classError || assignmentError || memberError) throw classError || assignmentError || memberError;
+    const ids = [...new Set([...(assignments || []).map(row => row.servant_id), ...(members || []).map(row => row.student_id)])];
+    const { data: profiles, error: profileError } = ids.length
+      ? await client.from('profiles').select('id, name').in('id', ids)
+      : { data: [], error: null };
+    if (profileError) throw profileError;
+    const byId = new Map((profiles || []).map(profile => [profile.id, profile]));
+    return res.json({
+      success: true,
+      year,
+      classes: (classes || []).map(classRow => ({
+        ...classRow,
+        students: (members || []).filter(member => member.class_instance_id === classRow.id)
+          .map(member => ({ id: member.student_id, name: byId.get(member.student_id)?.name || null })),
+        servants: (assignments || []).filter(assignment => assignment.class_instance_id === classRow.id)
+          .map(assignment => ({ ...assignment, name: byId.get(assignment.servant_id)?.name || null })),
+      }))
+    });
+  } catch (error: any) {
+    console.error('Admin class listing failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'ADMIN_CLASSES_FAILED', message: 'Could not load class and assignment data.' });
+  }
+});
+
+app.post('/api/church/admin/servant-assignments', requireRoleAdmin, async (req, res) => {
+  const servantId = typeof req.body?.servantId === 'string' ? req.body.servantId : '';
+  const classGroupId = typeof req.body?.classGroupId === 'string' ? req.body.classGroupId : '';
+  const action = req.body?.action;
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : null;
+  const validGroups = ['angels', 'primary_1', 'primary_2', 'preparatory', 'secondary', 'university'];
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(servantId) ||
+      !validGroups.includes(classGroupId) || !['ASSIGN', 'REMOVE'].includes(action)) {
+    return res.status(400).json({ success: false, error: 'INVALID_ASSIGNMENT', message: 'A valid servant account, class, and action are required.' });
+  }
+  if (reason && reason.length > 1000) {
+    return res.status(400).json({ success: false, error: 'INVALID_REASON', message: 'Reason must be 1000 characters or fewer.' });
+  }
+  try {
+    const authContext = (req as any).verifiedAuth as ServerAuthContext;
+    const client = getTrustedRoleClient();
+    const [{ data: activeYear, error: yearError }, { data: servant, error: profileError }] = await Promise.all([
+      client.from('church_years').select('id').eq('is_active', true).maybeSingle(),
+      client.from('profiles').select('id').eq('id', servantId).maybeSingle(),
+    ]);
+    if (yearError || profileError) throw yearError || profileError;
+    if (!activeYear) return res.status(409).json({ success: false, error: 'NO_ACTIVE_YEAR', message: 'No active church year is configured.' });
+    if (!servant) return res.status(404).json({ success: false, error: 'SERVANT_NOT_FOUND', message: 'Servant account was not found.' });
+    if (!await hasAssignedRoleForUser(servantId, 'teacher')) {
+      return res.status(400).json({ success: false, error: 'NOT_A_SERVANT', message: 'The account does not have an active Servant role.' });
+    }
+    const { data: classInstance, error: classError } = await client.from('class_instances')
+      .select('id').eq('church_year_id', activeYear.id).eq('class_group_id', classGroupId).maybeSingle();
+    if (classError) throw classError;
+    if (!classInstance) return res.status(404).json({ success: false, error: 'CLASS_NOT_FOUND', message: 'Class was not found in the active church year.' });
+    const { error: requestAuditError } = await client.from('admin_action_audit').insert({
+      actor_id: authContext.userId,
+      target_user_id: servantId,
+      operation: action === 'ASSIGN' ? 'servant_class_assignment_requested' : 'servant_class_unassignment_requested',
+      reason,
+      details: { classGroupId, churchYearId: activeYear.id, classInstanceId: classInstance.id }
+    });
+    if (requestAuditError) throw requestAuditError;
+    const { data: existing, error: assignmentError } = await client.from('servant_class_assignments')
+      .select('id, is_active').eq('church_year_id', activeYear.id)
+      .eq('class_instance_id', classInstance.id).eq('servant_id', servantId).maybeSingle();
+    if (assignmentError) throw assignmentError;
+    if (action === 'ASSIGN') {
+      const { error } = existing
+        ? await client.from('servant_class_assignments').update({
+            is_active: true, assigned_by: authContext.userId, assigned_at: new Date().toISOString()
+          }).eq('id', existing.id)
+        : await client.from('servant_class_assignments').insert({
+            id: randomUUID(), church_year_id: activeYear.id, class_instance_id: classInstance.id,
+            servant_id: servantId, assigned_by: authContext.userId, is_active: true
+          });
+      if (error) throw error;
+    } else if (existing?.is_active) {
+      const { error } = await client.from('servant_class_assignments').update({ is_active: false }).eq('id', existing.id);
+      if (error) throw error;
+    }
+    const { error: auditError } = await client.from('admin_action_audit').insert({
+      actor_id: authContext.userId,
+      target_user_id: servantId,
+      operation: action === 'ASSIGN' ? 'servant_class_assigned' : 'servant_class_unassigned',
+      reason,
+      details: { classGroupId, churchYearId: activeYear.id, classInstanceId: classInstance.id }
+    });
+    if (auditError) throw auditError;
+    return res.json({ success: true, servantId, classGroupId, action });
+  } catch (error: any) {
+    console.error('Admin servant assignment failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'SERVANT_ASSIGNMENT_FAILED', message: 'Could not complete and audit the servant assignment.' });
+  }
+});
+
+app.post('/api/church/admin/support-sessions', requireRoleAdmin, async (req, res) => {
+  const targetUserId = typeof req.body?.targetUserId === 'string' ? req.body.targetUserId.trim() : '';
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId) ||
+      !reason || reason.length > 1000) {
+    return res.status(400).json({ success: false, error: 'INVALID_SUPPORT_REQUEST', message: 'A valid target account and support reason are required.' });
+  }
+  try {
+    const authContext = (req as any).verifiedAuth as ServerAuthContext;
+    const client = getTrustedRoleClient();
+    const [{ data: profile, error: profileError }, { data: assignments, error: assignmentError }] = await Promise.all([
+      client.from('profiles').select('id, name, email, role, grade').eq('id', targetUserId).maybeSingle(),
+      client.from('profile_role_assignments').select('role, granted_at, granted_by').eq('user_id', targetUserId).is('revoked_at', null),
+    ]);
+    if (profileError || assignmentError) throw profileError || assignmentError;
+    if (!profile) return res.status(404).json({ success: false, error: 'ACCOUNT_NOT_FOUND', message: 'Account was not found.' });
+    const roles = (assignments || []).map(item => item.role as ServerRole);
+    const [studentMemberships, servantAssignments, familyLinks] = await Promise.all([
+      roles.includes('student')
+        ? client.from('class_memberships').select('church_year_id, class_instance_id, exact_grade, status, joined_at').eq('student_id', targetUserId)
+        : Promise.resolve({ data: [], error: null }),
+      roles.includes('teacher')
+        ? client.from('servant_class_assignments').select('church_year_id, class_instance_id, is_active, assigned_at').eq('servant_id', targetUserId).eq('is_active', true)
+        : Promise.resolve({ data: [], error: null }),
+      roles.includes('parent')
+        ? client.from('user_relationships').select('child_id, relationship_type, created_at').eq('parent_id', targetUserId)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (studentMemberships.error || servantAssignments.error || familyLinks.error) {
+      throw studentMemberships.error || servantAssignments.error || familyLinks.error;
+    }
+    const { error: auditError } = await client.from('admin_action_audit').insert({
+      actor_id: authContext.userId,
+      target_user_id: targetUserId,
+      operation: 'support_access_opened',
+      reason,
+      details: { readOnly: true, roles }
+    });
+    if (auditError) throw auditError;
+    return res.json({
+      success: true,
+      supportSession: { targetUserId, startedAt: new Date().toISOString(), readOnly: true },
+      account: {
+        ...profile,
+        roles: assignments || [],
+        workspaceData: {
+          studentMemberships: studentMemberships.data || [],
+          servantAssignments: servantAssignments.data || [],
+          familyLinks: familyLinks.data || [],
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Admin support access failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'SUPPORT_ACCESS_FAILED', message: 'Could not audit and open support access.' });
+  }
+});
+
+app.post('/api/church/admin/support-sessions/:targetUserId/close', requireRoleAdmin, async (req, res) => {
+  const targetUserId = req.params.targetUserId;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId)) {
+    return res.status(400).json({ success: false, error: 'INVALID_TARGET', message: 'Target account ID is invalid.' });
+  }
+  try {
+    const authContext = (req as any).verifiedAuth as ServerAuthContext;
+    const { error } = await getTrustedRoleClient().from('admin_action_audit').insert({
+      actor_id: authContext.userId, target_user_id: targetUserId,
+      operation: 'support_access_closed', details: { readOnly: true }
+    });
+    if (error) throw error;
+    return res.json({ success: true });
+  } catch (error: any) {
+    console.error('Admin support-session close failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'SUPPORT_CLOSE_FAILED', message: 'Could not audit support-session closure.' });
+  }
+});
+
+app.get('/api/church/admin/action-audit', requireRoleAdmin, async (req, res) => {
+  const targetUserId = typeof req.query.targetUserId === 'string' ? req.query.targetUserId : '';
+  if (targetUserId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId)) {
+    return res.status(400).json({ success: false, error: 'INVALID_TARGET', message: 'Target account ID is invalid.' });
+  }
+  try {
+    const client = getTrustedRoleClient();
+    let query = client.from('admin_action_audit')
+      .select('id, actor_id, target_user_id, operation, reason, details, occurred_at')
+      .order('occurred_at', { ascending: false }).limit(200);
+    if (targetUserId) query = query.eq('target_user_id', targetUserId);
+    const { data, error } = await query;
+    if (error) throw error;
+    return res.json({ success: true, audit: data || [] });
+  } catch (error: any) {
+    console.error('Admin action audit listing failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'ADMIN_AUDIT_FAILED', message: 'Could not load administrative audit history.' });
+  }
+});
+
+app.get('/api/church/admin/users', requireRoleAdmin, (_req, res) => {
+  return res.status(410).json({
+    success: false,
+    error: 'ENDPOINT_RETIRED',
+    message: 'Use /api/church/admin/accounts for authoritative account data.'
+  });
+});
+
+app.post('/api/church/admin/promote-user', requireRoleAdmin, (_req, res) => {
+  return res.status(410).json({
+    success: false,
+    error: 'ENDPOINT_RETIRED',
+    message: 'Use /api/church/admin/role-assignments for audited role changes.'
+  });
+});
+
+app.post('/api/church/admin/assign-servant', requireRoleAdmin, (_req, res) => {
+  return res.status(410).json({
+    success: false,
+    error: 'ENDPOINT_RETIRED',
+    message: 'Use /api/church/admin/servant-assignments for authoritative assignments.'
+  });
+});
 
 
 async function checkFileBelongsToPublishedLesson(
@@ -267,7 +1130,7 @@ app.get("/uploads/:filename", async (req, res) => {
 
     // 3. Authorization rules:
     // a) Admins have universal oversight
-    if (authContext.role === "admin") {
+    if (hasServerRole(authContext, 'admin')) {
       return res.sendFile(filePath);
     }
 
@@ -279,14 +1142,14 @@ app.get("/uploads/:filename", async (req, res) => {
 
     // c) If NOT published, it is a private teacher draft:
     // Students and parents must NEVER access private draft materials
-    if (authContext.role === "student" || authContext.role === "parent") {
+    if (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent')) {
       return res.status(403).json({
         error: "Access denied: students and parents cannot access private teacher draft materials"
       });
     }
 
     // d) Teachers may only access their own draft sources
-    if (authContext.role === "teacher") {
+    if (hasServerRole(authContext, 'teacher')) {
       const isOwner = await checkTeacherOwnership(safeFilename, fileMeta, authContext.userId);
       if (isOwner) {
         return res.sendFile(filePath);
@@ -588,12 +1451,11 @@ function requireAiAuth(allowedRoles: Array<'student' | 'teacher' | 'admin' | 'pa
         });
       }
 
-      const role = authContext.role;
-      if (role && !allowedRoles.includes(role)) {
+      if (!hasAnyServerRole(authContext, allowedRoles)) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: `Access denied. Role '${role}' is not authorized for this AI operation.`
+          message: "Access denied. No assigned role is authorized for this AI operation."
         });
       }
 
@@ -974,7 +1836,7 @@ app.post("/api/church/build-evidence-map", requireAiAuth(['teacher', 'admin']), 
     const authContext = (req as any).verifiedAuth as ServerAuthContext;
 
     // If user is a teacher (and not admin), check ownership of lesson
-    if (lessonId && authContext.role !== 'admin') {
+    if (lessonId && !hasServerRole(authContext, 'admin')) {
       const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
 
         const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
@@ -1292,7 +2154,7 @@ app.post("/api/church/create-outline", requireAiAuth(['teacher', 'admin']), asyn
     const authContext = (req as any).verifiedAuth as ServerAuthContext;
 
     // If user is a teacher (and not admin), check ownership of lesson
-    if (lessonId && authContext.role !== 'admin') {
+    if (lessonId && !hasServerRole(authContext, 'admin')) {
         const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
         const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
         if (supabaseUrl && supabaseAnonKey) {
@@ -1577,7 +2439,7 @@ app.post("/api/church/generate-lesson-pipeline", requireAiAuth(['teacher', 'admi
     const authContext = (req as any).verifiedAuth as ServerAuthContext;
 
     // If user is a teacher (and not admin), check ownership of lesson
-    if (lessonId && authContext.role !== 'admin') {
+    if (lessonId && !hasServerRole(authContext, 'admin')) {
       const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
 
         const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
@@ -2118,7 +2980,7 @@ app.post("/api/church/generate-tts", requireAiAuth(['teacher', 'admin']), async 
     }
 
     // Verify content ownership for teachers
-    if (authContext.role === 'teacher' && targetLesson) {
+    if (hasServerRole(authContext, 'teacher') && targetLesson) {
       const owner = targetLesson.createdBy || targetLesson.authorId;
       if (owner && owner !== authContext.userId &&
           !(authContext.userId === 'mina' && owner === 'user_teacher_mina_101') &&
@@ -2175,7 +3037,7 @@ app.post("/api/church/generate-tts", requireAiAuth(['teacher', 'admin']), async 
         mimeType: "audio/wav",
         size: audioBuffer.length,
         uploadedBy: authContext.userId,
-        uploaderRole: authContext.role,
+        uploaderRoles: authContext.roles,
         lessonId: lessonId || null,
         isPublic: false,
         uploadType: "source",
@@ -3631,10 +4493,10 @@ async function authorizeLessonWorkflow(
     return null;
   }
 
-  if (authContext.role === 'admin') {
+  if (hasServerRole(authContext, 'admin')) {
     return authContext;
   }
-  if (authContext.role !== 'teacher') {
+  if (!hasServerRole(authContext, 'teacher')) {
     res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only assigned teachers or administrators can manage lesson review." });
     return null;
   }
@@ -3885,7 +4747,7 @@ app.post("/api/church/publish-approved-lesson-version", async (req, res) => {
     if (!authContext.isAuthenticated || !authContext.userId) {
       return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Authentication is required." });
     }
-    if (authContext.role !== "teacher" && authContext.role !== "admin") {
+    if (!hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin')) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers and administrators may publish lessons." });
     }
 
@@ -3920,7 +4782,7 @@ app.post("/api/church/publish-approved-lesson-version", async (req, res) => {
     if (!version) {
       return res.status(404).json({ success: false, error: "VERSION_NOT_FOUND", message: "The lesson version was not found." });
     }
-    if (authContext.role === "teacher" && version.created_by !== authContext.userId) {
+    if (hasServerRole(authContext, 'teacher') && version.created_by !== authContext.userId) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Teachers may publish only their own approved lesson versions." });
     }
     if (version.status !== "APPROVED" || !version.approved_by || !version.approved_at) {
@@ -3930,7 +4792,7 @@ app.post("/api/church/publish-approved-lesson-version", async (req, res) => {
         message: "Only approved versions with approval metadata can be published."
       });
     }
-    if (authContext.role === "teacher") {
+    if (hasServerRole(authContext, 'teacher')) {
       const { data: lesson, error: lessonError } = await adminClient
         .from("lessons")
         .select("grade_level")
@@ -4238,10 +5100,10 @@ app.get("/api/church/active-version", async (req, res) => {
     // Apply authorization in the backend
     const authContext = await verifyServerRequestAuth(req);
     let targetStudentId = String(req.query.studentId || '');
-    if (authContext.isAuthenticated && authContext.role === 'student') {
+    if (authContext.isAuthenticated && hasServerRole(authContext, 'student')) {
       targetStudentId = authContext.userId ?? '';
     }
-    if (targetStudentId && (!authContext.isAuthenticated || authContext.role === 'student')) {
+    if (targetStudentId && (!authContext.isAuthenticated || hasServerRole(authContext, 'student'))) {
       const access = checkStudentLessonAccess(targetStudentId, lessonRecord);
       if (!access.allowed) {
         return res.status(403).json({
@@ -4284,10 +5146,10 @@ app.get("/api/church/lesson-versions", async (req, res) => {
 
     // Authorize student access
     let targetStudentId = String(req.query.studentId || '');
-    if (authContext.isAuthenticated && authContext.role === 'student') {
+    if (authContext.isAuthenticated && hasServerRole(authContext, 'student')) {
       targetStudentId = authContext.userId ?? '';
     }
-    if (targetStudentId && (!authContext.isAuthenticated || authContext.role === 'student')) {
+    if (targetStudentId && (!authContext.isAuthenticated || hasServerRole(authContext, 'student'))) {
       const access = checkStudentLessonAccess(targetStudentId, lessonRecord);
       if (!access.allowed) {
         return res.status(403).json({
@@ -4303,7 +5165,7 @@ app.get("/api/church/lesson-versions", async (req, res) => {
     );
 
     // Strict Model B RLS: Student, parent, or anonymous users can ONLY see the active version
-    if (!authContext.isAuthenticated || authContext.role === 'student' || authContext.role === 'parent') {
+    if (!authContext.isAuthenticated || hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent')) {
       const activeId = lessonRecord?.active_version_id;
       const visibleVersions = allLessonVersions.filter(
         (v: any) => v.id === activeId && v.status === 'PUBLISHED'
@@ -4418,8 +5280,8 @@ function ensurePublishedLessonAndVersion(lessonId: string, versionId?: string) {
 
   const effectiveVersionId = versionId || lessonRecord?.active_version_id;
   let targetVersion = effectiveVersionId ? serverReviewState.versions[effectiveVersionId] : null;
-  if (!targetVersion && effectiveVersionId && (lessonId === 'l-cross-01' || lessonRecord.status === 'published')) {
-    targetVersion = {
+  if (!targetVersion && effectiveVersionId) {
+    const generatedVersion = {
       id: effectiveVersionId,
       lessonId,
       versionNumber: 1,
@@ -4479,7 +5341,12 @@ function ensurePublishedLessonAndVersion(lessonId: string, versionId?: string) {
         ]
       }
     };
-    serverReviewState.versions[effectiveVersionId] = targetVersion;
+    targetVersion = generatedVersion;
+    serverReviewState.versions[effectiveVersionId] = generatedVersion;
+    if (lessonRecord) {
+      lessonRecord.status = 'published';
+      lessonRecord.active_version_id = effectiveVersionId;
+    }
   }
 
   return { lessonRecord, targetVersion };
@@ -4512,7 +5379,7 @@ async function authorizeStudentDataAccess(
     return null;
   }
 
-  if (authContext.role === 'student') {
+  if (hasServerRole(authContext, 'student')) {
     if (requestedStudentId && requestedStudentId !== authContext.userId) {
       res.status(403).json({ success: false, error: "FORBIDDEN", message: "Students can only access their own learning data." });
       return null;
@@ -4524,10 +5391,10 @@ async function authorizeStudentDataAccess(
     res.status(400).json({ success: false, error: "MISSING_PARAMS", message: "studentId is required for delegated access." });
     return null;
   }
-  if (authContext.role === 'admin') {
+  if (hasServerRole(authContext, 'admin')) {
     return requestedStudentId;
   }
-  if (authContext.role === 'parent') {
+  if (hasServerRole(authContext, 'parent')) {
     const related = serverReviewState.parentChildRelationships.some(
       relation => relation.parentId === authContext.userId &&
         relation.childId === requestedStudentId &&
@@ -4536,7 +5403,7 @@ async function authorizeStudentDataAccess(
     if (related) {
       return requestedStudentId;
     }
-  } else if (authContext.role === 'teacher') {
+  } else if (hasServerRole(authContext, 'teacher')) {
     const studentGroups = getStudentClassGroups(requestedStudentId);
     const savedAssignments = Object.prototype.hasOwnProperty.call(serverReviewState.teacherAssignments, authContext.userId)
       ? serverReviewState.teacherAssignments[authContext.userId]
@@ -4561,7 +5428,7 @@ async function authorizeStudentProgressWrite(
     res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Authentication is required." });
     return null;
   }
-  if (authContext.role !== 'student') {
+  if (!hasServerRole(authContext, 'student')) {
     res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only students can write their own learning progress." });
     return null;
   }
@@ -5441,7 +6308,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
 
     let effectiveClassGroup = requestedClassGroupId;
 
-    if (authContext.isAuthenticated && authContext.role === 'student') {
+    if (authContext.isAuthenticated && hasServerRole(authContext, 'student')) {
       const studentClassGroup = serverReviewState.studentClasses[authContext.userId]?.classGroupId || 'primary_2';
       if (requestedClassGroupId && requestedClassGroupId !== studentClassGroup) {
         return res.status(403).json({
@@ -5814,7 +6681,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     }
 
     // Only a verified student profile may submit quiz attempts.
-    if (authContext.role !== 'student') {
+    if (!hasServerRole(authContext, 'student')) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -6216,7 +7083,7 @@ app.get("/api/church/student-quiz/attempts", async (req, res) => {
       });
     }
 
-    if (authContext.role === 'student') {
+    if (hasServerRole(authContext, 'student')) {
       // Authenticated student can ONLY view their own attempts
       if (targetStudentId && targetStudentId !== authContext.userId) {
         return res.status(403).json({
@@ -6226,7 +7093,7 @@ app.get("/api/church/student-quiz/attempts", async (req, res) => {
         });
       }
       targetStudentId = authContext.userId;
-    } else if (authContext.role === 'teacher') {
+    } else if (hasServerRole(authContext, 'teacher')) {
       if (!targetStudentId) {
         return res.status(400).json({
           success: false,
@@ -6243,7 +7110,7 @@ app.get("/api/church/student-quiz/attempts", async (req, res) => {
           message: "Teachers can only access quiz attempts for students in their assigned classes."
         });
       }
-    } else if (authContext.role === 'parent') {
+    } else if (hasServerRole(authContext, 'parent')) {
       // Parents can only view their own children
       const isChild = serverReviewState.parentChildRelationships?.some(
         r => r.parentId === authContext.userId && r.childId === targetStudentId
@@ -6255,7 +7122,7 @@ app.get("/api/church/student-quiz/attempts", async (req, res) => {
           message: "Parents cannot view quiz attempts for students other than their children."
         });
       }
-    } else if (authContext.role === 'admin') {
+    } else if (hasServerRole(authContext, 'admin')) {
       if (!targetStudentId) {
         targetStudentId = authContext.userId;
       }
@@ -6381,7 +7248,7 @@ app.get("/api/church/student-mastery", async (req, res) => {
 
     const authContext = await verifyServerRequestAuth(req);
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
+      if (hasServerRole(authContext, 'student')) {
         // Authenticated student can ONLY view their own mastery
         if (targetStudentId && targetStudentId !== authContext.userId) {
           return res.status(403).json({
@@ -6475,7 +7342,7 @@ app.post("/api/church/student-mastery/evaluate", async (req, res) => {
     const authContext = await verifyServerRequestAuth(req);
     if (authContext.isAuthenticated) {
       // Parents and teachers cannot write student mastery evaluations
-      if (authContext.role === 'parent' || authContext.role === 'teacher') {
+      if (hasServerRole(authContext, 'parent') || hasServerRole(authContext, 'teacher')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -6585,7 +7452,289 @@ app.get("/api/church/classes", async (req, res) => {
   }
 });
 
+app.get("/api/church/servant/profile-classes", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to view your assigned service classes." });
+    }
+    if (!hasServerRole(authContext, 'teacher')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "A servant role is required to view assigned classes." });
+    }
+
+    const client = getTrustedProgressClient();
+    const { data: activeYear, error: yearError } = await client
+      .from('church_years')
+      .select('id, name')
+      .eq('is_active', true)
+      .maybeSingle();
+    if (yearError) throw new Error(`Could not load active church year: ${yearError.message}`);
+    if (!activeYear) return res.json({ success: true, classes: [] });
+
+    const { data: assignments, error: assignmentError } = await client
+      .from('servant_class_assignments')
+      .select('class_instance_id')
+      .eq('servant_id', authContext.userId)
+      .eq('church_year_id', activeYear.id)
+      .eq('is_active', true);
+    if (assignmentError) throw new Error(`Could not load assigned classes: ${assignmentError.message}`);
+
+    const classIds = [...new Set((assignments || []).map(assignment => assignment.class_instance_id).filter(Boolean))];
+    if (classIds.length === 0) return res.json({ success: true, classes: [] });
+
+    const { data: classInstances, error: classError } = await client
+      .from('class_instances')
+      .select('id, class_group_id, name_en, name_ar')
+      .in('id', classIds)
+      .eq('church_year_id', activeYear.id);
+    if (classError) throw new Error(`Could not load assigned class details: ${classError.message}`);
+
+    return res.json({
+      success: true,
+      classes: (classInstances || []).map(classroom => ({
+        id: classroom.id,
+        classGroupId: classroom.class_group_id,
+        name: classroom.name_en || classroom.class_group_id,
+        nameAr: classroom.name_ar || classroom.class_group_id,
+        churchYearName: activeYear.name
+      }))
+    });
+  } catch (error: any) {
+    console.error("Servant profile class lookup failed:", error);
+    return res.status(500).json({
+      success: false,
+      error: "SERVANT_PROFILE_CLASSES_FAILED",
+      message: error instanceof Error ? error.message : "Could not load assigned service classes."
+    });
+  }
+});
+
 // 2. Get Student's Own Class / Servant's Assigned Class
+app.get("/api/church/servant/home-summary", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to view your Servant Home." });
+    }
+    if (!hasServerRole(authContext, 'teacher')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "A servant role is required to view assigned class summaries." });
+    }
+
+    const client = getTrustedProgressClient();
+    const { data: activeYear, error: yearError } = await client
+      .from('church_years')
+      .select('id, name')
+      .eq('is_active', true)
+      .maybeSingle();
+    if (yearError) throw new Error(`Could not load active church year: ${yearError.message}`);
+
+    const { data: assignments, error: assignmentError } = activeYear
+      ? await client
+        .from('servant_class_assignments')
+        .select('class_instance_id')
+        .eq('servant_id', authContext.userId)
+        .eq('church_year_id', activeYear.id)
+        .eq('is_active', true)
+      : { data: [], error: null };
+    if (assignmentError) throw new Error(`Could not load servant class assignments: ${assignmentError.message}`);
+
+    const instanceIds = [...new Set((assignments || []).map(row => row.class_instance_id).filter(Boolean))];
+    let classes: Array<{ id: string; classGroupId: string; name: string; nameAr: string; studentCount: number; completedLessons: number; progressRecords: number; curriculumCount: number; lastActivityAt: string | null }> = [];
+    let recentActivity: Array<{ lessonId: string; title: string; titleAr: string; classGroupId: string; completedAt: string }> = [];
+    let upcomingEvents: Array<{ id: string; title: string; titleAr: string; type: string; dateTime: string; location: string | null; locationAr: string | null }> = [];
+    let scheduledPublications: Array<{ lessonId: string; title: string; titleAr: string; classGroupId: string; scheduledAt: string }> = [];
+    let publicationScheduleAvailable = true;
+    let publicationScheduleError: string | null = null;
+    let lessonsAwaitingReview = 0;
+    let totals = { students: 0, completedLessons: 0, progressRecords: 0, curriculumCount: 0 };
+    let studentsWithoutProgress = 0;
+
+    if (instanceIds.length > 0) {
+      const { data: instances, error: instanceError } = await client
+        .from('class_instances')
+        .select('id, class_group_id, name_en, name_ar')
+        .in('id', instanceIds)
+        .eq('church_year_id', activeYear!.id);
+      if (instanceError) throw new Error(`Could not load assigned classes: ${instanceError.message}`);
+
+      const activeInstances = instances || [];
+      const { data: memberships, error: membershipError } = await client
+        .from('class_memberships')
+        .select('class_instance_id, student_id, exact_grade')
+        .in('class_instance_id', activeInstances.map(row => row.id))
+        .eq('church_year_id', activeYear!.id)
+        .eq('status', 'active');
+      if (membershipError) throw new Error(`Could not load assigned class rosters: ${membershipError.message}`);
+
+      const roster = memberships || [];
+      const studentIds = [...new Set(roster.map(row => row.student_id).filter(Boolean))];
+      totals.students = studentIds.length;
+
+      const progressRows: Array<{ student_id: string; lesson_id: string; completed: boolean; completed_at: string | null }> = [];
+      for (let offset = 0; studentIds.length > 0; offset += 1000) {
+        const { data, error } = await client
+          .from('lesson_progress')
+          .select('student_id, lesson_id, completed, completed_at')
+          .in('student_id', studentIds)
+          .order('completed_at', { ascending: false, nullsFirst: false })
+          .range(offset, offset + 999);
+        if (error) throw new Error(`Could not load assigned students' lesson progress: ${error.message}`);
+        const page = data || [];
+        progressRows.push(...page);
+        if (page.length < 1000) break;
+      }
+
+      const lessonIds = [...new Set(progressRows.map(row => row.lesson_id).filter(Boolean))];
+      const { data: progressLessons, error: progressLessonError } = lessonIds.length > 0
+        ? await client.from('lessons').select('id, title_en, title_ar').in('id', lessonIds)
+        : { data: [], error: null };
+      if (progressLessonError) throw new Error(`Could not load activity lesson titles: ${progressLessonError.message}`);
+      const progressLessonMap = new Map((progressLessons || []).map(lesson => [lesson.id, lesson]));
+      const classesById = new Map(activeInstances.map(instance => [instance.id, instance]));
+
+      const { data: curriculum, error: curriculumError } = await client
+        .from('lessons')
+        .select('id, title_en, title_ar, grade_level, status, lesson_status')
+        .limit(5000);
+      if (curriculumError) throw new Error(`Could not load curriculum status: ${curriculumError.message}`);
+      const assignedCurriculum = (curriculum || []).filter(lesson =>
+        activeInstances.some(instance => getClassGroupIdForGrade(lesson.grade_level) === instance.class_group_id)
+      );
+      const assignedLessonIds = assignedCurriculum.map(lesson => lesson.id);
+
+      if (assignedLessonIds.length > 0) {
+        const { data: jobs, error: jobsError } = await client
+          .from('lesson_publication_jobs')
+          .select('lesson_id, scheduled_at')
+          .in('lesson_id', assignedLessonIds)
+          .eq('status', 'scheduled')
+          .gte('scheduled_at', new Date().toISOString())
+          .order('scheduled_at', { ascending: true })
+          .limit(10);
+        if (jobsError) {
+          if (jobsError.code === '42P01' || jobsError.code === 'PGRST205') {
+            publicationScheduleAvailable = false;
+            publicationScheduleError = "Scheduled publishing is unavailable because its database migration is not installed.";
+            console.warn("Servant Home scheduled publication data is unavailable:", jobsError.message);
+          } else {
+            throw new Error(`Could not load scheduled lesson publications: ${jobsError.message}`);
+          }
+        } else {
+          const curriculumById = new Map(assignedCurriculum.map(lesson => [lesson.id, lesson]));
+          scheduledPublications = (jobs || []).flatMap(job => {
+            const lesson = curriculumById.get(job.lesson_id);
+            if (!lesson) return [];
+            return [{
+              lessonId: job.lesson_id,
+              title: lesson.title_en,
+              titleAr: lesson.title_ar,
+              classGroupId: getClassGroupIdForGrade(lesson.grade_level),
+              scheduledAt: job.scheduled_at
+            }];
+          });
+        }
+
+        const { data: reviewVersions, error: reviewError } = await client
+          .from('lesson_versions')
+          .select('lesson_id')
+          .in('lesson_id', assignedLessonIds)
+          .eq('status', 'SERVANT_REVIEW');
+        if (reviewError) throw new Error(`Could not load curriculum review status: ${reviewError.message}`);
+        lessonsAwaitingReview = new Set((reviewVersions || []).map(version => version.lesson_id)).size;
+      }
+
+      classes = activeInstances.map(instance => {
+        const classRoster = roster.filter(member => member.class_instance_id === instance.id);
+        const groupProgress = progressRows.filter(row => classRoster.some(member => member.student_id === row.student_id));
+        const groupCompleted = groupProgress.filter(row => row.completed);
+        const groupCurriculum = (curriculum || []).filter(lesson =>
+          getClassGroupIdForGrade(lesson.grade_level) === instance.class_group_id
+          && (lesson.status === 'published' || lesson.lesson_status === 'published')
+        );
+        return {
+          id: instance.id,
+          classGroupId: instance.class_group_id,
+          name: instance.name_en || instance.class_group_id,
+          nameAr: instance.name_ar || instance.class_group_id,
+          studentCount: classRoster.length,
+          completedLessons: groupCompleted.length,
+          progressRecords: groupProgress.length,
+          curriculumCount: groupCurriculum.length,
+          lastActivityAt: groupCompleted.map(row => row.completed_at).filter((value): value is string => Boolean(value)).sort().at(-1) || null
+        };
+      });
+
+      totals = {
+        students: studentIds.length,
+        completedLessons: progressRows.filter(row => row.completed).length,
+        progressRecords: progressRows.length,
+        curriculumCount: (curriculum || []).filter(lesson =>
+          activeInstances.some(instance => getClassGroupIdForGrade(lesson.grade_level) === instance.class_group_id)
+          && (lesson.status === 'published' || lesson.lesson_status === 'published')
+        ).length
+      };
+      const studentsWithProgress = new Set(progressRows.map(row => row.student_id));
+      studentsWithoutProgress = studentIds.filter(id => !studentsWithProgress.has(id)).length;
+      recentActivity = progressRows
+        .filter(row => row.completed && row.completed_at && classesById.has(roster.find(member => member.student_id === row.student_id)?.class_instance_id || ''))
+        .map(row => {
+          const member = roster.find(item => item.student_id === row.student_id);
+          const instance = member ? classesById.get(member.class_instance_id) : null;
+          const lesson = progressLessonMap.get(row.lesson_id);
+          return {
+            lessonId: row.lesson_id,
+            title: lesson?.title_en || 'Completed lesson',
+            titleAr: lesson?.title_ar || 'درس مكتمل',
+            classGroupId: instance?.class_group_id || '',
+            completedAt: row.completed_at!
+          };
+        })
+        .sort((a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt))
+        .slice(0, 8);
+    }
+
+    const { data: events, error: eventError } = await client
+      .from('church_events')
+      .select('id, title_en, title_ar, type, date_time, location_en, location_ar')
+      .gte('date_time', new Date().toISOString())
+      .order('date_time', { ascending: true })
+      .limit(4);
+    if (eventError) throw new Error(`Could not load upcoming church events: ${eventError.message}`);
+    upcomingEvents = (events || []).map(event => ({
+      id: event.id,
+      title: event.title_en,
+      titleAr: event.title_ar,
+      type: event.type,
+      dateTime: event.date_time,
+      location: event.location_en || null,
+      locationAr: event.location_ar || null
+    }));
+
+    return res.json({
+      success: true,
+      churchYear: activeYear?.name || null,
+      classes,
+      totals,
+      studentsWithoutProgress,
+      lessonsAwaitingReview,
+      recentActivity,
+      upcomingEvents,
+      scheduledPublications,
+      publicationScheduleAvailable,
+      publicationScheduleError,
+      attendanceAvailable: false,
+      checkedAt: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error("Servant Home summary query failed:", error);
+    return res.status(500).json({
+      success: false,
+      error: "SERVANT_HOME_SUMMARY_FAILED",
+      message: error instanceof Error ? error.message : "Could not load Servant Home data."
+    });
+  }
+});
+
 app.get("/api/church/my-class", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
@@ -6600,7 +7749,7 @@ app.get("/api/church/my-class", async (req, res) => {
     const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
 
     // A. Teacher / Servant / Admin calling my-class: return assigned class and authoritative roster
-    if (authContext.isAuthenticated && (authContext.role === 'teacher' || authContext.role === 'admin')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'teacher') || hasServerRole(authContext, 'admin'))) {
       const targetUserId = authContext.userId;
       let assignedClassGroupId = 'primary_2';
 
@@ -6639,7 +7788,7 @@ app.get("/api/church/my-class", async (req, res) => {
             }
           }
 
-          if (!assignedClassGroupId && authContext.role === 'teacher') {
+          if (!assignedClassGroupId && hasServerRole(authContext, 'teacher')) {
             const { data: assignments } = await client
               .from('servant_class_assignments')
               .select('class_instance_id')
@@ -6797,7 +7946,7 @@ app.get("/api/church/my-class", async (req, res) => {
             success: true,
             classInfo: {
               servantId: targetUserId,
-              role: authContext.role,
+              role: getPrimaryRoleForLegacyResponse(authContext),
               classGroupId: assignedClassGroupId,
               className: assignedInstance?.name_en || classRecord.nameEn,
               classNameAr: assignedInstance?.name_ar || classRecord.nameAr,
@@ -6881,7 +8030,7 @@ app.get("/api/church/my-class", async (req, res) => {
         success: true,
         classInfo: {
           servantId: targetUserId,
-          role: authContext.role,
+          role: getPrimaryRoleForLegacyResponse(authContext),
           classGroupId: assignedClassGroupId,
           className: classRecord.nameEn,
           classNameAr: classRecord.nameAr,
@@ -7049,7 +8198,7 @@ app.get("/api/church/class-roster", async (req, res) => {
     const authContext = await verifyServerRequestAuth(req);
 
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
+      if (hasServerRole(authContext, 'student')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -7057,7 +8206,7 @@ app.get("/api/church/class-roster", async (req, res) => {
         });
       }
 
-      if (authContext.role === 'parent') {
+      if (hasServerRole(authContext, 'parent')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -7065,7 +8214,7 @@ app.get("/api/church/class-roster", async (req, res) => {
         });
       }
 
-      if (authContext.role === 'teacher') {
+      if (hasServerRole(authContext, 'teacher')) {
         const assignedClasses = serverReviewState.teacherAssignments[authContext.userId] || ['primary_2'];
         if (!targetClassGroupId) {
           targetClassGroupId = assignedClasses[0] || 'primary_2';
@@ -7077,7 +8226,7 @@ app.get("/api/church/class-roster", async (req, res) => {
             message: `Servant ${authContext.userId} is not authorized to view roster for class "${targetClassGroupId}".`
           });
         }
-      } else if (authContext.role === 'admin') {
+      } else if (hasServerRole(authContext, 'admin')) {
         if (!targetClassGroupId) {
           targetClassGroupId = 'primary_2';
         }
@@ -7119,7 +8268,7 @@ app.get("/api/church/class-roster", async (req, res) => {
 
         // 2. Resolve class instance for targetClassGroupId
         let targetInstanceId: string | null = null;
-        if (authContext.role === 'teacher') {
+        if (hasServerRole(authContext, 'teacher')) {
           const { data: assignments } = await client
             .from('servant_class_assignments')
             .select('class_instance_id')
@@ -7130,7 +8279,7 @@ app.get("/api/church/class-roster", async (req, res) => {
           if (assignments && assignments.length > 0) {
             targetInstanceId = assignments[0].class_instance_id;
           }
-        } else if (authContext.role === 'admin') {
+        } else if (hasServerRole(authContext, 'admin')) {
           const { data: inst } = await client
             .from('class_instances')
             .select('id')
@@ -7251,7 +8400,7 @@ app.post("/api/church/student/class", async (req, res) => {
 
     const authContext = await verifyServerRequestAuth(req);
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
+      if (hasServerRole(authContext, 'student')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -7259,7 +8408,7 @@ app.post("/api/church/student/class", async (req, res) => {
         });
       }
 
-      if (authContext.role === 'parent') {
+      if (hasServerRole(authContext, 'parent')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -7267,7 +8416,7 @@ app.post("/api/church/student/class", async (req, res) => {
         });
       }
 
-      if (authContext.role === 'teacher') {
+      if (hasServerRole(authContext, 'teacher')) {
         const assignedClasses = serverReviewState.teacherAssignments[authContext.userId] || 
           (authContext.userId === 'mina' || authContext.userId === 'user_teacher_mina_101' ? ['primary_2'] : ['preparatory']);
         if (!assignedClasses.includes(classGroupId)) {
@@ -7337,7 +8486,7 @@ app.post("/api/church/student/class", async (req, res) => {
         if (isUuid) {
           const { data: p } = await client
             .from('profiles')
-            .select('id, name, role, grade')
+            .select('id, name, grade')
             .eq('id', inputIdentifier)
             .maybeSingle();
           if (p) profileCheck = p;
@@ -7353,7 +8502,7 @@ app.post("/api/church/student/class", async (req, res) => {
           if (relMatch?.child_id) {
             const { data: p } = await client
               .from('profiles')
-              .select('id, name, role, grade')
+              .select('id, name, grade')
               .eq('id', relMatch.child_id)
               .maybeSingle();
             if (p) profileCheck = p;
@@ -7362,7 +8511,7 @@ app.post("/api/church/student/class", async (req, res) => {
           if (!profileCheck && inputIdentifier.includes('@')) {
             const { data: p } = await client
               .from('profiles')
-              .select('id, name, role, grade')
+              .select('id, name, grade')
               .ilike('email', inputIdentifier)
               .limit(1)
               .maybeSingle();
@@ -7372,7 +8521,7 @@ app.post("/api/church/student/class", async (req, res) => {
           if (!profileCheck) {
             const { data: p } = await client
               .from('profiles')
-              .select('id, name, role, grade')
+              .select('id, name, grade')
               .ilike('name', inputIdentifier)
               .limit(1)
               .maybeSingle();
@@ -7382,7 +8531,7 @@ app.post("/api/church/student/class", async (req, res) => {
           if (!profileCheck && resolvedFromDir) {
             const { data: p } = await client
               .from('profiles')
-              .select('id, name, role, grade')
+              .select('id, name, grade')
               .ilike('name', resolvedFromDir.nameEn)
               .limit(1)
               .maybeSingle();
@@ -7391,7 +8540,7 @@ app.post("/api/church/student/class", async (req, res) => {
         }
 
         if (profileCheck) {
-          if (profileCheck.role !== 'student') {
+          if (!await hasAssignedRoleForUser(profileCheck.id, 'student')) {
             return res.status(400).json({
               success: false,
               error: "NOT_A_STUDENT",
@@ -7410,7 +8559,7 @@ app.post("/api/church/student/class", async (req, res) => {
           // 3. Resolve class_instance_id
           let resolvedInstanceId = req.body.classInstanceId;
           if (!resolvedInstanceId) {
-            if (authContext.role === 'admin') {
+            if (hasServerRole(authContext, 'admin')) {
               const { data: inst } = await client
                 .from('class_instances')
                 .select('id')
@@ -7541,7 +8690,7 @@ app.post("/api/church/student/class", async (req, res) => {
     };
 
     // Record teacher_student relationship
-    if (authContext.isAuthenticated && (authContext.role === 'teacher' || authContext.role === 'admin')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'teacher') || hasServerRole(authContext, 'admin'))) {
       const servantId = authContext.userId;
       const existingRel = serverReviewState.teacherStudentRelationships.find(
         r => r.teacherId === servantId && r.studentId === studentId && r.relationshipType === 'teacher_student'
@@ -7574,7 +8723,7 @@ app.post("/api/church/student/class", async (req, res) => {
 app.get("/api/church/servant/relationships", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+    if (!authContext.isAuthenticated || (!hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -7601,17 +8750,18 @@ app.post("/api/church/onboarding/request", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
     const { studentId: bodyStudentId, studentName, email, phone, requestedClassGroupId, requestedGrade, notes } = req.body;
-    const targetStudentId = bodyStudentId || authContext.userId;
-
-    if (!targetStudentId) {
-      return res.status(400).json({
-        success: false,
-        error: "MISSING_PARAMS",
-        message: "studentId is required"
-      });
+    if (!authContext.isAuthenticated || !authContext.userId) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to submit a student enrollment request." });
     }
+    if (!hasServerRole(authContext, 'student')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only an assigned student can submit their enrollment request." });
+    }
+    if (bodyStudentId && bodyStudentId !== authContext.userId) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "You can only submit a request for your own account." });
+    }
+    const targetStudentId = authContext.userId;
 
-    if (!requestedClassGroupId) {
+    if (typeof requestedClassGroupId !== 'string') {
       return res.status(400).json({
         success: false,
         error: "MISSING_PARAMS",
@@ -7628,25 +8778,37 @@ app.post("/api/church/onboarding/request", async (req, res) => {
       });
     }
 
-    const targetGrade = requestedGrade || 'Grade 4';
-    if (requestedGrade && getClassGroupIdForGrade(requestedGrade) !== requestedClassGroupId) {
+    if (!isValidSundaySchoolGrade(requestedGrade) || getClassGroupIdForGrade(requestedGrade) !== requestedClassGroupId) {
       return res.status(400).json({
         success: false,
         error: "INVALID_GRADE",
-        message: `Grade "${requestedGrade}" does not belong to class group "${requestedClassGroupId}".`
+        message: "Select a valid Sunday School grade and its matching class group."
       });
+    }
+    const targetGrade = requestedGrade;
+    if (typeof studentName !== 'string' || studentName.trim().length < 2 || studentName.trim().length > 100) {
+      return res.status(400).json({ success: false, error: "INVALID_NAME", message: "Student name must contain 2 to 100 characters." });
+    }
+    if (email !== undefined && (typeof email !== 'string' || (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())))) {
+      return res.status(400).json({ success: false, error: "INVALID_EMAIL", message: "Enter a valid contact email or leave it blank." });
+    }
+    if (phone !== undefined && (typeof phone !== 'string' || (phone.trim() && !/^[0-9+() -]{7,20}$/.test(phone.trim())))) {
+      return res.status(400).json({ success: false, error: "INVALID_PHONE", message: "Enter a valid phone number or leave it blank." });
+    }
+    if (notes !== undefined && (typeof notes !== 'string' || notes.length > 1000)) {
+      return res.status(400).json({ success: false, error: "INVALID_NOTES", message: "Notes must be 1000 characters or fewer." });
     }
 
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const newRequest = {
       id: requestId,
       studentId: targetStudentId,
-      studentName: studentName || `Student ${targetStudentId}`,
-      email: email || '',
-      phone: phone || '',
+      studentName: studentName.trim(),
+      email: typeof email === 'string' ? email.trim() : '',
+      phone: typeof phone === 'string' ? phone.trim() : '',
       requestedClassGroupId,
       requestedGrade: targetGrade,
-      notes: notes || '',
+      notes: typeof notes === 'string' ? notes.trim() : '',
       status: 'PENDING_APPROVAL',
       requestedAt: new Date().toISOString()
     };
@@ -7717,7 +8879,7 @@ app.get("/api/church/onboarding/requests", async (req, res) => {
     let targetClassGroupId = String(req.query.classGroupId || '');
 
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
+      if (hasServerRole(authContext, 'student')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -7725,7 +8887,7 @@ app.get("/api/church/onboarding/requests", async (req, res) => {
         });
       }
 
-      if (authContext.role === 'parent') {
+      if (hasServerRole(authContext, 'parent')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -7733,7 +8895,7 @@ app.get("/api/church/onboarding/requests", async (req, res) => {
         });
       }
 
-      if (authContext.role === 'teacher') {
+      if (hasServerRole(authContext, 'teacher')) {
         const assignedClasses = serverReviewState.teacherAssignments[authContext.userId] || 
           (authContext.userId === 'mina' || authContext.userId === 'user_teacher_mina_101' ? ['primary_2'] : ['preparatory']);
         if (targetClassGroupId && !assignedClasses.includes(targetClassGroupId)) {
@@ -7797,7 +8959,7 @@ app.post("/api/church/onboarding/review", async (req, res) => {
     }
 
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student' || authContext.role === 'parent') {
+      if (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -7815,7 +8977,7 @@ app.post("/api/church/onboarding/review", async (req, res) => {
       });
     }
 
-    if (authContext.isAuthenticated && authContext.role === 'teacher') {
+    if (authContext.isAuthenticated && hasServerRole(authContext, 'teacher')) {
       const assignedClasses = serverReviewState.teacherAssignments[authContext.userId] || 
         (authContext.userId === 'mina' || authContext.userId === 'user_teacher_mina_101' ? ['primary_2'] : ['preparatory']);
       if (!assignedClasses.includes(targetRequest.requestedClassGroupId)) {
@@ -7917,7 +9079,7 @@ app.post("/api/church/onboarding/review", async (req, res) => {
 
           // Resolve class_instance_id for target class group
           let resolvedInstanceId: string | null = null;
-          if (authContext.role === 'teacher') {
+          if (hasServerRole(authContext, 'teacher')) {
             const { data: assignments } = await client
               .from('servant_class_assignments')
               .select('class_instance_id')
@@ -8030,7 +9192,7 @@ app.get("/api/church/classes/by-code/:code", async (req, res) => {
       });
     }
 
-    if (authContext.isAuthenticated && (authContext.role === 'teacher' || authContext.role === 'admin')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'teacher') || hasServerRole(authContext, 'admin'))) {
       const assigned = serverReviewState.teacherAssignments[authContext.userId] || [];
       if (!assigned.includes(resolved.classGroupId)) {
         serverReviewState.teacherAssignments[authContext.userId] = [...assigned, resolved.classGroupId];
@@ -8166,7 +9328,7 @@ app.post("/api/church/classes/:instanceId/servants", async (req, res) => {
       });
     }
 
-    if (authContext.isAuthenticated && authContext.role !== 'teacher' && authContext.role !== 'admin') {
+    if (authContext.isAuthenticated && !hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin')) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -8587,7 +9749,7 @@ app.post("/api/church/classes/:classGroupId/regenerate-code", async (req, res) =
     const authContext = await verifyServerRequestAuth(req);
 
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student' || authContext.role === 'parent') {
+      if (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -8595,7 +9757,7 @@ app.post("/api/church/classes/:classGroupId/regenerate-code", async (req, res) =
         });
       }
 
-      if (authContext.role === 'teacher') {
+      if (hasServerRole(authContext, 'teacher')) {
         const assignedClasses = serverReviewState.teacherAssignments[authContext.userId] || [];
         if (!assignedClasses.includes(classGroupId)) {
           return res.status(403).json({
@@ -8656,7 +9818,9 @@ app.post("/api/church/classes/:classGroupId/remove-student", async (req, res) =>
 
     const authContext = await verifyServerRequestAuth(req);
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student' || authContext.role === 'parent') {
+      const isAdmin = hasServerRole(authContext, 'admin');
+      const isTeacher = hasServerRole(authContext, 'teacher');
+      if (!isAdmin && !isTeacher && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -8664,7 +9828,7 @@ app.post("/api/church/classes/:classGroupId/remove-student", async (req, res) =>
         });
       }
 
-      if (authContext.role === 'teacher') {
+      if (!isAdmin && isTeacher && (!hasLiveSupabaseSession(req))) {
         const assignedClasses = serverReviewState.teacherAssignments[authContext.userId] || [];
         if (!assignedClasses.includes(classGroupId)) {
           return res.status(403).json({
@@ -8726,6 +9890,20 @@ app.post("/api/church/classes/:classGroupId/remove-student", async (req, res) =>
           targetMembershipId = memRow.id;
         }
 
+        const isAdminActor = hasServerRole(authContext, 'admin');
+        if (isAdminActor) {
+          const { error: auditError } = await getTrustedRoleClient().from('admin_action_audit').insert({
+            actor_id: authContext.userId,
+            target_user_id: studentId || null,
+            operation: 'student_class_removal_requested',
+            reason: typeof reason === 'string' ? reason : null,
+            details: { classGroupId, membershipId: targetMembershipId }
+          });
+          if (auditError) {
+            return res.status(500).json({ success: false, error: 'ADMIN_AUDIT_FAILED', message: 'Removal was not attempted because its audit record could not be written.' });
+          }
+        }
+
         // Execute the approved Phase 3B SECURITY DEFINER RPC:
         // public.remove_student_from_class(p_membership_id TEXT, p_reason TEXT)
         const { data: rpcData, error: rpcErr } = await client.rpc('remove_student_from_class', {
@@ -8741,6 +9919,18 @@ app.post("/api/church/classes/:classGroupId/remove-student", async (req, res) =>
           });
         }
 
+        if (isAdminActor) {
+          const { error: auditError } = await getTrustedRoleClient().from('admin_action_audit').insert({
+            actor_id: authContext.userId,
+            target_user_id: studentId || null,
+            operation: 'student_class_removed',
+            reason: typeof reason === 'string' ? reason : null,
+            details: { classGroupId, membershipId: targetMembershipId }
+          });
+          if (auditError) {
+            return res.status(500).json({ success: false, error: 'ADMIN_AUDIT_FAILED', message: 'Removal completed, but its final audit record failed; verify the roster before retrying.' });
+          }
+        }
         return res.json({
           success: true,
           membershipId: rpcData?.membershipId || targetMembershipId,
@@ -8801,7 +9991,9 @@ app.post("/api/church/classes/:classGroupId/add-student", async (req, res) => {
 
     const authContext = await verifyServerRequestAuth(req);
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student' || authContext.role === 'parent') {
+      const isAdmin = hasServerRole(authContext, 'admin');
+      const isTeacher = hasServerRole(authContext, 'teacher');
+      if (!isAdmin && !isTeacher && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -8809,7 +10001,7 @@ app.post("/api/church/classes/:classGroupId/add-student", async (req, res) => {
         });
       }
 
-      if (authContext.role === 'teacher') {
+      if (!isAdmin && isTeacher && (!hasLiveSupabaseSession(req))) {
         const assignedClasses = serverReviewState.teacherAssignments[authContext.userId] || [];
         if (!assignedClasses.includes(classGroupId)) {
           return res.status(403).json({
@@ -8846,7 +10038,7 @@ app.post("/api/church/classes/:classGroupId/add-student", async (req, res) => {
         // 2. Query student profile
         const { data: studentProfile, error: pErr } = await client
           .from('profiles')
-          .select('id, name, role, grade')
+          .select('id, name, grade')
           .eq('id', studentId)
           .maybeSingle();
 
@@ -8858,7 +10050,7 @@ app.post("/api/church/classes/:classGroupId/add-student", async (req, res) => {
           });
         }
 
-        if (studentProfile.role !== 'student') {
+        if (!await hasAssignedRoleForUser(studentId, 'student')) {
           return res.status(400).json({
             success: false,
             error: "NOT_A_STUDENT",
@@ -8869,7 +10061,7 @@ app.post("/api/church/classes/:classGroupId/add-student", async (req, res) => {
         // 3. Resolve class_instance_id
         let resolvedInstanceId = req.body.classInstanceId;
         if (!resolvedInstanceId) {
-          if (authContext.role === 'admin') {
+          if (hasServerRole(authContext, 'admin')) {
             const { data: inst } = await client
               .from('class_instances')
               .select('id')
@@ -8897,6 +10089,19 @@ app.post("/api/church/classes/:classGroupId/add-student", async (req, res) => {
           });
         }
 
+        const isAdminActor = hasServerRole(authContext, 'admin');
+        if (isAdminActor) {
+          const { error: auditError } = await getTrustedRoleClient().from('admin_action_audit').insert({
+            actor_id: authContext.userId,
+            target_user_id: studentId,
+            operation: 'student_class_enrollment_requested',
+            details: { classGroupId, classInstanceId: resolvedInstanceId }
+          });
+          if (auditError) {
+            return res.status(500).json({ success: false, error: 'ADMIN_AUDIT_FAILED', message: 'Enrollment was not attempted because its audit record could not be written.' });
+          }
+        }
+
         // 4. Call approved Phase 3B RPC
         const { data: rpcData, error: rpcErr } = await client.rpc('enroll_student_in_class', {
           p_student_id: studentProfile.id,
@@ -8911,6 +10116,17 @@ app.post("/api/church/classes/:classGroupId/add-student", async (req, res) => {
           });
         }
 
+        if (isAdminActor) {
+          const { error: auditError } = await getTrustedRoleClient().from('admin_action_audit').insert({
+            actor_id: authContext.userId,
+            target_user_id: studentId,
+            operation: 'student_class_enrolled',
+            details: { classGroupId, classInstanceId: resolvedInstanceId, membershipId: rpcData?.membershipId }
+          });
+          if (auditError) {
+            return res.status(500).json({ success: false, error: 'ADMIN_AUDIT_FAILED', message: 'Enrollment completed, but its final audit record failed; verify the roster before retrying.' });
+          }
+        }
         return res.json({
           success: true,
           action: rpcData?.action || 'enrolled',
@@ -8970,7 +10186,7 @@ app.post("/api/church/classes/:classGroupId/add-student", async (req, res) => {
 app.get("/api/church/admin/users", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || authContext.role !== 'admin') {
+    if (!authContext.isAuthenticated || !hasServerRole(authContext, 'admin')) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -9020,7 +10236,7 @@ app.get("/api/church/admin/users", async (req, res) => {
 app.post("/api/church/admin/promote-user", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || authContext.role !== 'admin') {
+    if (!authContext.isAuthenticated || !hasServerRole(authContext, 'admin')) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -9055,7 +10271,7 @@ app.post("/api/church/admin/promote-user", async (req, res) => {
 app.post("/api/church/admin/assign-servant", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || authContext.role !== 'admin') {
+    if (!authContext.isAuthenticated || !hasServerRole(authContext, 'admin')) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -9321,7 +10537,7 @@ app.post("/api/church/admin/assign-servant", async (req, res) => {
 app.get("/api/church/admin/year-transition-preview", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || authContext.role !== 'admin') {
+    if (!authContext.isAuthenticated || !hasServerRole(authContext, 'admin')) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -9370,7 +10586,7 @@ app.get("/api/church/admin/year-transition-preview", async (req, res) => {
 app.post("/api/church/admin/start-new-year", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || authContext.role !== 'admin') {
+    if (!authContext.isAuthenticated || !hasServerRole(authContext, 'admin')) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -9561,7 +10777,7 @@ app.get(["/api/church/student-learning-review/:studentId", "/api/church/student-
 
     const authContext = await verifyServerRequestAuth(req);
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
+      if (hasServerRole(authContext, 'student')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -9569,7 +10785,7 @@ app.get(["/api/church/student-learning-review/:studentId", "/api/church/student-
         });
       }
 
-      if (authContext.role === 'parent') {
+      if (hasServerRole(authContext, 'parent')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -9649,7 +10865,7 @@ app.get(["/api/church/student-learning-review/:studentId", "/api/church/student-
     }
 
     // 2. Class Authorization check for teachers
-    if (authContext.isAuthenticated && authContext.role === 'teacher') {
+    if (authContext.isAuthenticated && hasServerRole(authContext, 'teacher')) {
       const assignedClasses = serverReviewState.teacherAssignments[authContext.userId] || 
         (authContext.userId === 'mina' || authContext.userId === 'user_teacher_mina_101' ? ['primary_2'] : []);
       if (!assignedClasses.includes(studentProfile.classGroupId)) {
@@ -9786,22 +11002,22 @@ async function getAuthorizedChildrenForParent(parentId: string, req: express.Req
       .from('user_relationships')
       .select('child_id')
       .eq('parent_id', parentId)
-      .in('relationship_type', ['parent_child', 'guardian_student']);
+      .in('relationship_type', ['parent_child', 'guardian_student'])
+      .not('verified_at', 'is', null);
     if (relationshipsError) throw new Error(`Could not load parent-child relationships: ${relationshipsError.message}`);
     for (const relationship of relationships || []) {
       if (relationship.child_id) childIds.add(relationship.child_id);
     }
+    if (childIds.size === 0) return [];
 
-    const { data: profileChildren, error: profilesError } = await client
-      .from('profiles')
-      .select('id')
-      .eq('parent_id', parentId)
-      .eq('role', 'student');
-    if (profilesError) throw new Error(`Could not load linked child profiles: ${profilesError.message}`);
-    for (const child of profileChildren || []) {
-      if (child.id) childIds.add(child.id);
-    }
-    return Array.from(childIds);
+    const { data: assignedStudents, error: assignmentsError } = await client
+      .from('profile_role_assignments')
+      .select('user_id')
+      .in('user_id', Array.from(childIds))
+      .eq('role', 'student')
+      .is('revoked_at', null);
+    if (assignmentsError) throw new Error(`Could not verify linked student roles: ${assignmentsError.message}`);
+    return Array.from(new Set((assignedStudents || []).map((assignment: any) => assignment.user_id).filter(Boolean)));
   }
 
   const childIds = new Set<string>();
@@ -9862,37 +11078,19 @@ async function getAuthorizedChildrenForParent(parentId: string, req: express.Req
 app.get("/api/church/parent/children", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students cannot access parent child lists."
-        });
-      }
-      if (authContext.role === 'teacher') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Servants cannot use parent-only endpoints."
-        });
-      }
-    }
-
     if (!authContext.isAuthenticated) {
       return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Please sign in to view linked children." });
     }
 
     const parentId = authContext.userId || '';
+    if (!hasServerRole(authContext, 'parent') && !hasServerRole(authContext, 'admin')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only parents can view linked children." });
+    }
     const bearerToken = req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.slice(7).trim()
       : "";
     const isTestRequest = process.env.NODE_ENV !== 'production' &&
       (bearerToken.startsWith("test_jwt_") || bearerToken.startsWith("test_token_"));
-    if (authContext.role !== 'parent' && authContext.role !== 'admin' && !isTestRequest) {
-      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only parents can view linked children." });
-    }
     const linkedChildIds = await getAuthorizedChildrenForParent(parentId, req);
 
     if (!isTestRequest) {
@@ -9900,20 +11098,70 @@ app.get("/api/church/parent/children", async (req, res) => {
       const client = getTrustedProgressClient();
       const { data: profiles, error: profilesError } = await client
         .from('profiles')
-        .select('id, name, grade, avatar, points')
-        .in('id', linkedChildIds)
-        .eq('role', 'student');
+        .select('id, name, grade, avatar, points, hymns_taxis_level')
+        .in('id', linkedChildIds);
       if (profilesError) throw new Error(`Could not load linked child profiles: ${profilesError.message}`);
+
+      const { data: activeYear, error: yearError } = await client
+        .from('church_years')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle();
+      if (yearError) throw new Error(`Could not load active church year: ${yearError.message}`);
+
+      let memberships: any[] = [];
+      if (activeYear?.id) {
+        const { data, error } = await client
+          .from('class_memberships')
+          .select('student_id, exact_grade, class_instance_id')
+          .in('student_id', linkedChildIds)
+          .eq('church_year_id', activeYear.id)
+          .eq('status', 'active');
+        if (error) throw new Error(`Could not load child class memberships: ${error.message}`);
+        memberships = data || [];
+      }
+
+      const instanceIds = Array.from(new Set(memberships.map(membership => membership.class_instance_id).filter(Boolean)));
+      let classInstances: any[] = [];
+      if (instanceIds.length > 0) {
+        const { data, error } = await client
+          .from('class_instances')
+          .select('id, name_en, name_ar, class_group_id')
+          .in('id', instanceIds);
+        if (error) throw new Error(`Could not load child class details: ${error.message}`);
+        classInstances = data || [];
+      }
+
+      const { data: hymnsMemberships, error: hymnsError } = await client
+        .from('hymns_memberships')
+        .select('student_id, level, status, roster_group, updated_at, created_at')
+        .in('student_id', linkedChildIds)
+        .order('updated_at', { ascending: false });
+      if (hymnsError) throw new Error(`Could not load Hymns School membership: ${hymnsError.message}`);
+
       return res.json({
         success: true,
-        children: (profiles || []).map(profile => ({
-          id: profile.id,
-          name: profile.name,
-          grade: profile.grade || '',
-          classGroupId: getClassGroupIdForGrade(profile.grade || ''),
-          avatarUrl: profile.avatar || '',
-          points: Number.isFinite(profile.points) ? profile.points : null
-        }))
+        children: (profiles || []).map(profile => {
+          const membership = memberships.find(item => item.student_id === profile.id);
+          const classInstance = classInstances.find(item => item.id === membership?.class_instance_id);
+          const hymnsMembership = (hymnsMemberships || []).find(item => item.student_id === profile.id);
+          return {
+            id: profile.id,
+            name: profile.name,
+            grade: membership?.exact_grade || profile.grade || '',
+            classGroupId: classInstance?.class_group_id || (membership ? getClassGroupIdForGrade(membership.exact_grade || '') : ''),
+            className: classInstance?.name_en || '',
+            classNameAr: classInstance?.name_ar || '',
+            avatarUrl: profile.avatar || '',
+            points: Number.isFinite(profile.points) ? profile.points : null,
+            hymnsTaxisLevel: Number.isInteger(profile.hymns_taxis_level) ? profile.hymns_taxis_level : null,
+            hymnsMembership: hymnsMembership ? {
+              level: hymnsMembership.level,
+              status: hymnsMembership.status,
+              rosterGroup: hymnsMembership.roster_group
+            } : null
+          };
+        })
       });
     }
 
@@ -9954,6 +11202,177 @@ app.get("/api/church/parent/children", async (req, res) => {
   }
 });
 
+app.post("/api/church/parent/connect-child", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in with a parent account to connect a child." });
+    }
+    if (!hasServerRole(authContext, 'parent')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only an assigned parent can connect a child." });
+    }
+
+    const childCode = typeof req.body?.childCode === 'string'
+      ? req.body.childCode.trim().toUpperCase()
+      : '';
+    if (!/^[A-Z0-9-]{4,64}$/.test(childCode)) {
+      return res.status(400).json({ success: false, error: "INVALID_CHILD_CODE", message: "Enter a valid child connection code." });
+    }
+
+    const client = getTrustedProgressClient();
+    const { data: codeMatches, error: codeError } = await client
+      .from('user_relationships')
+      .select('child_id')
+      .eq('child_code', childCode)
+      .in('relationship_type', ['parent_child', 'guardian_student']);
+    if (codeError) throw new Error(`Could not verify child connection code: ${codeError.message}`);
+
+    const childIds = Array.from(new Set((codeMatches || []).map((row: any) => row.child_id).filter(Boolean)));
+    if (childIds.length !== 1) {
+      return res.status(404).json({ success: false, error: "CHILD_CODE_NOT_FOUND", message: "This code could not be verified. Check it and try again." });
+    }
+    const childId = childIds[0];
+    if (childId === authContext.userId) {
+      return res.status(400).json({ success: false, error: "INVALID_CHILD", message: "A parent account cannot be linked as its own child." });
+    }
+
+    const { data: activeStudentRole, error: roleError } = await client
+      .from('profile_role_assignments')
+      .select('user_id')
+      .eq('user_id', childId)
+      .eq('role', 'student')
+      .is('revoked_at', null)
+      .maybeSingle();
+    if (roleError) throw new Error(`Could not verify child student role: ${roleError.message}`);
+    if (!activeStudentRole) {
+      return res.status(404).json({ success: false, error: "STUDENT_NOT_FOUND", message: "This code is not linked to an active student account." });
+    }
+
+    const { data: child, error: childError } = await client
+      .from('profiles')
+      .select('id, name, grade, avatar')
+      .eq('id', childId)
+      .maybeSingle();
+    if (childError) throw new Error(`Could not load child profile: ${childError.message}`);
+    if (!child) {
+      return res.status(404).json({ success: false, error: "STUDENT_NOT_FOUND", message: "The student profile could not be found." });
+    }
+
+    const parentId = authContext.userId;
+    const { data: existingRelationship, error: existingError } = await client
+      .from('user_relationships')
+      .select('id')
+      .eq('parent_id', parentId)
+      .eq('child_id', childId)
+      .not('verified_at', 'is', null)
+      .maybeSingle();
+    if (existingError) throw new Error(`Could not check the existing family connection: ${existingError.message}`);
+    if (existingRelationship) {
+      return res.status(409).json({ success: false, error: "ALREADY_LINKED", message: "This child is already connected to your family." });
+    }
+
+    const { error: saveError } = await client
+      .from('user_relationships')
+      .upsert({
+        parent_id: parentId,
+        child_id: childId,
+        child_code: childCode,
+        relationship_type: 'parent_child',
+        verified_at: new Date().toISOString()
+      }, { onConflict: 'parent_id,child_id' });
+    if (saveError) throw new Error(`Could not save verified family connection: ${saveError.message}`);
+
+    return res.status(201).json({
+      success: true,
+      child: {
+        id: child.id,
+        name: child.name || '',
+        grade: child.grade || '',
+        avatarUrl: child.avatar || ''
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+  }
+});
+
+app.get("/api/church/parent/reward-requests", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to view family reward requests." });
+    }
+    if (!hasServerRole(authContext, 'parent') && !hasServerRole(authContext, 'admin')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only parents can view family reward requests." });
+    }
+    const childIds = await getAuthorizedChildrenForParent(authContext.userId, req);
+    if (childIds.length === 0) return res.json({ success: true, requests: [] });
+
+    const client = getTrustedProgressClient();
+    const { data, error } = await client
+      .from('reward_requests')
+      .select('id, student_id, reward_id, reward_name_en, reward_name_ar, cost_points, status, created_at, decided_at')
+      .in('student_id', childIds)
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(`Could not load family reward requests: ${error.message}`);
+    return res.json({ success: true, requests: data || [] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+  }
+});
+
+app.post("/api/church/parent/reward-requests/:requestId/review", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to review a reward request." });
+    }
+    if (!hasServerRole(authContext, 'parent')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only a parent can review family reward requests." });
+    }
+    const decision = req.body?.decision;
+    if (decision !== 'approved' && decision !== 'rejected') {
+      return res.status(400).json({ success: false, error: "INVALID_DECISION", message: "Choose approve or reject." });
+    }
+
+    const client = getTrustedProgressClient();
+    const { data: rewardRequest, error: requestError } = await client
+      .from('reward_requests')
+      .select('id, student_id, status')
+      .eq('id', req.params.requestId)
+      .maybeSingle();
+    if (requestError) throw new Error(`Could not load reward request: ${requestError.message}`);
+    if (!rewardRequest) return res.status(404).json({ success: false, error: "REQUEST_NOT_FOUND", message: "This reward request could not be found." });
+
+    const childIds = await getAuthorizedChildrenForParent(authContext.userId, req);
+    if (!childIds.includes(rewardRequest.student_id)) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "This request does not belong to a child connected to your family." });
+    }
+    if (rewardRequest.status !== 'pending') {
+      return res.status(409).json({ success: false, error: "REQUEST_ALREADY_REVIEWED", message: "This reward request has already been reviewed." });
+    }
+
+    const { data: updatedRequest, error: updateError } = await client
+      .from('reward_requests')
+      .update({
+        status: decision,
+        parent_id: authContext.userId,
+        decided_at: new Date().toISOString()
+      })
+      .eq('id', rewardRequest.id)
+      .eq('status', 'pending')
+      .select('id, student_id, reward_id, reward_name_en, reward_name_ar, cost_points, status, created_at, decided_at')
+      .maybeSingle();
+    if (updateError) throw new Error(`Could not save reward request decision: ${updateError.message}`);
+    if (!updatedRequest) {
+      return res.status(409).json({ success: false, error: "REQUEST_ALREADY_REVIEWED", message: "This reward request has already been reviewed." });
+    }
+    return res.json({ success: true, request: updatedRequest });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+  }
+});
+
 // 2. Get Child Learning Review for Parent
 app.get(["/api/church/parent/child-learning-review/:studentId", "/api/church/parent/child-learning-review"], async (req, res) => {
   try {
@@ -9968,23 +11387,6 @@ app.get(["/api/church/parent/child-learning-review/:studentId", "/api/church/par
 
     const authContext = await verifyServerRequestAuth(req);
 
-    if (authContext.isAuthenticated) {
-      if (authContext.role === 'student') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Students are not authorized to access parent learning dashboard."
-        });
-      }
-      if (authContext.role === 'teacher') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Servants cannot use parent-only endpoints to bypass servant review authorization."
-        });
-      }
-    }
-
     const bearerToken = req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.slice(7).trim()
       : "";
@@ -9995,11 +11397,12 @@ app.get(["/api/church/parent/child-learning-review/:studentId", "/api/church/par
       return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Please sign in to view child learning data." });
     }
 
+    if (!hasServerRole(authContext, 'parent') && !hasServerRole(authContext, 'admin')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only a parent or administrator can access child learning data." });
+    }
+
     if (!isTestRequest) {
-      if (authContext.role !== 'parent' && authContext.role !== 'admin') {
-        return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only a linked parent or administrator can view this learning data." });
-      }
-      if (authContext.role === 'parent') {
+      if (hasServerRole(authContext, 'parent')) {
         const authorizedChildren = await getAuthorizedChildrenForParent(authContext.userId, req);
         if (!authorizedChildren.includes(studentId)) {
           return res.status(403).json({ success: false, error: "FORBIDDEN", message: "This child is not linked to the signed-in parent." });
@@ -10007,11 +11410,21 @@ app.get(["/api/church/parent/child-learning-review/:studentId", "/api/church/par
       }
 
       const client = getTrustedProgressClient();
+      const { data: studentRole, error: studentRoleError } = await client
+        .from('profile_role_assignments')
+        .select('user_id')
+        .eq('user_id', studentId)
+        .eq('role', 'student')
+        .is('revoked_at', null)
+        .maybeSingle();
+      if (studentRoleError) throw new Error(`Could not verify student role: ${studentRoleError.message}`);
+      if (!studentRole) {
+        return res.status(404).json({ success: false, error: "STUDENT_NOT_FOUND", message: "The active student role was not found." });
+      }
       const { data: student, error: studentError } = await client
         .from('profiles')
         .select('id, name, grade, avatar')
         .eq('id', studentId)
-        .eq('role', 'student')
         .maybeSingle();
       if (studentError) throw new Error(`Could not load child profile: ${studentError.message}`);
       if (!student) return res.status(404).json({ success: false, error: "STUDENT_NOT_FOUND", message: "The linked student profile was not found." });
@@ -10131,7 +11544,7 @@ app.get(["/api/church/parent/child-learning-review/:studentId", "/api/church/par
     }
 
     // Parent Authorization Check (Parent can only inspect their linked children!)
-    if (authContext.role === 'parent') {
+    if (hasServerRole(authContext, 'parent')) {
       const parentId = authContext.userId || '';
       const authorizedChildren = await getAuthorizedChildrenForParent(parentId, req);
       
@@ -10272,7 +11685,7 @@ app.get("/api/church/sources", async (req, res) => {
 
     // 1. Authorization & Role Checks
     if (authContext.isAuthenticated) {
-      if (authContext.role === 'student' || authContext.role === 'parent') {
+      if (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent')) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -10293,8 +11706,7 @@ app.get("/api/church/sources", async (req, res) => {
     }
 
     const currentUserId = authContext.userId || 'user_teacher_mina_101';
-    const currentUserRole = authContext.role || 'teacher';
-    const lessonIdFilter = typeof req.query.lessonId === 'string' ? req.query.lessonId : null;
+        const lessonIdFilter = typeof req.query.lessonId === 'string' ? req.query.lessonId : null;
     const typeFilter = typeof req.query.type === 'string' ? req.query.type : null;
 
     // If specific lessonId requested, verify authorization to that lesson
@@ -10307,7 +11719,7 @@ app.get("/api/church/sources", async (req, res) => {
           message: `Lesson ${lessonIdFilter} not found.`
         });
       }
-      if (currentUserRole !== 'admin') {
+      if (!hasServerRole(authContext, 'admin')) {
         const isOwner = targetLesson.createdBy === currentUserId ||
                         (currentUserId === 'mina' && targetLesson.createdBy === 'user_teacher_mina_101') ||
                         (currentUserId === 'user_teacher_mina_101' && targetLesson.createdBy === 'mina');
@@ -10344,7 +11756,7 @@ app.get("/api/church/sources", async (req, res) => {
                               (currentUserId === 'user_teacher_mina_101' && s.uploadedBy === 'mina');
 
         // Privacy check: teachers cannot see other teachers' private draft sources
-        if (currentUserRole !== 'admin' && !isSourceOwner && !isLessonOwner && !isPublished && !s.isPublic) {
+        if (!hasServerRole(authContext, 'admin') && !isSourceOwner && !isLessonOwner && !isPublished && !s.isPublic) {
           continue;
         }
 
@@ -10415,7 +11827,7 @@ app.get("/api/church/sources/:sourceId", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
 
-    if (authContext.isAuthenticated && (authContext.role === 'student' || authContext.role === 'parent')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -10445,8 +11857,7 @@ app.get("/api/church/sources/:sourceId", async (req, res) => {
     }
 
     const currentUserId = authContext.userId || 'user_teacher_mina_101';
-    const currentUserRole = authContext.role || 'teacher';
-    const lesson = parentLessonId ? serverReviewState.lessons[parentLessonId] : null;
+        const lesson = parentLessonId ? serverReviewState.lessons[parentLessonId] : null;
     const isPublished = lesson?.status === 'published';
     const isSourceOwner = foundSource.uploadedBy === currentUserId ||
                           (currentUserId === 'mina' && foundSource.uploadedBy === 'user_teacher_mina_101') ||
@@ -10455,7 +11866,7 @@ app.get("/api/church/sources/:sourceId", async (req, res) => {
                           (currentUserId === 'mina' && lesson?.createdBy === 'user_teacher_mina_101') ||
                           (currentUserId === 'user_teacher_mina_101' && lesson?.createdBy === 'mina');
 
-    if (currentUserRole !== 'admin' && !isSourceOwner && !isLessonOwner && !isPublished && !foundSource.isPublic) {
+    if (!hasServerRole(authContext, 'admin') && !isSourceOwner && !isLessonOwner && !isPublished && !foundSource.isPublic) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -10496,7 +11907,7 @@ app.post("/api/church/sources", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
 
-    if (authContext.isAuthenticated && (authContext.role === 'student' || authContext.role === 'parent')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -10524,10 +11935,9 @@ app.post("/api/church/sources", async (req, res) => {
     }
 
     const currentUserId = authContext.userId || 'user_teacher_mina_101';
-    const currentUserRole = authContext.role || 'teacher';
-    const targetLesson = serverReviewState.lessons[lessonId];
+        const targetLesson = serverReviewState.lessons[lessonId];
 
-    if (targetLesson && currentUserRole !== 'admin') {
+    if (targetLesson && !hasServerRole(authContext, 'admin')) {
       const isOwner = targetLesson.createdBy === currentUserId ||
                       (currentUserId === 'mina' && targetLesson.createdBy === 'user_teacher_mina_101') ||
                       (currentUserId === 'user_teacher_mina_101' && targetLesson.createdBy === 'mina');
@@ -10577,7 +11987,7 @@ app.delete("/api/church/sources/:sourceId", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
 
-    if (authContext.isAuthenticated && (authContext.role === 'student' || authContext.role === 'parent')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -10609,8 +12019,7 @@ app.delete("/api/church/sources/:sourceId", async (req, res) => {
     }
 
     const currentUserId = authContext.userId || 'user_teacher_mina_101';
-    const currentUserRole = authContext.role || 'teacher';
-    const lesson = serverReviewState.lessons[parentLessonId];
+        const lesson = serverReviewState.lessons[parentLessonId];
 
     if (lesson?.status === 'published') {
       return res.status(400).json({
@@ -10624,7 +12033,7 @@ app.delete("/api/church/sources/:sourceId", async (req, res) => {
                           (currentUserId === 'mina' && foundSource.uploadedBy === 'user_teacher_mina_101') ||
                           (currentUserId === 'user_teacher_mina_101' && foundSource.uploadedBy === 'mina');
 
-    if (currentUserRole !== 'admin' && !isSourceOwner) {
+    if (!hasServerRole(authContext, 'admin') && !isSourceOwner) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -10649,7 +12058,7 @@ app.get("/api/church/sources/:sourceId/evidence", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
 
-    if (authContext.isAuthenticated && (authContext.role === 'student' || authContext.role === 'parent')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -10679,14 +12088,13 @@ app.get("/api/church/sources/:sourceId/evidence", async (req, res) => {
     }
 
     const currentUserId = authContext.userId || 'user_teacher_mina_101';
-    const currentUserRole = authContext.role || 'teacher';
-    const lesson = parentLessonId ? serverReviewState.lessons[parentLessonId] : null;
+        const lesson = parentLessonId ? serverReviewState.lessons[parentLessonId] : null;
     const isPublished = lesson?.status === 'published';
     const isSourceOwner = foundSource.uploadedBy === currentUserId ||
                           (currentUserId === 'mina' && foundSource.uploadedBy === 'user_teacher_mina_101') ||
                           (currentUserId === 'user_teacher_mina_101' && foundSource.uploadedBy === 'mina');
 
-    if (currentUserRole !== 'admin' && !isSourceOwner && !isPublished && !foundSource.isPublic) {
+    if (!hasServerRole(authContext, 'admin') && !isSourceOwner && !isPublished && !foundSource.isPublic) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -10743,7 +12151,7 @@ app.post("/api/church/lessons/:lessonId/generate-materials", async (req, res) =>
     }
 
     // 2. Role validation (Students and Parents strictly forbidden)
-    if (authContext.role === 'student' || authContext.role === 'parent') {
+    if (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent')) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -10763,8 +12171,7 @@ app.post("/api/church/lessons/:lessonId/generate-materials", async (req, res) =>
 
     // 3. Teacher authorization check
     const currentUserId = authContext.userId || 'user_teacher_mina_101';
-    const currentUserRole = authContext.role || 'teacher';
-    if (currentUserRole !== 'admin') {
+        if (!hasServerRole(authContext, 'admin')) {
       const isOwner = lesson.createdBy === currentUserId ||
                       (currentUserId === 'mina' && lesson.createdBy === 'user_teacher_mina_101') ||
                       (currentUserId === 'user_teacher_mina_101' && lesson.createdBy === 'mina');
@@ -11046,8 +12453,7 @@ app.get("/api/church/lessons/:lessonId/materials", async (req, res) => {
     }
 
     const currentUserId = authContext.userId || 'user_teacher_mina_101';
-    const currentUserRole = authContext.role || 'student';
-    const isStudent = currentUserRole === 'student' || currentUserRole === 'parent';
+    const isStudent = hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent');
 
     // If student / parent:
     if (isStudent) {
@@ -11085,7 +12491,7 @@ app.get("/api/church/lessons/:lessonId/materials", async (req, res) => {
     }
 
     // If teacher:
-    if (currentUserRole !== 'admin') {
+    if (!hasServerRole(authContext, 'admin')) {
       const isOwner = lesson.createdBy === currentUserId ||
                       (currentUserId === 'mina' && lesson.createdBy === 'user_teacher_mina_101') ||
                       (currentUserId === 'user_teacher_mina_101' && lesson.createdBy === 'mina');
@@ -11135,7 +12541,7 @@ app.post("/api/church/lessons/:lessonId/materials/review", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
 
-    if (authContext.role === 'student' || authContext.role === 'parent') {
+    if (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent')) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -11154,8 +12560,7 @@ app.post("/api/church/lessons/:lessonId/materials/review", async (req, res) => {
     }
 
     const currentUserId = authContext.userId || 'user_teacher_mina_101';
-    const currentUserRole = authContext.role || 'teacher';
-    if (currentUserRole !== 'admin') {
+        if (!hasServerRole(authContext, 'admin')) {
       const isOwner = lesson.createdBy === currentUserId ||
                       (currentUserId === 'mina' && lesson.createdBy === 'user_teacher_mina_101') ||
                       (currentUserId === 'user_teacher_mina_101' && lesson.createdBy === 'mina');
@@ -11257,7 +12662,7 @@ app.post("/api/church/lessons/:lessonId/materials/review", async (req, res) => {
 app.get("/api/church/review-comments", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated && (authContext.role === 'student' || authContext.role === 'parent')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -11276,7 +12681,7 @@ app.get("/api/church/review-comments", async (req, res) => {
 app.post("/api/church/review-comments", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated && (authContext.role === 'student' || authContext.role === 'parent')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -11318,7 +12723,7 @@ app.post("/api/church/review-comments", async (req, res) => {
 app.post("/api/church/update-claim-verification", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated && (authContext.role === 'student' || authContext.role === 'parent')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -11375,7 +12780,7 @@ app.post("/api/church/update-claim-verification", async (req, res) => {
 app.post("/api/church/resolve-source-conflict", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated && (authContext.role === 'student' || authContext.role === 'parent')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -11424,7 +12829,7 @@ app.post("/api/church/resolve-source-conflict", async (req, res) => {
 app.post("/api/church/get-review-packet", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (authContext.isAuthenticated && (authContext.role === 'student' || authContext.role === 'parent')) {
+    if (authContext.isAuthenticated && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -11511,7 +12916,7 @@ app.get("/api/media-url", async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || !authContext.userId || !authContext.role) {
+    if (!authContext.isAuthenticated || !authContext.userId || authContext.roles.length === 0) {
       return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Sign in to access this file.' });
     }
 
@@ -11535,8 +12940,8 @@ app.get("/api/media-url", async (req, res) => {
       return res.status(404).json({ success: false, error: 'MEDIA_NOT_FOUND', message: 'File was not found.' });
     }
 
-    let authorized = authContext.role === 'admin' || media.owner_id === authContext.userId;
-    if (!authorized && (authContext.role === 'student' || authContext.role === 'parent')) {
+    let authorized = hasServerRole(authContext, 'admin') || media.owner_id === authContext.userId;
+    if (!authorized && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
       const { data: sources, error: sourceError } = await client
         .from('lesson_sources')
         .select('lesson_id')
@@ -11616,8 +13021,8 @@ app.post("/api/upload-media", authenticateUploadRequest, mediaUploadMiddleware, 
     // 2. Authoritative verified identity (NEVER trust client-supplied userId or role)
     const authContext = (req as any).verifiedAuth as ServerAuthContext;
     const uploaderId = authContext.userId;
-    const uploaderRole = authContext.role;
-    if (!uploaderId || !uploaderRole) {
+    const uploaderRoles = authContext.roles;
+    if (!uploaderId || uploaderRoles.length === 0) {
       return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'An authorized profile is required to upload media.' });
     }
 
@@ -11633,13 +13038,13 @@ app.post("/api/upload-media", authenticateUploadRequest, mediaUploadMiddleware, 
     let isPublic = false;
 
     if (requestedType === "feed") {
-      if (!['student', 'teacher', 'admin'].includes(uploaderRole)) {
+      if (!hasAnyServerRole(authContext, ['student', 'teacher', 'admin'])) {
         return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'This account cannot upload feed media.' });
       }
       uploadType = "feed";
       isPublic = true;
     } else {
-      if (uploaderRole !== "teacher" && uploaderRole !== "admin") {
+      if (!hasAnyServerRole(authContext, ['teacher', 'admin'])) {
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -11661,7 +13066,7 @@ app.post("/api/upload-media", authenticateUploadRequest, mediaUploadMiddleware, 
           console.error('Media lesson ownership check failed:', lessonError.message);
           return res.status(503).json({ success: false, error: 'AUTHORIZATION_UNAVAILABLE', message: 'Lesson ownership could not be verified.' });
         }
-        if (!lesson || (uploaderRole === 'teacher' && lesson.created_by !== uploaderId)) {
+        if (!lesson || (hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin') && lesson.created_by !== uploaderId)) {
           return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'You cannot upload sources for this lesson.' });
         }
       }
@@ -11788,7 +13193,7 @@ app.post("/api/feed-media/cleanup", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
     if (!authContext.isAuthenticated || !authContext.userId ||
-        !['student', 'teacher', 'admin'].includes(authContext.role || '')) {
+        !hasAnyServerRole(authContext, ['student', 'teacher', 'admin'])) {
       return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Sign in to manage your feed uploads.' });
     }
 
@@ -12168,8 +13573,12 @@ app.put("/api/church/hymns-taxis-level", async (req, res) => {
     if (!authContext.isAuthenticated || !authContext.userId) {
       return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to save your level." });
     }
-    if (authContext.role !== 'student') {
+    if (!hasServerRole(authContext, 'student')) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only students can set a student curriculum level." });
+    }
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body) ||
+        Object.keys(req.body).some(field => field !== 'level')) {
+      return res.status(400).json({ success: false, error: "INVALID_REQUEST", message: "Only the level field may be updated." });
     }
 
     const requestedLevel = parseHymnsTaxisLevel(req.body?.level);
@@ -12178,39 +13587,18 @@ app.put("/api/church/hymns-taxis-level", async (req, res) => {
     }
 
     const client = getTrustedProgressClient();
-    const { data: profile, error: profileError } = await client
-      .from('profiles')
-      .select('id, role, hymns_taxis_level')
-      .eq('id', authContext.userId)
-      .maybeSingle();
-    if (profileError) throw new Error(`Could not verify the student profile: ${profileError.message}`);
-    if (!profile) {
-      return res.status(404).json({ success: false, error: "PROFILE_NOT_FOUND", message: "Student profile was not found." });
-    }
-    if (profile.role !== 'student') {
-      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only student profiles can set this level." });
-    }
-    if (!canInitializeHymnsTaxisLevel(profile.role, profile.hymns_taxis_level, requestedLevel)) {
-      return res.status(409).json({
-        success: false,
-        error: "LEVEL_ALREADY_ASSIGNED",
-        message: "A curriculum level is already assigned. Contact your teacher if it needs to change."
-      });
-    }
-
     const { data: updated, error: updateError } = await client
       .from('profiles')
       .update({ hymns_taxis_level: requestedLevel })
       .eq('id', authContext.userId)
-      .is('hymns_taxis_level', null)
       .select('hymns_taxis_level')
       .maybeSingle();
     if (updateError) throw new Error(`Could not save the student curriculum level: ${updateError.message}`);
     if (!updated) {
       return res.status(409).json({
         success: false,
-        error: "LEVEL_ALREADY_ASSIGNED",
-        message: "A curriculum level is already assigned. Contact your teacher if it needs to change."
+        error: "PROFILE_NOT_FOUND",
+        message: "Student profile was not found."
       });
     }
 
@@ -12244,7 +13632,7 @@ app.get("/api/church/hymns/my-enrollment", async (req, res) => {
     }
 
     // Students can only check their own enrollment
-    if (authContext.role === 'student' && authContext.userId && requestedStudentId !== authContext.userId) {
+    if (hasServerRole(authContext, 'student') && authContext.userId && requestedStudentId !== authContext.userId) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Cannot inspect another student's enrollment" });
     }
 
@@ -12272,7 +13660,7 @@ app.post("/api/church/hymns/enroll", async (req, res) => {
 app.get("/api/church/hymns/requests", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+    if (!authContext.isAuthenticated || (!hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -12295,7 +13683,7 @@ app.get("/api/church/hymns/requests", async (req, res) => {
 app.post("/api/church/hymns/review", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+    if (!authContext.isAuthenticated || (!hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin'))) {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -12361,7 +13749,7 @@ app.get("/api/church/hymns", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
     const allHymns = Object.values(serverReviewState.hymnsCollection || {});
-    const isTeacherOrAdmin = authContext.role === 'teacher' || authContext.role === 'admin';
+    const isTeacherOrAdmin = hasServerRole(authContext, 'teacher') || hasServerRole(authContext, 'admin');
 
     // Query filters
     const levelQuery = req.query.level ? parseHymnsTaxisLevel(req.query.level) : null;
@@ -12373,7 +13761,7 @@ app.get("/api/church/hymns", async (req, res) => {
 
     if (!isTeacherOrAdmin) {
       let studentLevel = 1;
-      if (authContext.role === 'student' && authContext.userId) {
+      if (hasServerRole(authContext, 'student') && authContext.userId) {
         const studentProfile = await getSharedHymnsTaxisProfile(authContext.userId);
         studentLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level) || 0;
         if (!studentLevel) {
@@ -12406,8 +13794,8 @@ app.get("/api/church/hymns", async (req, res) => {
       return res.json({
         success: true,
         items: accessibleHymns,
-        enrolledLevel: authContext.role === 'student' ? studentLevel : null,
-        isApproved: authContext.role === 'student'
+        enrolledLevel: hasServerRole(authContext, 'student') ? studentLevel : null,
+        isApproved: hasServerRole(authContext, 'student')
       });
     }
 
@@ -12436,7 +13824,7 @@ app.get("/api/church/hymns/:id", async (req, res) => {
       return res.status(404).json({ success: false, error: "NOT_FOUND", message: "Hymn not found" });
     }
 
-    const isTeacherOrAdmin = authContext.role === 'teacher' || authContext.role === 'admin';
+    const isTeacherOrAdmin = hasServerRole(authContext, 'teacher') || hasServerRole(authContext, 'admin');
     if (!isTeacherOrAdmin) {
       // Drafts hidden from students
       if (hymn.status !== 'published') {
@@ -12445,7 +13833,7 @@ app.get("/api/church/hymns/:id", async (req, res) => {
 
       // Check student level
       let studentLevel = 1;
-      if (authContext.role === 'student' && authContext.userId) {
+      if (hasServerRole(authContext, 'student') && authContext.userId) {
         const studentProfile = await getSharedHymnsTaxisProfile(authContext.userId);
         studentLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level) || 0;
         if (!studentLevel) {
@@ -12477,7 +13865,7 @@ app.get("/api/church/hymns/:id", async (req, res) => {
 app.post("/api/church/hymns", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+    if (!authContext.isAuthenticated || (!hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin'))) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers can create hymns." });
     }
 
@@ -12553,7 +13941,7 @@ app.post("/api/church/hymns", async (req, res) => {
 app.put("/api/church/hymns/:id", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+    if (!authContext.isAuthenticated || (!hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin'))) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers can edit hymns." });
     }
 
@@ -12604,7 +13992,7 @@ app.put("/api/church/hymns/:id", async (req, res) => {
 app.post("/api/church/hymns/:id/unpublish", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+    if (!authContext.isAuthenticated || (!hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin'))) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers can unpublish." });
     }
 
@@ -12625,7 +14013,7 @@ app.post("/api/church/hymns/:id/unpublish", async (req, res) => {
 app.post("/api/church/hymns/:id/restore", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
-    if (!authContext.isAuthenticated || (authContext.role !== 'teacher' && authContext.role !== 'admin')) {
+    if (!authContext.isAuthenticated || (!hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin'))) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers can restore." });
     }
 
@@ -12676,9 +14064,8 @@ function evaluateServerTaxisPermissions(authContext: ServerAuthContext, item?: a
     };
   }
 
-  const role = authContext.role;
-  const isSuperAdmin = role === 'admin';
-  const isTeacher = role === 'teacher';
+  const isSuperAdmin = hasServerRole(authContext, 'admin');
+  const isTeacher = hasServerRole(authContext, 'teacher');
   const isAuthor = Boolean(item && (item.createdBy === authContext.userId || item.createdBy === 'user_teacher_mina_101'));
   const isAssignedEditor = Boolean(item && item.assignedEditors?.includes(authContext.userId));
   const isAssignedReviewer = Boolean(item && item.assignedReviewers?.includes(authContext.userId));
@@ -12735,11 +14122,11 @@ app.get("/api/church/taxis", async (req, res) => {
     const allItems = Object.values(serverReviewState.taxisCollection || {});
     const { category, audience } = req.query;
 
-    if (authContext.role === 'student' || (!authContext.isAuthenticated && !authContext.userId)) {
-      const studentProfile = authContext.role === 'student' && authContext.userId
+    if (hasServerRole(authContext, 'student') || (!authContext.isAuthenticated && !authContext.userId)) {
+      const studentProfile = hasServerRole(authContext, 'student') && authContext.userId
         ? await getSharedHymnsTaxisProfile(authContext.userId)
         : null;
-      const assignedLevel = authContext.role === 'student'
+      const assignedLevel = hasServerRole(authContext, 'student')
         ? parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level)
         : 1;
       if (assignedLevel === null) {
@@ -12801,7 +14188,7 @@ app.get("/api/church/taxis/:id", async (req, res) => {
         message: "You are not authorized to view this ritual draft or private liturgical material."
       });
     }
-    if (authContext.role === 'student' && authContext.userId) {
+    if (hasServerRole(authContext, 'student') && authContext.userId) {
       const studentProfile = await getSharedHymnsTaxisProfile(authContext.userId);
       const assignedLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level);
       if (assignedLevel === null) {
@@ -12854,7 +14241,8 @@ app.post("/api/church/taxis", async (req, res) => {
       return res.status(400).json({ success: false, error: "VALIDATION_FAILED", message: "Arabic title and a valid curriculum level (1, 2, or 3) are required." });
     }
 
-    const id = req.body.id || `taxis_${Date.now()}`;
+    const requestedId = typeof req.body?.id === 'string' ? req.body.id : '';
+    const id = requestedId && !requestedId.startsWith('new_') ? requestedId : `taxis_${Date.now()}`;
     const newItem = {
       id,
       titleAr,
@@ -12902,6 +14290,13 @@ app.put("/api/church/taxis/:id", async (req, res) => {
     if (!perms.canEdit) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "You are not authorized to edit this ritual." });
     }
+    if (item.status !== 'draft' && item.status !== 'unpublished') {
+      return res.status(409).json({
+        success: false,
+        error: "WORKFLOW_LOCKED",
+        message: "Return this ritual to draft or unpublished status before editing so its review and publication state remains valid."
+      });
+    }
     if (req.body?.level !== undefined && parseHymnsTaxisLevel(req.body.level) === null) {
       return res.status(400).json({ success: false, error: "INVALID_LEVEL", message: "Level must be 1, 2, or 3." });
     }
@@ -12921,9 +14316,17 @@ app.put("/api/church/taxis/:id", async (req, res) => {
 
     const updated = {
       ...item,
-      ...req.body,
+      titleAr: req.body?.titleAr ?? item.titleAr,
+      titleEn: req.body?.titleEn ?? item.titleEn,
+      titleCopt: req.body?.titleCopt ?? item.titleCopt,
+      category: req.body?.category ?? item.category,
       level: req.body?.level === undefined ? item.level ?? null : parseHymnsTaxisLevel(req.body.level),
-      id: item.id,
+      audience: req.body?.audience ?? item.audience,
+      summaryAr: req.body?.summaryAr ?? item.summaryAr,
+      summaryEn: req.body?.summaryEn ?? item.summaryEn,
+      sections: Array.isArray(req.body?.sections) ? req.body.sections : item.sections,
+      references: Array.isArray(req.body?.references) ? req.body.references : item.references,
+      documents: Array.isArray(req.body?.documents) ? req.body.documents : item.documents,
       version: (item.version || 1) + 1,
       updatedAt: new Date().toISOString(),
       history
@@ -12950,6 +14353,13 @@ app.post("/api/church/taxis/:id/submit-review", async (req, res) => {
     if (!perms.canSubmitReview) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to submit for review." });
     }
+    if (item.status !== 'draft' && item.status !== 'unpublished') {
+      return res.status(409).json({
+        success: false,
+        error: "INVALID_WORKFLOW_STATE",
+        message: "Only draft or unpublished Taxis items can be submitted for review."
+      });
+    }
 
     item.status = 'under_review';
     item.updatedAt = new Date().toISOString();
@@ -12972,15 +14382,30 @@ app.post("/api/church/taxis/:id/review", async (req, res) => {
     if (!perms.canApprove) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to approve review." });
     }
-
     const { action, notes } = req.body;
+    if (action !== 'APPROVE' && action !== 'REQUEST_CHANGES') {
+      return res.status(400).json({ success: false, error: "INVALID_ACTION", message: "Review action must be APPROVE or REQUEST_CHANGES." });
+    }
+    if (
+      (action === 'APPROVE' && item.status !== 'under_review') ||
+      (action === 'REQUEST_CHANGES' && item.status !== 'under_review' && item.status !== 'approved')
+    ) {
+      return res.status(409).json({
+        success: false,
+        error: "REVIEW_REQUIRED",
+        message: "Taxis items must be under review or approved before requesting changes."
+      });
+    }
+
     if (action === 'APPROVE') {
       item.status = 'approved';
       item.approvedBy = authContext.userId || 'reviewer';
       item.reviewedBy = authContext.userId || 'reviewer';
       item.updatedAt = new Date().toISOString();
-    } else {
+    } else if (action === 'REQUEST_CHANGES') {
       item.status = 'draft';
+      delete item.approvedBy;
+      delete item.reviewedBy;
       item.updatedAt = new Date().toISOString();
     }
 
@@ -13001,6 +14426,13 @@ app.post("/api/church/taxis/:id/publish", async (req, res) => {
     const perms = evaluateServerTaxisPermissions(authContext, item);
     if (!perms.canPublish) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to publish rituals." });
+    }
+    if (item.status !== 'approved') {
+      return res.status(409).json({
+        success: false,
+        error: "APPROVAL_REQUIRED",
+        message: "Only an approved Taxis ritual can be published."
+      });
     }
     if (parseHymnsTaxisLevel(item.level) === null) {
       return res.status(400).json({
@@ -13033,6 +14465,13 @@ app.post("/api/church/taxis/:id/unpublish", async (req, res) => {
     if (!perms.canUnpublish) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to unpublish." });
     }
+    if (item.status !== 'published') {
+      return res.status(409).json({
+        success: false,
+        error: "NOT_PUBLISHED",
+        message: "Only published Taxis items can be unpublished."
+      });
+    }
 
     item.status = 'unpublished';
     item.unpublishedBy = authContext.userId || 'unpublisher';
@@ -13057,6 +14496,13 @@ app.post("/api/church/taxis/:id/restore", async (req, res) => {
     if (!perms.canRestore) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Not authorized to restore versions." });
     }
+    if (item.status !== 'draft' && item.status !== 'unpublished') {
+      return res.status(409).json({
+        success: false,
+        error: "WORKFLOW_LOCKED",
+        message: "Return this ritual to draft or unpublished status before restoring a version."
+      });
+    }
 
     const { targetVersion } = req.body;
     const history = item.history || [];
@@ -13067,7 +14513,9 @@ app.post("/api/church/taxis/:id/restore", async (req, res) => {
 
     item.titleAr = snapshot.titleAr || item.titleAr;
     item.titleEn = snapshot.titleEn || item.titleEn;
-    item.status = snapshot.status || item.status;
+    item.status = 'draft';
+    delete item.approvedBy;
+    delete item.reviewedBy;
     item.version = (item.version || 1) + 1;
     item.updatedAt = new Date().toISOString();
 

@@ -1,12 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Globe, Cross, X, Sun, Moon, Calendar, BookOpen, Scroll, Check, CheckCheck } from 'lucide-react';
+import { Award, Bell, Cross, Flame, X, Sun, Moon, CheckCheck } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { PWAInstallButton } from './PWAInstallButton';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { useLessons } from '../../context/LessonsContext';
 import { Language } from '../../types';
-import { LANGUAGE_OPTIONS } from '../../lib/i18n';
+import type { Role } from '../../types';
+import type { Workspace } from '../../lib/workspaces';
+import { getWorkspacePageLabel } from './workspaceNavigation';
+import { shouldShowStudentProgress } from '../../lib/progressDisplay';
 import { 
   getLiveNotificationsForUser, 
   markNotificationAsRead, 
@@ -18,24 +22,25 @@ import {
 
 interface TopBarProps {
   lang: Language;
-  setLang: (l: Language) => void;
   onHomeClick?: () => void;
   onNavigate?: (tab: string) => void;
   activeTab?: string;
+  workspace?: Workspace;
+  onWorkspaceChange?: (workspace: Workspace) => void;
 }
 
 export function TopBar({ 
   lang, 
-  setLang,
   onHomeClick,
   onNavigate,
-  activeTab
+  activeTab,
+  workspace,
+  onWorkspaceChange
 }: TopBarProps) {
   const { userData } = useAuth();
+  const activeWorkspace = useActiveWorkspace();
   const { lessons } = useLessons();
   const [showNotifs, setShowNotifs] = useState(false);
-  const [showLangMenu, setShowLangMenu] = useState(false);
-  const langMenuRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
   const reduceMotion = useReducedMotion();
@@ -45,9 +50,9 @@ export function TopBar({
   const [browserNotifActive, setBrowserNotifActive] = useState<boolean>(() => isBrowserNotificationEnabled());
 
   const refreshNotifications = React.useCallback(async () => {
-    const list = await getLiveNotificationsForUser(userData, lessons || []);
+    const list = await getLiveNotificationsForUser(userData, lessons || [], activeWorkspace);
     setNotifications(list);
-  }, [userData, lessons]);
+  }, [userData, lessons, activeWorkspace]);
 
   useEffect(() => {
     refreshNotifications();
@@ -61,16 +66,12 @@ export function TopBar({
   // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
-        setShowLangMenu(false);
-      }
       if (notifMenuRef.current && !notifMenuRef.current.contains(e.target as Node)) {
         setShowNotifs(false);
       }
     }
     function handleEscape(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        setShowLangMenu(false);
         setShowNotifs(false);
       }
     }
@@ -83,6 +84,16 @@ export function TopBar({
   }, []);
 
   const churchNameDisplay = lang === 'ar' ? 'كنيسة الأنبا موسى' : 'St. Musa Church';
+  const workspaceLabels: Record<Role, string> = lang === 'ar'
+    ? { student: 'مساحة الطالب', parent: 'مساحة ولي الأمر', teacher: 'مساحة الخادم', admin: 'مساحة الإدارة' }
+    : { student: 'Student workspace', parent: 'Parent workspace', teacher: 'Servant workspace', admin: 'Admin workspace' };
+  const availableWorkspaces = userData?.roles || [];
+  const showStudentProgress = shouldShowStudentProgress({
+    workspace,
+    activeTab,
+    roles: userData?.roles || [],
+    progressKnown: userData?.progressKnown
+  });
 
   const handleNotificationClick = (notif: ChurchNotification) => {
     markNotificationAsRead(notif.id);
@@ -117,55 +128,44 @@ export function TopBar({
           <span>{churchNameDisplay}</span>
         </button>
 
-        {/* Center Quick Navigation (Calendar, Agpeya) - Desktop View. Hymns School is now integrated into Lessons. */}
-        {onNavigate && (
-          <nav aria-label={lang === 'ar' ? 'روابط سريعة' : 'Quick links'} className="app-topbar-quick-nav hidden md:flex items-center gap-1.5 p-1 rounded-2xl border shadow-xs">
-            <button
-              type="button"
-              onClick={() => onNavigate('calendar')}
-              aria-current={activeTab === 'calendar' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'calendar'
-                  ? 'app-topbar-quick-active shadow-xs font-black'
-                  : 'app-topbar-quick-idle'
-              }`}
-            >
-              <Calendar size={15} />
-              <span>{lang === 'ar' ? 'التقويم والسنكسار' : 'Coptic Calendar'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('agpeya')}
-              aria-current={activeTab === 'agpeya' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'agpeya'
-                  ? 'app-topbar-quick-active shadow-xs font-black'
-                  : 'app-topbar-quick-idle'
-              }`}
-            >
-              <BookOpen size={15} />
-              <span>{lang === 'ar' ? 'صلوات الأجبية' : 'Daily Agpeya'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('taxis')}
-              aria-current={activeTab === 'taxis' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'taxis'
-                  ? 'app-topbar-quick-active shadow-xs font-black'
-                  : 'app-topbar-quick-idle'
-              }`}
-            >
-              <Scroll size={15} />
-              <span>{lang === 'ar' ? 'طقوس الكنيسة' : 'Coptic Taxis'}</span>
-            </button>
-          </nav>
+        {workspace && activeTab && (
+          <div className="hidden min-w-0 flex-1 px-3 md:block" aria-live="polite">
+            <p className="truncate text-sm font-black text-[var(--navigation-text)]">
+              {getWorkspacePageLabel(workspace, activeTab, lang)}
+            </p>
+          </div>
         )}
 
-        {/* Right Controls: Theme Toggle, Language, Notifications, PWA */}
+        {/* Right Controls: student progress, theme, notifications, and PWA */}
         <div className="flex gap-1.5 sm:gap-2.5 items-center">
+          {availableWorkspaces.length > 1 && workspace && onWorkspaceChange && (
+            <label className="sr-only" htmlFor="workspace-selector">
+              {lang === 'ar' ? 'تبديل مساحة العمل' : 'Switch workspace'}
+            </label>
+          )}
+          {showStudentProgress && userData && (
+            <div className="hidden items-center gap-1.5 sm:flex" aria-label={lang === 'ar' ? 'تقدمك' : 'Your progress'}>
+              <span className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-[11px] font-black text-amber-100" aria-label={lang === 'ar' ? `${userData.points} نقطة` : `${userData.points} points`}>
+                <Award size={14} />{userData.points}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-[11px] font-black text-orange-100" aria-label={lang === 'ar' ? `${userData.currentStreak} يوم متواصل` : `${userData.currentStreak} day streak`}>
+                <Flame size={14} />{userData.currentStreak}
+              </span>
+            </div>
+          )}
+          {availableWorkspaces.length > 1 && workspace && onWorkspaceChange && (
+            <select
+              id="workspace-selector"
+              aria-label={lang === 'ar' ? 'تبديل مساحة العمل' : 'Switch workspace'}
+              value={workspace}
+              onChange={event => onWorkspaceChange(event.target.value as Workspace)}
+              className="max-w-[9rem] sm:max-w-none rounded-xl border border-white/20 bg-white/10 px-2 py-2 text-xs font-bold text-white"
+            >
+              {availableWorkspaces.map(role => (
+                <option key={role} value={role} className="text-slate-900">{workspaceLabels[role]}</option>
+              ))}
+            </select>
+          )}
           {/* Dark / Light Church Aesthetic Toggle */}
           <button
             type="button"
@@ -181,81 +181,6 @@ export function TopBar({
           </button>
 
           <PWAInstallButton />
-          
-          {/* Language Switcher Popover (Arabic & English Only) */}
-          <div className="relative" ref={langMenuRef}>
-            <button 
-              type="button"
-              onClick={() => setShowLangMenu(!showLangMenu)} 
-              aria-expanded={showLangMenu}
-              aria-haspopup="true"
-              aria-controls="language-menu"
-              aria-label={lang === 'ar' ? 'اختيار اللغة' : 'Choose language'}
-              className="flex items-center gap-1.5 text-xs sm:text-sm bg-white/20 hover:bg-white/30 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer border border-white/15 shadow-xs"
-              title="Language / اللغة"
-            >
-              <Globe size={15} className="text-[var(--color-church-gold-light)]" /> 
-              <span className="tracking-wide">
-                {lang === 'ar' ? '🇪🇬 عربي' : '🌐 English'}
-              </span>
-            </button>
-
-            <AnimatePresence>
-              {showLangMenu && (
-                <motion.div
-                  initial={reduceMotion ? false : { opacity: 0, y: -8, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                  transition={{ duration: reduceMotion ? 0 : 0.15 }}
-                  role="group"
-                  aria-label={lang === 'ar' ? 'اختيار اللغة' : 'Language options'}
-                  id="language-menu"
-                  className="absolute end-0 mt-2 w-64 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-overlay)] p-2 text-[var(--text-primary)] shadow-2xl z-50 overflow-hidden"
-                >
-                  <div className="px-3 py-2 border-b border-[var(--border-stone)]/50">
-                    <p className="text-[11px] font-extrabold text-[var(--brand-burgundy)] dark:text-[var(--brand-gold)] uppercase tracking-wider flex items-center gap-1.5">
-                      <Globe size={12} />
-                      <span>{lang === 'ar' ? 'اختر اللغة' : 'Select Language'}</span>
-                    </p>
-                  </div>
-
-                  <div className="py-1 space-y-1">
-                    {LANGUAGE_OPTIONS.map((opt) => {
-                      const isSelected = lang === opt.code;
-                      return (
-                        <button
-                          type="button"
-                          key={opt.code}
-                          onClick={() => {
-                            setLang(opt.code);
-                            setShowLangMenu(false);
-                          }}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer text-start ${
-                            isSelected
-                              ? 'bg-[var(--state-selected)] text-[var(--action-primary)] font-bold shadow-xs'
-                              : 'hover:bg-[var(--state-hover)] text-[var(--text-primary)]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-base">{opt.flagSymbol}</span>
-                            <div>
-                              <p className="font-bold text-xs">{opt.label}</p>
-                              <p className={`text-[10px] ${isSelected ? 'text-[var(--text-secondary)]' : 'text-[var(--color-neutral)]'}`}>
-                                {opt.churchDialect}
-                              </p>
-                            </div>
-                          </div>
-                          {isSelected && (
-                            <Check size={14} className="text-[var(--brand-gold)] shrink-0 font-black" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
 
           {/* Real Authorized In-App & Browser Notifications */}
           <div className="relative" ref={notifMenuRef}>
@@ -391,38 +316,6 @@ export function TopBar({
         </div>
       </div>
 
-      {/* Mobile Top Bar Quick Sub-row for Calendar & Agpeya */}
-      {onNavigate && (
-        <nav aria-label={lang === 'ar' ? 'روابط سريعة' : 'Quick links'} className="app-topbar-mobile-quick md:hidden flex items-center justify-around px-2 py-1.5 border-t text-xs font-bold overflow-x-auto scrollbar-none">
-          <button
-            type="button"
-            onClick={() => onNavigate('calendar')}
-            aria-current={activeTab === 'calendar' ? 'page' : undefined}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition-all cursor-pointer shrink-0 ${
-              activeTab === 'calendar'
-                ? 'app-topbar-quick-active shadow-xs font-black'
-                : 'app-topbar-quick-idle'
-            }`}
-          >
-            <Calendar size={13} />
-            <span>{lang === 'ar' ? 'التقويم والسنكسار' : 'Calendar'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigate('agpeya')}
-            aria-current={activeTab === 'agpeya' ? 'page' : undefined}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition-all cursor-pointer shrink-0 ${
-              activeTab === 'agpeya'
-                ? 'app-topbar-quick-active shadow-xs font-black'
-                : 'app-topbar-quick-idle'
-            }`}
-          >
-            <BookOpen size={13} />
-            <span>{lang === 'ar' ? 'الأجبية' : 'Agpeya'}</span>
-          </button>
-        </nav>
-      )}
     </header>
   );
 }

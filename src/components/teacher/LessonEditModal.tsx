@@ -235,7 +235,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
               <p className="text-xs text-gray-500">
                 {isOnlineAuth 
                   ? (lang === 'ar' ? 'مسودة الإصدار المحمية • تعديل آمن وحفظ في Supabase' : 'Versioned Draft Foundation • Safe Supabase Storage')
-                  : (lang === 'ar' ? 'صلاحيات المعلم / خادم مدارس الأحد' : 'Teacher & Servant Privileges')}
+                  : (lang === 'ar' ? 'صلاحيات خادم مدارس الأحد' : 'Servant permissions')}
               </p>
             </div>
           </div>

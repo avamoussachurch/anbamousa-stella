@@ -1,7 +1,7 @@
 import React from 'react';
 
 export interface CopticCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'interactive' | 'sacred' | 'media' | 'status' | 'mousa-sand' | 'mousa-quest';
+  variant?: 'default' | 'interactive' | 'sacred' | 'media' | 'status' | 'mousa-sand' | 'mousa-quest' | 'feature' | 'subtle';
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
@@ -21,24 +21,28 @@ export const CopticCard: React.FC<CopticCardProps> = ({
 
   const variantStyles = {
     default:
-      'bg-[var(--surface-card)] border border-[var(--border-stone)] shadow-xs rounded-2xl',
+      'stella-card',
     interactive:
-      'bg-[var(--surface-card)] border border-[var(--border-stone)] shadow-xs hover:border-[var(--brand-gold)] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer rounded-2xl',
+      'stella-card stella-card--interactive',
     sacred:
-      'bg-[var(--surface-card)] border border-[var(--border-stone)] border-t-4 border-t-[var(--brand-gold)] shadow-xs rounded-2xl relative overflow-hidden',
+      'stella-card stella-card--feature border-t-4 border-t-[var(--mousa-gold)]',
     media:
-      'bg-[var(--surface-card)] border border-[var(--border-stone)] shadow-xs rounded-2xl overflow-hidden',
+      'stella-card',
     status:
-      'bg-[var(--surface-elevated)] border border-[var(--border-stone)] rounded-xl',
+      'stella-card stella-card--subtle rounded-xl',
     'mousa-sand':
-      'bg-[var(--mousa-cream-surface)] border border-[var(--mousa-border-sand)] shadow-xs rounded-2xl transition-all duration-200',
+      'stella-card',
     'mousa-quest':
-      'bg-[var(--mousa-cream-surface)] border-2 border-[var(--mousa-border-sand)] hover:border-[var(--mousa-gold)] shadow-md rounded-3xl relative overflow-hidden transition-all duration-200'
+      'stella-card stella-card--feature rounded-3xl',
+    feature:
+      'stella-card stella-card--feature',
+    subtle:
+      'stella-card stella-card--subtle'
   };
 
   return (
     <div
-      className={`${variantStyles[variant]} ${paddingStyles[padding]} transition-colors duration-200 ${className}`}
+      className={`${variantStyles[variant]} ${paddingStyles[padding]} ${className}`}
       {...props}
     >
       {children}

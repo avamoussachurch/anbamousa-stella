@@ -68,15 +68,27 @@ test('direction follows Arabic, English, and Coptic language selections', () => 
 });
 
 test('main and quick navigation expose localized landmarks and selected destinations', async () => {
-  const [bottomNav, topBar, styles] = await Promise.all([
+  const [bottomNav, topBar, languageSettings, profileTab, roleProfile, roleProfileShared, app, styles] = await Promise.all([
     readFile(new URL('../components/layout/BottomNav.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../components/layout/TopBar.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../components/shared/LanguageSettings.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../components/student/ProfileTab.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../components/profile/RoleAccountProfile.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../components/profile/RoleProfileShared.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../App.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../index.css', import.meta.url), 'utf8')
   ]);
   assert.match(bottomNav, /aria-label=\{lang === 'ar' \? 'التنقل الرئيسي' : 'Main navigation'\}/);
   assert.match(bottomNav, /aria-current=\{isActive \? 'page' : undefined\}/);
-  assert.match(topBar, /aria-label=\{lang === 'ar' \? 'روابط سريعة' : 'Quick links'\}/);
-  assert.match(topBar, /aria-expanded=\{showLangMenu\}/);
+  assert.match(topBar, /aria-label=\{lang === 'ar' \? 'العودة للرئيسية' : 'Go to home'\}/);
+  assert.match(topBar, /Church notifications, \$\{unreadCount\} unread/);
+  assert.doesNotMatch(topBar, /LANGUAGE_OPTIONS|showLangMenu|Choose language/);
+  assert.match(languageSettings, /setLang\('ar'\)/);
+  assert.match(languageSettings, /setLang\('en'\)/);
+  assert.match(profileTab, /<LanguageSettings lang=\{lang\} setLang=\{setLang\} \/>/);
+  assert.match(roleProfileShared, /<LanguageSettings lang=\{lang\} setLang=\{setLang\} \/>/);
+  assert.match(app, /localStorage\.setItem\('church_app_lang', newLang\)/);
+  assert.match(app, /applyLanguagePreference\(document\.documentElement, newLang\)/);
   assert.match(styles, /--state-selected:/);
   assert.match(styles, /:focus-visible/);
   assert.match(styles, /prefers-reduced-motion: reduce/);

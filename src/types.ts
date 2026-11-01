@@ -34,11 +34,15 @@ export interface TerminologyGlossaryItem {
 export interface User {
   id: string; // Firebase Auth UID
   fullName: string;
+  email?: string;
+  roles: Role[];
+  /** @deprecated Compatibility projection only. Never use for authorization. */
   role: Role;
   avatarUrl: string;
   points: number;
   currentStreak: number;
   longestStreak: number;
+  progressKnown?: boolean;
   parentEmail?: string;
   parentId?: string;
   parentName?: string;

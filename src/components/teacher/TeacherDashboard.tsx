@@ -14,22 +14,19 @@ import {
   Trash2, 
   RotateCcw,
   Sparkles,
-  Globe,
   Award,
-  BookOpen,
   School,
-  FolderOpen,
   Search,
-  Filter
+  Filter,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
+import { hasRole } from '../../lib/workspaces';
 import { useLessons } from '../../context/LessonsContext';
 import { Lesson, QuizQuestion, LessonSource, PresentationSlide, ServantComment } from '../../types';
 import { LessonEditModal } from './LessonEditModal';
 import { ExpressLessonPublishModal } from './ExpressLessonPublishModal';
 import { AttendanceVisitationTracker } from './AttendanceVisitationTracker';
-import { UserCheck } from 'lucide-react';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { createLessonDraft } from '../../lib/lessonAuthoringService';
 
@@ -43,19 +40,54 @@ import { PdfDocumentViewer } from '../sunday-school/viewers/PdfDocumentViewer';
 import { SlideDeckViewer } from '../sunday-school/viewers/SlideDeckViewer';
 import { TeacherPublishingHub, PublishingMode } from './publishing/TeacherPublishingHub';
 import { LessonPublicationManager } from './LessonPublicationManager';
+import { StudentExperiencePreview } from './StudentExperiencePreview';
+import { FeedTab } from '../student/FeedTab';
+import { ServantHomeDashboard } from './ServantHomeDashboard';
 
 interface TeacherDashboardProps {
-  onBackToApp?: () => void;
   onOpenParentPortal?: () => void;
-  onPreviewLesson?: (lessonId: string) => void;
   lang?: 'en' | 'ar';
+  activeTab?: string;
+  onNavigate?: (tab: string) => void;
 }
 
+type TeacherTab = 'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation' | 'preview' | 'communication';
+
+const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
+  overview: { en: 'Servant Studio', ar: 'استوديو الخادم' },
+  attendance: { en: 'Attendance & visits', ar: 'الحضور والافتقاد' },
+  sundaySchool: { en: 'Curriculum & publishing', ar: 'المناهج والنشر' },
+  sources: { en: 'Lesson sources & media', ar: 'مصادر ووسائط الدروس' },
+  mastery: { en: 'Student progress & quizzes', ar: 'تقدم الطلاب والاختبارات' },
+  classManagement: { en: 'Classes & students', ar: 'الفصول والطلاب' },
+  ai: { en: 'Lesson creator', ar: 'إنشاء درس' },
+  lessons: { en: 'Lesson library', ar: 'مكتبة الدروس' },
+  moderation: { en: 'Moderation', ar: 'الإشراف' },
+  preview: { en: 'Student experience preview', ar: 'معاينة تجربة التلميذ' },
+  communication: { en: 'Community feed', ar: 'منشورات المجتمع' }
+};
+
+const routeToTeacherTab: Record<string, TeacherTab> = {
+  home: 'overview',
+  studio: 'sundaySchool',
+  overview: 'overview',
+  attendance: 'attendance',
+  sundaySchool: 'sundaySchool',
+  sources: 'sources',
+  mastery: 'mastery',
+  classManagement: 'classManagement',
+  ai: 'ai',
+  lessons: 'lessons',
+  moderation: 'moderation',
+  preview: 'preview',
+  communication: 'communication'
+};
+
 export function TeacherDashboard({ 
-  onBackToApp, 
   onOpenParentPortal,
-  onPreviewLesson,
-  lang = 'en' 
+  lang = 'en',
+  activeTab: routeTab,
+  onNavigate
 }: TeacherDashboardProps) {
   const { userData, isGuest } = useAuth();
   const isOnlineAuth = !isGuest && Boolean(userData) && isSupabaseConfigured;
@@ -92,7 +124,16 @@ export function TeacherDashboard({
     updateStudentMastery
   } = useLessons();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation'>('overview');
+  const [localActiveTab, setLocalActiveTab] = useState<TeacherTab>('overview');
+  const activeTab = routeTab ? (routeToTeacherTab[routeTab] || 'overview') : localActiveTab;
+  const setActiveTab = (nextTab: TeacherTab) => {
+    if (!onNavigate) {
+      setLocalActiveTab(nextTab);
+      return;
+    }
+    onNavigate(nextTab === 'overview' ? 'home' : nextTab === 'sundaySchool' ? 'studio' : nextTab);
+  };
+  const [previewLessonId, setPreviewLessonId] = useState<string | null>(null);
   const [publishingModeToOpen, setPublishingModeToOpen] = useState<PublishingMode>('sunday_school');
   const [selectedSessionId, setSelectedSessionId] = useState<string>(() => classSessions[0]?.id || 'cs-2026-09-27');
   
@@ -125,9 +166,10 @@ export function TeacherDashboard({
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [showExpressPublishModal, setShowExpressPublishModal] = useState<boolean>(false);
 
-  // Universal Teacher Lesson Library Filters (Unrestricted site-wide access)
+  // Servant lesson library filters; server services enforce the effective permissions.
   const [lessonGradeFilter, setLessonGradeFilter] = useState<string>('ALL');
   const [lessonCategoryFilter, setLessonCategoryFilter] = useState<string>('ALL');
+  const [lessonStatusFilter, setLessonStatusFilter] = useState<'ALL' | 'draft' | 'published'>('ALL');
   const [lessonSearchQuery, setLessonSearchQuery] = useState<string>('');
 
   const filteredTeacherLessons = React.useMemo(() => {
@@ -146,6 +188,7 @@ export function TeacherDashboard({
       if (lessonCategoryFilter !== 'ALL') {
         if ((l.category || 'bible') !== lessonCategoryFilter) return false;
       }
+      if (lessonStatusFilter !== 'ALL' && l.status !== lessonStatusFilter) return false;
       // Search filter
       if (lessonSearchQuery.trim()) {
         const q = lessonSearchQuery.toLowerCase();
@@ -157,7 +200,7 @@ export function TeacherDashboard({
       }
       return true;
     });
-  }, [lessons, lessonGradeFilter, lessonCategoryFilter, lessonSearchQuery]);
+  }, [lessons, lessonGradeFilter, lessonCategoryFilter, lessonStatusFilter, lessonSearchQuery]);
 
   const handleAssignLessonToClass = (targetLesson: Lesson) => {
     if (activeSession) {
@@ -175,7 +218,7 @@ export function TeacherDashboard({
   };
 
   // Pending activation requests count
-  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number | null>(null);
   const [pendingRequestsError, setPendingRequestsError] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -186,12 +229,12 @@ export function TeacherDashboard({
       if (res.success && res.requests) {
         setPendingRequestsCount(res.requests.filter(r => r.status === 'PENDING_APPROVAL').length);
       } else {
-        setPendingRequestsCount(0);
+        setPendingRequestsCount(null);
         setPendingRequestsError(res.error || (lang === 'ar' ? 'تعذر تحميل طلبات التفعيل.' : 'Could not load activation requests.'));
       }
     }).catch((error: unknown) => {
       if (!isMounted) return;
-      setPendingRequestsCount(0);
+      setPendingRequestsCount(null);
       setPendingRequestsError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر تحميل طلبات التفعيل.' : 'Could not load activation requests.'));
     });
 
@@ -202,6 +245,11 @@ export function TeacherDashboard({
   const openPublishing = (mode: PublishingMode) => {
     setPublishingModeToOpen(mode);
     setActiveTab('sundaySchool');
+  };
+
+  const openStudentPreview = (lessonId?: string) => {
+    setPreviewLessonId(lessonId || null);
+    setActiveTab('preview');
   };
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -361,79 +409,41 @@ export function TeacherDashboard({
   };
 
   return (
-    <div className="pb-28 pt-4 px-4 max-w-5xl mx-auto space-y-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Top Header with Back to Church App & Logout Button */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--color-church-cream-dark)] dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          {onBackToApp && (
-            <button
-              onClick={onBackToApp}
-              className="p-2.5 rounded-2xl bg-[var(--mousa-sand-100)] dark:bg-stone-800 hover:bg-[var(--mousa-sand-200)] text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] transition-colors flex items-center justify-center shrink-0 border border-[var(--mousa-border-sand)] cursor-pointer"
-              title={lang === 'ar' ? 'العودة للتطبيق الرئيسي' : 'Return to Main App'}
-            >
-              <ArrowLeft size={20} className={lang === 'ar' ? 'rotate-180' : ''} />
-            </button>
-          )}
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl md:text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-                {lang === 'ar' ? 'استوديو الخادم ومدارس الأحد' : 'Teacher & Servant Studio'}
-              </h1>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-black bg-[var(--mousa-gold-soft)] text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)] border border-[var(--mousa-gold)]/30">
-                {lang === 'ar' ? 'صلاحيات المعلم' : 'Teacher Access'}
-              </span>
-            </div>
-            <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] mt-0.5 font-bold">
-              {lang === 'ar' 
-                ? `مرحباً ${userData?.fullName || 'بالخادم'} • رحلة القديس الأنبا موسى لمدارس الأحد` 
-                : `Welcome, ${userData?.fullName || 'Servant'} • The Journey of Moses Sunday School`}
+    <div className={`${activeTab === 'overview' ? 'w-full' : 'mx-auto w-full max-w-[96rem] px-4 pt-4 sm:px-6 lg:px-8'} space-y-6 pb-28`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      {activeTab !== 'overview' && (
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-default)] pb-4">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[.14em] text-[var(--action-primary)]">
+              {lang === 'ar' ? 'استوديو الخادم' : 'Servant Studio'}
             </p>
+            <h1 className="mt-1 text-xl font-black text-[var(--text-primary)] sm:text-2xl">
+              {lang === 'ar' ? teacherTabTitles[activeTab].ar : teacherTabTitles[activeTab].en}
+            </h1>
           </div>
-        </div>
-
-        {/* Action Controls: Direct Lesson Funnel, Dual-Role Switcher & Student View */}
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-          {/* Primary Action: Publish Lesson */}
-          <button
-            type="button"
-            onClick={() => setShowExpressPublishModal(true)}
-            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:opacity-95 text-white text-xs font-black transition-all flex items-center gap-2 shadow-md cursor-pointer"
-          >
-            <Plus size={16} className="stroke-[3]" />
-            <span>{lang === 'ar' ? '+ نشر درس جديد' : '+ Publish Lesson'}</span>
-          </button>
-
-          {/* Secondary Action: Generate Lesson */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('ai')}
-            className="px-3.5 py-2 rounded-2xl bg-[var(--mousa-cream-surface)] dark:bg-stone-800 hover:bg-[var(--mousa-sand-100)] text-[var(--mousa-teal-deep)] dark:text-stone-300 text-xs font-bold transition-colors flex items-center gap-1.5 border border-[var(--mousa-border-sand)] cursor-pointer shadow-2xs"
-            title={lang === 'ar' ? 'توليد درس كخيار ثانوي' : 'Generate Lesson (Secondary option)'}
-          >
-            <Sparkles size={14} className="text-[var(--mousa-gold)]" />
-            <span>{lang === 'ar' ? 'توليد درس' : 'Generate Lesson'}</span>
-          </button>
-
-          {onOpenParentPortal && (
-            <button
-              onClick={onOpenParentPortal}
-              className="px-3.5 py-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-[var(--mousa-teal-deep)] dark:text-amber-300 text-xs font-bold transition-colors flex items-center gap-1.5 border border-[var(--mousa-border-sand)] cursor-pointer shadow-2xs"
-            >
-              <span>👨‍👩‍👧</span>
-              <span>{lang === 'ar' ? 'بوابة ولي الأمر (أولادي)' : 'Parent Portal (My Kids)'}</span>
-            </button>
-          )}
-
-          {onBackToApp && (
-            <button
-              onClick={onBackToApp}
-              className="px-3.5 py-2 rounded-2xl bg-[var(--mousa-sand-100)] hover:bg-[var(--mousa-sand-200)] dark:bg-stone-800 text-[var(--mousa-sand-600)] dark:text-gray-200 text-xs font-bold transition-colors cursor-pointer border border-[var(--mousa-border-sand)]"
-            >
-              {lang === 'ar' ? 'عرض كطالب' : 'Student View'}
-            </button>
-          )}
-        </div>
-      </div>
+          <div className="flex flex-wrap gap-2">
+            {(activeTab === 'lessons' || activeTab === 'sundaySchool') && (
+              <button
+                type="button"
+                onClick={() => setShowExpressPublishModal(true)}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-orange-300 px-3 py-2 text-sm font-black text-slate-950 shadow-sm transition hover:brightness-105"
+              >
+                <Plus size={16} />
+                {lang === 'ar' ? 'إنشاء درس سريع' : 'Create a lesson'}
+              </button>
+            )}
+            {onOpenParentPortal && (
+              <button
+                type="button"
+                onClick={onOpenParentPortal}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border-default)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--state-hover)]"
+              >
+                <Users size={16} />
+                {lang === 'ar' ? 'بوابة الأسرة' : 'Family portal'}
+              </button>
+            )}
+          </div>
+        </header>
+      )}
 
       {!isOnlineAuth && (
         <p role="note" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
@@ -468,7 +478,7 @@ export function TeacherDashboard({
       )}
 
       {/* Pending Account Activation Alert for Servant */}
-      {pendingRequestsCount > 0 && activeTab !== 'classManagement' && (
+      {pendingRequestsCount !== null && pendingRequestsCount > 0 && activeTab !== 'classManagement' && activeTab !== 'overview' && (
         <div className="bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl p-4 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">🔔</span>
@@ -489,104 +499,31 @@ export function TeacherDashboard({
         </div>
       )}
 
-      <nav aria-label={lang === 'ar' ? 'أقسام استوديو المعلم' : 'Teacher studio sections'} className="space-y-3 rounded-3xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-4 shadow-xs dark:bg-[#1E1914]">
-        <button
-          type="button"
-          onClick={() => setActiveTab('overview')}
-          aria-current={activeTab === 'overview' ? 'page' : undefined}
-          className={`w-full rounded-2xl px-4 py-3 text-start font-black transition-colors ${activeTab === 'overview' ? 'bg-[var(--mousa-teal)] text-white' : 'text-[var(--mousa-teal-deep)] hover:bg-white/70 dark:text-amber-200 dark:hover:bg-stone-800'}`}
-        >
-          {lang === 'ar' ? 'نظرة عامة' : 'Overview'}
-        </button>
-        <div className="grid gap-3 md:grid-cols-3">
-          {[
-            {
-              title: lang === 'ar' ? 'الفصول والطلاب' : 'Classes & students',
-              links: [
-                { label: lang === 'ar' ? 'الفصل وقائمة الطلاب' : 'Classes & roster', tab: 'classManagement' as const, icon: <Users size={16} /> },
-                { label: lang === 'ar' ? 'التقدم ونتائج الاختبارات' : 'Progress & quiz results', tab: 'mastery' as const, icon: <Award size={16} /> }
-              ]
-            },
-            {
-              title: lang === 'ar' ? 'الدروس والنشر' : 'Lessons & publishing',
-              links: [
-                { label: lang === 'ar' ? 'مدارس الأحد' : 'Sunday School', tab: 'sundaySchool' as const, mode: 'sunday_school' as const, icon: <School size={16} /> },
-                { label: lang === 'ar' ? 'الألحان' : 'Hymns', tab: 'sundaySchool' as const, mode: 'hymns' as const, icon: <Mic size={16} /> },
-                { label: lang === 'ar' ? 'الطقس' : 'Taxis', tab: 'sundaySchool' as const, mode: 'taxis' as const, icon: <BookOpen size={16} /> },
-                { label: lang === 'ar' ? 'مكتبة الدروس' : 'Lesson library', tab: 'lessons' as const, icon: <FileText size={16} /> }
-              ]
-            },
-            {
-              title: lang === 'ar' ? 'أدوات الفصل' : 'Classroom tools',
-              links: [
-                { label: lang === 'ar' ? 'المصادر والوسائط' : 'Media & sources', tab: 'sources' as const, icon: <FolderOpen size={16} /> },
-                { label: lang === 'ar' ? 'الحضور والافتقاد' : 'Attendance & visits', tab: 'attendance' as const, icon: <UserCheck size={16} /> },
-                { label: lang === 'ar' ? 'الإشراف' : 'Moderation', tab: 'moderation' as const, icon: <ShieldAlert size={16} /> }
-              ]
-            }
-          ].map(group => (
-            <section key={group.title} className="rounded-2xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 dark:bg-stone-900/60">
-              <h2 className="mb-2 px-1 text-xs font-black uppercase tracking-wide text-[var(--mousa-sand-500)]">{group.title}</h2>
-              <div className="flex flex-wrap gap-2">
-                {group.links.map(link => (
-                  <button
-                    key={link.label}
-                    type="button"
-                    onClick={() => {
-                      if ('mode' in link && link.mode) openPublishing(link.mode);
-                      else setActiveTab(link.tab);
-                    }}
-                    aria-current={activeTab === link.tab ? 'page' : undefined}
-                    className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-start text-xs font-bold transition-colors ${activeTab === link.tab ? 'border-[var(--mousa-teal)] bg-[var(--mousa-teal)] text-white' : 'border-transparent bg-[var(--mousa-sand-100)] text-[var(--mousa-teal-deep)] hover:border-[var(--mousa-border-sand)] dark:bg-stone-800 dark:text-stone-100'}`}
-                  >
-                    {link.icon}
-                    {link.label}
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </nav>
-
       {activeTab === 'overview' && (
-        <section aria-labelledby="teacher-overview-heading" className="space-y-4">
-          <div>
-            <h2 id="teacher-overview-heading" className="text-xl font-black text-[var(--mousa-teal-deep)] dark:text-amber-100">
-              {lang === 'ar' ? 'ابدأ من هنا' : 'Your teaching workspace'}
-            </h2>
-            <p className="mt-1 text-sm text-[var(--mousa-sand-500)]">
-              {lang === 'ar' ? 'اختار القسم اللي محتاجه، وهتلاقي أدوات كل مهمة مع بعض.' : 'Choose a section to find the tools for each teaching task together.'}
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { title: lang === 'ar' ? 'الفصول والطلاب' : 'Classes & students', detail: lang === 'ar' ? 'إدارة الفصل ومراجعة طلبات الانضمام.' : 'Manage your class and review enrollment requests.', action: () => setActiveTab('classManagement') },
-              { title: lang === 'ar' ? 'تقدم الطلاب ونتائج الاختبارات' : 'Student progress & quiz results', detail: lang === 'ar' ? 'ملخص النتائج غير متاح لحد ما يتوصل بقراءة موثوقة من قاعدة البيانات.' : 'Summary results are unavailable until a trusted database read path is connected.', action: () => setActiveTab('mastery') },
-              { title: lang === 'ar' ? 'مكتبة الدروس' : 'Lesson library', detail: lang === 'ar' ? 'ابحث في الدروس وعاينها أو عدّلها.' : 'Find, preview, and edit lessons.', action: () => setActiveTab('lessons') },
-              { title: lang === 'ar' ? 'نشر مدارس الأحد' : 'Publish Sunday School content', detail: lang === 'ar' ? 'جهّز دروس مدارس الأحد وانشرها.' : 'Prepare and publish Sunday School lessons.', action: () => openPublishing('sunday_school') },
-              { title: lang === 'ar' ? 'نشر الألحان والطقس' : 'Publish hymns & Taxis', detail: lang === 'ar' ? 'افتح أدوات الألحان أو الطقس.' : 'Open the Hymns or Taxis publishing tools.', action: () => openPublishing('hymns') },
-              { title: lang === 'ar' ? 'تجهيز دفعة ملفات المنهج' : 'Import curriculum files', detail: lang === 'ar' ? 'ارفع عدة ملفات وحوّل كل ملف إلى مسودة للمراجعة.' : 'Upload multiple files and create reviewable drafts.', action: () => openPublishing('import') },
-              { title: lang === 'ar' ? 'أدوات الفصل' : 'Classroom tools', detail: lang === 'ar'
-                ? (isOnlineAuth ? 'الوسائط والإشراف، والحضور متاح كتجربة محلية فقط.' : 'الوسائط والحضور والإشراف.')
-                : (isOnlineAuth ? 'Media and moderation; attendance is currently a local demo only.' : 'Media, attendance, and moderation.'),
-                action: () => setActiveTab('sources') }
-            ].map(card => (
-              <button key={card.title} type="button" onClick={card.action} className="min-h-32 rounded-2xl border border-[var(--mousa-border-sand)] bg-white p-5 text-start shadow-xs transition hover:-translate-y-0.5 hover:border-[var(--mousa-teal)] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mousa-teal)] dark:bg-slate-900">
-                <span className="block font-black text-[var(--mousa-teal-deep)] dark:text-amber-100">{card.title}</span>
-                <span className="mt-2 block text-sm leading-relaxed text-[var(--mousa-sand-500)]">{card.detail}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        <ServantHomeDashboard
+          lang={lang}
+          servantName={userData?.fullName || (lang === 'ar' ? 'يا خادم' : 'Servant')}
+          pendingRequestsCount={pendingRequestsCount}
+          pendingRequestsError={pendingRequestsError}
+          onPublishLesson={() => setShowExpressPublishModal(true)}
+          onReviewRequests={() => setActiveTab('classManagement')}
+          onOpenCurriculum={openPublishing}
+          onOpenWorkspaceTab={tab => setActiveTab(tab as TeacherTab)}
+        />
       )}
+
+      {activeTab === 'preview' && (
+        <StudentExperiencePreview lang={lang} initialLessonId={previewLessonId} />
+      )}
+
+      {activeTab === 'communication' && <FeedTab lang={lang} />}
 
       {/* Tab: Multi-Mode Publishing Hub (Sunday School, Hymns School, Coptic Rituals / Taxis) */}
       {activeTab === 'sundaySchool' && (
         <TeacherPublishingHub
           lang={lang}
           initialMode={publishingModeToOpen}
-          onPreviewLesson={onPreviewLesson}
+          onPreviewLesson={openStudentPreview}
           sundaySchoolContent={
             <ManualLessonStudio
               sessions={classSessions}
@@ -621,7 +558,7 @@ export function TeacherDashboard({
                   });
                 }
               }}
-              onPreviewStudentLesson={onPreviewLesson}
+              onPreviewStudentLesson={openStudentPreview}
               lang={lang}
             />
           }
@@ -639,7 +576,7 @@ export function TeacherDashboard({
                 <p className="mt-2 text-sm leading-relaxed">
                   {lang === 'ar'
                     ? 'مش هنعرض بيانات محفوظة في المتصفح على إنها نتائج مؤكدة. التقرير الحالي مفيهوش قراءة موثوقة ومباشرة من سجلات الطلاب والاختبارات في قاعدة البيانات.'
-                    : 'Browser-cached values are not shown as confirmed results. This report does not yet read student progress and quiz attempts from an authoritative database-backed teacher endpoint.'}
+                    : 'Browser-cached values are not shown as confirmed results. This report does not yet read student progress and quiz attempts from an authoritative database-backed Servant endpoint.'}
                 </p>
               </div>
             </div>
@@ -770,7 +707,7 @@ export function TeacherDashboard({
               <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800">
                 <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
                   <CheckCircle2 size={22} />
-                  <h3>{lang === 'ar' ? 'تم إنشاء مسودة الدرس بنجاح • مراجعة المعلم' : 'Draft Generated Successfully • Review & Approve'}</h3>
+                  <h3>{lang === 'ar' ? 'تم إنشاء مسودة الدرس بنجاح • مراجعة الخادم' : 'Draft generated successfully • Servant review'}</h3>
                 </div>
                 <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 font-bold">
                   {lang === 'ar' ? 'جاهز للاعتماد' : 'Ready for Approval'}
@@ -854,8 +791,8 @@ export function TeacherDashboard({
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
                 {lang === 'ar' 
-                  ? 'صلاحيات مفتوحة للخادم لمعاينة وتعديل وتدريس أي درس في مناهج الكنيسة لجميع المراحل الدراسية.' 
-                  : 'Unrestricted teacher access to preview, edit, and teach any lesson across all church grades.'}
+                  ? 'الدروس المتاحة للمراجعة والإدارة حسب صلاحياتك وفصولك المسندة.'
+                  : 'Lessons available for review and management under your assigned permissions.'}
               </p>
             </div>
 
@@ -905,8 +842,8 @@ export function TeacherDashboard({
             lessons={filteredTeacherLessons}
             lessonVersions={lessonVersions || {}}
             lang={lang}
-            canManage={isOnlineAuth && (userData?.role === 'teacher' || userData?.role === 'admin')}
-            role={userData?.role}
+            canManage={isOnlineAuth && (hasRole(userData, 'teacher') || hasRole(userData, 'admin'))}
+            role={hasRole(userData, 'admin') ? 'admin' : hasRole(userData, 'teacher') ? 'teacher' : undefined}
             userId={userData?.id}
             onRefresh={refreshCurriculum}
           />
@@ -930,6 +867,19 @@ export function TeacherDashboard({
                   className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 border border-stone-300 dark:border-stone-700 text-stone-800 dark:text-stone-200 placeholder-stone-400 outline-none focus:border-amber-500"
                 />
               </div>
+              <label className="flex items-center gap-2 text-xs font-bold text-stone-600 dark:text-stone-300">
+                <span>{lang === 'ar' ? 'الحالة:' : 'Status:'}</span>
+                <select
+                  value={lessonStatusFilter}
+                  onChange={event => setLessonStatusFilter(event.target.value as typeof lessonStatusFilter)}
+                  aria-label={lang === 'ar' ? 'تصفية الدروس حسب الحالة' : 'Filter lessons by status'}
+                  className="rounded-lg border border-stone-300 bg-white px-2 py-1.5 dark:border-stone-700 dark:bg-slate-800"
+                >
+                  <option value="ALL">{lang === 'ar' ? 'كل الحالات' : 'All statuses'}</option>
+                  <option value="draft">{lang === 'ar' ? 'مسودة' : 'Draft'}</option>
+                  <option value="published">{lang === 'ar' ? 'منشور' : 'Published'}</option>
+                </select>
+              </label>
             </div>
 
             {/* Segmented Grade Buttons */}
@@ -995,6 +945,7 @@ export function TeacherDashboard({
                     onClick={() => {
                       setLessonGradeFilter('ALL');
                       setLessonCategoryFilter('ALL');
+                      setLessonStatusFilter('ALL');
                       setLessonSearchQuery('');
                     }}
                     className="px-4 py-2 bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold"
@@ -1091,14 +1042,14 @@ export function TeacherDashboard({
                   {/* Teacher Action Controls */}
                   <div className="flex items-center gap-2 self-end md:self-center flex-wrap">
                     {/* Open as Student Preview */}
-                    {onPreviewLesson && (
+                    {lesson.status === 'published' && (
                       <button 
-                        onClick={() => onPreviewLesson(lesson.id)}
+                        onClick={() => openStudentPreview(lesson.id)}
                         className="text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
-                        title={lang === 'ar' ? 'معاينة تجربة قراءة وقصة الطالب' : 'Preview student story reader & quiz'}
+                        title={lang === 'ar' ? 'معاينة رحلة التلميذ بدون حفظ التقدم' : 'Preview the student journey without saving progress'}
                       >
                         <Eye size={14} className="text-blue-500" />
-                        <span>{lang === 'ar' ? 'معاينة كطالب' : 'Open as Student'}</span>
+                        <span>{lang === 'ar' ? 'معاينة التلميذ' : 'Student preview'}</span>
                       </button>
                     )}
 

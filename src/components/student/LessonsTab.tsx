@@ -11,6 +11,7 @@ import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { HymnsSchoolTab } from '../hymns/HymnsSchoolTab';
 import { CopticTaxisTab } from '../taxis/CopticTaxisTab';
 import { StudentRoadmapView } from './StudentRoadmapView';
+import { useActiveWorkspace } from '../../context/WorkspaceContext';
 
 interface LessonsTabProps {
   onStartLesson: (id: string) => void;
@@ -20,6 +21,7 @@ interface LessonsTabProps {
 
 export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: LessonsTabProps) {
   const { userData } = useAuth();
+  const workspace = useActiveWorkspace();
   const { lessons, updateLesson, refreshCurriculum, contentProgress } = useLessons();
   const [selectedSchool, setSelectedSchool] = useState<'sunday_school' | 'hymns' | 'taxis'>('sunday_school');
   const [displayMode, setDisplayMode] = useState<'roadmap' | 'cards'>('roadmap');
@@ -29,7 +31,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
   const [showClassModal, setShowClassModal] = useState<boolean>(false);
   const [showExpressPublishModal, setShowExpressPublishModal] = useState<boolean>(false);
 
-  const isTeacher = userData?.role === 'teacher';
+  const isTeacher = workspace === 'teacher';
 
   const isLessonFinished = (l: Lesson) => {
     if (l.isCompleted) return true;

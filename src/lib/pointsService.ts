@@ -1,5 +1,6 @@
 import { LeaderboardEntry, User } from '../types';
 import { mockLeaderboard } from '../data';
+import { hasRole } from './workspaces';
 
 const LEADERBOARD_STORAGE_KEY = 'church_leaderboard_data';
 const PURCHASES_STORAGE_KEY = 'church_reward_purchases';
@@ -31,7 +32,7 @@ export function getLeaderboard(currentUser?: User | null): LeaderboardEntry[] {
     const existingIndex = list.findIndex(
       (e) => e.studentId === currentUser.id ||
              (isGuest && (e.studentId === 'u1' || e.studentId.startsWith('guest_'))) ||
-             (currentUser.role === 'student' && !currentUser.id.startsWith('s-') && e.studentId === 'u1')
+             (hasRole(currentUser, 'student') && !currentUser.id.startsWith('s-') && e.studentId === 'u1')
     );
 
     if (existingIndex >= 0) {
@@ -235,7 +236,7 @@ export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboa
     const existingIdx = list.findIndex(
       (e) => e.studentId === currentUser.id || 
              (isGuest && (e.studentId === 'u1' || e.studentId.startsWith('guest_'))) ||
-             (currentUser.role === 'student' && !currentUser.id.startsWith('s-') && e.studentId === 'u1')
+             (hasRole(currentUser, 'student') && !currentUser.id.startsWith('s-') && e.studentId === 'u1')
     );
 
     if (existingIdx >= 0) {

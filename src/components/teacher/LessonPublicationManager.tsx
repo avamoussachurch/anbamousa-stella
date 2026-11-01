@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CalendarClock, CheckCircle2, Loader2, Send, XCircle } from 'lucide-react';
+import { AlertCircle, CalendarClock, CheckCircle2, Filter, Loader2, Search, Send, XCircle } from 'lucide-react';
 import { Lesson, LessonVersion } from '../../types';
+import { CANONICAL_GRADE_LIST } from '../../lib/classGroups';
 import {
   canPublishVersion,
   cancelLessonPublication,
   canManageLessonVersion,
   formatPublicationTime,
+  getPublicationCalendarDays,
   getPublicationTimezone,
   listScheduledLessonPublications,
   parsePublicationLocalDateTime,
@@ -42,13 +44,28 @@ export function getPublicationLabel(
   lesson: Lesson,
   version: LessonVersion | undefined,
   jobs: ScheduledLessonPublication[]
-): 'Draft' | 'Awaiting Review' | 'Scheduled' | 'Published' | 'Failed' {
-  const lessonJobs = jobs.filter(job => job.lesson_id === lesson.id);
+): 'Draft' | 'Awaiting Review' | 'Revision Requested' | 'Approved' | 'Scheduled' | 'Published' | 'Failed' | 'Cancelled' {
+  const lessonJobs = jobs.filter(job => job.lesson_id === lesson.id && (!version || job.version_id === version.id));
   if (lessonJobs.some(job => job.status === 'scheduled' || job.status === 'processing')) return 'Scheduled';
   if (lessonJobs.some(job => job.status === 'failed')) return 'Failed';
-  if (lesson.status === 'published' || version?.status === 'PUBLISHED') return 'Published';
+  if (lessonJobs.some(job => job.status === 'cancelled')) return 'Cancelled';
+  if (version?.status === 'PUBLISHED') return 'Published';
   if (version?.status === 'SERVANT_REVIEW') return 'Awaiting Review';
+  if (version?.status === 'REVISION_REQUESTED') return 'Revision Requested';
+  if (version?.status === 'APPROVED') return 'Approved';
+  if (lesson.status === 'published') return 'Published';
   return 'Draft';
+}
+
+function getPublicationStatusText(status: ScheduledLessonPublication['status'], isAr: boolean): string {
+  const labels: Record<ScheduledLessonPublication['status'], [string, string]> = {
+    scheduled: ['مجدول', 'Scheduled'],
+    processing: ['جارٍ النشر', 'Processing'],
+    published: ['تم النشر', 'Published'],
+    failed: ['فشل', 'Failed'],
+    cancelled: ['ملغى', 'Cancelled']
+  };
+  return labels[status][isAr ? 0 : 1];
 }
 
 export function LessonPublicationManager({
@@ -69,6 +86,9 @@ export function LessonPublicationManager({
   const [working, setWorking] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [results, setResults] = useState<OperationResult[]>([]);
+  const [search, setSearch] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const refreshJobs = useCallback(async () => {
     setLoadingJobs(true);
@@ -86,7 +106,9 @@ export function LessonPublicationManager({
     const version = currentVersion(lesson, lessonVersions[lesson.id] || []);
     const eligibility = version ? canPublishVersion(version, lesson.id) : { canPublish: false, reason: 'No lesson version is available.' };
     const activeJob = jobs.find(job =>
-      job.lesson_id === lesson.id && (job.status === 'scheduled' || job.status === 'processing')
+      job.lesson_id === lesson.id &&
+      (!version || job.version_id === version.id) &&
+      (job.status === 'scheduled' || job.status === 'processing')
     );
     return {
       lesson,
@@ -98,6 +120,33 @@ export function LessonPublicationManager({
     };
   }), [jobs, lessonVersions, lessons, role, userId]);
 
+  const gradeOptions = useMemo(() => {
+    const observed = new Set(rows.map(row => row.lesson.grade).filter((grade): grade is string => Boolean(grade)));
+    return [
+      ...CANONICAL_GRADE_LIST.filter(grade => observed.has(grade.code)).map(grade => ({
+        value: grade.code,
+        label: lang === 'ar' ? grade.name.ar : grade.name.en
+      })),
+      ...Array.from(observed)
+        .filter(grade => !CANONICAL_GRADE_LIST.some(option => option.code === grade))
+        .map(grade => ({ value: grade, label: grade }))
+    ];
+  }, [lang, rows]);
+  const filteredRows = useMemo(() => {
+    const normalizedQuery = search.trim().toLocaleLowerCase();
+    return rows.filter(row => {
+      const matchesQuery = !normalizedQuery || [
+        row.lesson.title,
+        row.lesson.titleAr,
+        row.lesson.summary,
+        row.lesson.summaryAr,
+        row.lesson.grade
+      ].some(value => String(value || '').toLocaleLowerCase().includes(normalizedQuery));
+      return matchesQuery &&
+        (gradeFilter === 'all' || row.lesson.grade === gradeFilter) &&
+        (statusFilter === 'all' || row.status === statusFilter);
+    });
+  }, [gradeFilter, rows, search, statusFilter]);
   const selectedRows = rows.filter(row => selectedIds.has(row.lesson.id));
   const allEligibleSelected = selectedRows.length > 0 && selectedRows.every(row =>
     row.eligibility.canPublish && row.canManageVersion && !row.activeJob
@@ -105,10 +154,17 @@ export function LessonPublicationManager({
   const labels = {
     Draft: isAr ? 'مسودة' : 'Draft',
     'Awaiting Review': isAr ? 'بانتظار المراجعة' : 'Awaiting Review',
+    'Revision Requested': isAr ? 'مطلوب تعديل' : 'Revision requested',
+    Approved: isAr ? 'معتمد للنشر' : 'Approved',
     Scheduled: isAr ? 'مجدول' : 'Scheduled',
     Published: isAr ? 'منشور' : 'Published',
-    Failed: isAr ? 'فشل النشر' : 'Failed'
+    Failed: isAr ? 'فشل النشر' : 'Failed',
+    Cancelled: isAr ? 'أُلغي الموعد' : 'Cancelled'
   };
+  const statusCounts = filteredRows.reduce<Record<string, number>>((counts, row) => {
+    counts[row.status] = (counts[row.status] || 0) + 1;
+    return counts;
+  }, {});
 
   const toggleSelection = (lessonId: string) => {
     setSelectedIds(current => {
@@ -123,6 +179,13 @@ export function LessonPublicationManager({
 
   const handlePublish = async () => {
     if (!allEligibleSelected || working) return;
+    const affectedItems = selectedRows.map(row =>
+      `${row.lesson.title} (v${row.version!.versionNumber})`
+    );
+    const confirmation = isAr
+      ? `سيتم نشر النسخ المعتمدة التالية الآن:\n${affectedItems.join('\n')}\n\nهل تريد المتابعة؟`
+      : `These approved versions will be published now:\n${affectedItems.join('\n')}\n\nContinue?`;
+    if (!window.confirm(confirmation)) return;
     setWorking(true);
     clearResults();
     const outcome = await publishLessonsInBulk(
@@ -142,6 +205,13 @@ export function LessonPublicationManager({
   const handleSchedule = async () => {
     const scheduledDate = parsePublicationLocalDateTime(scheduledLocalTime, timezone);
     if (!allEligibleSelected || !scheduledDate || scheduledDate.getTime() <= Date.now() || working || loadingJobs || loadError) return;
+    const affectedItems = selectedRows.map(row =>
+      `${row.lesson.title} (v${row.version!.versionNumber})`
+    );
+    const confirmation = isAr
+      ? `ستُجدول النسخ المعتمدة التالية للنشر في ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'ar-EG')} (${timezone}):\n${affectedItems.join('\n')}\n\nهل تريد المتابعة؟`
+      : `These approved versions will be scheduled for ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'en')} (${timezone}):\n${affectedItems.join('\n')}\n\nContinue?`;
+    if (!window.confirm(confirmation)) return;
     setWorking(true);
     clearResults();
     const outcome = await scheduleLessonsInBulk(
@@ -160,6 +230,11 @@ export function LessonPublicationManager({
   };
 
   const handleCancel = async (job: ScheduledLessonPublication) => {
+    const title = lessons.find(lesson => lesson.id === job.lesson_id)?.title || job.lesson_id;
+    const confirmation = isAr
+      ? `إلغاء موعد نشر "${title}" في ${formatPublicationTime(job.scheduled_at, timezone, 'ar-EG')}؟`
+      : `Cancel the scheduled publication for "${title}" at ${formatPublicationTime(job.scheduled_at, timezone, 'en')}?`;
+    if (!window.confirm(confirmation)) return;
     setWorking(true);
     const response = await cancelLessonPublication(job.id);
     const success = Boolean(response.data && !response.error);
@@ -175,6 +250,11 @@ export function LessonPublicationManager({
   const handleReschedule = async (job: ScheduledLessonPublication) => {
     const scheduledDate = parsePublicationLocalDateTime(scheduledLocalTime, timezone);
     if (!scheduledDate || scheduledDate.getTime() <= Date.now()) return;
+    const title = lessons.find(lesson => lesson.id === job.lesson_id)?.title || job.lesson_id;
+    const confirmation = isAr
+      ? `إعادة جدولة "${title}" إلى ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'ar-EG')} (${timezone})؟`
+      : `Reschedule "${title}" to ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'en')} (${timezone})?`;
+    if (!window.confirm(confirmation)) return;
     setWorking(true);
     const response = await rescheduleLessonPublication(job.id, scheduledDate);
     setResults([{ lessonId: job.lesson_id, success: Boolean(response.data && !response.error), error: response.error?.message }]);
@@ -184,6 +264,10 @@ export function LessonPublicationManager({
 
   const parsedScheduleTime = parsePublicationLocalDateTime(scheduledLocalTime, timezone);
   const validFutureTime = Boolean(parsedScheduleTime && parsedScheduleTime.getTime() > Date.now());
+  const calendarDays = useMemo(
+    () => getPublicationCalendarDays(jobs, timezone, new Date(), 14, isAr ? 'ar-EG' : 'en'),
+    [isAr, jobs, timezone]
+  );
 
   if (!canManage) return null;
 
@@ -214,6 +298,16 @@ export function LessonPublicationManager({
       )}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="flex items-center gap-2 sm:me-2">
+          <p className="text-xs font-bold text-stone-600 dark:text-stone-300">
+            {isAr ? `المحدد: ${selectedIds.size}` : `Selected: ${selectedIds.size}`}
+          </p>
+          {selectedIds.size > 0 && (
+            <button type="button" onClick={() => setSelectedIds(new Set())} disabled={working} className="text-xs font-bold text-stone-500 underline disabled:opacity-50">
+              {isAr ? 'مسح التحديد' : 'Clear selection'}
+            </button>
+          )}
+        </div>
         <label className="flex-1 space-y-1 text-xs font-bold text-stone-700 dark:text-stone-200">
           <span>{isAr ? 'موعد النشر' : 'Publication time'}</span>
           <input
@@ -244,8 +338,46 @@ export function LessonPublicationManager({
         </button>
       </div>
 
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <label className="relative block">
+          <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+            placeholder={isAr ? 'بحث بالعنوان أو الملخص أو الصف' : 'Search title, summary, or grade'}
+            aria-label={isAr ? 'بحث في مكتبة المناهج' : 'Search curriculum library'}
+            className="w-full rounded-xl border border-stone-300 bg-white py-2.5 ps-9 pe-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+          />
+        </label>
+        <label className="flex items-center gap-2 rounded-xl border border-stone-300 bg-white px-3 text-xs font-bold dark:border-slate-700 dark:bg-slate-900">
+          <Filter size={14} />
+          <span>{isAr ? 'الصف' : 'Grade'}</span>
+          <select value={gradeFilter} onChange={event => setGradeFilter(event.target.value)} aria-label={isAr ? 'تصفية حسب الصف' : 'Filter by grade'} className="min-w-24 bg-transparent py-2.5">
+            <option value="all">{isAr ? 'كل الصفوف' : 'All grades'}</option>
+            {gradeOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 rounded-xl border border-stone-300 bg-white px-3 text-xs font-bold dark:border-slate-700 dark:bg-slate-900">
+          <span>{isAr ? 'الحالة' : 'Status'}</span>
+          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)} aria-label={isAr ? 'تصفية حسب حالة النشر' : 'Filter by publication status'} className="min-w-28 bg-transparent py-2.5">
+            <option value="all">{isAr ? 'كل الحالات' : 'All statuses'}</option>
+            {Object.entries(labels).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <div aria-label={isAr ? 'توزيع حالات المنهج الظاهرة' : 'Visible curriculum status distribution'} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {(['Draft', 'Awaiting Review', 'Approved', 'Published'] as const).map(status => (
+          <div key={status} className="rounded-xl border border-stone-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950">
+            <p className="text-[10px] font-bold text-stone-500">{labels[status]}</p>
+            <p className="text-lg font-black tabular-nums text-stone-900 dark:text-white">{statusCounts[status] || 0}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="max-h-72 space-y-2 overflow-auto rounded-xl border border-stone-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-950">
-        {rows.map(({ lesson, version, eligibility, activeJob, status }) => {
+        {filteredRows.map(({ lesson, version, eligibility, activeJob, status }) => {
           const selectable = Boolean(
             version &&
             eligibility.canPublish &&
@@ -266,6 +398,7 @@ export function LessonPublicationManager({
                 <span className="block truncate text-sm font-bold text-stone-800 dark:text-stone-100">{lesson.title}</span>
                 <span className="mt-0.5 block text-xs text-stone-500">
                   {labels[status]}
+                  {lesson.grade && <> · {lesson.grade}</>}
                   {!selectable && eligibility.reason && status !== 'Scheduled' && status !== 'Published' && (
                     <> · {eligibility.reason}</>
                   )}
@@ -277,6 +410,11 @@ export function LessonPublicationManager({
             </label>
           );
         })}
+        {!filteredRows.length && (
+          <p role="status" className="rounded-lg p-4 text-center text-xs text-stone-500">
+            {isAr ? 'لا توجد دروس تطابق البحث والتصفية.' : 'No lessons match the search and filters.'}
+          </p>
+        )}
       </div>
 
       {results.length > 0 && (
@@ -292,9 +430,53 @@ export function LessonPublicationManager({
       )}
 
       <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-xs font-black text-stone-700 dark:text-stone-200">{isAr ? 'تقويم النشر · ١٤ يوماً' : 'Publishing calendar · 14 days'}</h4>
+          <span dir="ltr" className="text-[10px] text-stone-500">{timezone}</span>
+        </div>
+        {loadingJobs ? (
+          <p className="text-xs text-stone-500">{isAr ? 'جارٍ تحميل التقويم...' : 'Loading calendar...'}</p>
+        ) : loadError ? (
+          <p role="status" className="text-xs text-stone-500">{isAr ? 'التقويم غير متاح حتى نجاح تحميل المواعيد.' : 'Calendar unavailable until schedules load successfully.'}</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+            {calendarDays.map(day => (
+              <div key={day.dateKey} className={`min-h-20 rounded-lg border p-2 ${day.isToday ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20' : 'border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950'}`}>
+                <p className="text-[10px] font-black text-stone-600 dark:text-stone-300">{day.label}</p>
+                {day.jobs.length === 0 ? (
+                  <p className="mt-2 text-[10px] text-stone-400">—</p>
+                ) : (
+                  <div className="mt-1 space-y-1">
+                    {day.jobs.slice(0, 2).map(job => {
+                      const title = lessons.find(lesson => lesson.id === job.lesson_id)?.title || job.lesson_id;
+                      const statusColor = job.status === 'published'
+                        ? 'text-emerald-700 dark:text-emerald-300'
+                        : job.status === 'failed'
+                          ? 'text-red-700 dark:text-red-300'
+                          : job.status === 'cancelled'
+                            ? 'text-stone-500'
+                            : 'text-amber-800 dark:text-amber-300';
+                      return (
+                        <p key={job.id} className={`truncate text-[10px] font-bold ${statusColor}`} title={`${title} · ${job.status}`}>
+                          {formatPublicationTime(job.scheduled_at, timezone, isAr ? 'ar-EG' : 'en').split(',').pop()?.trim()} · {title} · {getPublicationStatusText(job.status, isAr)}
+                        </p>
+                      );
+                    })}
+                    {day.jobs.length > 2 && <p className="text-[10px] text-stone-500">+{day.jobs.length - 2}</p>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
         <h4 className="text-xs font-black text-stone-700 dark:text-stone-200">{isAr ? 'المواعيد المجدولة وحالتها' : 'Scheduled publication status'}</h4>
         {loadingJobs ? (
           <p className="flex items-center gap-2 text-xs text-stone-500"><Loader2 size={14} className="animate-spin" />{isAr ? 'جارٍ تحميل المواعيد...' : 'Loading schedules...'}</p>
+        ) : loadError ? (
+          <p role="status" className="text-xs text-stone-500">{isAr ? 'تعذر تحميل حالة مواعيد النشر.' : 'Publication statuses are unavailable because schedules did not load.'}</p>
         ) : jobs.length === 0 ? (
           <p className="text-xs text-stone-500">{isAr ? 'لا توجد مواعيد نشر محفوظة.' : 'No saved publication schedules.'}</p>
         ) : jobs.map(job => {
@@ -304,7 +486,7 @@ export function LessonPublicationManager({
             <div key={job.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-stone-200 bg-white p-2.5 text-xs dark:border-slate-700 dark:bg-slate-950">
               <div className="min-w-0">
                 <p className="truncate font-bold">{title}</p>
-                <p className="text-stone-500">{labels[job.status === 'failed' ? 'Failed' : job.status === 'published' ? 'Published' : isScheduled || job.status === 'processing' ? 'Scheduled' : 'Draft']} · {formatPublicationTime(job.scheduled_at, timezone, isAr ? 'ar-EG' : 'en')}</p>
+                <p className="text-stone-500">{getPublicationStatusText(job.status, isAr)} · {formatPublicationTime(job.scheduled_at, timezone, isAr ? 'ar-EG' : 'en')}</p>
                 {job.error_message && <p role="alert" className="mt-1 text-red-700">{job.error_message}</p>}
               </div>
               {isScheduled && (

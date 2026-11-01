@@ -1,16 +1,20 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { updateSupabaseProfile } from '../lib/supabaseDatabase';
+import { updateOwnAccountProfile, updateSupabaseProfile } from '../lib/supabaseDatabase';
 import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../lib/pointsService';
 import { User } from '../types';
 import type { Session } from '@supabase/supabase-js';
 import { parseHymnsTaxisLevel } from '../lib/hymnsTaxisLevel';
+import { getCompatibilityRole } from '../lib/workspaces';
+import type { Role } from '../types';
+import { fetchAssignedRoles } from '../lib/roleService';
 
 interface AuthContextType {
   currentUser: { uid: string; email?: string | null } | null;
   userData: User | null;
   loading: boolean;
   loginAsGuest: (role?: 'student' | 'teacher' | 'parent', name?: string) => void;
+  refreshAssignedRoles: () => Promise<{ success: boolean; error?: string }>;
   setUserDirectly: (user: User) => void;
   syncAuthoritativeProgress: (points: number, currentStreak: number, longestStreak: number) => void;
   updateUserProfile: (updates: Partial<User>) => Promise<{ success: boolean; error?: string }>;
@@ -26,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   userData: null,
   loading: true,
   loginAsGuest: () => {},
+  refreshAssignedRoles: async () => ({ success: false, error: 'Not initialized' }),
   setUserDirectly: () => {},
   syncAuthoritativeProgress: () => {},
   updateUserProfile: async () => ({ success: false, error: 'Not initialized' }),
@@ -56,17 +61,26 @@ export function getCachedProfileFields(raw: string | null, userId: string): Part
   }
 }
 
+function readGuestUser(raw: string | null): User | null {
+  if (!raw) return null;
+  try {
+    const user = JSON.parse(raw) as Partial<User>;
+    const role = user.role;
+    if (!user.id?.startsWith('guest_') || !['student', 'parent', 'teacher'].includes(role || '')) return null;
+    const safeRole = role as Exclude<Role, 'admin'>;
+    return { ...user, role: safeRole, roles: [safeRole] } as User;
+  } catch (error) {
+    console.warn('Could not read saved guest session:', error);
+    return null;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [userData, setUserData] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const savedGuest = localStorage.getItem('church_guest_user');
-        if (savedGuest) return JSON.parse(savedGuest);
-        if (!isSupabaseConfigured) {
-          const savedUser = localStorage.getItem('church_auth_user');
-          if (savedUser) return JSON.parse(savedUser);
-        }
+        return readGuestUser(localStorage.getItem('church_guest_user'));
       } catch (e) {
         console.warn('Error reading saved user session:', e);
       }
@@ -75,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [isGuest, setIsGuest] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return Boolean(localStorage.getItem('church_guest_user'));
+      return Boolean(readGuestUser(localStorage.getItem('church_guest_user')));
     }
     return false;
   });
@@ -89,12 +103,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const safeUser: User = !isGuestUser && isSupabaseConfigured
       ? {
           ...user,
+          roles: sameAuthenticatedUser ? userData.roles : [],
           role: sameAuthenticatedUser ? userData.role : 'student',
           points: sameAuthenticatedUser ? userData.points : 0,
           currentStreak: sameAuthenticatedUser ? userData.currentStreak : 0,
           longestStreak: sameAuthenticatedUser ? userData.longestStreak : 0,
         }
-      : user;
+      : {
+          ...user,
+          roles: [user.role === 'admin' ? 'student' : user.role],
+          role: user.role === 'admin' ? 'student' : user.role,
+        };
     try {
       if (isGuestUser) {
         localStorage.setItem('church_guest_user', JSON.stringify(safeUser));
@@ -133,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       points: Math.max(0, points),
       currentStreak: safeCurrentStreak,
       longestStreak: Math.max(safeCurrentStreak, 0, longestStreak),
+      progressKnown: true,
     };
     setUserData(updatedUser);
     try {
@@ -157,6 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: 'guest_' + role + '_' + Date.now(),
       fullName: name || defaultName,
       role: role,
+      roles: [role],
       avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=church_${role}_guest`,
       points: role === 'parent' ? 0 : 120,
       currentStreak: 3,
@@ -182,17 +203,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   };
 
+  const refreshAssignedRoles = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!userData || isGuest) return { success: false, error: 'No authenticated account session' };
+    if (!supabase) return { success: false, error: 'Supabase session verification is unavailable' };
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.access_token) {
+        return { success: false, error: sessionError?.message || 'Authenticated session is unavailable' };
+      }
+      const roles = await fetchAssignedRoles(session.access_token);
+      setUserData(previous => {
+        if (!previous || previous.id !== userData.id) return previous;
+        const updated = { ...previous, roles, role: getCompatibilityRole(roles) };
+        try {
+          localStorage.setItem('church_auth_user', JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Could not cache refreshed account profile:', error);
+        }
+        window.dispatchEvent(new CustomEvent('church_user_updated', { detail: updated }));
+        return updated;
+      });
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error?.message || 'Could not refresh assigned roles' };
+    }
+  };
+
   const updateUserProfile = async (updates: Partial<User>): Promise<{ success: boolean; error?: string }> => {
     if (!userData) return { success: false, error: 'No active user session' };
 
-    const {
-      role: _role,
-      points: _points,
-      currentStreak: _currentStreak,
-      longestStreak: _longestStreak,
-      hymnsTaxisLevel: _hymnsTaxisLevel,
-      ...editableUpdates
-    } = updates;
+    const editableFields = new Set([
+      'fullName',
+      'avatarUrl',
+      'pushNotificationsEnabled',
+      'notifyLessonCompletion',
+      'notifyEventReminders',
+      'requireRewardApproval',
+    ]);
+    const protectedField = Object.keys(updates).find(field => !editableFields.has(field));
+    if (protectedField) {
+      return { success: false, error: `Profile field "${protectedField}" must be changed through its authorized workflow.` };
+    }
+
+    if (updates.fullName !== undefined &&
+      (typeof updates.fullName !== 'string' || updates.fullName.trim().length < 2 || updates.fullName.trim().length > 100)) {
+      return { success: false, error: 'Name must contain 2 to 100 characters.' };
+    }
+    if (updates.avatarUrl !== undefined && typeof updates.avatarUrl !== 'string') {
+      return { success: false, error: 'Avatar must be a valid image.' };
+    }
+    for (const field of ['pushNotificationsEnabled', 'notifyLessonCompletion', 'notifyEventReminders', 'requireRewardApproval'] as const) {
+      if (updates[field] !== undefined && typeof updates[field] !== 'boolean') {
+        return { success: false, error: 'Notification preferences must be boolean values.' };
+      }
+    }
+
+    const editableUpdates: Partial<User> = {};
+    if (updates.fullName !== undefined) editableUpdates.fullName = updates.fullName.trim();
+    if (updates.avatarUrl !== undefined) editableUpdates.avatarUrl = updates.avatarUrl;
+    if (updates.pushNotificationsEnabled !== undefined) editableUpdates.pushNotificationsEnabled = updates.pushNotificationsEnabled;
+    if (updates.notifyLessonCompletion !== undefined) editableUpdates.notifyLessonCompletion = updates.notifyLessonCompletion;
+    if (updates.notifyEventReminders !== undefined) editableUpdates.notifyEventReminders = updates.notifyEventReminders;
+    if (updates.requireRewardApproval !== undefined) editableUpdates.requireRewardApproval = updates.requireRewardApproval;
+
     const updatedUser: User = {
       ...userData,
       ...editableUpdates,
@@ -202,13 +275,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isGuest && isSupabaseConfigured) {
       if (!supabase) return { success: false, error: 'Supabase is configured but its client is unavailable' };
       try {
-        const { error } = await updateSupabaseProfile(userData.id, {
+        const { error } = await updateOwnAccountProfile({
           name: editableUpdates.fullName,
           avatar: editableUpdates.avatarUrl,
           push_notifications_enabled: editableUpdates.pushNotificationsEnabled,
           notify_lesson_completion: editableUpdates.notifyLessonCompletion,
           notify_event_reminders: editableUpdates.notifyEventReminders,
-          last_active: new Date().toISOString(),
+          require_reward_approval: editableUpdates.requireRewardApproval,
         });
         if (error) {
           return { success: false, error };
@@ -423,8 +496,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       let savedGuest: User | null = null;
       try {
-        const rawGuest = localStorage.getItem('church_guest_user');
-        if (rawGuest) savedGuest = JSON.parse(rawGuest);
+        savedGuest = readGuestUser(localStorage.getItem('church_guest_user'));
       } catch (e) {
         console.warn('Could not read saved guest session:', e);
       }
@@ -440,7 +512,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const uid = session.user.id;
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, name, email, avatar, points, current_streak, longest_streak, grade, hymns_taxis_level, require_reward_approval, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, screen_time_seconds')
         .eq('id', uid)
         .single();
 
@@ -462,14 +534,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Could not clear guest cache after authentication:', e);
       }
 
+      let assignedRoles: Role[] = [];
+      try {
+        assignedRoles = await fetchAssignedRoles(session.access_token);
+      } catch (error) {
+        console.error('Could not load authoritative account roles:', error);
+      }
+
       const loadedUser: User = {
         id: uid,
         fullName: profile?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-        role: profile?.role || 'student',
+        email: session.user.email || undefined,
+        roles: assignedRoles,
+        role: getCompatibilityRole(assignedRoles),
         avatarUrl: profile?.avatar || session.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`,
         points: Number.isFinite(profile?.points) ? profile.points : 0,
         currentStreak: Number.isFinite(profile?.current_streak) ? profile.current_streak : 0,
         longestStreak: Number.isFinite(profile?.longest_streak) ? profile.longest_streak : 0,
+        progressKnown: !profileError && Number.isFinite(profile?.points) && Number.isFinite(profile?.current_streak),
         parentEmail: cachedAuthUser.parentEmail || profile?.email || session.user.email,
         phone: cachedAuthUser.phone,
         grade: profile?.grade || cachedAuthUser.grade,
@@ -541,7 +623,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ currentUser, userData, loading, loginAsGuest, setUserDirectly, syncAuthoritativeProgress, updateUserProfile, addPoints, updateStreak, updateScreenTime, logout, isGuest }}>
+    <AuthContext.Provider value={{ currentUser, userData, loading, loginAsGuest, refreshAssignedRoles, setUserDirectly, syncAuthoritativeProgress, updateUserProfile, addPoints, updateStreak, updateScreenTime, logout, isGuest }}>
       {children}
     </AuthContext.Provider>
   );

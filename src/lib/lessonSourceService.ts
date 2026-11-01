@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import { getVerifiedServantAccount } from './roleService';
+import { hasRole } from './workspaces';
 import { 
   LessonSource, 
   SourceType, 
@@ -72,29 +74,13 @@ function generateUuid(): string {
  * Validates the current authenticated user and ensures they possess teacher or admin privileges.
  */
 async function getAuthenticatedServant(): Promise<{
-  user: { id: string; role?: string } | null;
+  user: { id: string; roles: import('../types').Role[]; role?: string } | null;
   error: Error | null;
 }> {
-  if (!supabase) {
-    return { user: null, error: new Error('Supabase client is not configured') };
-  }
-
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    return { user: null, error: new Error('Authentication required for source ingestion') };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  const finalRole = profile?.role || 'student';
-  if (finalRole !== 'teacher' && finalRole !== 'admin') {
-    return { user: null, error: new Error('Only servants, teachers, and administrators may ingest curriculum sources') };
-  }
-
-  return { user: { id: user.id, role: finalRole }, error: null };
+  return getVerifiedServantAccount(
+    'Authentication required for source ingestion',
+    'Only servants, teachers, and administrators may ingest curriculum sources'
+  );
 }
 
 /**
@@ -226,7 +212,7 @@ export async function addLessonSource(
     }
 
     // Verify servant authorization (Requirement 5)
-    if (lessonRow.created_by && lessonRow.created_by !== currentUserId && servantCheck.user.role !== 'admin') {
+    if (lessonRow.created_by && lessonRow.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return { data: null, error: new Error('Cannot add sources to another teacher\'s lesson') };
     }
 
@@ -348,7 +334,6 @@ export async function updateLessonSource(
       return { data: null, error: servantCheck.error };
     }
     const currentUserId = servantCheck.user.id;
-    const currentUserRole = servantCheck.user.role;
 
     // Fetch existing source
     const { data: existing, error: fetchErr } = await supabase!
@@ -362,7 +347,7 @@ export async function updateLessonSource(
     }
 
     // Authorization check
-    if (existing.uploaded_by !== currentUserId && currentUserRole !== 'admin') {
+    if (existing.uploaded_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return { data: null, error: new Error('Teacher cannot edit another teacher\'s source') };
     }
 
@@ -409,7 +394,6 @@ export async function removeLessonSource(
       return { data: null, error: servantCheck.error };
     }
     const currentUserId = servantCheck.user.id;
-    const currentUserRole = servantCheck.user.role;
 
     // Fetch existing source
     const { data: existing, error: fetchErr } = await supabase!
@@ -423,7 +407,7 @@ export async function removeLessonSource(
     }
 
     // Authorization check
-    if (existing.uploaded_by !== currentUserId && currentUserRole !== 'admin') {
+    if (existing.uploaded_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return { data: null, error: new Error('Teacher cannot delete another teacher\'s source') };
     }
 

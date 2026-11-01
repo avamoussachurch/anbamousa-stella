@@ -23,6 +23,7 @@ import {
   getOrCreateChildLinkCode
 } from '../../lib/parentChildService';
 import { useAuth } from '../../context/AuthContext';
+import { hasRole } from '../../lib/workspaces';
 import { QrCodeScanner } from './QrCodeScanner';
 
 interface AddChildModalProps {
@@ -51,6 +52,7 @@ export function AddChildModal({
   initialTab = 'qr'
 }: AddChildModalProps) {
   const { userData } = useAuth();
+  const isParentAccount = hasRole(userData, 'parent');
   const [activeTab, setActiveTab] = useState<'qr' | 'code' | 'link'>(initialTab);
   
   // Code Input Tab
@@ -90,6 +92,10 @@ export function AddChildModal({
     const clean = extractSecretCodeFromInput(val);
 
     if (clean.length >= 4) {
+      if (isParentAccount) {
+        setDetectedChild(null);
+        return;
+      }
       if (isChildAlreadyLinked(clean)) {
         setCodeError(lang === 'ar' ? 'هذا الطفل مرتبط بحسابك بالفعل.' : 'This child is already linked to your account.');
         setDetectedChild(null);
@@ -97,27 +103,9 @@ export function AddChildModal({
       }
 
       // Check if current user in student mode has this code
-      if (userData?.role === 'student' && (clean === getOrCreateChildLinkCode(userData).toUpperCase() || clean === userData.id.toUpperCase())) {
+      if (hasRole(userData, 'student') && (clean === getOrCreateChildLinkCode(userData).toUpperCase() || clean === userData.id.toUpperCase())) {
         setDetectedChild(userData);
         return;
-      }
-
-      // Check cached student accounts in local storage
-      const cachedKeys = ['church_auth_user', 'church_guest_user'];
-      for (const ck of cachedKeys) {
-        try {
-          const raw = localStorage.getItem(ck);
-          if (raw) {
-            const u = JSON.parse(raw);
-            if (u && u.role === 'student') {
-              const uCode = getOrCreateChildLinkCode(u).toUpperCase();
-              if (uCode === clean || u.id.toUpperCase() === clean) {
-                setDetectedChild(u);
-                return;
-              }
-            }
-          }
-        } catch (e) {}
       }
 
       // Check registered student codes (strictly by secret link code, NOT by browsing names)
@@ -136,33 +124,19 @@ export function AddChildModal({
     const extracted = extractSecretCodeFromInput(val);
 
     if (extracted.length >= 4) {
+      if (isParentAccount) {
+        setDetectedChild(null);
+        return;
+      }
       if (isChildAlreadyLinked(extracted)) {
         setLinkError(lang === 'ar' ? 'هذا الطفل مرتبط بحسابك بالفعل.' : 'This child is already linked to your account.');
         setDetectedChild(null);
         return;
       }
 
-      if (userData?.role === 'student' && (extracted === getOrCreateChildLinkCode(userData).toUpperCase() || extracted === userData.id.toUpperCase())) {
+      if (hasRole(userData, 'student') && (extracted === getOrCreateChildLinkCode(userData).toUpperCase() || extracted === userData.id.toUpperCase())) {
         setDetectedChild(userData);
         return;
-      }
-
-      // Check cached student accounts in local storage
-      const cachedKeys = ['church_auth_user', 'church_guest_user'];
-      for (const ck of cachedKeys) {
-        try {
-          const raw = localStorage.getItem(ck);
-          if (raw) {
-            const u = JSON.parse(raw);
-            if (u && u.role === 'student') {
-              const uCode = getOrCreateChildLinkCode(u).toUpperCase();
-              if (uCode === extracted || u.id.toUpperCase() === extracted) {
-                setDetectedChild(u);
-                return;
-              }
-            }
-          }
-        } catch (e) {}
       }
 
       const match = sundaySchoolRoster.find(

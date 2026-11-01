@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import { getVerifiedServantAccount } from './roleService';
+import { hasRole } from './workspaces';
 import { 
   EvidenceMap, 
   ClaimEvidence, 
@@ -137,29 +139,13 @@ function generateUuid(): string {
  * Validates the current authenticated user and ensures they possess teacher or admin privileges.
  */
 async function getAuthenticatedServant(): Promise<{
-  user: { id: string; role?: string } | null;
+  user: { id: string; roles: import('../types').Role[]; role?: string } | null;
   error: Error | null;
 }> {
-  if (!supabase) {
-    return { user: null, error: new Error('Supabase client is not configured') };
-  }
-
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    return { user: null, error: new Error('Authentication required for curriculum evidence operations') };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  const finalRole = profile?.role || 'student';
-  if (finalRole !== 'teacher' && finalRole !== 'admin') {
-    return { user: null, error: new Error('Only servants, teachers, and administrators may manage curriculum evidence') };
-  }
-
-  return { user: { id: user.id, role: finalRole }, error: null };
+  return getVerifiedServantAccount(
+    'Authentication required for curriculum evidence operations',
+    'Only servants, teachers, and administrators may manage curriculum evidence'
+  );
 }
 
 /**
@@ -453,7 +439,7 @@ export async function saveEvidenceMap(
       return { data: null, error: new Error('Target lesson not found') };
     }
 
-    if (lessonRow.created_by && lessonRow.created_by !== currentUserId && servantCheck.user.role !== 'admin') {
+    if (lessonRow.created_by && lessonRow.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return { data: null, error: new Error('Cannot attach evidence to another teacher\'s draft lesson') };
     }
 

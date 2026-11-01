@@ -10,12 +10,15 @@ import { isSupabaseConfigured } from '../../lib/supabase';
 import { getUserRank } from '../../lib/pointsService';
 import { getClassGroupForGrade } from '../../lib/classGroups';
 import { Language, Lesson } from '../../types';
+import { hasRole } from '../../lib/workspaces';
+import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import {
   MosesDuneHeroBanner,
   MosesJourneyBadge
 } from './JourneyOfMosesVisuals';
 import { MosesLessonProgressBar } from './MosesLessonProgressBar';
 import { MosesLiveJourneyIllustration } from './MosesLiveJourneyIllustration';
+import { StudentFeatureLinks } from './StudentFeatureLinks';
 
 interface HomeTabProps {
   onNavigate: (tab: string, lessonId?: string) => void;
@@ -26,6 +29,7 @@ interface HomeTabProps {
 
 export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, lang }: HomeTabProps) {
   const { userData, isGuest } = useAuth();
+  const workspace = useActiveWorkspace();
   const { lessons, curriculumLoading, curriculumError, curriculumLoadedForUserId, refreshCurriculum, contentProgress, refreshProgressSummary } = useLessons();
   const { currentStage } = useStage();
   const [badgeDismissed, setBadgeDismissed] = useState(false);
@@ -53,8 +57,8 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
   };
 
   const isCoptic = lang === 'copt' || lang === 'cop';
-  const isTeacher = userData?.role === 'teacher';
-  const isParent = userData?.role === 'parent';
+  const isTeacher = workspace === 'teacher' || (!workspace && hasRole(userData, 'teacher'));
+  const isParent = workspace === 'parent' || (!workspace && hasRole(userData, 'parent'));
 
   // Resolve student class group from requested or saved grade/class
   const studentGrade = userData?.requestedGrade || userData?.grade;
@@ -469,6 +473,8 @@ export function HomeTab({ onNavigate, onOpenTeacherStudio, onOpenParentPortal, l
           </div>
         </motion.div>
       </div>
+
+      <StudentFeatureLinks lang={lang} onNavigate={onNavigate} />
     </motion.div>
   );
 }

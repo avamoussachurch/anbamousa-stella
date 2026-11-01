@@ -29,6 +29,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { hasRole } from '../../lib/workspaces';
 import { 
   getMyClass, 
   assignStudentClass, 
@@ -63,7 +64,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
 }) => {
   const isAr = lang === 'ar';
   const { userData } = useAuth();
-  const isAdmin = userData?.role === 'admin';
+  const isAdmin = hasRole(userData, 'admin');
 
   const [loading, setLoading] = useState<boolean>(true);
   const [classInfo, setClassInfo] = useState<ServantClassInfo | null>(null);
@@ -256,7 +257,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
     e.preventDefault();
     const cleanTeacher = teacherInput.trim();
     if (!cleanTeacher || !classInfo?.classInstanceId) {
-      setAddTeacherError(isAr ? 'يرجى إدخال بريد أو اسم أو كود الخادم' : 'Please enter teacher email, name, or code');
+      setAddTeacherError(isAr ? 'يرجى إدخال بريد أو اسم أو كود الخادم' : 'Please enter a servant email, name, or code');
       return;
     }
     setAddingTeacher(true);
@@ -269,7 +270,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
         return;
       }
       setAddTeacherSuccess(
-        res.message || (isAr ? `تمت إضافة الخادم (${cleanTeacher}) إلى فريق تدريس الفصل بنجاح!` : `Teacher (${cleanTeacher}) added to class teaching team successfully!`)
+        res.message || (isAr ? `تمت إضافة الخادم (${cleanTeacher}) إلى فريق خدمة الفصل بنجاح!` : `Servant (${cleanTeacher}) added to the class team successfully!`)
       );
       setTeacherInput('');
       if (classInfo?.classInstanceId) {
@@ -525,7 +526,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-xl font-bold text-stone-100">
-                {isAr ? 'استوديو وفصول مدارس الأحد' : 'Teacher Studio & Class Operations'}
+                {isAr ? 'مساحة الخادم وفصول مدارس الأحد' : 'Servant Workspace & Class Operations'}
               </h2>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                 <ShieldCheck size={11} />
@@ -720,7 +721,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
           }`}
         >
           <Users size={15} />
-          <span>{isAr ? 'خدام ومعلمو الفصل' : 'Co-Teachers & Servants'}</span>
+          <span>{isAr ? 'فريق خدمة الفصل' : 'Class servant team'}</span>
           <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-stone-950/60 text-stone-300 font-mono">
             {classServants.length || (classInfo?.servants?.length ?? 1)}
           </span>
@@ -1153,7 +1154,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
               <div className="flex items-center gap-2">
                 <Users size={18} className="text-amber-400" />
                 <h3 className="text-base font-bold text-stone-100">
-                  {isAr ? 'خدام ومعلمو هذا الفصل' : 'Class Teaching Staff & Co-Teachers'}
+                  {isAr ? 'فريق خدام هذا الفصل' : 'Servants assigned to this class'}
                 </h3>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
                   {classServants.length || (classInfo?.servants?.length ?? 1)} {isAr ? 'خدام' : 'Servants'}
@@ -1161,8 +1162,8 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
               </div>
               <p className="text-xs text-stone-400 mt-1">
                 {isAr
-                  ? 'المعلمون المصرح لهم بإدارة هذا الفصل، تسجيل الحضور، ومراجعة وتقييم الطلاب المشتركين.'
-                  : 'Authorized teachers collaborating on this class instance with shared roster & grading rights.'}
+                  ? 'الخدام المصرح لهم بخدمة هذا الفصل ومتابعة الطلاب المسجلين.'
+                  : 'Servants authorized to serve this class and support its enrolled students.'}
               </p>
             </div>
 
@@ -1177,7 +1178,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
               className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md cursor-pointer shrink-0"
             >
               <Plus size={15} />
-              <span>{isAr ? 'إضافة خادم للفصل' : 'Add Co-Teacher'}</span>
+              <span>{isAr ? 'إضافة خادم للفصل' : 'Add a servant'}</span>
             </button>
           </div>
 
@@ -1191,7 +1192,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
           {loadingServants ? (
             <div className="py-12 text-center text-xs text-stone-500 flex items-center justify-center gap-2">
               <RefreshCw size={16} className="animate-spin text-amber-500" />
-              <span>{isAr ? 'جاري تحميل فريق الخدام...' : 'Loading teachers team...'}</span>
+              <span>{isAr ? 'جاري تحميل فريق الخدام...' : 'Loading servant team...'}</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1219,7 +1220,9 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                         {isAr && servant.nameAr ? servant.nameAr : servant.name}
                       </span>
                       <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        {servant.role || 'Teacher'}
+                        {servant.role?.toLowerCase() === 'teacher'
+                          ? (isAr ? 'خادم' : 'Servant')
+                          : servant.role || (isAr ? 'خادم' : 'Servant')}
                       </span>
                     </div>
                     {servant.email && (
@@ -1452,7 +1455,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-stone-100">
-                      {isAr ? 'إضافة خادم / معلم للفصل' : 'Add Co-Teacher to Class'}
+                      {isAr ? 'إضافة خادم للفصل' : 'Add a servant to this class'}
                     </h3>
                     <p className="text-[11px] text-stone-400">
                       {isAr ? `الفصل: ${classInfo?.className || 'فصلي'}` : `Class: ${classInfo?.className || 'My Class'}`}
@@ -1478,7 +1481,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
               <form onSubmit={handleAddTeacher} className="space-y-4">
                 <div>
                   <label className="block text-stone-300 font-bold mb-1.5">
-                    {isAr ? 'بريد أو اسم أو كود الخادم:' : 'Teacher Email, Name, or Code:'}
+                    {isAr ? 'بريد أو اسم أو كود الخادم:' : 'Servant email, name, or code:'}
                   </label>
                   <input
                     type="text"
@@ -1536,7 +1539,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                     ) : (
                       <UserPlus size={14} />
                     )}
-                    <span>{isAr ? 'إضافة واعتماد الخادم' : 'Add Teacher'}</span>
+                    <span>{isAr ? 'إضافة واعتماد الخادم' : 'Add Servant'}</span>
                   </button>
                 </div>
               </form>

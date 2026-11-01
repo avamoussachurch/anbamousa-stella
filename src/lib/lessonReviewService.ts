@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import { getVerifiedServantAccount } from './roleService';
+import { hasRole } from './workspaces';
 import { 
   LessonVersion, 
   LessonVersionStatus,
@@ -175,29 +177,13 @@ function createDefaultQuizDraft(versionId: string, lessonId: string, summaryEn?:
  * Validates the current authenticated user and ensures they possess teacher or admin privileges.
  */
 export async function getAuthenticatedServant(): Promise<{
-  user: { id: string; role?: string } | null;
+  user: { id: string; roles: import('../types').Role[]; role?: string } | null;
   error: Error | null;
 }> {
-  if (!supabase) {
-    return { user: null, error: new Error('Supabase client is not configured') };
-  }
-
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    return { user: null, error: new Error('Authentication required for servant review operations') };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  const finalRole = profile?.role || 'student';
-  if (finalRole !== 'teacher' && finalRole !== 'admin') {
-    return { user: null, error: new Error('Only servants, teachers, and administrators may participate in servant reviews') };
-  }
-
-  return { user: { id: user.id, role: finalRole }, error: null };
+  return getVerifiedServantAccount(
+    'Authentication required for servant review operations',
+    'Only servants, teachers, and administrators may participate in servant reviews'
+  );
 }
 
 /**
@@ -267,7 +253,6 @@ export async function submitVersionForReview(
       return { data: null, error: servantCheck.error };
     }
     const currentUserId = servantCheck.user.id;
-    const currentUserRole = servantCheck.user.role;
 
     // 1. Fetch target version
     const { data: verRow, error: verErr } = await supabase
@@ -289,7 +274,7 @@ export async function submitVersionForReview(
     }
 
     // 3. Authorization / Ownership check
-    if (verRow.created_by && verRow.created_by !== currentUserId && currentUserRole !== 'admin') {
+    if (verRow.created_by && verRow.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return {
         data: null,
         error: new Error("Authorization error: Cannot submit another teacher's draft for review.")
@@ -1053,7 +1038,6 @@ export async function approveLessonVersion(
       return { data: null, error: servantCheck.error };
     }
     const currentUserId = servantCheck.user.id;
-    const currentUserRole = servantCheck.user.role;
 
     // 1. Fetch target version
     const { data: verRow, error: verErr } = await supabase
@@ -1075,7 +1059,7 @@ export async function approveLessonVersion(
     }
 
     // 3. Ownership / authorization check (only authorized servant or admin can approve)
-    if (verRow.created_by && verRow.created_by !== currentUserId && currentUserRole !== 'admin') {
+    if (verRow.created_by && verRow.created_by !== currentUserId && !hasRole(servantCheck.user, 'admin')) {
       return {
         data: null,
         error: new Error("Authorization error: Unauthorized servant cannot approve another teacher's version.")

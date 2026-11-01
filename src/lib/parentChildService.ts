@@ -4,6 +4,7 @@ import { linkParentAndChildInSupabase, findStudentByLinkCodeInSupabase } from '.
 import { COPTIC_AVATARS, DEFAULT_STUDENT_AVATAR } from '../data/copticAvatars';
 import { supabase } from './supabase';
 import type { StudentLearningReviewData } from './classRosterService';
+import { hasRole } from './workspaces';
 export type { StudentLearningReviewData as ChildLearningReviewData };
 
 export interface RewardRequest {
@@ -34,6 +35,35 @@ export interface RosterStudent {
   rank: number;
   attendanceRate: number;
   isAlreadyLinked?: boolean;
+}
+
+export interface ParentChildRecord {
+  id: string;
+  name: string;
+  grade: string;
+  classGroupId: string;
+  className: string;
+  classNameAr: string;
+  avatarUrl: string;
+  points: number | null;
+  hymnsTaxisLevel: number | null;
+  hymnsMembership: {
+    level: number;
+    status: string;
+    rosterGroup: string;
+  } | null;
+}
+
+export interface ParentRewardRequest {
+  id: string;
+  student_id: string;
+  reward_id: string;
+  reward_name_en: string;
+  reward_name_ar: string;
+  cost_points: number;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  decided_at: string | null;
 }
 
 // Available Sunday School Class Roster for fast, realistic linking
@@ -123,7 +153,7 @@ const REWARD_REQUESTS_KEY = 'church_synced_reward_requests_v3';
 
 // Generate or retrieve persistent link code for any student
 export function getOrCreateChildLinkCode(user?: User | null): string {
-  if (!user || user.role !== 'student') return '';
+  if (!hasRole(user, 'student')) return '';
   if (user.linkCode) return user.linkCode;
   if (user.childLinkCode) return user.childLinkCode;
   
@@ -186,7 +216,7 @@ export function getLinkedChildren(parentId: string = 'default', activeStudentUse
     }));
 
     // If active user is a student, also ensure they are available or auto-linked to demonstrate real sync!
-    if (activeStudentUser && activeStudentUser.role === 'student') {
+    if (hasRole(activeStudentUser, 'student')) {
       const activeLinkCode = getOrCreateChildLinkCode(activeStudentUser);
       const studentMinutes = Math.round((activeStudentUser.screenTimeSeconds || 0) / 60);
       const activeChild: ChildProfile = {
@@ -221,7 +251,7 @@ export function getLinkedChildren(parentId: string = 'default', activeStudentUse
     saveLinkedChildren(parentId, list);
   } else {
     // If active student is logged in and is in the list, synchronize live values!
-    if (activeStudentUser && activeStudentUser.role === 'student') {
+    if (hasRole(activeStudentUser, 'student')) {
       let modified = false;
       list = list.map(child => {
         const isMatched = child.studentId === activeStudentUser.id || 
@@ -356,7 +386,7 @@ export function linkChildByCode(
   }
 
   // 1. Check against active student account
-  if (activeStudentUser && activeStudentUser.role === 'student') {
+  if (hasRole(activeStudentUser, 'student')) {
     const studentCode = getOrCreateChildLinkCode(activeStudentUser).toUpperCase();
     const studentId = activeStudentUser.id.toUpperCase();
 
@@ -466,12 +496,12 @@ export function linkChildByCode(
 
   // 3. Check cached student accounts in local storage
   try {
-    const cachedKeys = ['church_auth_user', 'church_guest_user'];
+    const cachedKeys = ['church_guest_user'];
     for (const ck of cachedKeys) {
       const rawUser = localStorage.getItem(ck);
       if (rawUser) {
         const u = JSON.parse(rawUser);
-        if (u && u.role === 'student') {
+        if (u?.id?.startsWith('guest_') && u.role === 'student') {
           const uCode = getOrCreateChildLinkCode(u).toUpperCase();
           if (uCode === normalized || u.id.toUpperCase() === normalized) {
             const newChild: ChildProfile = {
@@ -531,10 +561,58 @@ export async function linkChildByCodeAsync(
   inputCodeOrEmail: string,
   activeStudentUser?: User | null
 ): Promise<{ success: boolean; child?: ChildProfile; error?: string }> {
-  const isAuthenticatedParent = activeStudentUser?.role === 'parent' && Boolean(activeStudentUser.id);
-  const localRes = isAuthenticatedParent
-    ? { success: false, error: 'Authenticated family linking is unavailable until the server-side verification endpoint is configured.' }
-    : linkChildByCode(parentId, parentName, parentEmail, inputCodeOrEmail, activeStudentUser);
+  const isAuthenticatedParent = hasRole(activeStudentUser, 'parent') && Boolean(activeStudentUser.id);
+  if (isAuthenticatedParent) {
+    if (activeStudentUser?.id.startsWith('guest_')) {
+      return { success: false, error: 'Sign in to a verified parent account before connecting a child.' };
+    }
+
+    const normalizedCode = extractSecretCodeFromInput(inputCodeOrEmail);
+    if (!normalizedCode) return { success: false, error: 'Enter a valid child connection code.' };
+    try {
+      const headers = await getAuthHeader();
+      const response = await fetch('/api/church/parent/connect-child', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ childCode: normalizedCode })
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.success || !payload.child?.id) {
+        return {
+          success: false,
+          error: payload?.message || payload?.error || `Could not connect child (HTTP ${response.status}).`
+        };
+      }
+
+      const child: ChildProfile = {
+        id: payload.child.id,
+        studentId: payload.child.id,
+        nameEn: payload.child.name || '',
+        nameAr: payload.child.name || '',
+        age: 0,
+        gradeEn: payload.child.grade || '',
+        gradeAr: payload.child.grade || '',
+        avatarUrl: payload.child.avatarUrl || DEFAULT_STUDENT_AVATAR,
+        points: 0,
+        pointsKnown: false,
+        rank: 0,
+        attendanceRate: 0,
+        screenTimeMinutes: 0,
+        completedLessonsCount: 0,
+        totalLessonsCount: 0,
+        verseMemorizedCount: 0,
+        pendingRewardsCount: 0,
+        lessons: [],
+        isRealAccount: true
+      };
+      window.dispatchEvent(new CustomEvent('church:parent_linked', { detail: { parentId: activeStudentUser.id, parentName, child } }));
+      return { success: true, child };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Could not connect this child.' };
+    }
+  }
+
+  const localRes = linkChildByCode(parentId, parentName, parentEmail, inputCodeOrEmail, activeStudentUser);
   if (!isAuthenticatedParent && localRes.success) return localRes;
 
   const normalized = extractSecretCodeFromInput(inputCodeOrEmail);
@@ -961,14 +1039,7 @@ async function getAuthHeader(): Promise<Record<string, string>> {
  * Fetch authoritative linked children for the authenticated parent.
  */
 export async function getAuthoritativeParentChildren(): Promise<{
-  data: Array<{
-    id: string;
-    name: string;
-    grade: string;
-    classGroupId: string;
-    avatarUrl: string;
-    points: number | null;
-  }> | null;
+  data: ParentChildRecord[] | null;
   error: Error | null;
 }> {
   const headers = await getAuthHeader();
@@ -987,9 +1058,53 @@ export async function getAuthoritativeParentChildren(): Promise<{
     if (!Array.isArray(json.children)) {
       return { data: null, error: new Error('Parent children response was invalid') };
     }
-    return { data: json.children, error: null };
+    return { data: json.children as ParentChildRecord[], error: null };
   } catch (err: any) {
     return { data: null, error: new Error(err?.message || 'Network error') };
+  }
+}
+
+export async function getParentRewardRequests(): Promise<{
+  data: ParentRewardRequest[] | null;
+  error: Error | null;
+}> {
+  const headers = await getAuthHeader();
+  try {
+    const response = await fetch('/api/church/parent/reward-requests', { headers });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.success !== true || !Array.isArray(payload.requests)) {
+      return {
+        data: null,
+        error: new Error(payload?.message || payload?.error || `Could not load reward requests (HTTP ${response.status}).`)
+      };
+    }
+    return { data: payload.requests as ParentRewardRequest[], error: null };
+  } catch (error) {
+    return { data: null, error: error instanceof Error ? error : new Error('Could not load reward requests.') };
+  }
+}
+
+export async function reviewParentRewardRequest(
+  requestId: string,
+  decision: 'approved' | 'rejected'
+): Promise<{ data: ParentRewardRequest | null; error: Error | null }> {
+  const headers = await getAuthHeader();
+  try {
+    const response = await fetch(`/api/church/parent/reward-requests/${encodeURIComponent(requestId)}/review`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ decision })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.success !== true || !payload.request) {
+      return {
+        data: null,
+        error: new Error(payload?.message || payload?.error || `Could not review reward request (HTTP ${response.status}).`)
+      };
+    }
+    return { data: payload.request as ParentRewardRequest, error: null };
+  } catch (error) {
+    return { data: null, error: error instanceof Error ? error : new Error('Could not review reward request.') };
   }
 }
 

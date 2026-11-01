@@ -31,19 +31,19 @@ export const CopticButton: React.FC<CopticButtonProps> = ({
   // Variant styling
   const variantStyles = {
     primary:
-      'bg-[var(--brand-burgundy)] text-white hover:brightness-110 active:brightness-95 border border-[var(--brand-burgundy-dark)] shadow-xs focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]',
+      'bg-[var(--action-primary)] text-[var(--action-primary-text)] hover:brightness-110 active:brightness-95 border border-[var(--action-primary)] shadow-xs focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]',
     secondary:
-      'bg-[var(--surface-card)] text-[var(--text-ink)] hover:bg-[var(--surface-elevated)] active:bg-[var(--border-stone)]/40 border border-[var(--border-stone)] shadow-xs focus-visible:ring-2 focus-visible:ring-[var(--brand-blue)]',
+      'bg-[var(--surface-primary)] text-[var(--text-primary)] hover:bg-[var(--surface-secondary)] active:bg-[var(--state-selected)] border border-[var(--border-default)] shadow-xs focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]',
     gold:
-      'bg-[var(--brand-gold)] text-white hover:brightness-108 active:brightness-95 border border-[var(--brand-gold-dark)] shadow-xs focus-visible:ring-2 focus-visible:ring-[var(--brand-burgundy)] font-bold',
+      'bg-[var(--mousa-gold)] text-[var(--action-gold-text)] hover:brightness-105 active:brightness-95 border border-[var(--mousa-gold-dark)] shadow-xs focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] font-bold',
     ghost:
       'bg-transparent text-[var(--text-ink)] hover:bg-[var(--surface-elevated)] active:bg-[var(--border-stone)]/30 border border-transparent focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]',
     danger:
       'bg-[var(--color-danger)] text-white hover:brightness-110 active:brightness-95 border border-red-900 shadow-xs focus-visible:ring-2 focus-visible:ring-red-400',
     outline:
-      'bg-transparent text-[var(--brand-burgundy)] dark:text-[var(--brand-gold)] border border-[var(--brand-burgundy)] dark:border-[var(--brand-gold)] hover:bg-[var(--brand-burgundy)]/10 active:bg-[var(--brand-burgundy)]/20 focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]',
+      'bg-transparent text-[var(--action-primary)] border border-[var(--action-primary)] hover:bg-[var(--action-primary)]/10 active:bg-[var(--action-primary)]/20 focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]',
     'mousa-quest':
-      'bg-gradient-to-r from-[var(--mousa-teal)] to-[var(--mousa-teal-deep)] text-white font-extrabold border border-[var(--mousa-teal-light)] shadow-md hover:brightness-110 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--mousa-gold)]',
+      'bg-gradient-to-r from-[var(--mousa-teal)] to-[var(--mousa-teal-deep)] text-white font-extrabold border border-[var(--mousa-teal-light)] shadow-md hover:brightness-110 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]',
     'mousa-teal':
       'bg-[var(--mousa-teal-soft)] text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)] hover:bg-[var(--mousa-teal)]/20 border border-[var(--mousa-teal)]/30 font-bold focus-visible:ring-2 focus-visible:ring-[var(--mousa-teal)]'
   };

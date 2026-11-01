@@ -5,10 +5,12 @@ import { useGlobalAudio } from '../../context/AudioContext';
 import { useAuth } from '../../context/AuthContext';
 import { getHymns } from '../../lib/hymnsService';
 import type { CopticHymnItem } from '../../data/hymnsData';
+import { useActiveWorkspace } from '../../context/WorkspaceContext';
 
 export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const { currentTrackUrl, isPlaying, volume, playTrack, togglePlay, setVolume } = useGlobalAudio();
   const { userData, isGuest } = useAuth();
+  const workspace = useActiveWorkspace();
   const [isOpen, setIsOpen] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
   const [hymns, setHymns] = useState<CopticHymnItem[]>([]);
@@ -22,7 +24,11 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
     setHymnsError(null);
     try {
       const viewer = userData && !isGuest
-        ? { role: userData.role, hymnsTaxisLevel: userData.hymnsTaxisLevel }
+        ? workspace === 'student'
+          ? { roles: userData.roles, hymnsTaxisLevel: userData.hymnsTaxisLevel }
+          : workspace === 'teacher'
+            ? { roles: userData.roles.filter(role => role === 'teacher' || role === 'admin'), hymnsTaxisLevel: userData.hymnsTaxisLevel }
+            : undefined
         : undefined;
       const result = await getHymns(undefined, undefined, userData && !isGuest ? 'published' : undefined, viewer);
       if (requestId !== hymnRequestId.current) return;
@@ -42,12 +48,12 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
     } finally {
       if (requestId === hymnRequestId.current) setIsLoadingHymns(false);
     }
-  }, [isGuest, lang, userData?.id, userData?.role, userData?.hymnsTaxisLevel]);
+  }, [isGuest, lang, userData?.id, userData?.roles, userData?.hymnsTaxisLevel, workspace]);
 
   useEffect(() => {
     setHymns([]);
     setHymnsError(null);
-  }, [userData?.id, userData?.role, userData?.hymnsTaxisLevel]);
+  }, [userData?.id, userData?.roles, userData?.hymnsTaxisLevel]);
 
   useEffect(() => {
     if (!isOpen) return;

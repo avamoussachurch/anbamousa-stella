@@ -258,7 +258,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
 
         <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-2xl p-4 shadow-2xs">
           <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider block">
-            {lang === 'ar' ? 'تسجيلات الخدام' : 'Teacher Voice Audio'}
+            {lang === 'ar' ? 'تسجيلات الخدام' : 'Servant Voice Audio'}
           </span>
           <div className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
             {voiceCount}
@@ -317,10 +317,10 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
             >
               <option value="ALL">{lang === 'ar' ? '— جميع أنواع المصادر —' : '— All Media Types —'}</option>
               <option value="PDF">{lang === 'ar' ? 'مستندات PDF / DOCX' : 'PDF / DOCX Documents'}</option>
-              <option value="TEACHER_VOICE">{lang === 'ar' ? 'تسجيلات صوتية' : 'Teacher Voice Audio'}</option>
+              <option value="TEACHER_VOICE">{lang === 'ar' ? 'تسجيلات صوتية' : 'Servant Voice Audio'}</option>
               <option value="PPTX">{lang === 'ar' ? 'شرائح عرض (PPTX)' : 'Presentation Slides'}</option>
               <option value="IMAGE">{lang === 'ar' ? 'أيقونات وصور' : 'Icons & Images'}</option>
-              <option value="TEACHER_TEXT">{lang === 'ar' ? 'ملاحظات نصية' : 'Teacher Text Notes'}</option>
+              <option value="TEACHER_TEXT">{lang === 'ar' ? 'ملاحظات نصية' : 'Servant Text Notes'}</option>
               <option value="YOUTUBE_VIDEO">{lang === 'ar' ? 'فيديوهات يوتيوب' : 'YouTube Videos'}</option>
               <option value="OTHER_APPROVED_RESOURCE">{lang === 'ar' ? 'موارد خارجية معتمدة' : 'Approved Resources'}</option>
             </select>
@@ -426,7 +426,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
                           <button
                             onClick={() => setTextSource(source)}
                             className="p-1.5 hover:bg-stone-100 dark:hover:bg-slate-800 text-stone-600 dark:text-stone-300 rounded-lg transition-colors cursor-pointer"
-                            title={lang === 'ar' ? 'قراءة الملاحظات' : 'Read Teacher Notes'}
+                            title={lang === 'ar' ? 'قراءة الملاحظات' : 'Read Servant Notes'}
                           >
                             <BookOpen className="w-4 h-4" />
                           </button>
@@ -473,7 +473,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
                       ) : (
                         <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 rounded-md flex items-center gap-1">
                           <Lock className="w-3 h-3" />
-                          {lang === 'ar' ? 'مسودة خاصة بالخادم' : 'Private Teacher Draft'}
+                          {lang === 'ar' ? 'مسودة خاصة بالخادم' : 'Private Servant Draft'}
                         </span>
                       )}
 
