@@ -1,11 +1,12 @@
 import { LeaderboardEntry, User } from '../types';
 import { mockLeaderboard } from '../data';
-import { hasRole } from './workspaces';
 
 const LEADERBOARD_STORAGE_KEY = 'church_leaderboard_data';
 const PURCHASES_STORAGE_KEY = 'church_reward_purchases';
 
 export function getLeaderboard(currentUser?: User | null): LeaderboardEntry[] {
+  if (!currentUser?.id.startsWith('guest_')) return [];
+
   let list: LeaderboardEntry[] = [];
   if (typeof window !== 'undefined') {
     try {
@@ -31,8 +32,7 @@ export function getLeaderboard(currentUser?: User | null): LeaderboardEntry[] {
     // Match existing user entry or standard guest baseline ('u1' / any previous guest)
     const existingIndex = list.findIndex(
       (e) => e.studentId === currentUser.id ||
-             (isGuest && (e.studentId === 'u1' || e.studentId.startsWith('guest_'))) ||
-             (hasRole(currentUser, 'student') && !currentUser.id.startsWith('s-') && e.studentId === 'u1')
+             (isGuest && (e.studentId === 'u1' || e.studentId.startsWith('guest_')))
     );
 
     if (existingIndex >= 0) {
@@ -83,6 +83,8 @@ export function updateLeaderboardUser(
   currentUser: User,
   pointsDelta: number
 ): LeaderboardEntry[] {
+  if (!currentUser.id.startsWith('guest_')) return [];
+
   let list = getLeaderboard(currentUser);
 
   const userIndex = list.findIndex(
@@ -214,6 +216,8 @@ const DEFAULT_STREAK_LEADERBOARD: StreakLeaderboardEntry[] = [
 const STREAK_LEADERBOARD_STORAGE_KEY = 'church_streak_leaderboard_data';
 
 export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboardEntry[] {
+  if (!currentUser?.id.startsWith('guest_')) return [];
+
   let list: StreakLeaderboardEntry[] = [];
   if (typeof window !== 'undefined') {
     try {
@@ -235,8 +239,7 @@ export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboa
 
     const existingIdx = list.findIndex(
       (e) => e.studentId === currentUser.id || 
-             (isGuest && (e.studentId === 'u1' || e.studentId.startsWith('guest_'))) ||
-             (hasRole(currentUser, 'student') && !currentUser.id.startsWith('s-') && e.studentId === 'u1')
+             (isGuest && (e.studentId === 'u1' || e.studentId.startsWith('guest_')))
     );
 
     if (existingIdx >= 0) {
@@ -288,6 +291,8 @@ export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboa
 }
 
 export function updateStreakLeaderboardUser(currentUser: User): StreakLeaderboardEntry[] {
+  if (!currentUser.id.startsWith('guest_')) return [];
+
   const list = getStreakLeaderboard(currentUser);
   if (typeof window !== 'undefined') {
     try {

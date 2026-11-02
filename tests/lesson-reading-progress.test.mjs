@@ -3,6 +3,7 @@ import { afterEach, test } from 'node:test';
 import {
   calculateSectionProgress,
   canFinishLesson,
+  resolveLessonProgressStatus,
   toggleReadSection
 } from '../src/lib/lessonReadingProgress.ts';
 import {
@@ -39,6 +40,17 @@ test('incomplete sections cannot finish; all required sections can, unless alrea
   assert.equal(canFinishLesson(sections, sections), true);
   assert.equal(canFinishLesson(sections, sections, { status: 'COMPLETED' }), false);
   assert.equal(canFinishLesson([], []), false);
+});
+
+test('reading every section does not complete a lesson before the trusted completion result', () => {
+  const sections = ['section-1', 'section-2'];
+  const readingStatus = resolveLessonProgressStatus(false);
+  const completedStatus = resolveLessonProgressStatus(true);
+
+  assert.equal(readingStatus, 'IN_PROGRESS');
+  assert.equal(completedStatus, 'COMPLETED');
+  assert.equal(canFinishLesson(sections, sections, { status: readingStatus }), true);
+  assert.equal(canFinishLesson(sections, sections, { status: completedStatus }), false);
 });
 
 test('unread toggles are saved only after server confirmation', async () => {

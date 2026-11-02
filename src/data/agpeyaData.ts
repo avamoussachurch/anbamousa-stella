@@ -115,7 +115,7 @@ export const AGPEYA_HOURS: AgpeyaHourData[] = [
   {
     id: 'none',
     nameAr: 'صلاة الساعة التاسعة',
-    nameEn: 'None (Ninth Hour - 3 PM)',
+    nameEn: 'Nones (Ninth Hour - 3 PM)',
     timeLabelAr: 'الساعة ٣ عصراً',
     timeLabelEn: '3:00 PM',
     themeAr: 'موت الفادي بالجسد على الصليب، واعتراف اللص اليمين: اذكرني يا رب متى جئت في ملكوتك',

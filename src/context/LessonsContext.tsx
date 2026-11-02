@@ -70,6 +70,7 @@ import {
   getStudentProgressSummary,
   isStudentProgressSynced
 } from '../lib/studentProgressService';
+import { resolveLessonProgressStatus } from '../lib/lessonReadingProgress';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
 interface LessonsContextType {
@@ -1079,8 +1080,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
         : [...current.sectionsCompleted, sectionId];
 
       const pct = Math.round((newSections.length / Math.max(1, totalSections)) * 100);
-      const isComplete = newSections.length >= totalSections;
-      const locallyComplete = isComplete && !isOnlineAuth;
+      const status = resolveLessonProgressStatus(current.status === 'COMPLETED');
 
       return {
         ...prev,
@@ -1089,8 +1089,8 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
           sectionsCompleted: newSections,
           totalSections,
           completionPercent: pct,
-          status: locallyComplete ? 'COMPLETED' : 'IN_PROGRESS',
-          completedAt: locallyComplete ? new Date().toISOString() : current.completedAt,
+          status,
+          completedAt: status === 'COMPLETED' ? current.completedAt : undefined,
             lastPositionSectionId: sectionId,
             pendingSync: isOnlineAuth
           }
@@ -1321,7 +1321,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       publishLessonVersion,
       updateStudentContentProgress: (studentId: string, lessonId: string, sections: string[], pct: number, confirmedComplete = false) => {
         const key = `${studentId}_${lessonId}`;
-        const status = pct >= 100 && (confirmedComplete || !isOnlineAuth) ? 'COMPLETED' : 'IN_PROGRESS';
+        const status = resolveLessonProgressStatus(pct >= 100 && confirmedComplete);
         setContentProgress(prev => ({
           ...prev,
           [key]: {

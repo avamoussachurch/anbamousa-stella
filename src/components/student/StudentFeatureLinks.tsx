@@ -48,7 +48,7 @@ export function StudentFeatureLinks({ lang, onNavigate }: { lang: Language; onNa
       <button
         type="button"
         onClick={() => onNavigate('agpeya')}
-        className="group relative flex min-h-40 flex-col justify-between overflow-hidden rounded-3xl border border-teal-200/70 bg-gradient-to-br from-teal-50 via-white to-emerald-100 p-5 text-start shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-teal-900/70 dark:from-[#132b2c] dark:via-[#172a2c] dark:to-[#193a37]"
+        className="group relative flex min-h-40 flex-col justify-between overflow-hidden rounded-3xl border border-teal-200/70 bg-gradient-to-br from-teal-50 via-white to-emerald-100 p-5 text-start shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-[#315B62] dark:from-[#12313B] dark:via-[#153944] dark:to-[#17453F]"
       >
         <div aria-hidden="true" className="pointer-events-none absolute -end-5 -top-7 text-teal-700/10 dark:text-teal-100/10">
           <BookOpen size={124} strokeWidth={1.2} />
@@ -76,7 +76,7 @@ export function StudentFeatureLinks({ lang, onNavigate }: { lang: Language; onNa
       <button
         type="button"
         onClick={() => onNavigate('calendar')}
-        className="group relative flex min-h-40 flex-col justify-between overflow-hidden rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-100 p-5 text-start shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-amber-900/70 dark:from-[#30251a] dark:via-[#2b241d] dark:to-[#3a2c1d]"
+        className="group relative flex min-h-40 flex-col justify-between overflow-hidden rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-100 p-5 text-start shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-[#65563D] dark:from-[#27323A] dark:via-[#26313A] dark:to-[#3C382A]"
       >
         <div aria-hidden="true" className="pointer-events-none absolute -end-4 -top-5 text-amber-800/10 dark:text-amber-100/10">
           <Cross size={112} strokeWidth={1.1} />

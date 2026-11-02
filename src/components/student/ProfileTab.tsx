@@ -430,6 +430,11 @@ export function ProfileTab({
                   <img src={userData.avatarUrl} alt="Avatar" className="w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full border-4 border-[var(--mousa-gold)] bg-[var(--mousa-sand-100)] mb-4 shadow-sm object-cover" />
                   <h2 className="text-xl md:text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{userData.fullName}</h2>
                   <p className="text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)] font-bold md:text-lg">{lang === 'ar' ? 'رحلة القديس الأنبا موسى' : 'The Journey of Moses'}</p>
+                  {isGuest && (
+                    <span className="mt-2 inline-flex items-center rounded-full border border-amber-300/50 bg-amber-100/70 px-3 py-1 text-[10px] font-extrabold text-amber-900 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-200">
+                      {lang === 'ar' ? 'معاينة ضيف · بيانات تجريبية' : 'Guest preview · demo data'}
+                    </span>
+                  )}
                   
                   <div className="flex justify-center gap-6 md:gap-12 mt-6 pt-6 border-t border-[var(--mousa-border-sand)]/60">
                     <div>
@@ -464,7 +469,8 @@ export function ProfileTab({
                     <Award size={20} className="text-[var(--mousa-gold)]" />
                     {lang === 'ar' ? 'الأوسمة والإنجازات' : 'Achievements'}
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                  {isGuest && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
                     {[
                       {
                         id: 'early_bird',
@@ -522,7 +528,15 @@ export function ProfileTab({
                         </div>
                       </div>
                     ))}
-                  </div>
+                    </div>
+                  )}
+                  {!isGuest && (
+                    <p role="status" className="mt-4 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">
+                      {lang === 'ar'
+                        ? 'لا توجد إنجازات موثقة متاحة لهذا الحساب حتى الآن.'
+                        : 'Verified achievements are not available for this account yet.'}
+                    </p>
+                  )}
                 </div>
               </div>
 

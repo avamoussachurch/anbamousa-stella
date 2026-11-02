@@ -515,7 +515,6 @@ export const MosesJourneyTrail: React.FC<JourneyTrailProps> = ({
 interface MosesJourneyBadgeProps {
   completedLessonsCount: number;
   lastCompletedLessonTitle?: string;
-  pointsEarned?: number;
   lang: Language;
   onExploreMore?: () => void;
   onDismiss?: () => void;
@@ -530,7 +529,6 @@ interface MosesJourneyBadgeProps {
 export const MosesJourneyBadge: React.FC<MosesJourneyBadgeProps> = ({
   completedLessonsCount,
   lastCompletedLessonTitle,
-  pointsEarned = 50,
   lang,
   onExploreMore,
   onDismiss,
@@ -624,7 +622,9 @@ export const MosesJourneyBadge: React.FC<MosesJourneyBadgeProps> = ({
                 }}
               >
                 <Star size={11} className="fill-current text-[var(--mousa-gold)]" />
-                <span>+{pointsEarned} {isAr ? 'نقطة بركة مكتسبة' : 'blessing points'}</span>
+                <span>
+                  {completedLessonsCount} {isCop ? 'ⲛ̀ⲥⲃⲱ' : isAr ? 'محطات مكتملة' : 'lessons completed'}
+                </span>
               </span>
             </div>
 

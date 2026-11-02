@@ -22,6 +22,10 @@ export function calculateSectionProgress(
   };
 }
 
+export function resolveLessonProgressStatus(confirmedComplete: boolean): StudentContentProgress['status'] {
+  return confirmedComplete ? 'COMPLETED' : 'IN_PROGRESS';
+}
+
 export function canFinishLesson(
   sectionIds: string[],
   sectionsCompleted: string[],
