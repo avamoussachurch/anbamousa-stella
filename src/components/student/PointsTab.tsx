@@ -26,7 +26,7 @@ const REWARD_PRODUCTS = [
 import { usePoints } from '../../context/PointsContext';
 
 export function PointsTab({ lang }: { lang: Language }) {
-  const { userData } = useAuth();
+  const { userData, isGuest } = useAuth();
   const { points, currentStreak, longestStreak, leaderboard: displayLeaderboard, streakLeaderboard: displayStreaks, addPoints } = usePoints();
   
   // Section order:
@@ -214,13 +214,13 @@ export function PointsTab({ lang }: { lang: Language }) {
                 <Flame size={36} fill="currentColor" className="text-white drop-shadow-xs" />
               </div>
               <div className="text-4xl md:text-5xl font-black text-amber-700 dark:text-amber-400 tracking-tight">
-                {userData.currentStreak || 1} {lang === 'ar' ? 'أيام' : 'Days'}
+                {userData.currentStreak ?? 0} {lang === 'ar' ? 'أيام' : 'Days'}
               </div>
               <p className="text-stone-800 dark:text-stone-200 font-extrabold uppercase tracking-wider text-xs sm:text-sm">
                 {lang === 'ar' ? 'سلسلة المواظبة الحالية في مسيرة الأنبا موسى' : 'Current Daily Learning Streak'}
               </p>
               <div className="flex items-center justify-center gap-3 pt-2 text-xs font-bold text-stone-600 dark:text-stone-400">
-                <span>{lang === 'ar' ? `🏆 أطول مواظبة: ${userData.longestStreak || userData.currentStreak || 1} يوم` : `🏆 Longest: ${userData.longestStreak || userData.currentStreak || 1} days`}</span>
+                <span>{lang === 'ar' ? `🏆 أطول مواظبة: ${userData.longestStreak ?? userData.currentStreak ?? 0} يوم` : `🏆 Longest: ${userData.longestStreak ?? userData.currentStreak ?? 0} days`}</span>
               </div>
             </motion.div>
 
@@ -236,12 +236,19 @@ export function PointsTab({ lang }: { lang: Language }) {
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 text-xs font-black">
                 <Sparkles size={14} />
-                <span>{lang === 'ar' ? `سلسلتك: ${userData.currentStreak || 1} أيام` : `Your Streak: ${userData.currentStreak || 1} Days`}</span>
+                <span>{lang === 'ar' ? `سلسلتك: ${userData.currentStreak ?? 0} أيام` : `Your Streak: ${userData.currentStreak ?? 0} Days`}</span>
               </div>
             </div>
 
+            {displayStreaks.length === 0 && (
+              <p role="status" className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">
+                {lang === 'ar'
+                  ? 'الترتيب الرسمي غير متاح حالياً.'
+                  : 'Official rankings are not available yet.'}
+              </p>
+            )}
             {/* Visual Top 3 Podium for Streaks */}
-            <LeaderboardPodium 
+            <LeaderboardPodium
               items={displayStreaks.slice(0, 3).map(e => ({
                 id: e.id,
                 studentId: e.studentId,
@@ -337,7 +344,7 @@ export function PointsTab({ lang }: { lang: Language }) {
             </div>
             
             <div className="space-y-6 relative before:absolute before:inset-0 before:ml-7 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-[var(--mousa-border-sand)]">
-              {mockBadges.map((badge, index) => {
+              {isGuest && mockBadges.map((badge, index) => {
                 const isUnlocked = userData.points >= badge.pointsThreshold;
                 
                 return (
@@ -386,6 +393,13 @@ export function PointsTab({ lang }: { lang: Language }) {
                   </motion.div>
                 );
               })}
+              {!isGuest && (
+                <p role="status" className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">
+                  {lang === 'ar'
+                    ? 'لا توجد إنجازات موثقة متاحة لهذا الحساب حتى الآن.'
+                    : 'Verified achievements are not available for this account yet.'}
+                </p>
+              )}
             </div>
           </motion.div>
         )}
@@ -434,6 +448,13 @@ export function PointsTab({ lang }: { lang: Language }) {
                </span>
              </div>
 
+             {displayLeaderboard.length === 0 && (
+               <p role="status" className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">
+                 {lang === 'ar'
+                   ? 'الترتيب الرسمي غير متاح حالياً.'
+                   : 'Official rankings are not available yet.'}
+               </p>
+             )}
              {/* Visual Top 3 Podium for Points */}
              <LeaderboardPodium 
                items={displayLeaderboard.slice(0, 3).map(e => ({

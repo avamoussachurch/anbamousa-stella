@@ -70,7 +70,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const currentHymn = hymns.find(h => h.audioUrl === currentTrackUrl);
 
   return (
-    <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end">
+    <div className={`fixed bottom-24 z-40 flex flex-col ${lang === 'ar' ? 'left-4 items-start' : 'right-4 items-end'}`}>
       <AnimatePresence>
         {isOpen && (
           <motion.div

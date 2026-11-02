@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BookOpen, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Language } from '../../types';
@@ -43,15 +43,10 @@ const fallbackVerses = [
 ];
 
 export function BibleVerseCard({ lang }: { lang: Language }) {
-  const [verse, setVerse] = useState(fallbackVerses[0]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Pick random verse
-    const picked = fallbackVerses[Math.floor(Math.random() * fallbackVerses.length)];
-    setVerse(picked);
-    setLoading(false);
-  }, []);
+  const date = new Date();
+  const dayOfYear = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(date.getFullYear(), 0, 0)) / 86400000);
+  const verse = fallbackVerses[dayOfYear % fallbackVerses.length];
+  const isCoptic = lang === 'cop' || lang === 'copt';
 
   return (
     <>
@@ -72,21 +67,14 @@ export function BibleVerseCard({ lang }: { lang: Language }) {
             </div>
           </div>
 
-          {loading ? (
-            <div className="animate-pulse space-y-2 py-2">
-              <div className="h-4 bg-amber-900/20 rounded-sm w-3/4"></div>
-              <div className="h-4 bg-amber-900/20 rounded-sm w-1/2"></div>
-            </div>
-          ) : (
-            <div>
-              <p className="font-bold leading-relaxed text-base sm:text-lg italic text-amber-950">
-                "{lang === 'ar' ? verse.ar : verse.en}"
-              </p>
-              <span className="inline-block mt-1 font-extrabold text-xs text-amber-900">
-                ({lang === 'ar' ? verse.referenceAr : verse.referenceEn})
-              </span>
-            </div>
-          )}
+          <div>
+            <p className="font-bold leading-relaxed text-base sm:text-lg italic text-amber-950">
+              "{lang === 'ar' ? verse.ar : isCoptic ? verse.copt : verse.en}"
+            </p>
+            <span className="inline-block mt-1 font-extrabold text-xs text-amber-900">
+              ({lang === 'ar' ? verse.referenceAr : isCoptic ? verse.referenceCopt : verse.referenceEn})
+            </span>
+          </div>
         </div>
       </motion.div>
     </>

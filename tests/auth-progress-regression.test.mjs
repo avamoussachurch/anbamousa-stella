@@ -7,7 +7,7 @@ import {
   getStudentProgressSummary,
   isStudentProgressSynced
 } from '../src/lib/studentProgressService.ts';
-import { awardPoints } from '../src/lib/pointsService.ts';
+import { awardPoints, getLeaderboard, getStreakLeaderboard } from '../src/lib/pointsService.ts';
 
 const originalFetch = globalThis.fetch;
 const originalWindow = globalThis.window;
@@ -169,4 +169,23 @@ test('authenticated points cannot be granted by editing the local cache', () => 
 
   assert.throws(() => awardPoints('student-1', 500, 'unverified'), /server-verified activity/i);
   assert.equal(JSON.parse(storage.get('church_auth_user')).points, 10);
+});
+
+test('sample leaderboard data is available only in the guest demo workspace', () => {
+  const account = {
+    id: 'student-1',
+    role: 'student',
+    roles: ['student'],
+    fullName: 'Mina Hanna',
+    avatarUrl: '',
+    points: 240,
+    currentStreak: 0,
+    longestStreak: 0
+  };
+  const demo = { ...account, id: 'guest_student-1' };
+
+  assert.deepEqual(getLeaderboard(account), []);
+  assert.deepEqual(getStreakLeaderboard(account), []);
+  assert.ok(getLeaderboard(demo).length > 0);
+  assert.ok(getStreakLeaderboard(demo).length > 0);
 });

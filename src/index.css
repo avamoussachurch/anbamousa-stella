@@ -1617,4 +1617,44 @@
   .dark .border-stone-700 {
     border-color: var(--border-default) !important;
   }
+
+  .stella-adventure-star {
+    animation: stella-star-twinkle 3.8s ease-in-out infinite;
+    box-shadow: 0 0 10px 2px rgb(245 217 140 / 35%);
+  }
+
+  .stella-cloud-drift {
+    animation: stella-cloud-drift 52s ease-in-out infinite alternate;
+  }
+
+  .stella-cloud-drift-slow {
+    animation-duration: 74s;
+    animation-direction: alternate-reverse;
+  }
+
+  .stella-trail-dashes {
+    animation: stella-trail-flow 26s linear infinite;
+  }
+
+  @keyframes stella-star-twinkle {
+    0%, 100% { opacity: 0.35; transform: scale(0.82); }
+    50% { opacity: 0.95; transform: scale(1.18); }
+  }
+
+  @keyframes stella-cloud-drift {
+    from { transform: translateX(-8px); }
+    to { transform: translateX(24px); }
+  }
+
+  @keyframes stella-trail-flow {
+    to { stroke-dashoffset: -120; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stella-adventure-star,
+    .stella-cloud-drift,
+    .stella-trail-dashes {
+      animation: none;
+    }
+  }
 }

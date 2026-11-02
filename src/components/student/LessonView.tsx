@@ -492,6 +492,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
         sectionProgressError={sectionProgressError}
         finishSuccess={finishSuccess}
         onNavigateHome={onBack}
+        previewMode={isGuest}
         onMarkSectionRead={async sectionId => {
           if (readOnly) return;
           const existingSections = currentProgress?.sectionsCompleted || [];

@@ -22,8 +22,8 @@ export interface PointsContextType {
 
 const PointsContext = createContext<PointsContextType>({
   points: 0,
-  currentStreak: 1,
-  longestStreak: 1,
+  currentStreak: 0,
+  longestStreak: 0,
   leaderboard: [],
   streakLeaderboard: [],
   addPoints: async () => 0,
@@ -63,7 +63,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [userData, refreshScores]);
 
   const currentPoints = userData?.points ?? 0;
-  const currentStreak = userData?.currentStreak ?? 1;
+  const currentStreak = userData?.currentStreak ?? 0;
   const longestStreak = Math.max(currentStreak, userData?.longestStreak ?? currentStreak);
 
   // Guaranteed unified Leaderboard: Synchronize current student's points identically
