@@ -75,21 +75,106 @@ export function StellaPageHeader({
 
 export interface StellaSectionTitleProps {
   title: string;
+  eyebrow?: string;
   description?: string;
   action?: ReactNode;
   className?: string;
   dir?: 'ltr' | 'rtl' | 'auto';
+  useStellaTokens?: boolean;
 }
 
-export function StellaSectionTitle({ title, description, action, className = '', dir }: StellaSectionTitleProps) {
+export function StellaSectionTitle({
+  title,
+  eyebrow,
+  description,
+  action,
+  className = '',
+  dir,
+  useStellaTokens = false
+}: StellaSectionTitleProps) {
   return (
-    <div className={`stella-section-title ${className}`} dir={dir}>
+    <div className={`stella-section-title${useStellaTokens ? ' stella-section-title--tokenized' : ''} ${className}`} dir={dir}>
       <div className="min-w-0">
+        {eyebrow && <p className="stella-section-title__eyebrow">{eyebrow}</p>}
         <h2>{title}</h2>
         {description && <p>{description}</p>}
       </div>
       {action && <div className="stella-section-title__action">{action}</div>}
     </div>
+  );
+}
+
+export interface StellaSurfacePanelProps extends Omit<StellaCardProps, 'variant'> {
+  surface?: 'primary' | 'secondary' | 'muted';
+  bordered?: boolean;
+  radius?: 'card' | 'panel';
+}
+
+export function StellaSurfacePanel({
+  surface = 'primary',
+  bordered = true,
+  radius = 'card',
+  className = '',
+  ...props
+}: StellaSurfacePanelProps) {
+  const classes = [
+    'stella-surface-panel',
+    `stella-surface-panel--${surface}`,
+    `stella-surface-panel--radius-${radius}`,
+    bordered ? '' : 'stella-surface-panel--borderless',
+    className
+  ].filter(Boolean).join(' ');
+
+  return (
+    <StellaCard
+      {...props}
+      variant="default"
+      className={classes}
+    />
+  );
+}
+
+export type StellaStatusIndicatorTone = 'success' | 'warning' | 'error' | 'neutral';
+
+export interface StellaStatusIndicatorProps {
+  status: StellaStatusIndicatorTone;
+  label: string;
+  className?: string;
+  dir?: 'ltr' | 'rtl' | 'auto';
+}
+
+export function StellaStatusIndicator({ status, label, className = '', dir }: StellaStatusIndicatorProps) {
+  const tone = status === 'error' ? 'danger' : status;
+  const classes = [
+    'stella-status',
+    `stella-status--${tone}`,
+    'stella-status-indicator',
+    `stella-status-indicator--${status}`,
+    className
+  ].filter(Boolean).join(' ');
+
+  return (
+    <span
+      className={classes}
+      role={status === 'error' ? 'alert' : 'status'}
+      aria-label={label}
+      dir={dir}
+    >
+      {label}
+    </span>
+  );
+}
+
+export interface StellaPixelLabelProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
+  children: string;
+}
+
+export function StellaPixelLabel({ children, className = '', ...props }: StellaPixelLabelProps) {
+  const classes = ['stella-pixel-label', className].filter(Boolean).join(' ');
+  return (
+    <span className={classes} {...props}>
+      {children}
+    </span>
   );
 }
 

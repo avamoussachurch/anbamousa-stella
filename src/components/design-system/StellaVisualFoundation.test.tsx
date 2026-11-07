@@ -14,7 +14,11 @@ import {
   StellaProgressBar,
   StellaProgressRing,
   StellaSelect,
+  StellaPixelLabel,
+  StellaSectionTitle,
+  StellaStatusIndicator,
   StellaStatusLabel,
+  StellaSurfacePanel,
   StellaTextarea,
   StellaTimeline
 } from './StellaVisualFoundation';
@@ -135,4 +139,81 @@ test('shared form controls associate labels and errors with accessible inputs', 
   assert.match(select, /stella-select__icon/);
   assert.match(textarea, /stella-field__control--multiline/);
   assert.match(error, /role="alert" dir="rtl"/);
+});
+
+test('tokenized section headings render optional content and preserve RTL direction', () => {
+  const heading = renderToStaticMarkup(createElement(StellaSectionTitle, {
+    eyebrow: 'LEARNING',
+    title: 'Your lessons',
+    description: 'Continue where you left off.',
+    dir: 'rtl',
+    useStellaTokens: true
+  }));
+  const legacyHeading = renderToStaticMarkup(createElement(StellaSectionTitle, {
+    title: 'Overview'
+  }));
+
+  assert.match(heading, /stella-section-title--tokenized/);
+  assert.match(heading, /dir="rtl"/);
+  assert.match(heading, /stella-section-title__eyebrow">LEARNING/);
+  assert.match(heading, /<h2>Your lessons<\/h2>/);
+  assert.match(heading, /Continue where you left off\./);
+  assert.doesNotMatch(legacyHeading, /stella-section-title--tokenized|stella-section-title__eyebrow/);
+  assert.match(legacyHeading, /<h2>Overview<\/h2>/);
+});
+
+test('surface panels support semantic surfaces, optional borders, padding, and radius', () => {
+  const panel = renderToStaticMarkup(createElement(StellaSurfacePanel, {
+    as: 'div',
+    surface: 'secondary',
+    bordered: false,
+    radius: 'panel',
+    padding: 'sm',
+    dir: 'rtl',
+    'aria-label': 'Lesson details'
+  }, 'Panel content'));
+
+  assert.match(panel, /stella-surface-panel stella-surface-panel--secondary stella-surface-panel--radius-panel stella-surface-panel--borderless/);
+  assert.match(panel, /dir="rtl"/);
+  assert.match(panel, /aria-label="Lesson details"/);
+  assert.match(panel, /Panel content/);
+});
+
+test('status indicators expose accessible labels and roles for every status', () => {
+  const expectedRoles: Record<'success' | 'warning' | 'error' | 'neutral', string> = {
+    success: 'status',
+    warning: 'status',
+    error: 'alert',
+    neutral: 'status'
+  } as const;
+
+  for (const status of ['success', 'warning', 'error', 'neutral'] as const) {
+    const role = expectedRoles[status];
+    const markup = renderToStaticMarkup(createElement(StellaStatusIndicator, {
+      status,
+      label: `${status} label`,
+      dir: 'rtl'
+    }));
+
+    assert.match(markup, new RegExp(`role="${role}"`));
+    assert.match(markup, new RegExp(`aria-label="${status} label"`));
+    assert.match(markup, new RegExp(`stella-status-indicator--${status}`));
+    assert.match(markup, /dir="rtl"/);
+    assert.match(markup, new RegExp(`>${status} label<`));
+  }
+});
+
+test('decorative pixel labels remain text labels and existing status labels keep their markup', () => {
+  const pixelLabel = renderToStaticMarkup(createElement(StellaPixelLabel, {
+    children: 'CHAPEL',
+    dir: 'rtl',
+    'aria-label': 'Village label'
+  }));
+  const existingStatus = renderToStaticMarkup(createElement(StellaStatusLabel, {
+    tone: 'success'
+  }, 'On track'));
+
+  assert.match(pixelLabel, /class="stella-pixel-label" dir="rtl" aria-label="Village label">CHAPEL/);
+  assert.match(existingStatus, /class="stella-status stella-status--success "/);
+  assert.doesNotMatch(existingStatus, /role="status"/);
 });

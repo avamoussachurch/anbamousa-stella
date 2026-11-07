@@ -2,6 +2,19 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Stella 2.0 palette: raw colors are defined once and mapped to semantic tokens below. */
+:root {
+  --stella-palette-midnight: #25334A;
+  --stella-palette-parchment: #F3E7CE;
+  --stella-palette-antique-gold: #CBA45E;
+  --stella-palette-burgundy: #804653;
+  --stella-palette-sage: #819477;
+  --stella-palette-ivory: #FFF9ED;
+  --stella-palette-stone: #A99D89;
+  --stella-palette-forest: #455F4C;
+  --stella-palette-sky: #9CBCC9;
+}
+
 /* ========================================================
    Standardized Canonical Coptic Orthodox Church Palette
    Unifies Light & Dark modes under a single semantic system
@@ -85,6 +98,28 @@
   --font-english-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: var(--font-arabic-ui);
 
+  /* Stella 2.0 typography roles; opt into these per component to preserve existing screens. */
+  --stella-font-display: var(--font-arabic-sacred), Georgia, 'Times New Roman', serif;
+  --stella-font-body: var(--font-english-ui);
+  --stella-font-body-rtl: var(--font-arabic-ui);
+  --stella-font-body-coptic: var(--font-coptic-ui);
+  /* Decorative labels only; no pixel font is downloaded or bundled by this token. */
+  --stella-font-pixel: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
+
+  /* Responsive type scale with mobile-safe minimum sizes and explicit line heights. */
+  --stella-type-display: clamp(2rem, 4vw, 3rem);
+  --stella-type-h1: clamp(1.75rem, 3vw, 2.5rem);
+  --stella-type-h2: clamp(1.375rem, 2.4vw, 1.875rem);
+  --stella-type-h3: clamp(1.125rem, 1.8vw, 1.375rem);
+  --stella-type-body: 1rem;
+  --stella-type-body-small: 0.9375rem;
+  --stella-type-caption: 0.8125rem;
+  --stella-type-label: 0.875rem;
+  --stella-leading-display: 1.2;
+  --stella-leading-heading: 1.35;
+  --stella-leading-body: 1.65;
+  --stella-leading-compact: 1.45;
+
   /* Semantic Church Color Mappings */
   --color-church-blue: #0B2E5C;
   --color-church-blue-light: #1B365D;
@@ -133,6 +168,45 @@
   --mousa-coral-dark: #A5391C;
   --mousa-coral-soft: #FDEFEA;
   --mousa-coral-glow: #EB7958;
+
+  /* Stella 2.0 brand and village palette aliases. */
+  --stella-brand-midnight: var(--stella-palette-midnight);
+  --stella-brand-parchment: var(--stella-palette-parchment);
+  --stella-brand-antique-gold: var(--stella-palette-antique-gold);
+  --stella-brand-burgundy: var(--stella-palette-burgundy);
+  --stella-brand-sage: var(--stella-palette-sage);
+  --stella-brand-ivory: var(--stella-palette-ivory);
+  --stella-brand-stone: var(--stella-palette-stone);
+  --stella-brand-forest: var(--stella-palette-forest);
+  --stella-brand-sky: var(--stella-palette-sky);
+  --stella-village-sky: var(--stella-palette-sky);
+  --stella-village-ground: var(--stella-palette-parchment);
+  --stella-village-stone: var(--stella-palette-stone);
+  --stella-village-foliage: var(--stella-palette-sage);
+  --stella-village-forest: var(--stella-palette-forest);
+
+  /* Stella 2.0 semantic tokens: light theme. */
+  --stella-surface-canvas: var(--stella-palette-ivory);
+  --stella-surface-primary: var(--stella-palette-ivory);
+  --stella-surface-secondary: var(--stella-palette-parchment);
+  --stella-surface-muted: color-mix(in srgb, var(--stella-palette-parchment) 55%, var(--stella-palette-ivory));
+  --stella-border-default: var(--stella-palette-stone);
+  --stella-border-strong: var(--stella-palette-forest);
+  --stella-text-primary: var(--stella-palette-midnight);
+  --stella-text-secondary: var(--stella-palette-forest);
+  --stella-text-muted: color-mix(in srgb, var(--stella-palette-midnight) 68%, var(--stella-palette-stone));
+  --stella-text-inverse: var(--stella-palette-ivory);
+  --stella-feedback-success: var(--stella-palette-forest);
+  --stella-feedback-success-foreground: var(--stella-palette-ivory);
+  --stella-feedback-success-surface: color-mix(in srgb, var(--stella-palette-sage) 26%, var(--stella-palette-ivory));
+  --stella-feedback-warning: var(--stella-palette-antique-gold);
+  --stella-feedback-warning-foreground: var(--stella-palette-midnight);
+  --stella-feedback-warning-surface: color-mix(in srgb, var(--stella-palette-antique-gold) 22%, var(--stella-palette-ivory));
+  --stella-feedback-error: var(--stella-palette-burgundy);
+  --stella-feedback-error-foreground: var(--stella-palette-ivory);
+  --stella-feedback-error-surface: color-mix(in srgb, var(--stella-palette-burgundy) 12%, var(--stella-palette-ivory));
+  --stella-focus-ring: var(--stella-palette-midnight);
+  --stella-focus-ring-contrast: var(--stella-palette-ivory);
 }
 
 :root[data-theme="dark"],
@@ -247,9 +321,100 @@
   --mousa-coral-dark: #B85B49;
   --mousa-coral-soft: #30231F;
   --mousa-coral-glow: #F3A08E;
+
+  /* Stella 2.0 semantic tokens: dark theme. Palette aliases stay constant. */
+  --stella-surface-canvas: var(--stella-palette-midnight);
+  --stella-surface-primary: color-mix(in srgb, var(--stella-palette-midnight) 92%, var(--stella-palette-forest));
+  --stella-surface-secondary: color-mix(in srgb, var(--stella-palette-midnight) 80%, var(--stella-palette-forest));
+  --stella-surface-muted: color-mix(in srgb, var(--stella-palette-midnight) 72%, var(--stella-palette-forest));
+  --stella-border-default: color-mix(in srgb, var(--stella-palette-midnight) 45%, var(--stella-palette-stone));
+  --stella-border-strong: var(--stella-palette-stone);
+  --stella-text-primary: var(--stella-palette-ivory);
+  --stella-text-secondary: var(--stella-palette-parchment);
+  --stella-text-muted: var(--stella-palette-stone);
+  --stella-text-inverse: var(--stella-palette-midnight);
+  --stella-feedback-success: var(--stella-palette-sage);
+  --stella-feedback-success-foreground: var(--stella-palette-midnight);
+  --stella-feedback-success-surface: color-mix(in srgb, var(--stella-palette-forest) 70%, var(--stella-palette-midnight));
+  --stella-feedback-warning: var(--stella-palette-antique-gold);
+  --stella-feedback-warning-foreground: var(--stella-palette-midnight);
+  --stella-feedback-warning-surface: color-mix(in srgb, var(--stella-palette-antique-gold) 18%, var(--stella-palette-midnight));
+  --stella-feedback-error: var(--stella-palette-burgundy);
+  --stella-feedback-error-foreground: var(--stella-palette-ivory);
+  --stella-feedback-error-surface: color-mix(in srgb, var(--stella-palette-burgundy) 58%, var(--stella-palette-midnight));
+  --stella-focus-ring: var(--stella-palette-antique-gold);
+  --stella-focus-ring-contrast: var(--stella-palette-midnight);
 }
 
 @theme {
+  --font-stella-display: var(--stella-font-display);
+  --font-stella-body: var(--stella-font-body);
+  --font-stella-body-rtl: var(--stella-font-body-rtl);
+  --font-stella-body-coptic: var(--stella-font-body-coptic);
+  --font-stella-pixel: var(--stella-font-pixel);
+
+  --text-stella-display: var(--stella-type-display);
+  --text-stella-display--line-height: var(--stella-leading-display);
+  --text-stella-h1: var(--stella-type-h1);
+  --text-stella-h1--line-height: var(--stella-leading-heading);
+  --text-stella-h2: var(--stella-type-h2);
+  --text-stella-h2--line-height: var(--stella-leading-heading);
+  --text-stella-h3: var(--stella-type-h3);
+  --text-stella-h3--line-height: var(--stella-leading-heading);
+  --text-stella-body: var(--stella-type-body);
+  --text-stella-body--line-height: var(--stella-leading-body);
+  --text-stella-body-small: var(--stella-type-body-small);
+  --text-stella-body-small--line-height: var(--stella-leading-body);
+  --text-stella-caption: var(--stella-type-caption);
+  --text-stella-caption--line-height: var(--stella-leading-compact);
+  --text-stella-label: var(--stella-type-label);
+  --text-stella-label--line-height: var(--stella-leading-compact);
+
+  --color-stella-midnight: var(--stella-palette-midnight);
+  --color-stella-parchment: var(--stella-palette-parchment);
+  --color-stella-antique-gold: var(--stella-palette-antique-gold);
+  --color-stella-burgundy: var(--stella-palette-burgundy);
+  --color-stella-sage: var(--stella-palette-sage);
+  --color-stella-ivory: var(--stella-palette-ivory);
+  --color-stella-stone: var(--stella-palette-stone);
+  --color-stella-forest: var(--stella-palette-forest);
+  --color-stella-sky: var(--stella-palette-sky);
+  --color-stella-brand-midnight: var(--stella-brand-midnight);
+  --color-stella-brand-parchment: var(--stella-brand-parchment);
+  --color-stella-brand-antique-gold: var(--stella-brand-antique-gold);
+  --color-stella-brand-burgundy: var(--stella-brand-burgundy);
+  --color-stella-brand-sage: var(--stella-brand-sage);
+  --color-stella-brand-ivory: var(--stella-brand-ivory);
+  --color-stella-brand-stone: var(--stella-brand-stone);
+  --color-stella-brand-forest: var(--stella-brand-forest);
+  --color-stella-brand-sky: var(--stella-brand-sky);
+  --color-stella-village-sky: var(--stella-village-sky);
+  --color-stella-village-ground: var(--stella-village-ground);
+  --color-stella-village-stone: var(--stella-village-stone);
+  --color-stella-village-foliage: var(--stella-village-foliage);
+  --color-stella-village-forest: var(--stella-village-forest);
+  --color-stella-surface-canvas: var(--stella-surface-canvas);
+  --color-stella-surface-primary: var(--stella-surface-primary);
+  --color-stella-surface-secondary: var(--stella-surface-secondary);
+  --color-stella-surface-muted: var(--stella-surface-muted);
+  --color-stella-border-default: var(--stella-border-default);
+  --color-stella-border-strong: var(--stella-border-strong);
+  --color-stella-text-primary: var(--stella-text-primary);
+  --color-stella-text-secondary: var(--stella-text-secondary);
+  --color-stella-text-muted: var(--stella-text-muted);
+  --color-stella-text-inverse: var(--stella-text-inverse);
+  --color-stella-feedback-success: var(--stella-feedback-success);
+  --color-stella-feedback-success-foreground: var(--stella-feedback-success-foreground);
+  --color-stella-feedback-success-surface: var(--stella-feedback-success-surface);
+  --color-stella-feedback-warning: var(--stella-feedback-warning);
+  --color-stella-feedback-warning-foreground: var(--stella-feedback-warning-foreground);
+  --color-stella-feedback-warning-surface: var(--stella-feedback-warning-surface);
+  --color-stella-feedback-error: var(--stella-feedback-error);
+  --color-stella-feedback-error-foreground: var(--stella-feedback-error-foreground);
+  --color-stella-feedback-error-surface: var(--stella-feedback-error-surface);
+  --color-stella-focus-ring: var(--stella-focus-ring);
+  --color-stella-focus-ring-contrast: var(--stella-focus-ring-contrast);
+
   --color-church-blue: var(--color-church-blue);
   --color-church-blue-light: var(--color-church-blue-light);
   --color-church-gold: var(--color-church-gold);
@@ -922,6 +1087,31 @@
     outline-offset: 3px;
   }
 
+  .stella-surface-panel {
+    color: var(--stella-text-primary);
+    background: var(--stella-surface-primary);
+    border-color: var(--stella-border-default);
+    border-radius: var(--radius-card);
+    box-shadow: none;
+    transition: none;
+  }
+
+  .stella-surface-panel--secondary {
+    background: var(--stella-surface-secondary);
+  }
+
+  .stella-surface-panel--muted {
+    background: var(--stella-surface-muted);
+  }
+
+  .stella-surface-panel--borderless {
+    border: 0;
+  }
+
+  .stella-surface-panel--radius-panel {
+    border-radius: var(--radius-panel);
+  }
+
   .stella-page-header,
   .stella-page-header__main {
     display: flex;
@@ -1011,6 +1201,73 @@
     color: var(--text-muted);
     font-size: 0.82rem;
     line-height: 1.6;
+  }
+
+  .stella-section-title .stella-section-title__eyebrow {
+    color: var(--stella-palette-antique-gold);
+    font-family: var(--stella-font-body);
+    font-size: var(--stella-type-label);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .stella-section-title--tokenized h2 {
+    color: var(--stella-text-primary);
+    font-family: var(--stella-font-display);
+    font-size: var(--stella-type-h3);
+    line-height: var(--stella-leading-heading);
+  }
+
+  .stella-section-title--tokenized > div > p:not(.stella-section-title__eyebrow) {
+    color: var(--stella-text-muted);
+    font-family: var(--stella-font-body);
+    font-size: var(--stella-type-body-small);
+    line-height: var(--stella-leading-body);
+  }
+
+  .stella-status.stella-status-indicator--success {
+    --status-ink: var(--stella-feedback-success);
+    --status-surface: var(--stella-feedback-success-surface);
+    --status-border: var(--stella-feedback-success);
+    --status-dot: var(--stella-feedback-success);
+  }
+
+  .stella-status.stella-status-indicator--warning {
+    --status-ink: var(--stella-feedback-warning-foreground);
+    --status-surface: var(--stella-feedback-warning-surface);
+    --status-border: var(--stella-feedback-warning);
+    --status-dot: var(--stella-feedback-warning);
+  }
+
+  .stella-status.stella-status-indicator--error {
+    --status-ink: var(--stella-feedback-error-foreground);
+    --status-surface: var(--stella-feedback-error-surface);
+    --status-border: var(--stella-feedback-error);
+    --status-dot: var(--stella-feedback-error);
+  }
+
+  .stella-status.stella-status-indicator--neutral {
+    --status-ink: var(--stella-text-secondary);
+    --status-surface: var(--stella-surface-muted);
+    --status-border: var(--stella-border-default);
+    --status-dot: var(--stella-text-muted);
+  }
+
+  .stella-pixel-label {
+    display: inline-flex;
+    align-items: center;
+    max-inline-size: 100%;
+    padding: 0.25rem 0.4rem;
+    color: var(--stella-text-secondary);
+    background: var(--stella-surface-muted);
+    border: 1px solid var(--stella-border-default);
+    border-radius: 0.25rem;
+    font-family: var(--stella-font-pixel);
+    font-size: var(--stella-type-caption);
+    line-height: var(--stella-leading-compact);
+    overflow-wrap: anywhere;
+    text-transform: uppercase;
   }
 
   .stella-metric {
