@@ -39,6 +39,11 @@ let trustedServiceClientConfig = '';
 let publicAuthClient: ReturnType<typeof createClient> | null = null;
 let publicAuthClientConfig = '';
 
+const PERSISTED_STUDENT_SUMMARY_CACHE_TTL_MS = 2000;
+const persistedStudentSummaryCache = new Map<string, { expiresAt: number; value: any }>();
+const persistedStudentSummaryInflight = new Map<string, Promise<any>>();
+const persistedStudentSummaryGeneration = new Map<string, number>();
+
 function getTrustedServiceClient(errorMessage: string) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
   const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -218,26 +223,14 @@ async function verifyServerRequestAuth(req: express.Request): Promise<ServerAuth
 
   try {
     const trustedClient = getTrustedRoleClient();
-    // Identity is already verified by Supabase Auth. Run the profile integrity
-    // check and authoritative role lookup concurrently to avoid serial DB latency.
-    const [profileResult, assignmentsResult] = await Promise.all([
-      trustedClient
-        .from('profiles')
-        .select('id')
-        .eq('id', verifiedUserId)
-        .maybeSingle(),
-      trustedClient
-        .from('profile_role_assignments')
-        .select('role')
-        .eq('user_id', verifiedUserId)
-        .is('revoked_at', null)
-    ]);
-    const { data: profile, error: profileError } = profileResult;
-    const { data: assignments, error: assignmentsError } = assignmentsResult;
-    if (profileError || !profile?.id) {
-      if (profileError) console.error('Could not verify account profile:', profileError.message);
-      return { userId: null, roles: [], isAuthenticated: false };
-    }
+    // Supabase Auth verifies the identity, and profile_role_assignments.user_id
+    // has a foreign key to profiles.id. The active role lookup therefore also
+    // proves that the account has a profile; a second profiles request is redundant.
+    const { data: assignments, error: assignmentsError } = await trustedClient
+      .from('profile_role_assignments')
+      .select('role')
+      .eq('user_id', verifiedUserId)
+      .is('revoked_at', null);
     if (assignmentsError || !Array.isArray(assignments) || assignments.length === 0) {
       if (assignmentsError) console.error('Could not load assigned account roles:', assignmentsError.message);
       return { userId: null, roles: [], isAuthenticated: false };
@@ -6540,8 +6533,41 @@ app.get("/api/church/student-progress/summary", async (req, res) => {
       return;
     }
     if (isUuidStudentId(targetStudentId)) {
-      const summary = await loadPersistedStudentProgressSummary(targetStudentId);
-      return res.json(summary);
+      const forceRefresh = req.query.refresh === '1';
+      const now = Date.now();
+      const cached = persistedStudentSummaryCache.get(targetStudentId);
+      if (!forceRefresh && cached && cached.expiresAt > now) {
+        return res.json(cached.value);
+      }
+
+      if (forceRefresh) {
+        persistedStudentSummaryCache.delete(targetStudentId);
+        persistedStudentSummaryGeneration.set(
+          targetStudentId,
+          (persistedStudentSummaryGeneration.get(targetStudentId) || 0) + 1
+        );
+      } else {
+        const inFlight = persistedStudentSummaryInflight.get(targetStudentId);
+        if (inFlight) return res.json(await inFlight);
+      }
+
+      const generation = persistedStudentSummaryGeneration.get(targetStudentId) || 0;
+      const summaryPromise = loadPersistedStudentProgressSummary(targetStudentId);
+      persistedStudentSummaryInflight.set(targetStudentId, summaryPromise);
+      try {
+        const summary = await summaryPromise;
+        if ((persistedStudentSummaryGeneration.get(targetStudentId) || 0) === generation) {
+          persistedStudentSummaryCache.set(targetStudentId, {
+            expiresAt: Date.now() + PERSISTED_STUDENT_SUMMARY_CACHE_TTL_MS,
+            value: summary
+          });
+        }
+        return res.json(summary);
+      } finally {
+        if (persistedStudentSummaryInflight.get(targetStudentId) === summaryPromise) {
+          persistedStudentSummaryInflight.delete(targetStudentId);
+        }
+      }
     }
 
     const studentProgressMap: Record<string, any> = {};
