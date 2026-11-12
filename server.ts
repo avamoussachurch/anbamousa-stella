@@ -13603,7 +13603,11 @@ app.get("/api/media-url", async (req, res) => {
     }
 
     let authorized = hasServerRole(authContext, 'admin') || media.owner_id === authContext.userId;
-    if (!authorized && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
+    if (!authorized && (
+      hasServerRole(authContext, 'student') ||
+      hasServerRole(authContext, 'parent') ||
+      hasServerRole(authContext, 'teacher')
+    )) {
       const { data: sources, error: sourceError } = await client
         .from('lesson_sources')
         .select('lesson_id')
@@ -13620,7 +13624,7 @@ app.get("/api/media-url", async (req, res) => {
           .select('id, status, lesson_status')
           .in('id', lessonIds);
         if (lessonError) {
-          console.error('Private media publication lookup failed:', lessonError.message);
+          console.error('Private media lesson publication lookup failed:', lessonError.message);
           return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
         }
         authorized = (lessons || []).some((lesson: any) =>
@@ -13628,17 +13632,73 @@ app.get("/api/media-url", async (req, res) => {
         );
       }
 
-      const { data: linkedLessons, error: linkedLessonError } = await client
-        .from('lessons')
-        .select('id, status, lesson_status')
-        .or(`audio_url.eq.${req.query.reference},pdf_worksheet_url.eq.${req.query.reference}`);
-      if (linkedLessonError) {
-        console.error('Private media lesson-field lookup failed:', linkedLessonError.message);
-        return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+      if (!authorized) {
+        const { data: linkedLessons, error: linkedLessonError } = await client
+          .from('lessons')
+          .select('id, status, lesson_status')
+          .or(`audio_url.eq.${req.query.reference},pdf_worksheet_url.eq.${req.query.reference}`);
+        if (linkedLessonError) {
+          console.error('Private media lesson-field lookup failed:', linkedLessonError.message);
+          return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+        }
+        authorized = (linkedLessons || []).some((lesson: any) =>
+          lesson.status === 'published' || lesson.lesson_status === 'published'
+        );
       }
-      authorized = authorized || (linkedLessons || []).some((lesson: any) =>
-        lesson.status === 'published' || lesson.lesson_status === 'published'
-      );
+
+      // Hymns and Taxis store stable private Storage references in their own
+      // Supabase rows. Resolve access through the published curriculum record,
+      // not by making the curriculum bucket public.
+      if (!authorized) {
+        const [{ data: linkedHymns, error: hymnError }, { data: linkedTaxis, error: taxisError }] = await Promise.all([
+          client.from('hymns')
+            .select('id, status, level, created_by')
+            .or(`audio_url.eq.${req.query.reference},pdf_url.eq.${req.query.reference},sheet_music_url.eq.${req.query.reference}`),
+          client.from('coptic_taxis_items')
+            .select('id, status, level, target_audience, created_by, attachments')
+            .contains('attachments', [{ fileUrl: req.query.reference }])
+        ]);
+        if (hymnError || taxisError) {
+          console.error('Private Hymns/Taxis media lookup failed:', hymnError?.message || taxisError?.message);
+          return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+        }
+
+        const isStudent = hasServerRole(authContext, 'student');
+        const isTeacher = hasServerRole(authContext, 'teacher');
+        const isParent = hasServerRole(authContext, 'parent');
+        let studentLevel: number | null = null;
+        let studentGrade = '';
+        if (isStudent) {
+          const { data: profile, error: profileError } = await client
+            .from('profiles')
+            .select('hymns_taxis_level, grade')
+            .eq('id', authContext.userId)
+            .maybeSingle();
+          if (profileError) {
+            console.error('Private Hymns/Taxis profile lookup failed:', profileError.message);
+            return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+          }
+          studentLevel = parseHymnsTaxisLevel(profile?.hymns_taxis_level);
+          studentGrade = String(profile?.grade || '').toLowerCase();
+        }
+
+        const hymnAllowed = (linkedHymns || []).some((item: any) => {
+          if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
+          if (isStudent) return item.status === 'published' && studentLevel !== null && item.level === studentLevel;
+          return isParent ? item.status === 'published' : true;
+        });
+        const taxisAllowed = (linkedTaxis || []).some((item: any) => {
+          if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
+          if (isStudent) {
+            if (item.status !== 'published' || studentLevel === null || item.level !== studentLevel) return false;
+            return item.target_audience === 'all' ||
+              (item.target_audience === 'preparatory' && studentGrade.includes('prep')) ||
+              (item.target_audience === 'deacons' && studentLevel >= 2);
+          }
+          return isParent ? item.status === 'published' : true;
+        });
+        authorized = hymnAllowed || taxisAllowed;
+      }
     }
 
     if (!authorized) {
