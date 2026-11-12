@@ -39,7 +39,7 @@ let trustedServiceClientConfig = '';
 let publicAuthClient: SupabaseClient<any> | null = null;
 let publicAuthClientConfig = '';
 
-const PERSISTED_STUDENT_SUMMARY_CACHE_TTL_MS = 2000;
+const PERSISTED_STUDENT_SUMMARY_CACHE_TTL_MS = 3000;
 const persistedStudentSummaryCache = new Map<string, { expiresAt: number; value: any }>();
 const persistedStudentSummaryInflight = new Map<string, Promise<any>>();
 const persistedStudentSummaryGeneration = new Map<string, number>();
