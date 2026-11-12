@@ -420,7 +420,7 @@ export async function getPublishedLessonsForCurrentUser(includeLinkedStudents = 
         .eq('church_year_id', activeYear.id),
       supabase
         .from('lessons')
-        .select('id,title_en,title_ar,grade_level,summary_en,summary_ar,scripture_verse_en,scripture_verse_ar,verse_reference,audio_url,pdf_worksheet_url,points_reward,quiz_questions,active_version_id,created_at,lesson_status,status,approved_servant_name,approved_at,video_url,teacher_notes')
+        .select('id,title_en,title_ar,category,grade_level,summary_en,summary_ar,scripture_verse_en,scripture_verse_ar,verse_reference,audio_url,pdf_worksheet_url,points_reward,quiz_questions,active_version_id,created_at,lesson_status,status,approved_servant_name,approved_at')
         .not('active_version_id', 'is', null)
         .or('status.ilike.published,lesson_status.ilike.published')
     ]);
