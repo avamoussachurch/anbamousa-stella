@@ -31,12 +31,12 @@ export function HomeTab({ onNavigate, lang }: HomeTabProps) {
     (!isGuest && !isSupabaseConfigured && curriculumLoadedForUserId !== userData.id)
   );
   const curriculumIsLoading = Boolean(
-    isOnlineAuth && (curriculumLoading || !curriculumReadyForUser)
+    isOnlineAuth && !curriculumReadyForUser && !curriculumError
   );
   const sourceLessons = isGuest
     ? (lessons?.length ? lessons : mockLessons)
     : isOnlineAuth
-      ? (curriculumIsLoading || curriculumError ? [] : lessons)
+      ? (curriculumReadyForUser ? lessons : [])
       : curriculumLoadedForUserId === userData.id && !curriculumError
         ? lessons
         : [];
