@@ -304,7 +304,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
     setCurriculumLoading(true);
     setCurriculumError(null);
-    setCurriculumLoadedForUserId(null);
+    setCurriculumLoadedForUserId(current => current === userData.id ? current : null);
 
     try {
       const isTeacher = activeWorkspace === 'teacher';
@@ -316,86 +316,61 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       if (result.error) {
         console.warn('Online curriculum load note from Supabase:', result.error);
         setCurriculumError(result.error.message || 'Failed to load online curriculum');
-        setLessons([]);
-        setCurriculumLoading(false);
         return;
       }
 
-      let onlineLessons = result.data || [];
-      let completedSet = new Set<string>();
-      let hasAuthoritativeSummary = false;
-
-      // Authoritative Progress Synchronization:
-      // Fetch authoritative student progress summary from server to survive refreshes & cross-device sessions
-      try {
-        const summaryData = await getStudentProgressSummary(userData.id);
-        if (summaryData.success && summaryData.completedLessonIds) {
-          completedSet = new Set(summaryData.completedLessonIds);
-          hasAuthoritativeSummary = true;
-        }
-        if (summaryData.success && summaryData.allProgress) {
-          setContentProgress(prev => {
-            const next = { ...prev };
-            for (const [lessonId, p] of Object.entries(summaryData.allProgress)) {
-              const key = `${userData.id}_${lessonId}`;
-              if (!(prev[key] as (StudentContentProgress & { pendingSync?: boolean }) | undefined)?.pendingSync) {
-                next[key] = p;
-              }
-            }
-            return next;
-          });
-        }
-      } catch (sumErr) {
-        console.warn('Note on summary load in LessonsContext:', sumErr);
-      }
-
+      const onlineLessons = result.data || [];
       if (onlineLessons.length > 0) {
-        setLessons(onlineLessons.map(l => ({
-          ...l,
-          isCompleted: hasAuthoritativeSummary ? completedSet.has(l.id) : Boolean(l.isCompleted)
-        })));
+        setLessons(onlineLessons.map(l => ({ ...l, isCompleted: Boolean(l.isCompleted) })));
       } else {
         setLessons([]);
       }
 
-      // Hydrate version map and sources from normalized database
+      // Hydrate related curriculum records in small parallel batches instead of a
+      // serial N+1 waterfall. Four lessons at a time keeps database concurrency bounded.
       const newVersionMap: Record<string, LessonVersion[]> = {};
       const newSourcesList: LessonSource[] = [];
+      const evidenceMapUpdates: Record<string, EvidenceMap> = {};
+      const outlineUpdates: Record<string, LessonOutline> = {};
 
-      for (const l of onlineLessons) {
-        if (isAuthoringCurriculum) {
-          const versionsResult = await getTeacherLessonVersions(l.id);
-          if (versionsResult.data && versionsResult.data.length > 0) {
-            newVersionMap[l.id] = versionsResult.data;
-          } else if (l.latestVersion) {
-            newVersionMap[l.id] = [l.latestVersion];
-          }
-        } else if (l.latestVersion) {
-          // For students/parents: strictly the authoritative active version
-          newVersionMap[l.id] = [l.latestVersion];
-        }
+      for (let offset = 0; offset < onlineLessons.length; offset += 4) {
+        const batch = onlineLessons.slice(offset, offset + 4);
+        const hydratedBatch = await Promise.all(batch.map(async (lesson) => {
+          const [versionsResult, sourcesResult, evidenceResult, outlineResult] = await Promise.all([
+            isAuthoringCurriculum
+              ? getTeacherLessonVersions(lesson.id)
+              : Promise.resolve(null),
+            getLessonSourcesForLesson(lesson.id),
+            isTeacher ? getEvidenceMap(lesson.id) : Promise.resolve(null),
+            isTeacher ? getLessonOutline(lesson.id) : Promise.resolve(null)
+          ]);
 
-        const srcResult = await getLessonSourcesForLesson(l.id);
-        if (srcResult.data) {
-          newSourcesList.push(...srcResult.data);
-        }
+          const versions = versionsResult?.data?.length
+            ? versionsResult.data
+            : lesson.latestVersion ? [lesson.latestVersion] : [];
 
-        if (isTeacher) {
-          const eMapRes = await getEvidenceMap(l.id);
-          if (eMapRes.data) {
-            setEvidenceMaps(prev => ({
-              ...prev,
-              [l.id]: eMapRes.data!
-            }));
-          }
-          const outRes = await getLessonOutline(l.id);
-          if (outRes.data) {
-            setOutlines(prev => ({
-              ...prev,
-              [l.id]: outRes.data!
-            }));
-          }
+          return {
+            lessonId: lesson.id,
+            versions,
+            sources: sourcesResult.data || [],
+            evidenceMap: evidenceResult?.data || null,
+            outline: outlineResult?.data || null
+          };
+        }));
+
+        for (const item of hydratedBatch) {
+          if (item.versions.length > 0) newVersionMap[item.lessonId] = item.versions;
+          newSourcesList.push(...item.sources);
+          if (item.evidenceMap) evidenceMapUpdates[item.lessonId] = item.evidenceMap;
+          if (item.outline) outlineUpdates[item.lessonId] = item.outline;
         }
+      }
+
+      if (Object.keys(evidenceMapUpdates).length > 0) {
+        setEvidenceMaps(prev => ({ ...prev, ...evidenceMapUpdates }));
+      }
+      if (Object.keys(outlineUpdates).length > 0) {
+        setOutlines(prev => ({ ...prev, ...outlineUpdates }));
       }
 
       setLessonVersions((prev) => ({
@@ -409,12 +384,12 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
           return [...newSourcesList, ...prev.filter((s) => !existingIds.has(s.id))];
         });
       }
+      setCurriculumLoadedForUserId(userData.id);
     } catch (e: any) {
       console.error('Failed to load online curriculum:', e);
       setCurriculumError(e?.message || 'Failed to load online curriculum');
     } finally {
       setCurriculumLoading(false);
-      setCurriculumLoadedForUserId(userData.id);
     }
   }, [userData?.id, userData?.roles, isGuest, activeWorkspace]);
 
@@ -422,41 +397,46 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
     loadOnlineCurriculum();
   }, [loadOnlineCurriculum]);
 
-  // Authoritative progress summary sync for student across reloads & sessions
+  // Load authoritative progress only in the student workspace. Curriculum loading
+  // already supplies the lesson list; teachers and admins do not need a student summary.
   useEffect(() => {
-    if (userData?.id) {
-      getStudentProgressSummary(userData.id).then(summaryData => {
-        if (summaryData.success && summaryData.completedLessonIds) {
-          const completedSet = new Set(summaryData.completedLessonIds);
-          setLessons(prev => prev.map(l => ({
-            ...l,
-            isCompleted: completedSet.has(l.id)
-          })));
-        }
-        if (summaryData.success && summaryData.allProgress) {
-          setContentProgress(prev => {
-            const next = { ...prev };
-            for (const [lessonId, p] of Object.entries(summaryData.allProgress)) {
-              const key = `${userData.id}_${lessonId}`;
-              if (!(prev[key] as (StudentContentProgress & { pendingSync?: boolean }) | undefined)?.pendingSync) {
-                next[key] = p;
-              }
+    if (isGuest || !isSupabaseConfigured || activeWorkspace !== 'student' || !userData?.id) return;
+    let cancelled = false;
+
+    getStudentProgressSummary(userData.id).then(summaryData => {
+      if (cancelled) return;
+      if (summaryData.success && summaryData.completedLessonIds) {
+        const completedSet = new Set(summaryData.completedLessonIds);
+        setLessons(prev => prev.map(l => ({
+          ...l,
+          isCompleted: completedSet.has(l.id)
+        })));
+      }
+      if (summaryData.success && summaryData.allProgress) {
+        setContentProgress(prev => {
+          const next = { ...prev };
+          for (const [lessonId, p] of Object.entries(summaryData.allProgress)) {
+            const key = `${userData.id}_${lessonId}`;
+            if (!(prev[key] as (StudentContentProgress & { pendingSync?: boolean }) | undefined)?.pendingSync) {
+              next[key] = p;
             }
-            return next;
-          });
-        }
-        if (summaryData.success && summaryData.streak) {
-          syncAuthoritativeProgress(
-            summaryData.points,
-            summaryData.streak.currentStreak,
-            summaryData.streak.longestStreak
-          );
-        }
-      }).catch(err => {
-        console.warn('Note on initial progress summary sync:', err);
-      });
-    }
-  }, [userData?.id]);
+          }
+          return next;
+        });
+      }
+      if (summaryData.success && summaryData.streak) {
+        syncAuthoritativeProgress(
+          summaryData.points,
+          summaryData.streak.currentStreak,
+          summaryData.streak.longestStreak
+        );
+      }
+    }).catch(err => {
+      console.warn('Note on initial progress summary sync:', err);
+    });
+
+    return () => { cancelled = true; };
+  }, [userData?.id, activeWorkspace, isGuest]);
 
   // LocalStorage sync
   useEffect(() => {
@@ -860,7 +840,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
          }
 
          // Authoritative refresh of curriculum and versions
-         await loadOnlineCurriculum();
+         void loadOnlineCurriculum().catch(error => console.warn('Post-publish curriculum refresh note:', error));
 
          // Confirmed state update
          setLessonVersions(prev => {
