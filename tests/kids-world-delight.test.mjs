@@ -29,7 +29,13 @@ test('shared world has visible playful decorations and keeps motion accessible',
   assert.match(css, /Higher-contrast defaults/);
 });
 
-test('quiz answers play one specific result sound without a generic click sound', async () => {\n  const quiz = await read('../src/components/sunday-school/student/SundaySchoolQuizView.tsx');\n  assert.match(quiz, /playSound\\(index === currentQuestion\\.correctIndex \\? 'correct' : 'incorrect'\\)/);\n  assert.match(quiz, /data-sfx=\"off\"/);\n});\n\ntest('every saved quiz opens a motivational splash with verified performance, points and streak', async () => {
+test('quiz answers play one specific result sound without a generic click sound', async () => {
+  const quiz = await read('../src/components/sunday-school/student/SundaySchoolQuizView.tsx');
+  assert.match(quiz, /playSound\(index === currentQuestion\.correctIndex \? 'correct' : 'incorrect'\)/);
+  assert.match(quiz, /data-sfx="off"/);
+});
+
+\ntest('every saved quiz opens a motivational splash with verified performance, points and streak', async () => {
   const quiz = await read('../src/components/sunday-school/student/SundaySchoolQuizView.tsx');
   const splash = await read('../src/components/sunday-school/student/QuizVictorySplash.tsx');
   assert.match(quiz, /setShowVictorySplash\(true\)/);
