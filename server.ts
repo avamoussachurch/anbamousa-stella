@@ -10,6 +10,7 @@ import { createStorageReference, parseStorageReference } from "./src/lib/mediaSt
 import { hymnFromDatabase, hymnToDatabase, taxisFromDatabase, taxisToDatabase } from "./src/lib/hymnsTaxisPersistence";
 import { canEditOwnedTaxisItem, canManageHymnsTaxis, canPublishOwnedTaxisItem, canReadHymnsTaxis, canReviewTaxisItem } from "./src/lib/hymnsTaxisAuthorization";
 import { randomUUID } from "crypto";
+import { findCanonicalGrade } from "./src/lib/classGroups";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -5598,13 +5599,38 @@ function isUuidStudentId(studentId: string): boolean {
 }
 
 function classGroupForLessonGrade(grade: string): string | null {
-  if (grade === 'KG1' || grade === 'KG2') return 'angels';
-  if (['Grade 1', 'Grade 2', 'Grade 3'].includes(grade)) return 'primary_1';
-  if (['Grade 4', 'Grade 5', 'Grade 6'].includes(grade)) return 'primary_2';
-  if (['Prep 1', 'Prep 2', 'Prep 3'].includes(grade)) return 'preparatory';
-  if (['Secondary 1', 'Secondary 2', 'Secondary 3'].includes(grade)) return 'secondary';
-  if (grade === 'University' || grade === 'Youth') return 'university';
-  return null;
+  if (!grade || typeof grade !== 'string') return null;
+
+  // A grade range must stay within one class group. For example, 5th-6th
+  // Grade is Primary 4-6, while a range crossing Grade 3 to Grade 4 is invalid.
+  const rangeMatch = grade.match(/(?:grade\s*)?(\d{1,2})(?:st|nd|rd|th)?\s*[-–—]\s*(?:grade\s*)?(\d{1,2})(?:st|nd|rd|th)?/i);
+  if (rangeMatch) {
+    const first = findCanonicalGrade(`Grade ${rangeMatch[1]}`);
+    const last = findCanonicalGrade(`Grade ${rangeMatch[2]}`);
+    if (!first || !last || first.classGroupId !== last.classGroupId) return null;
+    return first.classGroupId;
+  }
+
+  // Use the same canonical grade resolver as curriculum authoring and student
+  // enrollment. This accepts persisted lesson labels, Arabic aliases, ordinal
+  // labels, and canonical grade IDs consistently.
+  const canonical = findCanonicalGrade(grade);
+  if (canonical) return canonical.classGroupId;
+
+  // Also accept an already-resolved class group identifier or display label.
+  const normalized = grade.trim().toLowerCase().replace(/[_–—-]+/g, ' ').replace(/\s+/g, ' ');
+  const directGroups: Record<string, string> = {
+    angels: 'angels',
+    'primary 1': 'primary_1',
+    primary_1: 'primary_1',
+    'primary 2': 'primary_2',
+    primary_2: 'primary_2',
+    preparatory: 'preparatory',
+    secondary: 'secondary',
+    university: 'university',
+    youth: 'university'
+  };
+  return directGroups[normalized] || null;
 }
 
 interface ProgressLessonVersion {
