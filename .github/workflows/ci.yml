@@ -37,5 +37,7 @@ jobs:
             exit 1
           fi
           npx tsx --test "${test_files[@]}"
+      - name: Check trusted bootstrap script syntax
+        run: node --check scripts/provision-initial-admin.mjs
       - name: Production build
         run: npm run build
