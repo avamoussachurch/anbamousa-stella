@@ -61,7 +61,7 @@ export function QuizVictorySplash({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {(passed || perfect) && <ConfettiCanvas />}
+      {(passed || perfect) && <ConfettiCanvas layer="behind" />}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="quiz-victory-orbit quiz-victory-orbit--one" />
         <div className="quiz-victory-orbit quiz-victory-orbit--two" />
