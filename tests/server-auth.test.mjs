@@ -1940,30 +1940,29 @@ test('role authorization uses assigned roles and admin routes reject non-admin c
   assert.equal(anonymous.status, 401);
 });
 
-test('role authorization fails closed when profile or assigned-role lookups fail', async () => {
-  const missingProfileId = 'role-auth-missing-profile';
+test('role authorization fails closed when no active role exists or the assigned-role lookup fails', async () => {
+  const missingRoleId = 'role-auth-no-active-role';
   const roleLookupFailureId = 'role-auth-lookup-failure';
-  roleAssignments.set(missingProfileId, ['student']);
+  // profile_role_assignments.user_id has a foreign key to profiles.id, so a
+  // missing profile cannot have an active role assignment in the real database.
+  roleAssignments.delete(missingRoleId);
   roleAssignments.set(roleLookupFailureId, ['admin']);
-  missingProfileIds.add(missingProfileId);
   roleLookupFailureIds.add(roleLookupFailureId);
 
   try {
-    const missingProfile = await request('/api/church/me/roles', {
+    const noActiveRole = await request('/api/church/me/roles', {
       role: 'admin',
-      userId: missingProfileId
+      userId: missingRoleId
     });
     const roleLookupFailure = await request('/api/church/admin/role-requests', {
       role: 'admin',
       userId: roleLookupFailureId
     });
 
-    assert.equal(missingProfile.status, 401);
+    assert.equal(noActiveRole.status, 401);
     assert.equal(roleLookupFailure.status, 401);
   } finally {
-    missingProfileIds.delete(missingProfileId);
     roleLookupFailureIds.delete(roleLookupFailureId);
-    roleAssignments.delete(missingProfileId);
     roleAssignments.delete(roleLookupFailureId);
   }
 });
