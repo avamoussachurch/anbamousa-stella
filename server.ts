@@ -13694,7 +13694,7 @@ app.get("/api/media-url", async (req, res) => {
         const isParent = hasServerRole(authContext, 'parent');
         let studentLevel: number | null = null;
         let studentGrade = '';
-        if (isStudent) {
+        if (isStudent && !isTeacher && !isAdmin) {
           const { data: profile, error: profileError } = await client
             .from('profiles')
             .select('hymns_taxis_level, grade')
@@ -13710,11 +13710,13 @@ app.get("/api/media-url", async (req, res) => {
 
         const hymnAllowed = (linkedHymns || []).some((item: any) => {
           if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
+          if (isTeacher) return true;
           if (isStudent) return item.status === 'published' && studentLevel !== null && item.level === studentLevel;
-          return isParent ? item.status === 'published' : true;
+          return isParent && item.status === 'published';
         });
         const taxisAllowed = (linkedTaxis || []).some((item: any) => {
           if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
+          if (isTeacher) return true;
           if (isStudent) {
             if (item.status !== 'published' || studentLevel === null || item.level !== studentLevel) return false;
             const audience = String(item.target_audience || '').toUpperCase();
@@ -13725,7 +13727,7 @@ app.get("/api/media-url", async (req, res) => {
               || audience === 'DEACONS'
             );
           }
-          return isParent ? item.status === 'published' : true;
+          return isParent && item.status === 'published';
         });
         authorized = hymnAllowed || taxisAllowed;
       }
