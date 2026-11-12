@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { configureSupabase } from '../src/lib/supabase.ts';
+import { findClassGroupForGrade } from '../src/lib/classGroups.ts';
 import {
   getPublishedLessonsForCurrentUser,
   shouldLoadAuthoringCurriculum
@@ -85,4 +86,15 @@ test('student lesson retrieval uses active membership and excludes lessons for o
   assert.equal(result.error, null);
   assert.deepEqual(result.data.map(lesson => lesson.id), ['lesson-assigned']);
   assert.equal(result.data[0].currentVersionId, 'version-assigned');
+});
+
+
+test('grade-group resolver recognizes ordinal ranges used by published lesson records', () => {
+  assert.equal(findClassGroupForGrade('5th-6th Grade')?.id, 'primary_2');
+  assert.equal(findClassGroupForGrade('10th–12th Grade')?.id, 'secondary');
+});
+
+test('grade-group resolver agrees with the database youth classification', () => {
+  assert.equal(findClassGroupForGrade('High School & Youth')?.id, 'university');
+  assert.equal(findClassGroupForGrade('High School')?.id, 'secondary');
 });
