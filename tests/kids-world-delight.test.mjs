@@ -12,6 +12,7 @@ test('sound effects are optional, persistent, synthesized locally and never bloc
   assert.match(audio, /playSound/);
   assert.match(audio, /Sound is an enhancement only/);
   assert.match(audio, /document\.addEventListener\('click'/);
+  for (const event of ['correct', 'incorrect', 'open', 'close', 'streak', 'levelup', 'achievement', 'portal']) { assert.match(audio, new RegExp(event)); }
   assert.doesNotMatch(app, /SoundEffectsControl/);
   assert.doesNotMatch(app, /fixed bottom-24 left-4 z-50/);
 });
@@ -35,7 +36,8 @@ test('quiz answers play one specific result sound without a generic click sound'
   assert.match(quiz, /data-sfx="off"/);
 });
 
-\ntest('every saved quiz opens a motivational splash with verified performance, points and streak', async () => {
+
+test('every saved quiz opens a motivational splash with verified performance, points and streak', async () => {
   const quiz = await read('../src/components/sunday-school/student/SundaySchoolQuizView.tsx');
   const splash = await read('../src/components/sunday-school/student/QuizVictorySplash.tsx');
   assert.match(quiz, /setShowVictorySplash\(true\)/);
