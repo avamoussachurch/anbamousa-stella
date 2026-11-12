@@ -14,8 +14,20 @@ let authUrl;
 let appOutput = '';
 let rpcFailure = false;
 let quizInsertFailure = false;
+let curriculumWriteFailure = false;
 let publicationTeacherAssigned = false;
 let publicationRpcCalls = 0;
+let publicationGrade = 'Grade 4';
+let publicationActiveYear = true;
+let publicationRpcFailure = false;
+let publicationReadbackMatches = true;
+let publicationClassGroupQueries = [];
+let publicationTeacherAssignmentYear = '00000000-0000-4000-8000-000000000001';
+let assignedClassGroupId = 'primary_2';
+let liveTeacherAssignments = [];
+let liveClassMemberships = [];
+let appEnv;
+let appPort;
 const roleAssignments = new Map();
 const roleRequests = [];
 const roleAudit = [];
@@ -24,8 +36,20 @@ const missingProfileIds = new Set();
 const roleLookupFailureIds = new Set();
 const bannedUserIds = new Set();
 const profileHymnsTaxisLevels = new Map();
+const profileGrades = new Map();
+const hymnsTable = new Map();
+const taxisItemsTable = new Map();
 const completionWrites = new Map();
 const completionRpcCalls = [];
+const persistedLessons = new Map();
+const persistedLessonVersions = new Map();
+const persistedLessonSections = new Map();
+const persistedProfiles = new Map();
+const persistedClassMemberships = [];
+const persistedClassInstances = new Map();
+const persistedSectionProgress = new Map();
+const persistedLessonProgress = new Map();
+let sectionProgressWriteFailure = false;
 const quizAttemptWrites = [];
 const profilePatchWrites = [];
 const stateFilePaths = [
@@ -38,6 +62,129 @@ let stateFileSnapshots = [];
 function respondJson(res, status, value) {
   res.writeHead(status, { 'content-type': 'application/json' });
   res.end(JSON.stringify(value));
+}
+
+function readRequestJson(req) {
+  return new Promise((resolve, reject) => {
+    let rawBody = '';
+    req.on('data', chunk => { rawBody += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(rawBody ? JSON.parse(rawBody) : {});
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+function respondPostgrestRows(req, res, status, rows) {
+  if (req.headers.accept?.includes('application/vnd.pgrst.object+json')) {
+    if (rows.length === 0) return respondJson(res, 406, { code: 'PGRST116', message: 'No rows found' });
+    return respondJson(res, status, rows[0]);
+  }
+  return respondJson(res, status, rows);
+}
+
+function filterPostgrestRows(rows, url) {
+  return rows.filter(row => {
+    for (const [column, filter] of url.searchParams) {
+      if (column === 'select' || column === 'order' || column === 'limit') continue;
+      if (filter.startsWith('eq.') && String(row[column] ?? '') !== filter.slice(3)) return false;
+      if (filter.startsWith('in.(')) {
+        const values = filter.slice(4, -1).split(',').map(value => value.replace(/^"|"$/g, ''));
+        if (!values.includes(String(row[column] ?? ''))) return false;
+      }
+    }
+    return true;
+  });
+}
+
+function persistedProgressRows(tableName) {
+  if (tableName === 'lessons') return [...persistedLessons.values()];
+  if (tableName === 'lesson_versions') return [...persistedLessonVersions.values()];
+  if (tableName === 'lesson_sections') return [...persistedLessonSections.values()];
+  if (tableName === 'profiles') return [...persistedProfiles.values()];
+  if (tableName === 'church_years') return [{ id: '00000000-0000-4000-8000-000000000001', is_active: true }];
+  if (tableName === 'class_memberships') return persistedClassMemberships;
+  if (tableName === 'class_instances') return [...persistedClassInstances.values()];
+  if (tableName === 'lesson_section_progress') return [...persistedSectionProgress.values()];
+  if (tableName === 'lesson_progress') return [...persistedLessonProgress.values()];
+  return [];
+}
+
+async function handleCurriculumTable(req, res, url, tableName, table, bearer, userId) {
+  if (curriculumWriteFailure && ['POST', 'PATCH'].includes(req.method)) {
+    return respondJson(res, 500, { code: 'XX000', message: 'Simulated Supabase curriculum write failure' });
+  }
+
+  const roles = roleAssignments.get(userId) || [];
+  const canManage = roles.includes('teacher') || roles.includes('admin');
+  const isAdmin = roles.includes('admin');
+  const isTeacher = roles.includes('teacher');
+  const queryId = (url.searchParams.get('id') || '').replace(/^eq\./, '');
+
+  if (req.method === 'GET') {
+    let rows = [...table.values()].filter(row => !queryId || row.id === queryId);
+    for (const [key, value] of url.searchParams) {
+      if (key === 'select' || key === 'order' || key === 'limit') continue;
+      if (value.startsWith('eq.')) {
+        const expected = value.slice(3);
+        rows = rows.filter(row => String(row[key] ?? '') === expected);
+      }
+    }
+    if (!canManage) {
+      if (!roles.includes('student')) rows = [];
+      else if (tableName === 'hymns') {
+        const level = profileHymnsTaxisLevels.get(userId);
+        rows = rows.filter(row => row.status === 'published' && row.level === level);
+      } else {
+        const level = profileHymnsTaxisLevels.get(userId);
+        const grade = (profileGrades.get(userId) || '').toLowerCase();
+        rows = rows.filter(row =>
+          row.status === 'published' &&
+          row.level === level &&
+          (['ALL', 'CONGREGATION'].includes(row.target_audience) &&
+            (row.audience_detail !== 'preparatory' || grade.includes('prep')) ||
+            row.target_audience === 'DEACONS' && (level || 0) >= 2)
+        );
+      }
+    }
+    return respondPostgrestRows(req, res, 200, rows);
+  }
+
+  if (!canManage) return respondJson(res, 403, { code: '42501', message: 'Teacher or admin role required' });
+  const payload = await readRequestJson(req);
+  if (req.method === 'POST') {
+    const row = {
+      ...payload,
+      status: payload.status || 'draft',
+      created_by: userId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    if (row.status !== 'draft' || (!isAdmin && !isTeacher)) {
+      return respondJson(res, 403, { code: '42501', message: 'Only teacher/admin-owned drafts may be created' });
+    }
+    if (table.has(row.id)) return respondJson(res, 409, { code: '23505', message: 'Duplicate content ID' });
+    table.set(row.id, row);
+    return respondPostgrestRows(req, res, 201, [row]);
+  }
+
+  if (req.method === 'PATCH') {
+    const row = table.get(queryId);
+    if (!row) return respondPostgrestRows(req, res, 200, []);
+    const isOwner = row.created_by === userId;
+    const canReview = isTeacher && ['under_review', 'approved'].includes(row.status);
+    if (!isAdmin && (!isTeacher || (!isOwner && !canReview))) {
+      return respondJson(res, 403, { code: '42501', message: 'Only the author or admin may update this content' });
+    }
+    const updated = { ...row, ...payload };
+    table.set(queryId, updated);
+    return respondPostgrestRows(req, res, 200, [updated]);
+  }
+  return respondJson(res, 405, { message: 'Unsupported method' });
 }
 
 async function listenOnEphemeralPort(server) {
@@ -66,6 +213,26 @@ function authHeaders(role, userId) {
   return { authorization: `Bearer test_jwt_${role}|${userId}` };
 }
 
+async function startApp() {
+  appOutput = '';
+  app = spawn(process.execPath, ['--import', 'tsx', 'server.ts'], {
+    cwd: root,
+    env: appEnv,
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  app.stdout.setEncoding('utf8').on('data', data => { appOutput += data; });
+  app.stderr.setEncoding('utf8').on('data', data => { appOutput += data; });
+  await waitForApp();
+}
+
+async function restartApp() {
+  if (app && app.exitCode === null) {
+    app.kill();
+    await once(app, 'exit');
+  }
+  await startApp();
+}
+
 async function request(path, { method = 'GET', role, userId, body } = {}) {
   if (role && userId && !roleAssignments.has(userId)) roleAssignments.set(userId, [role]);
   const headers = { ...(role && userId ? authHeaders(role, userId) : {}) };
@@ -74,6 +241,13 @@ async function request(path, { method = 'GET', role, userId, body } = {}) {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body)
+  });
+}
+
+async function requestWithLiveAuth(path, { role, userId } = {}) {
+  if (role && userId && !roleAssignments.has(userId)) roleAssignments.set(userId, [role]);
+  return fetch(`${baseUrl}${path}`, {
+    headers: { authorization: `Bearer ${role}|${userId}` }
   });
 }
 
@@ -171,7 +345,8 @@ before(async () => {
         name: requestedId,
         email: `${requestedId}@example.test`,
         role: roleAssignments.get(requestedId)?.[0] || role || 'student',
-        grade: 'Grade 4',
+        grade: profileGrades.get(requestedId) || 'Grade 4',
+        points: persistedProfiles.get(requestedId)?.points || 0,
         hymns_taxis_level: profileHymnsTaxisLevels.get(requestedId) ?? null,
         created_at: new Date(0).toISOString()
       }] : []);
@@ -215,7 +390,43 @@ before(async () => {
       }
       return respondJson(res, 200, adminActionAudit);
     }
-    if (['/rest/v1/class_memberships', '/rest/v1/user_relationships'].includes(url.pathname)) {
+    if (url.pathname === '/rest/v1/hymns') {
+      return handleCurriculumTable(req, res, url, 'hymns', hymnsTable, bearer, userId);
+    }
+    if (url.pathname === '/rest/v1/coptic_taxis_items') {
+      return handleCurriculumTable(req, res, url, 'coptic_taxis_items', taxisItemsTable, bearer, userId);
+    }
+    if (bearer === 'test-service-role-key') {
+      const tableName = url.pathname.replace('/rest/v1/', '');
+      const requestedId = (url.searchParams.get('id') || '').replace(/^eq\./, '');
+      const requestedLessonId = (url.searchParams.get('lesson_id') || '').replace(/^eq\./, '');
+      const requestedVersionId = (url.searchParams.get('lesson_version_id') || '').replace(/^eq\./, '');
+      const requestedStudentId = (url.searchParams.get('student_id') || '').replace(/^eq\./, '');
+      const requestedProfileId = (url.searchParams.get('id') || '').replace(/^eq\./, '');
+      const requestedClassIds = (url.searchParams.get('id') || '').match(/^in\.\((.*)\)$/)?.[1].split(',') || [];
+      const usePersistedFixture =
+        tableName === 'lessons' && (persistedLessons.has(requestedId) || persistedLessons.size > 0) ||
+        tableName === 'lesson_versions' &&
+          (persistedLessonVersions.has(requestedId) || persistedLessons.has(requestedLessonId) || persistedLessonVersions.size > 0) ||
+        tableName === 'lesson_sections' &&
+          ([...persistedLessonVersions.values()].some(version => version.id === requestedVersionId) ||
+            [...persistedLessonVersions.values()].some(version => version.id === requestedLessonId) ||
+            persistedLessonSections.size > 0) ||
+        tableName === 'profiles' && persistedProfiles.has(requestedProfileId) ||
+        tableName === 'church_years' ||
+        tableName === 'class_memberships' &&
+          persistedClassMemberships.some(row => row.student_id === requestedStudentId) ||
+        tableName === 'class_instances' &&
+          requestedClassIds.some(id => persistedClassInstances.has(id)) ||
+        ['lesson_section_progress', 'lesson_progress'].includes(tableName);
+      if (usePersistedFixture) {
+        return respondPostgrestRows(req, res, 200, filterPostgrestRows(persistedProgressRows(tableName), url));
+      }
+    }
+    if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/class_memberships') {
+      return respondJson(res, 200, []);
+    }
+    if (url.pathname === '/rest/v1/user_relationships') {
       return respondJson(res, 200, []);
     }
     if (url.pathname === '/rest/v1/rpc/request_role_promotion') {
@@ -343,6 +554,14 @@ before(async () => {
       return;
     }
     if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/lesson_versions') {
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        (url.searchParams.get('id') || '').replace(/^eq\./, '')
+      )) {
+        return respondPostgrestRows(req, res, 200, []);
+      }
+      if (url.searchParams.get('select') === 'status') {
+        return respondPostgrestRows(req, res, 200, [{ status: 'PUBLISHED' }]);
+      }
       return respondJson(res, 200, {
         id: 'v-publication-test',
         lesson_id: 'l-publication-test',
@@ -353,22 +572,40 @@ before(async () => {
       });
     }
     if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/lessons') {
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        (url.searchParams.get('id') || '').replace(/^eq\./, '')
+      )) {
+        return respondPostgrestRows(req, res, 200, []);
+      }
+      if (url.searchParams.get('select') === 'active_version_id,lesson_status') {
+        return respondPostgrestRows(req, res, 200, publicationReadbackMatches
+          ? [{ active_version_id: 'v-publication-test', lesson_status: 'published' }]
+          : [{ active_version_id: 'different-version', lesson_status: 'draft' }]);
+      }
+      if (url.searchParams.get('select') === 'grade_level') {
+        return respondPostgrestRows(req, res, 200, [{ grade_level: publicationGrade }]);
+      }
       return respondJson(res, 200, { grade_level: 'Grade 4' });
     }
     if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/church_years') {
-      return respondJson(res, 200, { id: 'year-1' });
+      return respondPostgrestRows(req, res, 200, publicationActiveYear ? [{ id: 'year-1' }] : []);
     }
     if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/church_events') {
       return respondJson(res, 200, []);
     }
     if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/class_instances') {
-      return respondJson(res, 200, { id: 'class-1' });
+      const requestedGroup = (url.searchParams.get('class_group_id') || '').replace(/^eq\./, '');
+      publicationClassGroupQueries.push(requestedGroup);
+      return respondPostgrestRows(req, res, 200, requestedGroup === 'primary_2' ? [{ id: 'class-1' }] : []);
     }
     if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/servant_class_assignments') {
       if (req.method === 'POST' || req.method === 'PATCH') {
         return respondJson(res, 201, {});
       }
-      return respondJson(res, 200, publicationTeacherAssigned ? { id: 'assignment-1' } : null);
+      const requestedYear = (url.searchParams.get('church_year_id') || '').replace(/^eq\./, '');
+      return respondPostgrestRows(req, res, 200, publicationTeacherAssigned && requestedYear === publicationTeacherAssignmentYear
+        ? [{ id: 'assignment-1' }]
+        : []);
     }
     if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/lesson_publication_jobs') {
       return respondJson(res, 200, null);
@@ -378,7 +615,59 @@ before(async () => {
       '/rest/v1/rpc/publish_lesson_version'
     ].includes(url.pathname)) {
       publicationRpcCalls += 1;
+      if (publicationRpcFailure) {
+        return respondJson(res, 409, { code: '42501', message: 'Simulated publication failure' });
+      }
       return respondJson(res, 200, { success: true, published_at: '2026-01-01T00:00:00.000Z' });
+    }
+    if (bearer !== 'test-service-role-key' && url.pathname === '/rest/v1/church_years') {
+      return respondPostgrestRows(req, res, 200, [{ id: 'year-live', name: 'Live Year', is_active: true }]);
+    }
+    if (bearer !== 'test-service-role-key' && url.pathname === '/rest/v1/servant_class_assignments') {
+      const requestedUserId = (url.searchParams.get('servant_id') || '').replace(/^eq\./, '');
+      const rows = liveTeacherAssignments.filter(assignment =>
+        (!requestedUserId || assignment.servant_id === requestedUserId) &&
+        assignment.church_year_id === 'year-live' &&
+        assignment.is_active
+      );
+      return respondPostgrestRows(req, res, 200, rows);
+    }
+    if (bearer !== 'test-service-role-key' && url.pathname === '/rest/v1/class_instances') {
+      const idFilter = url.searchParams.get('id') || '';
+      const requestedId = idFilter.startsWith('eq.') ? idFilter.slice(3) : '';
+      const requestedIds = (url.searchParams.get('id') || '').match(/^in\.\((.*)\)$/)?.[1]?.split(',').map(value => value.replace(/^"|"$/g, '')) || [];
+      const requestedGroup = (url.searchParams.get('class_group_id') || '').replace(/^eq\./, '');
+      const rows = [{
+        id: 'class-live',
+        class_group_id: assignedClassGroupId,
+        name_en: 'Assigned Class',
+        name_ar: 'فصل',
+        join_code: 'LIVE-CLASS',
+        church_year_id: 'year-live'
+      }].filter(instance =>
+        (!requestedId || instance.id === requestedId) &&
+        (!requestedIds.length || requestedIds.includes(instance.id)) &&
+        (!requestedGroup || instance.class_group_id === requestedGroup)
+      );
+      return respondPostgrestRows(req, res, 200, rows);
+    }
+    if (bearer !== 'test-service-role-key' && url.pathname === '/rest/v1/class_memberships') {
+      const classId = (url.searchParams.get('class_instance_id') || '').replace(/^eq\./, '');
+      const yearId = (url.searchParams.get('church_year_id') || '').replace(/^eq\./, '');
+      const rows = liveClassMemberships.filter(membership =>
+        membership.class_instance_id === classId && membership.church_year_id === yearId && membership.status === 'active'
+      );
+      return respondPostgrestRows(req, res, 200, rows);
+    }
+    if (bearer !== 'test-service-role-key' && url.pathname === '/rest/v1/profiles' && url.searchParams.get('id')?.startsWith('in.')) {
+      const ids = url.searchParams.get('id').slice(4, -1).split(',');
+      return respondPostgrestRows(req, res, 200, ids.map(id => ({
+        id,
+        name: `Profile ${id}`,
+        avatar: null,
+        role: roleAssignments.get(id)?.[0] || 'student',
+        hymns_taxis_level: null
+      })));
     }
     if (url.pathname === '/rest/v1/quiz_attempts') {
       if (bearer !== 'test-service-role-key') {
@@ -417,7 +706,41 @@ before(async () => {
           completed_at: previous?.completed_at || body.p_completed_at
         };
         completionWrites.set(key, result);
+        const progressKey = `${body.p_student_id}:${body.p_lesson_id}`;
+        persistedLessonProgress.set(progressKey, {
+          student_id: body.p_student_id,
+          lesson_id: body.p_lesson_id,
+          completed: true,
+          completed_at: result.completed_at,
+          points_earned: previous ? (persistedLessonProgress.get(progressKey)?.points_earned || 50) : 50
+        });
+        const profile = persistedProfiles.get(body.p_student_id);
+        if (profile) persistedProfiles.set(body.p_student_id, { ...profile, points: result.total_points });
         return respondJson(res, 200, [result]);
+      });
+      return;
+    }
+    if (url.pathname === '/rest/v1/rpc/set_lesson_section_read') {
+      if (bearer !== 'test-service-role-key') {
+        return respondJson(res, 403, { message: 'Trusted server key required' });
+      }
+      readRequestJson(req).then(body => {
+        if (sectionProgressWriteFailure) {
+          return respondJson(res, 500, { message: 'Simulated section progress write failure' });
+        }
+        const key = `${body.p_student_id}:${body.p_lesson_id}:${body.p_version_id}`;
+        const previous = persistedSectionProgress.get(key)?.sections_completed || [];
+        const sections = body.p_is_read
+          ? [...new Set([...previous, body.p_section_id])]
+          : previous.filter(id => id !== body.p_section_id);
+        persistedSectionProgress.set(key, {
+          student_id: body.p_student_id,
+          lesson_id: body.p_lesson_id,
+          version_id: body.p_version_id,
+          sections_completed: sections,
+          total_sections: body.p_total_sections
+        });
+        return respondJson(res, 200, [{ sections_completed: sections }]);
       });
       return;
     }
@@ -427,29 +750,21 @@ before(async () => {
   authUrl = `http://127.0.0.1:${authPort}`;
 
   const portProbe = createServer();
-  const appPort = await listenOnEphemeralPort(portProbe);
+  appPort = await listenOnEphemeralPort(portProbe);
   portProbe.close();
   await once(portProbe, 'close');
   baseUrl = `http://127.0.0.1:${appPort}`;
-  const env = { ...process.env };
-  delete env.SUPABASE_ANON_KEY;
-  env.NODE_ENV = 'test';
-  env.PORT = String(appPort);
-  env.VITE_SUPABASE_URL = authUrl;
-  env.SUPABASE_URL = authUrl;
-  env.VITE_SUPABASE_ANON_KEY = 'test-anon-key';
-  env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
-  env.SUPABASE_SECRET_KEY = 'test-service-role-key';
-  env.ENABLE_REVIEW_TEST_RESET = 'false';
-
-  app = spawn(process.execPath, ['--import', 'tsx', 'server.ts'], {
-    cwd: root,
-    env,
-    stdio: ['ignore', 'pipe', 'pipe']
-  });
-  app.stdout.setEncoding('utf8').on('data', data => { appOutput += data; });
-  app.stderr.setEncoding('utf8').on('data', data => { appOutput += data; });
-  await waitForApp();
+  appEnv = { ...process.env };
+  delete appEnv.SUPABASE_ANON_KEY;
+  appEnv.NODE_ENV = 'test';
+  appEnv.PORT = String(appPort);
+  appEnv.VITE_SUPABASE_URL = authUrl;
+  appEnv.SUPABASE_URL = authUrl;
+  appEnv.VITE_SUPABASE_ANON_KEY = 'test-anon-key';
+  appEnv.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+  appEnv.SUPABASE_SECRET_KEY = 'test-service-role-key';
+  appEnv.ENABLE_REVIEW_TEST_RESET = 'false';
+  await startApp();
 });
 
 async function prepareLessonCompletion({ studentId = 'mark', lessonId, versionId }) {
@@ -470,6 +785,38 @@ async function prepareLessonCompletion({ studentId = 'mark', lessonId, versionId
     });
     assert.equal(section.status, 200, await section.text());
   }
+}
+
+function preparePersistedStudentLesson({ studentId, lessonId, versionId, sectionIds, classGroupId = 'primary_2' }) {
+  const activeYearId = '00000000-0000-4000-8000-000000000001';
+  const classInstanceId = `10000000-0000-4000-8000-${studentId.slice(-12)}`;
+  persistedProfiles.set(studentId, { id: studentId, points: 100 });
+  persistedLessons.set(lessonId, {
+    id: lessonId,
+    grade_level: 'Grade 4',
+    active_version_id: versionId,
+    status: 'published',
+    lesson_status: 'published'
+  });
+  persistedLessonVersions.set(versionId, {
+    id: versionId,
+    lesson_id: lessonId,
+    status: 'PUBLISHED'
+  });
+  for (const id of sectionIds) {
+    persistedLessonSections.set(id, { id, lesson_version_id: versionId });
+  }
+  persistedClassInstances.set(classInstanceId, {
+    id: classInstanceId,
+    class_group_id: classGroupId,
+    church_year_id: activeYearId
+  });
+  persistedClassMemberships.push({
+    student_id: studentId,
+    church_year_id: activeYearId,
+    class_instance_id: classInstanceId,
+    status: 'active'
+  });
 }
 
 after(async () => {
@@ -706,6 +1053,11 @@ test('admin curriculum mutations are recorded in the administrative audit log', 
 
 test('lesson publishing requires the teacher class assignment and succeeds for an assigned teacher', async () => {
   const body = { lessonId: 'l-publication-test', versionId: 'v-publication-test' };
+  publicationGrade = 'Grade 4';
+  publicationActiveYear = true;
+  publicationTeacherAssignmentYear = '00000000-0000-4000-8000-000000000001';
+  publicationRpcFailure = false;
+  publicationReadbackMatches = true;
   publicationTeacherAssigned = false;
   const initialRpcCalls = publicationRpcCalls;
   const unassigned = await request('/api/church/publish-approved-lesson-version', {
@@ -726,7 +1078,134 @@ test('lesson publishing requires the teacher class assignment and succeeds for a
   });
   assert.equal(assigned.status, 200, await assigned.text());
   assert.equal(publicationRpcCalls, initialRpcCalls + 1);
+
+  publicationGrade = '4th Grade';
+  const gradeAlias = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    role: 'teacher',
+    userId: 'user_teacher_mina_101',
+    body
+  });
+  assert.equal(gradeAlias.status, 200, await gradeAlias.text());
+  assert.equal(publicationRpcCalls, initialRpcCalls + 2);
+
+  publicationGrade = 'Grade 1';
+  const wrongGrade = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    role: 'teacher',
+    userId: 'user_teacher_mina_101',
+    body
+  });
+  const wrongGradeBody = await wrongGrade.text();
+  assert.equal(wrongGrade.status, 403, `${wrongGradeBody}; class-group lookup: ${publicationClassGroupQueries.at(-1)}`);
+  assert.equal(publicationClassGroupQueries.at(-1), 'primary_1');
+
+  publicationGrade = 'Grade 4';
+  publicationTeacherAssignmentYear = 'year-inactive';
+  const inactiveYear = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    role: 'teacher',
+    userId: 'user_teacher_mina_101',
+    body
+  });
+  assert.equal(inactiveYear.status, 403, await inactiveYear.text());
+
+  publicationTeacherAssignmentYear = '00000000-0000-4000-8000-000000000001';
+  publicationRpcFailure = true;
+  const failedPublication = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    role: 'teacher',
+    userId: 'user_teacher_mina_101',
+    body
+  });
+  assert.equal(failedPublication.status, 409, await failedPublication.text());
+
+  publicationRpcFailure = false;
+  publicationReadbackMatches = false;
+  const unverifiedPublication = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    role: 'teacher',
+    userId: 'user_teacher_mina_101',
+    body
+  });
+  assert.equal(unverifiedPublication.status, 500, await unverifiedPublication.text());
+
+  const multiRoleAdminId = `multi-role-admin-${Date.now()}`;
+  roleAssignments.set(multiRoleAdminId, ['teacher', 'admin']);
   publicationTeacherAssigned = false;
+  publicationReadbackMatches = true;
+  const adminWithTeacherRole = await request('/api/church/publish-approved-lesson-version', {
+    method: 'POST',
+    role: 'teacher',
+    userId: multiRoleAdminId,
+    body
+  });
+  assert.equal(adminWithTeacherRole.status, 200, await adminWithTeacherRole.text());
+
+  publicationTeacherAssigned = false;
+  publicationGrade = 'Grade 4';
+  publicationActiveYear = true;
+  publicationTeacherAssignmentYear = '00000000-0000-4000-8000-000000000001';
+  publicationRpcFailure = false;
+  publicationReadbackMatches = true;
+});
+
+test('multi-role teacher class reads require a current matching assignment and use persisted roster rows', async () => {
+  const teacherId = `live-class-teacher-${Date.now()}`;
+  roleAssignments.set(teacherId, ['student', 'teacher']);
+  assignedClassGroupId = 'primary_2';
+  liveTeacherAssignments = [{
+    id: 'assignment-live',
+    servant_id: teacherId,
+    class_instance_id: 'class-live',
+    church_year_id: 'year-live',
+    is_active: true
+  }];
+  liveClassMemberships = [{
+    id: 'membership-live',
+    student_id: 'student-live',
+    class_instance_id: 'class-live',
+    church_year_id: 'year-live',
+    exact_grade: 'Grade 4',
+    status: 'active',
+    joined_at: '2026-01-01T00:00:00.000Z'
+  }];
+
+  const valid = await requestWithLiveAuth('/api/church/my-class?classGroupId=primary_2', {
+    role: 'teacher',
+    userId: teacherId
+  });
+  const validBodyText = await valid.text();
+  assert.equal(valid.status, 200, validBodyText);
+  const validBody = JSON.parse(validBodyText);
+  assert.equal(validBody.classInfo.classInstanceId, 'class-live');
+  assert.deepEqual(validBody.roster.map(student => student.id), ['student-live']);
+
+  const wrongClass = await requestWithLiveAuth('/api/church/my-class?classGroupId=primary_1', {
+    role: 'teacher',
+    userId: teacherId
+  });
+  assert.equal(wrongClass.status, 403, await wrongClass.text());
+
+  liveTeacherAssignments = [{
+    ...liveTeacherAssignments[0],
+    church_year_id: 'year-inactive'
+  }];
+  const inactiveYear = await requestWithLiveAuth('/api/church/my-class', {
+    role: 'teacher',
+    userId: teacherId
+  });
+  assert.equal(inactiveYear.status, 403, await inactiveYear.text());
+
+  liveTeacherAssignments = [];
+  const unassigned = await requestWithLiveAuth('/api/church/my-class', {
+    role: 'teacher',
+    userId: teacherId
+  });
+  assert.equal(unassigned.status, 403, await unassigned.text());
+
+  liveTeacherAssignments = [];
+  liveClassMemberships = [];
 });
 
 test('Taxis workflow metadata cannot be forged through edits and publishing requires approval', async () => {
@@ -759,11 +1238,8 @@ test('Taxis workflow metadata cannot be forged through edits and publishing requ
     }
   });
   const forgedResult = await forgedUpdate.json();
-  assert.equal(forgedUpdate.status, 200);
-  assert.equal(forgedResult.item.status, 'draft');
-  assert.equal(forgedResult.item.approvedBy, undefined);
-  assert.equal(forgedResult.item.publishedBy, undefined);
-  assert.equal(forgedResult.item.assignedReviewers, undefined);
+  assert.equal(forgedUpdate.status, 409);
+  assert.equal(forgedResult.error, 'USE_WORKFLOW_ACTION');
 
   const publishDraft = await request(`/api/church/taxis/${itemId}/publish`, {
     method: 'POST',
@@ -844,6 +1320,184 @@ test('Taxis workflow metadata cannot be forged through edits and publishing requ
     body: { titleAr: 'تعديل منشور' }
   });
   assert.equal(lockedPublishedEdit.status, 409);
+});
+
+test('Hymns and Taxis persist through Supabase across an application restart and honor role boundaries', async () => {
+  const suffix = Date.now();
+  const teacherId = `hymns-taxis-restart-teacher-${suffix}`;
+  const reviewerId = `hymns-taxis-restart-reviewer-${suffix}`;
+  const studentId = `hymns-taxis-restart-student-${suffix}`;
+  roleAssignments.set(teacherId, ['teacher']);
+  roleAssignments.set(reviewerId, ['teacher']);
+  roleAssignments.set(studentId, ['student']);
+  profileGrades.set(teacherId, 'Head Servant');
+  profileGrades.set(studentId, 'Grade 4');
+  profileHymnsTaxisLevels.set(studentId, 2);
+
+  const unauthorizedCreate = await request('/api/church/hymns', {
+    method: 'POST',
+    role: 'student',
+    userId: studentId,
+    body: { titleAr: 'غير مصرح', level: 2 }
+  });
+  assert.equal(unauthorizedCreate.status, 403);
+  const unauthorizedTaxisCreate = await request('/api/church/taxis', {
+    method: 'POST',
+    role: 'student',
+    userId: studentId,
+    body: { titleAr: 'غير مصرح', titleEn: 'Not allowed', level: 2 }
+  });
+  assert.equal(unauthorizedTaxisCreate.status, 403);
+
+  const hymnId = `restart-hymn-${suffix}`;
+  const hymnCreate = await request('/api/church/hymns', {
+    method: 'POST',
+    role: 'teacher',
+    userId: teacherId,
+    body: {
+      id: hymnId,
+      titleAr: 'لحن بعد إعادة التشغيل',
+      titleEn: 'Restart Hymn',
+      titleCoptic: 'Ⲁ̀ⲅⲓⲟⲥ',
+      seasonAr: 'الصوم الكبير',
+      seasonEn: 'Great Lent',
+      occasionTag: 'lent',
+      level: 2,
+      audioUrl: 'storage://hymns/restart-audio',
+      pdfUrl: 'storage://hymns/restart-pdf',
+      sheetMusicUrl: 'storage://hymns/restart-sheet',
+      lines: [{ id: 1, coptic: 'Ⲁ̀ⲅⲓⲟⲥ', arabized: 'أجيوس', arabic: 'قدوس' }],
+      status: 'published'
+    }
+  });
+  assert.equal(hymnCreate.status, 201, hymnCreate.status === 201 ? '' : await hymnCreate.text());
+  assert.equal((await hymnCreate.json()).hymn.status, 'published');
+
+  const taxisId = `restart-taxis-${suffix}`;
+  const taxisCreate = await request('/api/church/taxis', {
+    method: 'POST',
+    role: 'teacher',
+    userId: teacherId,
+    body: {
+      id: taxisId,
+      titleAr: 'طقس بعد إعادة التشغيل',
+      titleEn: 'Restart Taxis',
+      category: 'liturgy',
+      season: 'Great Lent',
+      level: 2,
+      audience: 'all',
+      sections: [{ id: 'section-1', order: 1, titleAr: 'عنوان', titleEn: 'Title', contentAr: 'شرح' }],
+      references: ['كتاب الطقس'],
+      documents: []
+    }
+  });
+  assert.equal(taxisCreate.status, 201, taxisCreate.status === 201 ? '' : await taxisCreate.text());
+  assert.equal((await taxisCreate.json()).item.status, 'draft');
+
+  const submitTaxis = await request(`/api/church/taxis/${taxisId}/submit-review`, {
+    method: 'POST',
+    role: 'teacher',
+    userId: teacherId,
+    body: {}
+  });
+  assert.equal(submitTaxis.status, 200, await submitTaxis.text());
+
+  const selfApproval = await request(`/api/church/taxis/${taxisId}/review`, {
+    method: 'POST',
+    role: 'teacher',
+    userId: teacherId,
+    body: { action: 'APPROVE' }
+  });
+  assert.equal(selfApproval.status, 403);
+
+  const reviewerApproval = await request(`/api/church/taxis/${taxisId}/review`, {
+    method: 'POST',
+    role: 'teacher',
+    userId: reviewerId,
+    body: { action: 'APPROVE' }
+  });
+  assert.equal(reviewerApproval.status, 200, await reviewerApproval.text());
+
+  const publishTaxis = await request(`/api/church/taxis/${taxisId}/publish`, {
+    method: 'POST',
+    role: 'teacher',
+    userId: teacherId,
+    body: {}
+  });
+  assert.equal(publishTaxis.status, 200, await publishTaxis.text());
+
+  const unauthorizedPublish = await request(`/api/church/taxis/${taxisId}/publish`, {
+    method: 'POST',
+    role: 'student',
+    userId: studentId,
+    body: {}
+  });
+  assert.equal(unauthorizedPublish.status, 403);
+
+  await restartApp();
+
+  const studentHymns = await request('/api/church/hymns?level=2', { role: 'student', userId: studentId });
+  assert.equal(studentHymns.status, 200, studentHymns.status === 200 ? '' : await studentHymns.text());
+  const hymns = await studentHymns.json();
+  const storedHymn = hymns.items.find(item => item.id === hymnId);
+  assert.equal(storedHymn?.status, 'published');
+  assert.equal(storedHymn?.audioUrl, 'storage://hymns/restart-audio');
+  assert.equal(storedHymn?.pdfUrl, 'storage://hymns/restart-pdf');
+  assert.equal(storedHymn?.lines[0].arabic, 'قدوس');
+
+  const studentTaxis = await request('/api/church/taxis', { role: 'student', userId: studentId });
+  assert.equal(studentTaxis.status, 200, studentTaxis.status === 200 ? '' : await studentTaxis.text());
+  const taxis = await studentTaxis.json();
+  const storedTaxis = taxis.items.find(item => item.id === taxisId);
+  assert.equal(storedTaxis?.status, 'published');
+  assert.equal(storedTaxis?.season, 'Great Lent');
+  assert.deepEqual(storedTaxis?.references, ['كتاب الطقس']);
+  assert.equal(storedTaxis?.sections[0].contentAr, 'شرح');
+
+  const unpublishHymn = await request(`/api/church/hymns/${hymnId}/unpublish`, {
+    method: 'POST',
+    role: 'teacher',
+    userId: teacherId,
+    body: {}
+  });
+  assert.equal(unpublishHymn.status, 200, await unpublishHymn.text());
+
+  const unpublishTaxis = await request(`/api/church/taxis/${taxisId}/unpublish`, {
+    method: 'POST',
+    role: 'teacher',
+    userId: teacherId,
+    body: {}
+  });
+  assert.equal(unpublishTaxis.status, 200, await unpublishTaxis.text());
+
+  curriculumWriteFailure = true;
+  const failedWrite = await request('/api/church/hymns', {
+    method: 'POST',
+    role: 'teacher',
+    userId: teacherId,
+    body: { id: `failed-hymn-${suffix}`, titleAr: 'فشل', level: 2 }
+  });
+  curriculumWriteFailure = false;
+  assert.equal(failedWrite.status, 500);
+  assert.equal((await failedWrite.json()).success, false);
+  assert.equal(hymnsTable.has(`failed-hymn-${suffix}`), false);
+  curriculumWriteFailure = true;
+  const failedTaxisWrite = await request('/api/church/taxis', {
+    method: 'POST',
+    role: 'teacher',
+    userId: teacherId,
+    body: { id: `failed-taxis-${suffix}`, titleAr: 'فشل', titleEn: 'Failed', level: 2 }
+  });
+  curriculumWriteFailure = false;
+  assert.equal(failedTaxisWrite.status, 500);
+  assert.equal((await failedTaxisWrite.json()).success, false);
+  assert.equal(taxisItemsTable.has(`failed-taxis-${suffix}`), false);
+
+  roleAssignments.delete(teacherId);
+  roleAssignments.delete(studentId);
+  profileGrades.delete(teacherId);
+  profileGrades.delete(studentId);
+  profileHymnsTaxisLevels.delete(studentId);
 });
 
 test('unauthorized progress writes and disabled reset endpoint do not proceed', async () => {
@@ -975,19 +1629,176 @@ test('failed Supabase completion writes return an error without awarding points'
   }
 });
 
+test('UUID-backed student completion persists real section UUIDs and is returned by a later progress read', async () => {
+  const studentId = '40000000-0000-4000-8000-000000000001';
+  const lessonId = '20000000-0000-4000-8000-000000000001';
+  const versionId = '30000000-0000-4000-8000-000000000001';
+  const sectionIds = [
+    '50000000-0000-4000-8000-000000000001',
+    '50000000-0000-4000-8000-000000000002'
+  ];
+  preparePersistedStudentLesson({ studentId, lessonId, versionId, sectionIds });
+
+  const start = await request('/api/church/student-progress/start', {
+    method: 'POST', role: 'student', userId: studentId, body: { lessonId, versionId }
+  });
+  assert.equal(start.status, 200, await start.text());
+  for (const sectionId of sectionIds) {
+    const section = await request('/api/church/student-progress/complete-section', {
+      method: 'POST', role: 'student', userId: studentId, body: { lessonId, versionId, sectionId }
+    });
+    assert.equal(section.status, 200, await section.text());
+  }
+
+  const completion = await request('/api/church/student-progress/complete-lesson', {
+    method: 'POST', role: 'student', userId: studentId, body: { lessonId, versionId }
+  });
+  const completed = await completion.json();
+  assert.equal(completion.status, 200, JSON.stringify(completed));
+  assert.equal(completed.progress.status, 'COMPLETED');
+  assert.deepEqual(completed.progress.sectionsCompleted.sort(), sectionIds.sort());
+
+  const readback = await request(`/api/church/student-progress?lessonId=${lessonId}`, {
+    role: 'student', userId: studentId
+  });
+  const persisted = await readback.json();
+  assert.equal(readback.status, 200, JSON.stringify(persisted));
+  assert.equal(persisted.progress.status, 'COMPLETED');
+  assert.equal(persisted.progress.completionPercent, 100);
+
+  const summaryResponse = await request('/api/church/student-progress/summary', {
+    role: 'student', userId: studentId
+  });
+  const summary = await summaryResponse.json();
+  assert.equal(summaryResponse.status, 200, JSON.stringify(summary));
+  assert.deepEqual(summary.completedLessonIds, [lessonId]);
+  assert.equal(summary.allProgress[lessonId].status, 'COMPLETED');
+  assert.deepEqual(summary.allProgress[lessonId].sectionsCompleted.sort(), sectionIds.sort());
+  assert.equal(summary.points, 150);
+  assert.equal(summary.totalAssignedLessons, 1);
+});
+
+test('UUID-backed progress rejects another student, invalid lesson versions, invalid sections, and unassigned classes', async () => {
+  const studentId = '40000000-0000-4000-8000-000000000002';
+  const lessonId = '20000000-0000-4000-8000-000000000002';
+  const versionId = '30000000-0000-4000-8000-000000000002';
+  const sectionId = '50000000-0000-4000-8000-000000000003';
+  preparePersistedStudentLesson({ studentId, lessonId, versionId, sectionIds: [sectionId] });
+
+  const unauthorized = await request('/api/church/student-progress/start', {
+    method: 'POST', role: 'teacher', userId: '40100000-0000-4000-8000-000000000002',
+    body: { lessonId, versionId, studentId }
+  });
+  assert.equal(unauthorized.status, 403);
+
+  const invalidVersion = await request('/api/church/student-progress/start', {
+    method: 'POST', role: 'student', userId: studentId,
+    body: { lessonId, versionId: '30000000-0000-4000-8000-000000000099' }
+  });
+  assert.equal(invalidVersion.status, 404);
+  assert.equal((await invalidVersion.json()).error, 'INVALID_VERSION');
+
+  const invalidSection = await request('/api/church/student-progress/complete-section', {
+    method: 'POST', role: 'student', userId: studentId,
+    body: { lessonId, versionId, sectionId: '50000000-0000-4000-8000-000000000099' }
+  });
+  assert.equal(invalidSection.status, 400);
+  assert.equal((await invalidSection.json()).error, 'INVALID_SECTION');
+
+  const unassignedStudent = '40000000-0000-4000-8000-000000000003';
+  const otherLesson = '20000000-0000-4000-8000-000000000003';
+  const otherVersion = '30000000-0000-4000-8000-000000000003';
+  preparePersistedStudentLesson({
+    studentId: unassignedStudent,
+    lessonId: otherLesson,
+    versionId: otherVersion,
+    sectionIds: ['50000000-0000-4000-8000-000000000004'],
+    classGroupId: 'preparatory'
+  });
+  const unassigned = await request('/api/church/student-progress/start', {
+    method: 'POST', role: 'student', userId: unassignedStudent, body: { lessonId: otherLesson, versionId: otherVersion }
+  });
+  assert.equal(unassigned.status, 403);
+  assert.equal((await unassigned.json()).error, 'CLASS_NOT_ASSIGNED');
+
+  const missingLesson = await request('/api/church/student-progress/start', {
+    method: 'POST', role: 'student', userId: studentId,
+    body: {
+      lessonId: '20000000-0000-4000-8000-000000000099',
+      versionId: '30000000-0000-4000-8000-000000000099'
+    }
+  });
+  assert.equal(missingLesson.status, 404);
+  assert.equal((await missingLesson.json()).error, 'LESSON_NOT_FOUND');
+});
+
+test('UUID-backed section and completion database failures do not mark progress complete', async () => {
+  const studentId = '40000000-0000-4000-8000-000000000004';
+  const lessonId = '20000000-0000-4000-8000-000000000004';
+  const versionId = '30000000-0000-4000-8000-000000000004';
+  const sectionIds = [
+    '50000000-0000-4000-8000-000000000005',
+    '50000000-0000-4000-8000-000000000006'
+  ];
+  preparePersistedStudentLesson({ studentId, lessonId, versionId, sectionIds });
+
+  sectionProgressWriteFailure = true;
+  try {
+    const failedSection = await request('/api/church/student-progress/complete-section', {
+      method: 'POST', role: 'student', userId: studentId,
+      body: { lessonId, versionId, sectionId: sectionIds[0] }
+    });
+    assert.equal(failedSection.status, 500);
+  } finally {
+    sectionProgressWriteFailure = false;
+  }
+
+  for (const sectionId of sectionIds) {
+    const section = await request('/api/church/student-progress/complete-section', {
+      method: 'POST', role: 'student', userId: studentId, body: { lessonId, versionId, sectionId }
+    });
+    assert.equal(section.status, 200, await section.text());
+  }
+
+  rpcFailure = true;
+  try {
+    const failedCompletion = await request('/api/church/student-progress/complete-lesson', {
+      method: 'POST', role: 'student', userId: studentId, body: { lessonId, versionId }
+    });
+    assert.equal(failedCompletion.status, 502);
+    assert.equal((await failedCompletion.json()).success, false);
+  } finally {
+    rpcFailure = false;
+  }
+
+  const readback = await request(`/api/church/student-progress?lessonId=${lessonId}`, {
+    role: 'student', userId: studentId
+  });
+  const progress = await readback.json();
+  assert.equal(readback.status, 200);
+  assert.equal(progress.progress.status, 'IN_PROGRESS');
+  assert.equal(progress.progress.completionPercent, 100);
+  assert.equal(progress.progress.completedAt, null);
+});
+
 test('failed authoritative completion does not report lesson completion in progress summaries', async () => {
   const studentId = `test_student_failed_completion_${Date.now()}`;
   const lessonId = 'l-cross-01';
   const versionId = `ver-failed-completion-${Date.now()}`;
   await prepareLessonCompletion({ studentId, lessonId, versionId });
 
-  const completion = await request('/api/church/student-progress/complete-lesson', {
-    method: 'POST',
-    role: 'student',
-    userId: studentId,
-    body: { lessonId, versionId }
-  });
-  assert.equal(completion.status, 502);
+  rpcFailure = true;
+  try {
+    const completion = await request('/api/church/student-progress/complete-lesson', {
+      method: 'POST',
+      role: 'student',
+      userId: studentId,
+      body: { lessonId, versionId }
+    });
+    assert.equal(completion.status, 502);
+  } finally {
+    rpcFailure = false;
+  }
 
   const summaryResponse = await request('/api/church/student-progress/summary', {
     role: 'student',

@@ -2,6 +2,8 @@ import { TaxisItem, TaxisUserPermissions, TaxisAudience, TaxisCategory, TaxisSta
 import { filterTaxisItemsByLevel, parseHymnsTaxisLevel } from './hymnsTaxisLevel';
 import { markCurriculumImportDraft } from './curriculumImport';
 import { hasRole } from './workspaces';
+import { getAuthenticatedApiHeaders, getAuthenticatedApiToken } from './apiAuth';
+import { isSupabaseConfigured } from './supabase';
 
 export const INITIAL_TAXIS_COLLECTION: TaxisItem[] = [
   {
@@ -167,32 +169,6 @@ export const INITIAL_TAXIS_COLLECTION: TaxisItem[] = [
   }
 ];
 
-const TAXIS_STORAGE_KEY = 'church_coptic_taxis_items';
-
-function getStoredTaxisItems(): TaxisItem[] {
-  if (typeof window === 'undefined') return INITIAL_TAXIS_COLLECTION;
-  try {
-    const raw = localStorage.getItem(TAXIS_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (e) {
-    console.warn('Could not read Taxis items from localStorage:', e);
-  }
-  return INITIAL_TAXIS_COLLECTION;
-}
-
-function saveStoredTaxisItems(items: TaxisItem[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(TAXIS_STORAGE_KEY, JSON.stringify(items));
-    window.dispatchEvent(new CustomEvent('church_taxis_updated', { detail: items }));
-  } catch (e) {
-    console.warn('Could not save Taxis items to localStorage:', e);
-  }
-}
-
 /**
  * Computes explicit granular permissions for a user on Taxis content
  */
@@ -218,8 +194,6 @@ export function computeTaxisPermissions(
   const isSuperAdmin = hasRole(user, 'admin');
   const isTeacher = hasRole(user, 'teacher');
   const isAuthor = Boolean(item && item.createdBy === user.id);
-  const isAssignedEditor = Boolean(item && item.assignedEditors?.includes(user.id));
-  const isAssignedReviewer = Boolean(item && item.assignedReviewers?.includes(user.id));
 
   // Admin has full capabilities
   if (isSuperAdmin) {
@@ -239,16 +213,17 @@ export function computeTaxisPermissions(
 
   // Teacher / Servant role
   if (isTeacher) {
+    const grade = (user.grade || '').toLowerCase();
     return {
       canView: true,
       canCreate: true,
-      canEdit: isAuthor || isAssignedEditor || !item, // authors and assigned editors
-      canSubmitReview: isAuthor || isAssignedEditor,
-      canReview: isAssignedReviewer || Boolean(user.grade?.includes('Deacon')),
-      canApprove: isAssignedReviewer,
-      canPublish: Boolean(user.grade?.includes('Head') || user.grade?.includes('Priest')),
-      canUnpublish: Boolean(user.grade?.includes('Head') || user.grade?.includes('Priest')),
-      canRestore: Boolean(user.grade?.includes('Head')),
+      canEdit: isAuthor || !item,
+      canSubmitReview: isAuthor,
+      canReview: isAuthor,
+      canApprove: isAuthor,
+      canPublish: isAuthor && (grade.includes('head') || grade.includes('priest')),
+      canUnpublish: isAuthor && (grade.includes('head') || grade.includes('priest')),
+      canRestore: isAuthor && grade.includes('head'),
       canManagePermissions: false
     };
   }
@@ -283,7 +258,6 @@ export async function getTaxisItems(category?: string, audience?: string, viewer
   items: TaxisItem[];
   error?: string;
 }> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
   const filterForStudent = (items: TaxisItem[], checkAudience = true) => {
     if (!hasRole(viewer, 'student')) return items;
     const level = parseHymnsTaxisLevel(viewer.hymnsTaxisLevel);
@@ -296,55 +270,52 @@ export async function getTaxisItems(category?: string, audience?: string, viewer
         (item.audience === 'deacons' && level >= 2))
     );
   };
+  if (!isSupabaseConfigured) {
+    let items = filterForStudent(INITIAL_TAXIS_COLLECTION);
+    if (category && category !== 'ALL') items = items.filter(item => item.category === category);
+    if (audience && audience !== 'ALL') items = items.filter(item => item.audience === audience);
+    return { success: true, items };
+  }
+
   try {
     const q = new URLSearchParams();
     if (category && category !== 'ALL') q.set('category', category);
     if (audience && audience !== 'ALL') q.set('audience', audience);
 
     const res = await fetch(`/api/church/taxis?${q.toString()}`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      }
+      headers: await getAuthenticatedApiHeaders()
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && Array.isArray(data.items)) {
-        let items = filterForStudent(data.items, false);
-        if (category && category !== 'ALL') items = items.filter(item => item.category === category);
-        if (audience && audience !== 'ALL') items = items.filter(item => item.audience === audience);
-        return { success: true, items };
-      }
-      if (token) return { success: false, items: [], error: data.message || data.error || 'Could not load Taxis lessons.' };
-    } else if (token) {
-      return { success: false, items: [], error: `Could not load Taxis lessons (HTTP ${res.status}).` };
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      return { success: false, items: [], error: data?.message || data?.error || `Could not load Taxis lessons (HTTP ${res.status}).` };
     }
+    const data = await res.json();
+    if (data.success && Array.isArray(data.items)) {
+      let items = filterForStudent(data.items, false);
+      if (category && category !== 'ALL') items = items.filter(item => item.category === category);
+      if (audience && audience !== 'ALL') items = items.filter(item => item.audience === audience);
+      return { success: true, items };
+    }
+    return { success: false, items: [], error: data.message || data.error || 'Could not load Taxis lessons.' };
   } catch (error) {
-    if (token) return { success: false, items: [], error: error instanceof Error ? error.message : 'Network error while loading Taxis lessons.' };
+    return { success: false, items: [], error: error instanceof Error ? error.message : 'Network error while loading Taxis lessons.' };
   }
-
-  if (hasRole(viewer, 'student') && parseHymnsTaxisLevel(viewer.hymnsTaxisLevel) === null) {
-    return { success: false, items: [], error: 'Choose your shared Hymns and Taxis level to view lessons.' };
-  }
-
-  // Only unauthenticated demo mode can use local items.
-  const local = getStoredTaxisItems();
-  let filtered = filterForStudent(local);
-  if (category && category !== 'ALL') filtered = filtered.filter(i => i.category === category);
-  if (audience && audience !== 'ALL') filtered = filtered.filter(i => i.audience === audience);
-  return { success: true, items: filtered };
 }
 
 /**
  * Save or publish a Taxis item
  */
 export async function saveTaxisItem(
-  item: Partial<TaxisItem> & { titleAr: string; titleEn: string },
-  user: User
+  item: Partial<TaxisItem> & { titleAr: string; titleEn: string }
 ): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
-  let token: string | null = null;
+  if (!isSupabaseConfigured) {
+    return { success: false, error: 'Supabase is not configured; Taxis changes cannot be persisted.' };
+  }
+
+  let token: string;
   try {
-    token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+    token = await getAuthenticatedApiToken();
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Could not read the authentication session.' };
   }
@@ -363,94 +334,23 @@ export async function saveTaxisItem(
       body: JSON.stringify(item)
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.item) {
-        const local = getStoredTaxisItems().filter(i => i.id !== data.item.id);
-        saveStoredTaxisItems([data.item, ...local]);
-        return { success: true, item: data.item };
-      } else {
-        return { success: false, error: data.message || data.error };
-      }
-    }
-    if (token) return { success: false, error: `Could not save Taxis item (HTTP ${res.status}).` };
+    const data = await res.json().catch(() => null);
+    if (!res.ok) return { success: false, error: data?.message || data?.error || `Could not save Taxis item (HTTP ${res.status}).` };
+    if (data?.success && data.item) return { success: true, item: data.item };
+    return { success: false, error: data?.message || data?.error || 'Supabase did not confirm the Taxis save.' };
   } catch (error) {
-    if (token) return { success: false, error: error instanceof Error ? error.message : 'Network error while saving Taxis item.' };
+    return { success: false, error: error instanceof Error ? error.message : 'Network error while saving Taxis item.' };
   }
-
-  // Local fallback
-  const list = getStoredTaxisItems();
-  const existingIdx = list.findIndex(i => i.id === item.id);
-  const now = new Date().toISOString();
-
-  let finalItem: TaxisItem;
-  if (existingIdx >= 0) {
-    const prev = list[existingIdx];
-    finalItem = {
-      ...prev,
-      ...item,
-      version: prev.version + 1,
-      updatedAt: now,
-      history: [
-        ...(prev.history || []),
-        {
-          version: prev.version,
-          status: prev.status,
-          titleAr: prev.titleAr,
-          titleEn: prev.titleEn,
-          sectionsCount: prev.sections?.length || 0,
-          savedBy: user.id,
-          savedByName: user.fullName,
-          savedAt: now
-        }
-      ]
-    } as TaxisItem;
-    list[existingIdx] = finalItem;
-  } else {
-    finalItem = {
-      id: item.id || `taxis_${Date.now()}`,
-      titleAr: item.titleAr,
-      titleEn: item.titleEn,
-      titleCopt: item.titleCopt,
-      category: item.category || 'liturgy',
-      audience: item.audience || 'all',
-      status: item.status || 'draft',
-      summaryAr: item.summaryAr || '',
-      summaryEn: item.summaryEn || '',
-      sections: item.sections || [],
-      references: item.references || [],
-      documents: item.documents || [],
-      version: 1,
-      history: [],
-      createdBy: user.id,
-      createdByName: user.fullName,
-      createdAt: now,
-      updatedAt: now
-    };
-    list.unshift(finalItem);
-  }
-
-  saveStoredTaxisItems(list);
-  return { success: true, item: finalItem };
 }
 
 export async function createTaxisDraft(
   item: Partial<TaxisItem> & { id: string; titleAr: string; titleEn: string }
 ): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
-  let token: string | null = null;
-  try {
-    token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Could not read the authentication session.' };
-  }
-  if (!token) return { success: false, error: 'Your session expired. Sign in again before creating a curriculum draft.' };
-
   try {
     const response = await fetch('/api/church/taxis', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
+        ...(await getAuthenticatedApiHeaders())
       },
       body: JSON.stringify(markCurriculumImportDraft(item))
     });
@@ -462,8 +362,6 @@ export async function createTaxisDraft(
       };
     }
 
-    const local = getStoredTaxisItems().filter(existing => existing.id !== data.item.id);
-    saveStoredTaxisItems([data.item, ...local]);
     return { success: true, item: data.item };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Network error while creating Taxis draft.' };
@@ -478,16 +376,6 @@ export async function executeTaxisStatusAction(
   action: 'SUBMIT_REVIEW' | 'APPROVE' | 'REQUEST_CHANGES' | 'PUBLISH' | 'UNPUBLISH' | 'RESTORE',
   params?: { restoreVersion?: number; notes?: string }
 ): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
-  let token: string | null = null;
-  try {
-    token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Could not read the authentication session.' };
-  }
-  if (!token) {
-    return { success: false, error: 'Your session expired. Sign in again before changing a Taxis workflow status.' };
-  }
-
   try {
     let endpoint = '';
     let payload: any = {};
@@ -511,7 +399,7 @@ export async function executeTaxisStatusAction(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          ...(await getAuthenticatedApiHeaders())
         },
         body: JSON.stringify(payload)
       });
@@ -519,8 +407,6 @@ export async function executeTaxisStatusAction(
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.item) {
-          const local = getStoredTaxisItems().filter(i => i.id !== data.item.id);
-          saveStoredTaxisItems([data.item, ...local]);
           return { success: true, item: data.item };
         } else {
           return { success: false, error: data.message || data.error };

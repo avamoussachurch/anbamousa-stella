@@ -412,11 +412,12 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
     setFeedbackMessage(null);
 
     try {
-      const lessonPayload = buildLessonPayload('published');
+      if (!isOnlineAuth) {
+        throw new Error('Sign in with an online account before publishing this lesson.');
+      }
+      let lessonPayload = buildLessonPayload('published');
 
-      // Call express publishing service if Supabase configured
-      if (isOnlineAuth) {
-        await publishExpressLesson({
+      const result = await publishExpressLesson({
           titleEn: lessonPayload.title,
           titleAr: lessonPayload.titleAr,
           category: lessonPayload.category,
@@ -432,8 +433,11 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
           teacherNotes: lessonPayload.teacherNotes,
           publishDirectly: true,
           quiz: lessonPayload.quiz || []
-        });
+      });
+      if (result.error || !result.data?.lesson || result.data.lesson.status !== 'published') {
+        throw result.error || new Error('The database did not confirm lesson publication.');
       }
+      lessonPayload = result.data.lesson;
 
       // Link directly to current active session
       if (activeSession) {
@@ -457,19 +461,9 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
       });
     } catch (err: any) {
       console.error('Publish error:', err);
-      // Fallback local publish
-      const fallbackPayload = buildLessonPayload('published');
-      if (activeSession) {
-        onUpdateSession(activeSession.id, {
-          activeLessonId: fallbackPayload.id,
-          title: fallbackPayload.title,
-          status: 'PUBLISHED'
-        });
-      }
-      onPublishLesson(fallbackPayload, activeSession?.id);
       setFeedbackMessage({
-        type: 'success',
-        text: isAr ? 'تم نشر الدرس لجميع الطلاب بنجاح!' : 'Lesson published and ready for Sunday students!'
+        type: 'error',
+        text: err instanceof Error ? err.message : (isAr ? 'تعذر نشر الدرس.' : 'Lesson publication failed.')
       });
     } finally {
       setIsSaving(false);

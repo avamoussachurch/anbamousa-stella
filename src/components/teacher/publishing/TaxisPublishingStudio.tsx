@@ -321,7 +321,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       status
     };
 
-    const res = await saveTaxisItem(payload, userData!);
+    const res = await saveTaxisItem(payload);
     setIsSaving(false);
     if (res.success && res.item) {
       setHasUnsavedChanges(false);
@@ -583,6 +583,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
               <option value="feasts">{isAr ? 'الأعياد' : 'Feasts'}</option>
               <option value="pascha">{isAr ? 'البصخة' : 'Pascha'}</option>
               <option value="occasions">{isAr ? 'مناسبات' : 'Occasions'}</option>
+              <option value="clergy">{isAr ? 'خدمات الكهنة' : 'Clergy services'}</option>
             </select>
             <select value={libraryLevel} onChange={event => setLibraryLevel(event.target.value as typeof libraryLevel)} aria-label={isAr ? 'تصفية حسب المستوى' : 'Filter by level'} className="col-span-2 min-w-0 rounded-lg border border-stone-200 bg-white p-2 text-[11px] dark:border-stone-700 dark:bg-stone-800">
               <option value="all">{isAr ? 'كل المستويات' : 'All levels'}</option>
@@ -790,6 +791,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
                   <option value="feasts">{isAr ? 'الأعياد السيدية والمناسبات (Feasts)' : 'Feasts'}</option>
                   <option value="pascha">{isAr ? 'أسبوع الآلام والبصخة المقدسة (Pascha)' : 'Pascha'}</option>
                   <option value="occasions">{isAr ? 'مناسبات خاصة وتدشين (Occasions)' : 'Occasions'}</option>
+                  <option value="clergy">{isAr ? 'خدمات الكهنة (Clergy Services)' : 'Clergy services'}</option>
                 </select>
               </div>
 

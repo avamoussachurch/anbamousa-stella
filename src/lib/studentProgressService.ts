@@ -70,10 +70,16 @@ function storeServerProgress(progress: StudentContentProgress): LocallyTrackedPr
   return confirmed;
 }
 
-function progressMatchesRequest(progress: any, lessonId: string, studentId?: string): progress is StudentContentProgress {
+function progressMatchesRequest(
+  progress: any,
+  lessonId: string,
+  studentId?: string,
+  versionId?: string
+): progress is StudentContentProgress {
   return Boolean(
     progress?.studentId &&
     progress.lessonId === lessonId &&
+    (!versionId || progress.versionId === versionId) &&
     (!studentId || progress.studentId === studentId) &&
     Array.isArray(progress.sectionsCompleted)
   );
@@ -116,17 +122,15 @@ export async function getStudentProgress(
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.success) {
       return {
-        data: LOCAL_PROGRESS_STORE[`${studentId || 'u1'}_${lessonId}`] || null,
+        data: null,
         error: responseError(res.status, json, 'fetch student progress')
       };
     }
 
     return { data: json.progress, error: null };
   } catch (err: any) {
-    // Keep an offline copy available while exposing the failed request to callers.
-    const key = `${studentId || 'u1'}_${lessonId}`;
     return {
-      data: LOCAL_PROGRESS_STORE[key] || null,
+      data: null,
       error: err instanceof Error ? err : new Error('Could not fetch student progress.')
     };
   }
@@ -158,7 +162,7 @@ export async function startLessonProgress(
       return { data: null, error: responseError(res.status, json, 'start lesson progress') };
     }
 
-    if (!progressMatchesRequest(json.progress, lessonId, studentId)) {
+    if (!progressMatchesRequest(json.progress, lessonId, studentId, versionId)) {
       return { data: null, error: new Error('The server did not return persisted lesson progress.') };
     }
     const confirmed = storeServerProgress(json.progress);
@@ -194,7 +198,7 @@ export async function completeSectionProgress(
       return { data: null, error: responseError(res.status, json, 'save lesson section progress') };
     }
 
-    if (!progressMatchesRequest(json.progress, lessonId, studentId)) {
+    if (!progressMatchesRequest(json.progress, lessonId, studentId, versionId)) {
       return { data: null, error: new Error('The server did not return persisted section progress.') };
     }
     const prog = storeServerProgress(json.progress);
@@ -242,7 +246,7 @@ export async function completeLessonProgress(
       };
     }
     if (
-      !progressMatchesRequest(json.progress, lessonId, studentId) ||
+      !progressMatchesRequest(json.progress, lessonId, studentId, versionId) ||
       json.progress.status !== 'COMPLETED' ||
       json.progress.completionPercent < 100
     ) {
@@ -403,48 +407,13 @@ export async function getStudentProgressSummary(
       serverCairoDate: json.serverCairoDate || new Date().toISOString().split('T')[0]
     };
   } catch (err: any) {
-    // Offline / Local storage fallback
-    const completedIds: string[] = [];
-    const allProg: Record<string, StudentContentProgress> = {};
-
-    // Check in-memory store
-    for (const [k, p] of Object.entries(LOCAL_PROGRESS_STORE)) {
-      if (!studentId || k.startsWith(`${studentId}_`)) {
-        const lId = k.split('_').slice(1).join('_');
-        allProg[lId] = p;
-        if (p.status === 'COMPLETED' && !completedIds.includes(lId)) {
-          completedIds.push(lId);
-        }
-      }
-    }
-
-    // Also check localStorage items for robust reload persistence
-    if (typeof window !== 'undefined') {
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('church_progress_')) {
-            const raw = localStorage.getItem(key);
-            if (raw) {
-              const p = JSON.parse(raw);
-              if (p && (!studentId || p.studentId === studentId)) {
-                allProg[p.lessonId] = p;
-                if (p.status === 'COMPLETED' && !completedIds.includes(p.lessonId)) {
-                  completedIds.push(p.lessonId);
-                }
-              }
-            }
-          }
-        }
-      } catch (_) {}
-    }
     return {
       success: false,
-      completedLessonIds: completedIds,
-      completedCount: completedIds.length,
-      totalAssignedLessons: Math.max(1, completedIds.length),
-      progressPercent: completedIds.length > 0 ? 100 : 0,
-      allProgress: allProg,
+      completedLessonIds: [],
+      completedCount: 0,
+      totalAssignedLessons: 0,
+      progressPercent: 0,
+      allProgress: {},
       points: 0,
       streak: { currentStreak: 0, longestStreak: 0, lastActiveCairoDate: '' },
       completionHistory: [],

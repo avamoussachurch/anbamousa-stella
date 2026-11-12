@@ -133,12 +133,12 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
     setDurationSec(h.durationSec || 120);
     setHazatExplanationAr(h.hazatExplanationAr || '');
     setHazatExplanationEn(h.hazatExplanationEn || '');
-    setSheetMusicUrl((h as any).sheetMusicUrl || '');
-    setPdfUrl((h as any).pdfUrl || '');
+    setSheetMusicUrl(h.sheetMusicUrl || '');
+    setPdfUrl(h.pdfUrl || '');
     setLines(h.lines || []);
-    setVersion((h as any).version || 1);
-    setStatus((h as any).status || 'published');
-    setHistory((h as any).history || []);
+    setVersion(h.version || 1);
+    setStatus(h.status || 'published');
+    setHistory(h.history || []);
     setHasUnsavedChanges(false);
   };
 
@@ -239,10 +239,10 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
       hazatExplanationAr,
       hazatExplanationEn,
       lines,
+      sheetMusicUrl,
+      pdfUrl,
       status: publishImmediate ? 'published' : status
     };
-    (payload as any).sheetMusicUrl = sheetMusicUrl;
-    (payload as any).pdfUrl = pdfUrl;
 
     const isExisting = hymns.some(h => h.id === selectedHymnId);
     let res;
@@ -286,6 +286,11 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
         type: 'success'
       });
       await loadLibrary();
+    } else {
+      setStatusMessage({
+        text: res.error || (isAr ? 'تعذر إلغاء نشر اللحن' : 'Could not unpublish hymn.'),
+        type: 'error'
+      });
     }
   };
 

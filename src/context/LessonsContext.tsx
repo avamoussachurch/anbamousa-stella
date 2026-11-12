@@ -31,7 +31,8 @@ import { useActiveWorkspace } from './WorkspaceContext';
 import { 
   getPublishedLessonsForCurrentUser, 
   getTeacherLessonVersions,
-  getLessonSourcesForLesson
+  getLessonSourcesForLesson,
+  shouldLoadAuthoringCurriculum
 } from '../lib/curriculumService';
 import { 
   getTeacherCurriculumLessons, 
@@ -307,7 +308,8 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const isTeacher = activeWorkspace === 'teacher';
-      const result = isTeacher 
+      const isAuthoringCurriculum = shouldLoadAuthoringCurriculum(activeWorkspace, userData.roles);
+      const result = isAuthoringCurriculum
         ? await getTeacherCurriculumLessons()
         : await getPublishedLessonsForCurrentUser();
 
@@ -361,7 +363,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       const newSourcesList: LessonSource[] = [];
 
       for (const l of onlineLessons) {
-        if (isTeacher) {
+        if (isAuthoringCurriculum) {
           const versionsResult = await getTeacherLessonVersions(l.id);
           if (versionsResult.data && versionsResult.data.length > 0) {
             newVersionMap[l.id] = versionsResult.data;

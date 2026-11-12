@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 import { getVerifiedServantAccount } from './roleService';
 import { hasRole } from './workspaces';
+import { findClassGroupForGrade } from './classGroups';
+import { publishLessonVersion } from './lessonPublishingService';
 import { 
   Lesson, 
   LessonVersion, 
@@ -134,6 +136,63 @@ async function getAuthenticatedServant(): Promise<{
   );
 }
 
+async function getActiveTeacherClassGroups(userId: string): Promise<{ groups: Set<string> | null; error: Error | null }> {
+  if (!supabase) return { groups: null, error: new Error('Supabase client is not configured') };
+  const { data: activeYear, error: yearError } = await supabase
+    .from('church_years')
+    .select('id')
+    .eq('is_active', true)
+    .maybeSingle();
+  if (yearError) return { groups: null, error: new Error(`Failed to load active church year: ${yearError.message}`) };
+  if (!activeYear) return { groups: new Set(), error: null };
+
+  const { data: assignments, error: assignmentError } = await supabase
+    .from('servant_class_assignments')
+    .select('class_instance_id')
+    .eq('servant_id', userId)
+    .eq('church_year_id', activeYear.id)
+    .eq('is_active', true);
+  if (assignmentError) return { groups: null, error: new Error(`Failed to load active teacher assignments: ${assignmentError.message}`) };
+  if (!assignments?.length) return { groups: new Set(), error: null };
+
+  const { data: instances, error: instanceError } = await supabase
+    .from('class_instances')
+    .select('class_group_id')
+    .eq('church_year_id', activeYear.id)
+    .in('id', assignments.map(assignment => assignment.class_instance_id));
+  if (instanceError) return { groups: null, error: new Error(`Failed to load assigned class groups: ${instanceError.message}`) };
+  return { groups: new Set((instances || []).map(instance => instance.class_group_id)), error: null };
+}
+
+async function teacherMayAuthorGrade(
+  user: { id: string; roles: import('../types').Role[]; role?: string },
+  grade: string
+): Promise<{ allowed: boolean; error: Error | null }> {
+  if (hasRole(user, 'admin')) return { allowed: true, error: null };
+  const targetGroup = findClassGroupForGrade(grade)?.id;
+  if (!targetGroup) return { allowed: false, error: null };
+  const assignments = await getActiveTeacherClassGroups(user.id);
+  if (assignments.error) return { allowed: false, error: assignments.error };
+  return { allowed: Boolean(assignments.groups?.has(targetGroup)), error: null };
+}
+
+async function teacherMayEditLesson(
+  user: { id: string; roles: import('../types').Role[]; role?: string },
+  lessonId: string
+): Promise<{ allowed: boolean; error: Error | null }> {
+  if (hasRole(user, 'admin')) return { allowed: true, error: null };
+  if (!supabase) return { allowed: false, error: new Error('Supabase client is not configured') };
+  const { data: lesson, error } = await supabase
+    .from('lessons')
+    .select('grade_level')
+    .eq('id', lessonId)
+    .maybeSingle();
+  if (error || !lesson) {
+    return { allowed: false, error: new Error(error?.message || 'Lesson not found') };
+  }
+  return teacherMayAuthorGrade(user, lesson.grade_level);
+}
+
 /**
  * 1. createLessonDraft(input)
  *
@@ -169,6 +228,13 @@ export async function createLessonDraft(
     const titleAr = (input.titleAr && input.titleAr.trim()) ? input.titleAr.trim() : titleEn;
     const category = input.category || 'bible';
     const gradeLevel = input.gradeLevel || '4th Grade';
+    const assignmentCheck = await teacherMayAuthorGrade(servantCheck.user, gradeLevel);
+    if (assignmentCheck.error || !assignmentCheck.allowed) {
+      return {
+        data: null,
+        error: assignmentCheck.error || new Error('You must have an active assignment for this lesson grade.')
+      };
+    }
     const nowIso = new Date().toISOString();
     const lessonId = input.id || generateUuid();
     const versionId = input.versionId || generateUuid();
@@ -610,6 +676,25 @@ export async function updateLessonDraft(
       };
     }
 
+    if (!hasRole(servantCheck.user, 'admin')) {
+      const currentAssignment = await teacherMayEditLesson(servantCheck.user, lessonId);
+      if (currentAssignment.error || !currentAssignment.allowed) {
+        return {
+          data: null,
+          error: currentAssignment.error || new Error('You must have an active assignment for this lesson grade.')
+        };
+      }
+      const targetAssignment = updates.gradeLevel
+        ? await teacherMayAuthorGrade(servantCheck.user, updates.gradeLevel)
+        : { allowed: true, error: null };
+      if (targetAssignment.error || !targetAssignment.allowed) {
+        return {
+          data: null,
+          error: targetAssignment.error || new Error('You must have an active assignment for the new lesson grade.')
+        };
+      }
+    }
+
     // Resolve target editable version
     let targetVersionId = updates.versionId;
     let targetVersion: DbLessonVersion | null = null;
@@ -769,6 +854,14 @@ export async function saveLessonSections(
       return { data: null, error: new Error('Version not found') };
     }
 
+    const assignmentCheck = await teacherMayEditLesson(servantCheck.user, versionRow.lesson_id);
+    if (assignmentCheck.error || !assignmentCheck.allowed) {
+      return {
+        data: null,
+        error: assignmentCheck.error || new Error('You must have an active assignment for this lesson grade.')
+      };
+    }
+
     if (versionRow.status === 'PUBLISHED' || versionRow.status === 'APPROVED') {
       return {
         data: null,
@@ -868,6 +961,14 @@ export async function updateLessonSection(
       return { data: null, error: new Error('Parent version not found') };
     }
 
+    const assignmentCheck = await teacherMayEditLesson(servantCheck.user, versionRow.lesson_id);
+    if (assignmentCheck.error || !assignmentCheck.allowed) {
+      return {
+        data: null,
+        error: assignmentCheck.error || new Error('You must have an active assignment for this lesson grade.')
+      };
+    }
+
     if (versionRow.status === 'PUBLISHED' || versionRow.status === 'APPROVED') {
       return {
         data: null,
@@ -941,6 +1042,13 @@ export async function getTeacherCurriculumLessons(): Promise<AuthoringResult<Les
     if (servantCheck.error || !servantCheck.user) {
       return { data: null, error: servantCheck.error };
     }
+    let assignedGroups: Set<string> | null = null;
+    if (!hasRole(servantCheck.user, 'admin')) {
+      const assignments = await getActiveTeacherClassGroups(servantCheck.user.id);
+      if (assignments.error) return { data: null, error: assignments.error };
+      assignedGroups = assignments.groups;
+      if (!assignedGroups?.size) return { data: [], error: null };
+    }
 
     // Query all lessons visible to this servant under RLS
     const { data: dbLessons, error: lessonsErr } = await supabase
@@ -956,9 +1064,14 @@ export async function getTeacherCurriculumLessons(): Promise<AuthoringResult<Les
       return { data: [], error: null };
     }
 
+    const lessonsForUser = assignedGroups
+      ? (dbLessons as DbLesson[]).filter(lesson =>
+          assignedGroups!.has(findClassGroupForGrade(lesson.grade_level)?.id || '')
+        )
+      : dbLessons as DbLesson[];
     const adaptedLessons: Lesson[] = [];
 
-    for (const l of dbLessons as DbLesson[]) {
+    for (const l of lessonsForUser) {
       // For each lesson, resolve its authoritative active version or its latest draft version
       let versionToUse: LessonVersion | null = null;
 
@@ -1086,8 +1199,8 @@ export interface PublishExpressLessonInput {
 }
 
 /**
- * Publishes or saves an express lesson directly to Supabase without AI dependency.
- * Creates the root public.lessons, public.lesson_versions, and public.lesson_sources.
+ * Saves an express lesson without AI dependency. Teacher-authored lessons remain drafts;
+ * an administrator's direct publication is finalized through the trusted publish API.
  */
 export async function publishExpressLesson(
   input: PublishExpressLessonInput
@@ -1107,10 +1220,23 @@ export async function publishExpressLesson(
     const titleAr = (input.titleAr && input.titleAr.trim()) ? input.titleAr.trim() : titleEn;
     const category = input.category || 'bible';
     const gradeLevel = input.gradeLevel || '4th Grade';
+    const assignmentCheck = await teacherMayAuthorGrade(servantCheck.user, gradeLevel);
+    if (assignmentCheck.error || !assignmentCheck.allowed) {
+      return {
+        data: null,
+        error: assignmentCheck.error || new Error('You must have an active assignment for this lesson grade.')
+      };
+    }
     const nowIso = new Date().toISOString();
     const lessonId = generateUuid();
     const versionId = generateUuid();
     const isPublished = input.publishDirectly !== false;
+    if (isPublished && !hasRole(servantCheck.user, 'admin')) {
+      return {
+        data: null,
+        error: new Error('Teachers must submit the lesson for review before it can be published.')
+      };
+    }
 
     // Calculate total points available from quiz difficulty multipliers
     const formattedQuizQuestions = (input.quiz || []).map((q, idx) => {
@@ -1166,11 +1292,11 @@ export async function publishExpressLesson(
       audio_url: input.audioUrl || null,
       pdf_worksheet_url: input.slidesUrl || null,
       points_reward: totalLessonPoints,
-      active_version_id: isPublished ? versionId : null,
-      lesson_status: isPublished ? 'published' : 'draft',
-      status: isPublished ? 'published' : 'draft',
-      approved_servant_name: isPublished ? (servantCheck.user.role || 'Servant') : null,
-      approved_at: isPublished ? nowIso : null,
+      active_version_id: null,
+      lesson_status: 'draft',
+      status: 'draft',
+      approved_servant_name: null,
+      approved_at: null,
       created_by: currentUserId,
       created_at: nowIso
     };
@@ -1198,8 +1324,8 @@ export async function publishExpressLesson(
       id: versionId,
       lesson_id: lessonId,
       version_number: 1,
-      status: isPublished ? 'PUBLISHED' : 'AI_DRAFT',
-      approved_by: isPublished ? (servantCheck.user.role || 'Servant') : null,
+      status: isPublished ? 'APPROVED' : 'AI_DRAFT',
+      approved_by: isPublished ? currentUserId : null,
       approved_at: isPublished ? nowIso : null,
       approval_note: isPublished ? 'Directly authored and approved by Sunday School servant' : null,
       created_by: currentUserId,
@@ -1240,7 +1366,10 @@ export async function publishExpressLesson(
       created_at: nowIso
     };
 
-    await supabase!.from('lesson_sections').insert([sectionRow]);
+    const { error: sectionError } = await supabase!.from('lesson_sections').insert([sectionRow]);
+    if (sectionError) {
+      return { data: null, error: new Error(`Failed to save lesson section: ${sectionError.message}`) };
+    }
 
     // 4. Register media as lesson sources for student viewers
     const sourcesToInsert: any[] = [];
@@ -1295,7 +1424,20 @@ export async function publishExpressLesson(
     }
 
     if (sourcesToInsert.length > 0) {
-      await supabase!.from('lesson_sources').insert(sourcesToInsert);
+      const { error: sourcesError } = await supabase!.from('lesson_sources').insert(sourcesToInsert);
+      if (sourcesError) {
+        return { data: null, error: new Error(`Failed to save lesson media: ${sourcesError.message}`) };
+      }
+    }
+
+    if (isPublished) {
+      const publication = await publishLessonVersion(lessonId, versionId);
+      if (publication.error || !publication.data) {
+        return {
+          data: null,
+          error: publication.error || new Error('The publication operation did not confirm success.')
+        };
+      }
     }
 
     const appLesson: Lesson = {

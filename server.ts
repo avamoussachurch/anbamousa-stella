@@ -7,6 +7,8 @@ import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import { isValidSundaySchoolGrade, parseHymnsTaxisLevel } from "./src/lib/hymnsTaxisLevel";
 import { createStorageReference, parseStorageReference } from "./src/lib/mediaStorageReference";
+import { hymnFromDatabase, hymnToDatabase, taxisFromDatabase, taxisToDatabase } from "./src/lib/hymnsTaxisPersistence";
+import { canEditOwnedTaxisItem, canManageHymnsTaxis, canPublishOwnedTaxisItem, canReadHymnsTaxis, canReviewTaxisItem } from "./src/lib/hymnsTaxisAuthorization";
 import { randomUUID } from "crypto";
 
 const app = express();
@@ -3424,6 +3426,28 @@ function getClassGroupIdForGrade(grade?: string | null): string {
   return 'primary_2';
 }
 
+function getAssignedClassGroupForLessonGrade(grade?: string | null): string | null {
+  const normalizedGrade = String(grade || '').toLowerCase().trim();
+  if (!normalizedGrade) return null;
+  const ordinalGrade = normalizedGrade.match(/\b(1[0-2]|[1-9])(st|nd|rd|th)\s+(?:grade|class)\b/);
+  if (ordinalGrade) {
+    const gradeNumber = Number(ordinalGrade[1]);
+    if (gradeNumber <= 3) return 'primary_1';
+    if (gradeNumber <= 6) return 'primary_2';
+    if (gradeNumber <= 9) return 'preparatory';
+    return 'secondary';
+  }
+  const groupId = getClassGroupIdForGrade(normalizedGrade);
+  if (
+    groupId === 'primary_2' &&
+    !(/\b(?:grade\s*[4-6]|[4-6](?:st|nd|rd|th)?(?:\s+grade)?|primary\s*[4-6]|primary_2)\b/.test(normalizedGrade) ||
+      ['رابعة ابتدائي', 'خامسة ابتدائي', 'ساتة ابتدائي', 'سادس', 'الصف الرابع', 'الصف الخامس', 'الصف السادس'].some(value => normalizedGrade.includes(value)))
+  ) {
+    return null;
+  }
+  return groupId;
+}
+
 const KNOWN_SERVANTS_DIRECTORY = [
   { id: 'mina', nameEn: 'Servant Mina', nameAr: 'الخادم مينا', email: 'mina@church.org', role: 'teacher' },
   { id: 'user_teacher_mina_101', nameEn: 'Servant Mina', nameAr: 'الخادم مينا', email: 'mina.servant@church.org', role: 'teacher' },
@@ -4750,6 +4774,8 @@ app.post("/api/church/publish-approved-lesson-version", async (req, res) => {
     if (!hasServerRole(authContext, 'teacher') && !hasServerRole(authContext, 'admin')) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only teachers and administrators may publish lessons." });
     }
+    const isAdmin = hasServerRole(authContext, 'admin');
+    const isTeacher = hasServerRole(authContext, 'teacher') && !isAdmin;
 
     const { lessonId, versionId } = req.body || {};
     if (typeof lessonId !== "string" || typeof versionId !== "string" || !lessonId || !versionId) {
@@ -4782,7 +4808,7 @@ app.post("/api/church/publish-approved-lesson-version", async (req, res) => {
     if (!version) {
       return res.status(404).json({ success: false, error: "VERSION_NOT_FOUND", message: "The lesson version was not found." });
     }
-    if (hasServerRole(authContext, 'teacher') && version.created_by !== authContext.userId) {
+    if (isTeacher && version.created_by !== authContext.userId) {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Teachers may publish only their own approved lesson versions." });
     }
     if (version.status !== "APPROVED" || !version.approved_by || !version.approved_at) {
@@ -4792,7 +4818,7 @@ app.post("/api/church/publish-approved-lesson-version", async (req, res) => {
         message: "Only approved versions with approval metadata can be published."
       });
     }
-    if (hasServerRole(authContext, 'teacher')) {
+    if (isTeacher) {
       const { data: lesson, error: lessonError } = await adminClient
         .from("lessons")
         .select("grade_level")
@@ -4802,14 +4828,7 @@ app.post("/api/church/publish-approved-lesson-version", async (req, res) => {
         return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: lessonError.message });
       }
 
-      const grade = String(lesson?.grade_level || "");
-      const classGroup = grade === "KG1" || grade === "KG2" ? "angels"
-        : ["Grade 1", "Grade 2", "Grade 3"].includes(grade) ? "primary_1"
-        : ["Grade 4", "Grade 5", "Grade 6"].includes(grade) ? "primary_2"
-        : ["Prep 1", "Prep 2", "Prep 3"].includes(grade) ? "preparatory"
-        : ["Secondary 1", "Secondary 2", "Secondary 3"].includes(grade) ? "secondary"
-        : ["University", "Youth"].includes(grade) ? "university"
-        : null;
+      const classGroup = getAssignedClassGroupForLessonGrade(lesson?.grade_level);
       if (!classGroup) {
         return res.status(403).json({ success: false, error: "FORBIDDEN", message: "This lesson grade has no assigned teacher class." });
       }
@@ -4891,6 +4910,39 @@ app.post("/api/church/publish-approved-lesson-version", async (req, res) => {
     }
     if (!published?.success) {
       return res.status(500).json({ success: false, error: "PUBLICATION_UNCONFIRMED", message: "The database did not confirm publication." });
+    }
+
+    const [{ data: publishedLesson, error: publishedLessonError }, { data: publishedVersion, error: publishedVersionError }] = await Promise.all([
+      adminClient
+        .from("lessons")
+        .select("active_version_id, lesson_status")
+        .eq("id", lessonId)
+        .maybeSingle(),
+      adminClient
+        .from("lesson_versions")
+        .select("status")
+        .eq("id", versionId)
+        .eq("lesson_id", lessonId)
+        .maybeSingle()
+    ]);
+    if (publishedLessonError || publishedVersionError) {
+      const readbackError = publishedLessonError || publishedVersionError;
+      return res.status(500).json({
+        success: false,
+        error: "PUBLICATION_VERIFICATION_FAILED",
+        message: readbackError.message
+      });
+    }
+    if (
+      publishedLesson?.active_version_id !== versionId ||
+      publishedLesson.lesson_status !== "published" ||
+      publishedVersion?.status !== "PUBLISHED"
+    ) {
+      return res.status(500).json({
+        success: false,
+        error: "PUBLICATION_UNVERIFIED",
+        message: "The database RPC returned success, but the published lesson state could not be confirmed."
+      });
     }
 
     return res.json({
@@ -5208,29 +5260,56 @@ app.get("/api/church/student-progress", async (req, res) => {
     }
     targetStudentId = authorizedStudentId;
 
-    const lessonForAccess = serverReviewState.lessons[lessonId] || {
-      id: lessonId,
-      classGroupId: resolveLessonClassGroupId(lessonId)
-    };
-    const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
-    if (!access.allowed) {
-      return res.status(403).json({
-        success: false,
-        error: "FORBIDDEN_CLASS_ACCESS",
-        message: access.reason || "Student is not enrolled in the class assigned to this lesson."
-      });
+    let progress;
+    if (process.env.NODE_ENV === 'test' && !isUuidStudentId(targetStudentId)) {
+      const lessonForAccess = serverReviewState.lessons[lessonId] || {
+        id: lessonId,
+        classGroupId: resolveLessonClassGroupId(lessonId)
+      };
+      const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
+      if (!access.allowed) {
+        return res.status(403).json({
+          success: false,
+          error: "FORBIDDEN_CLASS_ACCESS",
+          message: access.reason || "Student is not enrolled in the class assigned to this lesson."
+        });
+      }
+      ensurePublishedLessonAndVersion(lessonId);
+      progress = serverReviewState.progress[`${targetStudentId}_${lessonId}`] || null;
+    } else {
+      const client = getTrustedProgressClient();
+      const { data: lesson, error: lessonError } = await client
+        .from('lessons')
+        .select('active_version_id')
+        .eq('id', lessonId)
+        .maybeSingle();
+      if (lessonError) throw new Error(`Could not load active lesson version: ${lessonError.message}`);
+      if (!lesson?.active_version_id) {
+        return res.status(404).json({ success: false, error: 'LESSON_NOT_FOUND', message: 'No active published lesson version was found.' });
+      }
+      const { targetVersion } = await loadPublishedLessonVersionForStudent(
+        targetStudentId,
+        lessonId,
+        lesson.active_version_id
+      );
+      progress = await loadPersistedStudentLessonProgress(
+        targetStudentId,
+        lessonId,
+        lesson.active_version_id,
+        targetVersion.sections.length
+      );
     }
-    ensurePublishedLessonAndVersion(lessonId);
-
-    const key = `${targetStudentId}_${lessonId}`;
-    const progress = serverReviewState.progress[key] || null;
 
     return res.json({
       success: true,
       progress
     });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+    return res.status(err?.status || 500).json({
+      success: false,
+      error: err?.code || "PROGRESS_READ_FAILED",
+      message: err?.message || "Could not load persisted student progress."
+    });
   }
 });
 
@@ -5460,19 +5539,14 @@ async function persistLessonCompletion(
   studentId: string,
   lessonId: string,
   completedAt: string
-): Promise<{ pointsAwarded: number; totalPoints: number; completedAt: string } | null> {
+): Promise<{ pointsAwarded: number; totalPoints: number; completedAt: string }> {
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return null;
-  }
-
   const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey) {
-    throw new Error('SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY must be configured on the trusted server.');
+  if (!supabaseUrl || !serviceKey) {
+    throw new Error('Supabase URL and trusted server credentials are required to persist lesson completion.');
   }
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(lessonId)) {
-    throw new Error('The lesson ID is not a UUID accepted by public.lesson_progress.');
+  if (process.env.NODE_ENV !== 'test' && (!isUuidStudentId(studentId) || !isUuidStudentId(lessonId))) {
+    throw new Error('Student and lesson IDs must be UUIDs accepted by public.lesson_progress.');
   }
 
   const trustedClient = createClient(supabaseUrl, serviceKey, {
@@ -5503,6 +5577,136 @@ function isUuidStudentId(studentId: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(studentId);
 }
 
+function classGroupForLessonGrade(grade: string): string | null {
+  if (grade === 'KG1' || grade === 'KG2') return 'angels';
+  if (['Grade 1', 'Grade 2', 'Grade 3'].includes(grade)) return 'primary_1';
+  if (['Grade 4', 'Grade 5', 'Grade 6'].includes(grade)) return 'primary_2';
+  if (['Prep 1', 'Prep 2', 'Prep 3'].includes(grade)) return 'preparatory';
+  if (['Secondary 1', 'Secondary 2', 'Secondary 3'].includes(grade)) return 'secondary';
+  if (grade === 'University' || grade === 'Youth') return 'university';
+  return null;
+}
+
+interface ProgressLessonVersion {
+  lessonRecord: Record<string, any>;
+  targetVersion: Record<string, any>;
+  sectionIds: string[];
+  isPersisted: boolean;
+}
+
+async function loadPublishedLessonVersionForStudent(
+  studentId: string,
+  lessonId: string,
+  versionId: string
+): Promise<ProgressLessonVersion> {
+  if (!isUuidStudentId(studentId) || !isUuidStudentId(lessonId) || !isUuidStudentId(versionId)) {
+    throw Object.assign(new Error('Student, lesson, and version IDs must be valid Supabase UUIDs.'), { status: 400, code: 'INVALID_ID' });
+  }
+
+  const client = getTrustedProgressClient();
+  const { data: lesson, error: lessonError } = await client
+    .from('lessons')
+    .select('id, grade_level, active_version_id, status, lesson_status')
+    .eq('id', lessonId)
+    .maybeSingle();
+  if (lessonError) throw new Error(`Could not load the published lesson: ${lessonError.message}`);
+  if (!lesson) throw Object.assign(new Error('Published lesson was not found.'), { status: 404, code: 'LESSON_NOT_FOUND' });
+
+  const lessonStatus = String(lesson.status || lesson.lesson_status || '').toLowerCase();
+  if (lessonStatus !== 'published' || lesson.active_version_id !== versionId) {
+    throw Object.assign(new Error('The requested lesson version is not the active published version.'), { status: 404, code: 'INVALID_VERSION' });
+  }
+
+  const { data: version, error: versionError } = await client
+    .from('lesson_versions')
+    .select('id, lesson_id, status')
+    .eq('id', versionId)
+    .eq('lesson_id', lessonId)
+    .maybeSingle();
+  if (versionError) throw new Error(`Could not verify the active lesson version: ${versionError.message}`);
+  if (!version || version.status !== 'PUBLISHED') {
+    throw Object.assign(new Error('The active lesson version is not published.'), { status: 404, code: 'INVALID_VERSION' });
+  }
+
+  const { data: sections, error: sectionsError } = await client
+    .from('lesson_sections')
+    .select('id')
+    .eq('lesson_version_id', versionId);
+  if (sectionsError) throw new Error(`Could not load published lesson sections: ${sectionsError.message}`);
+  const sectionIds = (sections || []).map((section: { id: string }) => section.id);
+  if (sectionIds.length === 0 || sectionIds.some(sectionId => !isUuidStudentId(sectionId))) {
+    throw Object.assign(new Error('The active published lesson has no valid persisted section UUIDs.'), { status: 409, code: 'INVALID_SECTIONS' });
+  }
+
+  const expectedClassGroup = classGroupForLessonGrade(lesson.grade_level);
+  if (!expectedClassGroup) {
+    throw Object.assign(new Error('The lesson grade is not mapped to an active Sunday School class.'), { status: 409, code: 'INVALID_LESSON_GRADE' });
+  }
+  const { data: activeYear, error: yearError } = await client
+    .from('church_years')
+    .select('id')
+    .eq('is_active', true)
+    .maybeSingle();
+  if (yearError) throw new Error(`Could not verify the active church year: ${yearError.message}`);
+  if (!activeYear) {
+    throw Object.assign(new Error('There is no active church year for student class assignment.'), { status: 403, code: 'CLASS_NOT_ASSIGNED' });
+  }
+
+  const { data: memberships, error: membershipError } = await client
+    .from('class_memberships')
+    .select('class_instance_id')
+    .eq('student_id', studentId)
+    .eq('church_year_id', activeYear.id)
+    .eq('status', 'active');
+  if (membershipError) throw new Error(`Could not verify the student class assignment: ${membershipError.message}`);
+  const classInstanceIds = [...new Set((memberships || []).map((membership: { class_instance_id: string }) => membership.class_instance_id))];
+  if (classInstanceIds.length === 0) {
+    throw Object.assign(new Error('The student has no active class membership.'), { status: 403, code: 'CLASS_NOT_ASSIGNED' });
+  }
+
+  const { data: classInstances, error: classError } = await client
+    .from('class_instances')
+    .select('id, class_group_id')
+    .in('id', classInstanceIds)
+    .eq('church_year_id', activeYear.id);
+  if (classError) throw new Error(`Could not verify the assigned Sunday School class: ${classError.message}`);
+  if (!(classInstances || []).some((classInstance: { class_group_id: string }) => classInstance.class_group_id === expectedClassGroup)) {
+    throw Object.assign(new Error('The student is not assigned to a class for this lesson grade.'), { status: 403, code: 'CLASS_NOT_ASSIGNED' });
+  }
+
+  return {
+    lessonRecord: lesson,
+    targetVersion: { ...version, sections: sectionIds.map(id => ({ id })) },
+    sectionIds,
+    isPersisted: true
+  };
+}
+
+async function resolveStudentProgressLesson(
+  studentId: string,
+  lessonId: string,
+  versionId: string
+): Promise<ProgressLessonVersion> {
+  if (process.env.NODE_ENV === 'test' && !isUuidStudentId(studentId)) {
+    const lessonRecord = serverReviewState.lessons[lessonId] || {
+      id: lessonId,
+      classGroupId: resolveLessonClassGroupId(lessonId)
+    };
+    const access = checkStudentLessonAccess(studentId, lessonRecord);
+    if (!access.allowed) {
+      throw Object.assign(new Error(access.reason || 'Student is not assigned to this lesson class.'), { status: 403, code: 'FORBIDDEN_CLASS_ACCESS' });
+    }
+    const { lessonRecord: ensuredLesson, targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
+    return {
+      lessonRecord: ensuredLesson,
+      targetVersion,
+      sectionIds: (targetVersion.sections || []).map((section: any) => typeof section === 'string' ? section : section.id),
+      isPersisted: false
+    };
+  }
+  return loadPublishedLessonVersionForStudent(studentId, lessonId, versionId);
+}
+
 function getTrustedProgressClient() {
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
   const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -5531,6 +5735,42 @@ async function loadPersistedLessonSections(
     throw new Error(`Could not load persisted lesson section progress: ${error.message}`);
   }
   return Array.isArray(data?.sections_completed) ? data.sections_completed : null;
+}
+
+async function loadPersistedStudentLessonProgress(
+  studentId: string,
+  lessonId: string,
+  versionId: string,
+  totalSections: number
+) {
+  const client = getTrustedProgressClient();
+  const [{ data: completion, error: completionError }, sectionsCompleted] = await Promise.all([
+    client
+      .from('lesson_progress')
+      .select('completed, completed_at, points_earned')
+      .eq('student_id', studentId)
+      .eq('lesson_id', lessonId)
+      .maybeSingle(),
+    loadPersistedLessonSections(studentId, lessonId, versionId)
+  ]);
+  if (completionError) {
+    throw new Error(`Could not load persisted lesson completion: ${completionError.message}`);
+  }
+  const completed = Boolean(completion?.completed);
+  const sections = sectionsCompleted || [];
+  return {
+    studentId,
+    lessonId,
+    versionId,
+    status: completed ? 'COMPLETED' : sections.length ? 'IN_PROGRESS' : 'OPENED',
+    sectionsCompleted: sections,
+    totalSections,
+    completionPercent: completed ? 100 : Math.min(100, Math.round((sections.length / totalSections) * 100)),
+    startedAt: undefined,
+    completedAt: completed ? completion.completed_at : null,
+    pointsAwarded: completed,
+    pointsEarned: Number(completion?.points_earned || 0)
+  };
 }
 
 async function persistLessonSectionRead(input: {
@@ -5591,39 +5831,44 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       }
     }
 
-    const lessonForAccess = serverReviewState.lessons[lessonId] || {
-      id: lessonId,
-      classGroupId: resolveLessonClassGroupId(lessonId)
-    };
-    const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
-    if (!access.allowed) {
-      return res.status(403).json({
-        success: false,
-        error: "FORBIDDEN_CLASS_ACCESS",
-        message: access.reason || "Student is not enrolled in the class assigned to this lesson."
-      });
+    if (process.env.NODE_ENV === 'test' && !isUuidStudentId(targetStudentId)) {
+      const lessonForAccess = serverReviewState.lessons[lessonId] || {
+        id: lessonId,
+        classGroupId: resolveLessonClassGroupId(lessonId)
+      };
+      const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
+      if (!access.allowed) {
+        return res.status(403).json({
+          success: false,
+          error: "FORBIDDEN_CLASS_ACCESS",
+          message: access.reason || "Student is not enrolled in the class assigned to this lesson."
+        });
+      }
     }
-    const { targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
+    const resolved = await resolveStudentProgressLesson(targetStudentId, lessonId, versionId);
+    const { targetVersion } = resolved;
 
     const key = `${targetStudentId}_${lessonId}`;
     const existing = serverReviewState.progress[key];
-    const totalSections = targetVersion.sections?.length || targetVersion.sectionsCount || 1;
-    const persistedSections = isUuidStudentId(targetStudentId)
-      ? await loadPersistedLessonSections(targetStudentId, lessonId, versionId)
+    const totalSections = resolved.sectionIds.length;
+    const persistedProgress = resolved.isPersisted
+      ? await loadPersistedStudentLessonProgress(targetStudentId, lessonId, versionId, totalSections)
       : null;
 
-    if (existing) {
-      if (isUuidStudentId(targetStudentId)) {
-        existing.sectionsCompleted = persistedSections || [];
-        existing.versionId = versionId;
-        existing.totalSections = totalSections;
-        existing.completionPercent = Math.min(100, Math.round((existing.sectionsCompleted.length / totalSections) * 100));
-      }
+    if (persistedProgress) {
       return res.json({
         success: true,
-        progress: existing,
-        isNew: false
+        progress: persistedProgress,
+        isNew: !existing
       });
+    }
+
+    if (existing) {
+      existing.sectionsCompleted = await loadPersistedLessonSections(targetStudentId, lessonId, versionId) || existing.sectionsCompleted;
+      existing.versionId = versionId;
+      existing.totalSections = totalSections;
+      existing.completionPercent = Math.min(100, Math.round((existing.sectionsCompleted.length / totalSections) * 100));
+      return res.json({ success: true, progress: existing, isNew: false });
     }
 
     const newProgress = {
@@ -5631,9 +5876,9 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       lessonId,
       versionId,
       status: 'IN_PROGRESS',
-      sectionsCompleted: isUuidStudentId(targetStudentId) ? (persistedSections || []) : [],
+      sectionsCompleted: [],
       totalSections,
-      completionPercent: Math.min(100, Math.round(((persistedSections || []).length / totalSections) * 100)),
+      completionPercent: 0,
       startedAt: new Date().toISOString(),
       completedAt: null
     };
@@ -5646,7 +5891,11 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       isNew: true
     });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+    return res.status(err?.status || 500).json({
+      success: false,
+      error: err?.code || "PROGRESS_START_FAILED",
+      message: err?.message || "Could not start persisted lesson progress."
+    });
   }
 });
 
@@ -5675,21 +5924,9 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
       return;
     }
 
-    const lessonForAccess = serverReviewState.lessons[lessonId] || {
-      id: lessonId,
-      classGroupId: resolveLessonClassGroupId(lessonId)
-    };
-    const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
-    if (!access.allowed) {
-      return res.status(403).json({
-        success: false,
-        error: "FORBIDDEN_CLASS_ACCESS",
-        message: access.reason || "Student is not enrolled in the class assigned to this lesson."
-      });
-    }
-    const { lessonRecord, targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
-
-    if (sectionId === 'non-existent-section-id-404' || (targetVersion.sections && targetVersion.sections.length > 0 && !targetVersion.sections.some((s: any) => s.id === sectionId || s === sectionId))) {
+    const resolved = await resolveStudentProgressLesson(targetStudentId, lessonId, versionId);
+    const { targetVersion } = resolved;
+    if ((resolved.isPersisted && !isUuidStudentId(sectionId)) || !resolved.sectionIds.includes(sectionId)) {
       return res.status(400).json({
         success: false,
         error: "INVALID_SECTION",
@@ -5698,8 +5935,11 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
     }
 
     const key = `${targetStudentId}_${lessonId}`;
-    const totalSections = targetVersion.sections?.length || targetVersion.sectionsCount || 1;
-    let prog = serverReviewState.progress[key];
+    const totalSections = resolved.sectionIds.length;
+    const persistedProgress = resolved.isPersisted
+      ? await loadPersistedStudentLessonProgress(targetStudentId, lessonId, versionId, totalSections)
+      : null;
+    let prog = persistedProgress || serverReviewState.progress[key];
 
     if (prog?.status === 'COMPLETED' || prog?.pointsAwarded === true) {
       return res.status(409).json({
@@ -5723,7 +5963,7 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
       };
     }
 
-    const sectionsCompleted = isUuidStudentId(targetStudentId)
+    const sectionsCompleted = resolved.isPersisted
       ? await persistLessonSectionRead({
           studentId: targetStudentId,
           lessonId,
@@ -5750,16 +5990,21 @@ app.post("/api/church/student-progress/complete-section", async (req, res) => {
       prog.completedAt = null;
     }
 
-    serverReviewState.progress[key] = prog;
-    // Persist progress to server disk
-    savePersistentClassState();
+    if (!resolved.isPersisted) {
+      serverReviewState.progress[key] = prog;
+      savePersistentClassState();
+    }
 
     return res.json({
       success: true,
       progress: prog
     });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+    return res.status(err?.status || 500).json({
+      success: false,
+      error: err?.code || "SECTION_PROGRESS_FAILED",
+      message: err?.message || "Could not persist lesson section progress."
+    });
   }
 });
 
@@ -5780,26 +6025,33 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
       return;
     }
 
-    const lessonForAccess = serverReviewState.lessons[lessonId] || {
-      id: lessonId,
-      classGroupId: resolveLessonClassGroupId(lessonId)
-    };
-    const access = checkStudentLessonAccess(targetStudentId, lessonForAccess);
-    if (!access.allowed) {
-      return res.status(403).json({
-        success: false,
-        error: "FORBIDDEN_CLASS_ACCESS",
-        message: access.reason || "Student is not enrolled in the class assigned to this lesson."
-      });
-    }
-    const { lessonRecord, targetVersion } = ensurePublishedLessonAndVersion(lessonId, versionId);
+    const resolved = await resolveStudentProgressLesson(targetStudentId, lessonId, versionId);
+    const { lessonRecord, targetVersion } = resolved;
 
     const key = `${targetStudentId}_${lessonId}`;
-    let prog = serverReviewState.progress[key];
-    const totalSections = targetVersion.sections?.length || targetVersion.sectionsCount || 1;
+    const totalSections = resolved.sectionIds.length;
+    let prog = resolved.isPersisted
+      ? await loadPersistedStudentLessonProgress(targetStudentId, lessonId, versionId, totalSections)
+      : serverReviewState.progress[key];
+    if (!prog && resolved.isPersisted) {
+      prog = {
+        studentId: targetStudentId,
+        lessonId,
+        versionId,
+        status: 'IN_PROGRESS',
+        sectionsCompleted: [],
+        totalSections,
+        completionPercent: 0,
+        startedAt: null,
+        completedAt: null
+      };
+    }
 
     // Premature completion rejection: All sections must be finished
-    if (!prog || (prog.sectionsCompleted && prog.sectionsCompleted.length < totalSections)) {
+    if (!prog || (
+      prog.status !== 'COMPLETED' &&
+      !resolved.sectionIds.every((sectionId: string) => prog.sectionsCompleted.includes(sectionId))
+    )) {
       return res.status(400).json({
         success: false,
         error: "INCOMPLETE_SECTIONS",
@@ -5820,18 +6072,16 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
       });
     }
 
-    const isFirstCompletion = persistedCompletion
-      ? persistedCompletion.pointsAwarded > 0
-      : !prog.pointsAwarded;
+    const isFirstCompletion = persistedCompletion.pointsAwarded > 0;
     prog.status = 'COMPLETED';
-    prog.completedAt = persistedCompletion?.completedAt || proposedCompletedAt;
+    prog.completedAt = persistedCompletion.completedAt || proposedCompletedAt;
     prog.completionPercent = 100;
     prog.pointsAwarded = true;
 
     // Authoritative Points Calculation
     const currentPoints = serverReviewState.userPoints[targetStudentId] ?? (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0);
-    const pointsEarned = persistedCompletion?.pointsAwarded ?? (isFirstCompletion ? 50 : 0);
-    const newTotalPoints = persistedCompletion?.totalPoints ?? currentPoints + pointsEarned;
+    const pointsEarned = persistedCompletion.pointsAwarded;
+    const newTotalPoints = persistedCompletion.totalPoints;
     serverReviewState.userPoints[targetStudentId] = newTotalPoints;
 
     // Authoritative Cairo-Local Streak Calculation
@@ -5895,7 +6145,10 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
     };
 
     // Save persistent class & learning state to file
-    savePersistentClassState();
+    if (!resolved.isPersisted) {
+      serverReviewState.progress[key] = prog;
+      savePersistentClassState();
+    }
 
     return res.json({
       success: true,
@@ -5912,7 +6165,11 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
       completionHistory: serverReviewState.completionHistory[targetStudentId] || []
     });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: err?.message || "Server error" });
+    return res.status(err?.status || 500).json({
+      success: false,
+      error: err?.code || "LESSON_COMPLETION_FAILED",
+      message: err?.message || "Could not persist lesson completion."
+    });
   }
 });
 
@@ -6055,12 +6312,216 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
 });
 
 // 5. Get Student Progress Summary (Cross-Device, Fresh Session & Dependent UI Sync)
+async function loadPersistedStudentProgressSummary(studentId: string) {
+  const client = getTrustedProgressClient();
+  const [
+    { data: profile, error: profileError },
+    { data: completionRows, error: completionError },
+    { data: sectionRows, error: sectionError },
+    { data: publishedLessons, error: lessonsError },
+    { data: activeYear, error: yearError }
+  ] = await Promise.all([
+    client.from('profiles').select('points, current_streak, longest_streak, last_active').eq('id', studentId).maybeSingle(),
+    client.from('lesson_progress')
+      .select('lesson_id, completed, points_earned, completed_at')
+      .eq('student_id', studentId),
+    client.from('lesson_section_progress')
+      .select('lesson_id, version_id, sections_completed, total_sections, updated_at')
+      .eq('student_id', studentId),
+    client.from('lessons')
+      .select('id, active_version_id, grade_level, status')
+      .eq('status', 'published'),
+    client.from('church_years').select('id').eq('is_active', true).maybeSingle()
+  ]);
+  if (profileError) throw new Error(`Could not load student points: ${profileError.message}`);
+  if (!profile) throw new Error('Student profile was not found.');
+  if (completionError) throw new Error(`Could not load persisted lesson completions: ${completionError.message}`);
+  if (sectionError) throw new Error(`Could not load persisted lesson sections: ${sectionError.message}`);
+  if (lessonsError) throw new Error(`Could not load published lessons: ${lessonsError.message}`);
+  if (yearError) throw new Error(`Could not load the active church year: ${yearError.message}`);
+
+  const completions = completionRows || [];
+  const sectionProgress = sectionRows || [];
+  const lessonsById = new Map<string, any>((publishedLessons || []).map((lesson: any) => [lesson.id, lesson]));
+  const progressLessonIds = Array.from(new Set([
+    ...completions.map((row: any) => row.lesson_id),
+    ...sectionProgress.map((row: any) => row.lesson_id)
+  ]));
+  if (progressLessonIds.length > 0) {
+    const { data: progressLessons, error } = await client
+      .from('lessons')
+      .select('id, active_version_id, grade_level, status')
+      .in('id', progressLessonIds);
+    if (error) throw new Error(`Could not load lessons referenced by progress: ${error.message}`);
+    for (const lesson of progressLessons || []) lessonsById.set(lesson.id, lesson);
+  }
+
+  const classGroupIds = new Set<string>();
+  if (activeYear?.id) {
+    const { data: memberships, error: membershipError } = await client
+      .from('class_memberships')
+      .select('class_instance_id')
+      .eq('student_id', studentId)
+      .eq('church_year_id', activeYear.id)
+      .eq('status', 'active');
+    if (membershipError) throw new Error(`Could not load active student class assignments: ${membershipError.message}`);
+    const classInstanceIds = Array.from(new Set((memberships || []).map((row: any) => row.class_instance_id)));
+    if (classInstanceIds.length > 0) {
+      const { data: classInstances, error: classError } = await client
+        .from('class_instances')
+        .select('id, class_group_id')
+        .in('id', classInstanceIds)
+        .eq('church_year_id', activeYear.id);
+      if (classError) throw new Error(`Could not load assigned class groups: ${classError.message}`);
+      for (const classInstance of classInstances || []) {
+        if (typeof classInstance.class_group_id === 'string') classGroupIds.add(classInstance.class_group_id);
+      }
+    }
+  }
+
+  const lessonRows = Array.from(lessonsById.values());
+  const activeVersionIds = Array.from(new Set(
+    lessonRows.map((lesson: any) => lesson.active_version_id).filter(Boolean)
+  ));
+  const versionsById = new Map<string, any>();
+  if (activeVersionIds.length > 0) {
+    const { data: versions, error } = await client
+      .from('lesson_versions')
+      .select('id, status')
+      .in('id', activeVersionIds);
+    if (error) throw new Error(`Could not verify published lesson versions: ${error.message}`);
+    for (const version of versions || []) versionsById.set(version.id, version);
+  }
+
+  const assignedLessons = lessonRows.filter((lesson: any) => {
+    if (lesson.status !== 'published' || !lesson.active_version_id ||
+        versionsById.get(lesson.active_version_id)?.status !== 'PUBLISHED') return false;
+    const classGroup = classGroupForLessonGrade(lesson.grade_level);
+    return Boolean(classGroup && classGroupIds.has(classGroup));
+  });
+
+  const sectionProgressByLesson = new Map<string, any>();
+  for (const row of sectionProgress) sectionProgressByLesson.set(row.lesson_id, row);
+  const sectionVersionIds = Array.from(new Set([
+    ...activeVersionIds,
+    ...sectionProgress.map((row: any) => row.version_id).filter(Boolean)
+  ]));
+  const sectionCounts = new Map<string, number>();
+  if (sectionVersionIds.length > 0) {
+    const { data: sections, error } = await client
+      .from('lesson_sections')
+      .select('lesson_version_id')
+      .in('lesson_version_id', sectionVersionIds);
+    if (error) throw new Error(`Could not count published lesson sections: ${error.message}`);
+    for (const section of sections || []) {
+      sectionCounts.set(section.lesson_version_id, (sectionCounts.get(section.lesson_version_id) || 0) + 1);
+    }
+  }
+
+  const allProgress: Record<string, any> = {};
+  for (const lessonId of progressLessonIds) {
+    const completion = completions.find((row: any) => row.lesson_id === lessonId);
+    const savedSections = sectionProgressByLesson.get(lessonId);
+    const lesson = lessonsById.get(lessonId);
+    const activeVersionId = lesson?.active_version_id || savedSections?.version_id;
+    const versionMatchesActive = !lesson?.active_version_id ||
+      savedSections?.version_id === lesson.active_version_id;
+    const sectionsCompleted = versionMatchesActive && Array.isArray(savedSections?.sections_completed)
+      ? savedSections.sections_completed
+      : [];
+    const completed = Boolean(completion?.completed);
+    const totalSections = Number(savedSections?.total_sections) ||
+      (activeVersionId ? sectionCounts.get(activeVersionId) || 0 : 0);
+    allProgress[lessonId] = {
+      studentId,
+      lessonId,
+      versionId: activeVersionId,
+      status: completed ? 'COMPLETED' : sectionsCompleted.length ? 'IN_PROGRESS' : 'OPENED',
+      sectionsCompleted,
+      totalSections,
+      completionPercent: completed ? 100 : totalSections > 0
+        ? Math.min(100, Math.round((sectionsCompleted.length / totalSections) * 100))
+        : 0,
+      startedAt: savedSections?.updated_at,
+      completedAt: completed ? completion?.completed_at : null,
+      pointsAwarded: completed,
+      pointsEarned: Number(completion?.points_earned || 0)
+    };
+  }
+
+  const completedRows = completions.filter((row: any) => row.completed && row.completed_at);
+  const completedLessonIds = completedRows.map((row: any) => row.lesson_id);
+  const rememberedStreak = serverReviewState.userStreaks[studentId];
+  const streak = calculateCairoStreakForStudent([
+    ...completedRows.map((row: any) => row.completed_at),
+    ...(Array.isArray(rememberedStreak?.activeCairoDays) ? rememberedStreak.activeCairoDays : [])
+  ]);
+  const storedLastActive = profile.last_active ? getCairoDateString(profile.last_active) : '';
+  const latestCairoDate = rememberedStreak?.lastActiveCairoDate || streak.lastActiveCairoDate || storedLastActive;
+  const todayCairo = getCairoDateString();
+  const currentStreak = Math.max(streak.currentStreak, Number(rememberedStreak?.currentStreak) || 0, Number(profile.current_streak) || 0);
+  const longestStreak = Math.max(streak.longestStreak, Number(rememberedStreak?.longestStreak) || 0, Number(profile.longest_streak) || 0, currentStreak);
+  const history = [...(serverReviewState.completionHistory[studentId] || [])];
+  const persistedHistory = [...completedRows]
+    .sort((left: any, right: any) => Date.parse(right.completed_at) - Date.parse(left.completed_at))
+    .map((row: any) => ({
+      type: 'LESSON_COMPLETED',
+      lessonId: row.lesson_id,
+      completedAt: row.completed_at,
+      pointsEarned: Number(row.points_earned || 0)
+    }));
+  for (const item of persistedHistory) {
+    if (!history.some((entry: any) => entry.lessonId === item.lessonId && entry.type === item.type)) {
+      history.push(item);
+    }
+  }
+  const mastery: Record<string, any> = {};
+  for (const [key, value] of Object.entries(serverReviewState.mastery)) {
+    if (key.startsWith(`${studentId}_`)) mastery[key.slice(studentId.length + 1)] = value;
+  }
+  const quizScores: Record<string, number> = {};
+  for (const [key, attempts] of Object.entries(serverReviewState.attempts)) {
+    if (!key.startsWith(`${studentId}_`) || !Array.isArray(attempts) || attempts.length === 0) continue;
+    const latest = attempts[attempts.length - 1];
+    if (typeof latest?.percentage === 'number') quizScores[key.slice(studentId.length + 1)] = latest.percentage;
+  }
+
+  return {
+    success: true,
+    studentId,
+    classGroupId: classGroupIds.values().next().value || null,
+    completedLessonIds,
+    completedCount: completedLessonIds.length,
+    totalAssignedLessons: assignedLessons.length,
+    progressPercent: assignedLessons.length
+      ? Math.round((completedLessonIds.filter((id: string) => assignedLessons.some((lesson: any) => lesson.id === id)).length / assignedLessons.length) * 100)
+      : 0,
+    allProgress,
+    mastery,
+    quizScores,
+    points: Number(profile.points || 0),
+    streak: {
+      currentStreak,
+      longestStreak,
+      lastActiveCairoDate: latestCairoDate,
+      isActiveToday: latestCairoDate === todayCairo
+    },
+    completionHistory: history,
+    serverCairoDate: getCairoDateString(),
+    serverCairoTime: getCairoTimeString()
+  };
+}
+
 app.get("/api/church/student-progress/summary", async (req, res) => {
   try {
     const requestedStudentId = String(req.query.studentId || '');
     const targetStudentId = await authorizeStudentDataAccess(req, res, requestedStudentId);
     if (!targetStudentId) {
       return;
+    }
+    if (isUuidStudentId(targetStudentId)) {
+      const summary = await loadPersistedStudentProgressSummary(targetStudentId);
+      return res.json(summary);
     }
 
     const studentProgressMap: Record<string, any> = {};
@@ -7753,8 +8214,178 @@ app.get("/api/church/my-class", async (req, res) => {
       const targetUserId = authContext.userId;
       let assignedClassGroupId = 'primary_2';
 
+      if (token && !token.startsWith("test_jwt_") && !token.startsWith("test_token_")) {
+        if (!supabaseUrl || !supabaseAnonKey) {
+          return res.status(503).json({
+            success: false,
+            error: "CLASS_DATA_NOT_CONFIGURED",
+            message: "Authoritative class data is not configured."
+          });
+        }
+        try {
+          const client = createClient(supabaseUrl, supabaseAnonKey, {
+            global: { headers: { Authorization: `Bearer ${token}` } },
+            auth: { persistSession: false, autoRefreshToken: false }
+          });
+          const { data: activeYear, error: yearError } = await client
+            .from('church_years')
+            .select('id, name')
+            .eq('is_active', true)
+            .maybeSingle();
+          if (yearError) {
+            return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: "Failed to read the active church year." });
+          }
+          if (!activeYear) {
+            return res.status(403).json({ success: false, error: "NO_ACTIVE_CHURCH_YEAR", message: "No active church year is configured." });
+          }
+
+          const requestedCode = String(req.query.classCode || '').trim();
+          const requestedGroup = String(req.query.classGroupId || '').trim();
+          let assignedInstances: any[] = [];
+          if (hasServerRole(authContext, 'admin')) {
+            let query = client
+              .from('class_instances')
+              .select('id, class_group_id, name_en, name_ar, join_code')
+              .eq('church_year_id', activeYear.id);
+            if (requestedCode) query = query.eq('join_code', requestedCode);
+            if (requestedGroup) query = query.eq('class_group_id', requestedGroup);
+            const { data, error } = await query;
+            if (error) {
+              return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: "Failed to read active class instances." });
+            }
+            assignedInstances = data || [];
+          } else {
+            const { data: assignments, error: assignmentError } = await client
+              .from('servant_class_assignments')
+              .select('class_instance_id')
+              .eq('servant_id', targetUserId)
+              .eq('church_year_id', activeYear.id)
+              .eq('is_active', true);
+            if (assignmentError) {
+              return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: "Failed to read active teacher assignments." });
+            }
+            if (!assignments?.length) {
+              return res.status(403).json({ success: false, error: "NO_ACTIVE_ASSIGNMENT", message: "No active class assignment was found for this teacher." });
+            }
+            const { data, error: instanceError } = await client
+              .from('class_instances')
+              .select('id, class_group_id, name_en, name_ar, join_code')
+              .eq('church_year_id', activeYear.id)
+              .in('id', assignments.map((assignment: any) => assignment.class_instance_id));
+            if (instanceError) {
+              return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: "Failed to read assigned class instances." });
+            }
+            assignedInstances = (data || []).filter((instance: any) =>
+              (!requestedCode || instance.join_code === requestedCode) &&
+              (!requestedGroup || instance.class_group_id === requestedGroup)
+            );
+          }
+
+          if (!assignedInstances.length) {
+            return res.status(403).json({
+              success: false,
+              error: "CLASS_NOT_ASSIGNED",
+              message: "No active class assigned to this account matches the requested class."
+            });
+          }
+          const assignedInstance = assignedInstances[0];
+          assignedClassGroupId = assignedInstance.class_group_id;
+
+          const { data: memberships, error: membershipError } = await client
+            .from('class_memberships')
+            .select('id, student_id, exact_grade, joined_at')
+            .eq('church_year_id', activeYear.id)
+            .eq('class_instance_id', assignedInstance.id)
+            .eq('status', 'active');
+          if (membershipError) {
+            return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: "Failed to read the active class roster." });
+          }
+
+          const roster: any[] = [];
+          if (memberships?.length) {
+            const { data: profiles, error: profilesError } = await client
+              .from('profiles')
+              .select('id, name, avatar, hymns_taxis_level')
+              .in('id', memberships.map((membership: any) => membership.student_id));
+            if (profilesError) {
+              return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: "Failed to read student profiles." });
+            }
+            const profileById = new Map((profiles || []).map((profile: any) => [profile.id, profile]));
+            for (const membership of memberships) {
+              const profile = profileById.get(membership.student_id);
+              roster.push({
+                id: membership.student_id,
+                membershipId: membership.id,
+                name: profile?.name || 'Student',
+                grade: membership.exact_grade,
+                classGroupId: assignedClassGroupId,
+                avatarUrl: profile?.avatar || undefined,
+                hymnsTaxisLevel: parseHymnsTaxisLevel(profile?.hymns_taxis_level) || undefined,
+                joinedAt: membership.joined_at
+              });
+            }
+          }
+
+          const { data: teamAssignments, error: teamError } = await client
+            .from('servant_class_assignments')
+            .select('id, servant_id')
+            .eq('class_instance_id', assignedInstance.id)
+            .eq('church_year_id', activeYear.id)
+            .eq('is_active', true);
+          if (teamError) {
+            return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: "Failed to read the active servant team." });
+          }
+          let servantTeam: any[] = [];
+          if (teamAssignments?.length) {
+            const { data: teamProfiles, error: teamProfilesError } = await client
+              .from('profiles')
+              .select('id, name, email, role, avatar')
+              .in('id', teamAssignments.map((assignment: any) => assignment.servant_id));
+            if (teamProfilesError) {
+              return res.status(500).json({ success: false, error: "DATABASE_ERROR", message: "Failed to read servant profiles." });
+            }
+            const teamProfileById = new Map((teamProfiles || []).map((profile: any) => [profile.id, profile]));
+            servantTeam = teamAssignments.map((assignment: any) => {
+              const profile = teamProfileById.get(assignment.servant_id);
+              return {
+                id: assignment.servant_id,
+                assignmentId: assignment.id,
+                name: profile?.name || 'Servant',
+                email: profile?.email || '',
+                role: profile?.role || 'teacher',
+                avatar: profile?.avatar || undefined
+              };
+            });
+          }
+
+          return res.json({
+            success: true,
+            classInfo: {
+              servantId: targetUserId,
+              role: getPrimaryRoleForLegacyResponse(authContext),
+              classGroupId: assignedClassGroupId,
+              className: assignedInstance.name_en,
+              classNameAr: assignedInstance.name_ar,
+              servants: servantTeam.map((servant: any) => servant.name),
+              servantTeam,
+              churchYear: activeYear.name,
+              classCode: assignedInstance.join_code,
+              classInstanceId: assignedInstance.id
+            },
+            roster
+          });
+        } catch (error) {
+          console.error("Supabase teacher my-class read failed:", error);
+          return res.status(500).json({
+            success: false,
+            error: "DATABASE_ERROR",
+            message: "Failed to read the teacher's assigned class from Supabase."
+          });
+        }
+      }
+
       // 1. Authoritative Supabase persistence check for authenticated online users (Phase 3C.2 & Phase 3C.3)
-      if (supabaseUrl && supabaseAnonKey && token && !token.startsWith("test_jwt_")) {
+      if (supabaseUrl && supabaseAnonKey && token && !token.startsWith("test_jwt_") && !token.startsWith("test_token_")) {
         try {
           const client = createClient(supabaseUrl, supabaseAnonKey, {
             global: { headers: { Authorization: `Bearer ${token}` } },
@@ -8196,6 +8827,13 @@ app.get("/api/church/class-roster", async (req, res) => {
   try {
     let targetClassGroupId = String(req.query.classGroupId || '');
     const authContext = await verifyServerRequestAuth(req);
+    if (authContext.isAuthenticated && hasLiveSupabaseSession(req)) {
+      return res.status(410).json({
+        success: false,
+        error: "USE_ASSIGNED_CLASS_ENDPOINT",
+        message: "Load teacher class rosters through /api/church/my-class so the active assignment is verified."
+      });
+    }
 
     if (authContext.isAuthenticated) {
       if (hasServerRole(authContext, 'student')) {
@@ -13744,6 +14382,255 @@ app.post("/api/church/hymns/review", async (req, res) => {
   }
 });
 
+app.use(async (req, res, next) => {
+  const collectionPath = '/api/church/hymns';
+  const itemMatch = req.path.match(/^\/api\/church\/hymns\/([^/]+)(?:\/(unpublish|restore))?$/);
+  const isCollectionRequest = req.path === collectionPath && ['GET', 'POST'].includes(req.method);
+  const isItemRequest = Boolean(itemMatch && (
+    (['GET', 'PUT'].includes(req.method) && !itemMatch[2]) ||
+    (req.method === 'POST' && ['unpublish', 'restore'].includes(itemMatch[2] || ''))
+  ));
+  if (!isCollectionRequest && !isItemRequest) return next();
+
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const canManage = authContext.isAuthenticated && canManageHymnsTaxis(authContext.roles);
+    const studentView = authContext.isAuthenticated && authContext.roles.includes('student') && !canManage;
+    if (!authContext.isAuthenticated || !canReadHymnsTaxis(authContext.roles)) {
+      return res.status(authContext.isAuthenticated ? 403 : 401).json({
+        success: false,
+        error: authContext.isAuthenticated ? 'FORBIDDEN' : 'UNAUTHORIZED',
+        message: 'A verified student, teacher, or admin account is required.'
+      });
+    }
+    if (!canManage && req.method !== 'GET') {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Only teachers and admins can manage Hymns.' });
+    }
+
+    const db = getRoleRequestClient(req);
+    const getStudentProfile = async () => {
+      const { data, error } = await db
+        .from('profiles')
+        .select('hymns_taxis_level, grade')
+        .eq('id', authContext.userId)
+        .maybeSingle();
+      if (error) throw new Error(`Could not load student curriculum profile: ${error.message}`);
+      return data as { hymns_taxis_level: number | null; grade: string | null } | null;
+    };
+    const sendDbError = (error: { code?: string; message?: string }, operation: string) => {
+      console.error(`${operation} failed:`, error.message || error);
+      const status = error.code === '42501' ? 403 : error.code === '23505' ? 409 : 500;
+      return res.status(status).json({
+        success: false,
+        error: status === 403 ? 'FORBIDDEN' : status === 409 ? 'CONFLICT' : 'SUPABASE_ERROR',
+        message: error.message || `Supabase could not ${operation}.`
+      });
+    };
+    const validHymnPayload = (payload: any, requireAll: boolean) => {
+      const requiredText = ['titleAr', 'titleEn', 'titleCoptic', 'seasonAr', 'seasonEn'];
+      if (requireAll && requiredText.some(field => typeof payload?.[field] !== 'string' || !payload[field].trim())) return false;
+      if (payload?.titleAr !== undefined && (typeof payload.titleAr !== 'string' || !payload.titleAr.trim())) return false;
+      if (payload?.titleEn !== undefined && (typeof payload.titleEn !== 'string' || !payload.titleEn.trim())) return false;
+      if (payload?.occasionTag !== undefined && !['annual', 'kiahk', 'lent', 'pascha', 'resurrection', 'st_mary'].includes(payload.occasionTag)) return false;
+      if (payload?.difficulty !== undefined && !['easy', 'medium', 'advanced'].includes(payload.difficulty)) return false;
+      if (payload?.level !== undefined && parseHymnsTaxisLevel(payload.level) === null) return false;
+      if (payload?.durationSec !== undefined && (!Number.isInteger(Number(payload.durationSec)) || Number(payload.durationSec) < 0)) return false;
+      if (payload?.lines !== undefined && !Array.isArray(payload.lines)) return false;
+      if (payload?.status !== undefined && !['draft', 'published'].includes(payload.status)) return false;
+      return true;
+    };
+    const hymnSnapshot = (hymn: any, userId: string, savedAt: string) => ({
+      ...hymn,
+      savedBy: userId,
+      savedAt
+    });
+
+    if (isCollectionRequest && req.method === 'GET') {
+      let level: number | null = req.query.level ? parseHymnsTaxisLevel(req.query.level) : null;
+      if (req.query.level && level === null) {
+        return res.status(400).json({ success: false, error: 'INVALID_LEVEL', message: 'Level must be 1, 2, or 3.' });
+      }
+      if (studentView) {
+        const profile = await getStudentProfile();
+        const assignedLevel = parseHymnsTaxisLevel(profile?.hymns_taxis_level);
+        if (assignedLevel === null) {
+          return res.status(409).json({ success: false, error: 'LEVEL_SETUP_REQUIRED', message: 'Choose your shared Hymns and Taxis level to view lessons.' });
+        }
+        if (level !== null && level !== assignedLevel) {
+          return res.status(403).json({ success: false, error: 'HYMN_LEVEL_ACCESS_DENIED', message: 'The requested level is not assigned to this student.' });
+        }
+        level = assignedLevel;
+      }
+      let query = db.from('hymns').select('*').order('updated_at', { ascending: false });
+      if (level !== null) query = query.eq('level', level);
+      if (studentView) query = query.eq('status', 'published');
+      if (typeof req.query.season === 'string' && req.query.season !== 'all') query = query.eq('occasion_tag', req.query.season);
+      if (canManage && typeof req.query.status === 'string' && req.query.status !== 'all') query = query.eq('status', req.query.status);
+      const { data, error } = await query;
+      if (error) return sendDbError(error, 'load Hymns');
+      const items = (data || []).map(hymnFromDatabase);
+      return res.json({
+        success: true,
+        items,
+        enrolledLevel: studentView ? level : null,
+        isApproved: studentView
+      });
+    }
+
+    if (isItemRequest && req.method === 'GET' && itemMatch) {
+      if (!itemMatch[2] && ['enroll', 'review', 'requests', 'my-enrollment', 'roster-requests'].includes(itemMatch[1])) {
+        return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Hymn not found.' });
+      }
+      const { data, error } = await db.from('hymns').select('*').eq('id', itemMatch[1]).maybeSingle();
+      if (error) return sendDbError(error, 'load Hymn');
+      if (!data) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Hymn not found.' });
+      const hymn = hymnFromDatabase(data);
+      if (studentView) {
+        const profile = await getStudentProfile();
+        const assignedLevel = parseHymnsTaxisLevel(profile?.hymns_taxis_level);
+        if (assignedLevel === null) {
+          return res.status(409).json({ success: false, error: 'LEVEL_SETUP_REQUIRED', message: 'Choose your shared Hymns and Taxis level to view lessons.' });
+        }
+        if (hymn.status !== 'published' || hymn.level !== assignedLevel) {
+          return res.status(403).json({ success: false, error: 'HYMN_ACCESS_DENIED', message: 'This Hymn is not available to this student.' });
+        }
+      }
+      return res.json({ success: true, hymn });
+    }
+
+    if (isCollectionRequest && req.method === 'POST') {
+      const body = req.body || {};
+      if (!validHymnPayload(body, false) || typeof body.titleAr !== 'string' || !body.titleAr.trim() ||
+          parseHymnsTaxisLevel(body.level) === null) {
+        return res.status(400).json({ success: false, error: 'VALIDATION_FAILED', message: 'A title and valid level (1, 2, or 3) are required; Hymn fields must match the supported curriculum values.' });
+      }
+      const id = typeof body.id === 'string' && body.id.trim() ? body.id.trim() : `hymn_${randomUUID()}`;
+      if (id.length > 200) return res.status(400).json({ success: false, error: 'INVALID_ID', message: 'Hymn ID is too long.' });
+      const desiredStatus = body.status === 'published' ? 'published' : 'draft';
+      const insert = hymnToDatabase({
+        ...body,
+        titleEn: body.titleEn || body.titleAr,
+        titleCoptic: body.titleCoptic || '',
+        seasonAr: body.seasonAr || 'طقس سنوي',
+        seasonEn: body.seasonEn || 'Annual',
+        occasionTag: body.occasionTag || 'annual',
+        difficulty: body.difficulty || 'easy',
+        durationSec: Number(body.durationSec || 0),
+        lines: Array.isArray(body.lines) ? body.lines : []
+      });
+      delete insert.status;
+      const { data: created, error } = await db.from('hymns')
+        .insert({ id, ...insert, version: 1, history: [] })
+        .select('*')
+        .single();
+      if (error) return sendDbError(error, 'create Hymn');
+      if (!created) return res.status(500).json({ success: false, error: 'WRITE_UNCONFIRMED', message: 'Supabase did not confirm the Hymn insert.' });
+      if (desiredStatus === 'published') {
+        const publishedAt = new Date().toISOString();
+        const { data: published, error: publishError } = await db.from('hymns')
+          .update({ status: 'published', published_at: publishedAt, updated_at: publishedAt })
+          .eq('id', id)
+          .select('*')
+          .single();
+        if (publishError) return sendDbError(publishError, 'publish Hymn');
+        if (!published) return res.status(500).json({ success: false, error: 'WRITE_UNCONFIRMED', message: 'The Hymn draft was created, but Supabase did not confirm publication.' });
+        return res.status(201).json({ success: true, hymn: hymnFromDatabase(published) });
+      }
+      return res.status(201).json({ success: true, hymn: hymnFromDatabase(created) });
+    }
+
+    if (isItemRequest && itemMatch && req.method === 'PUT' && !itemMatch[2]) {
+      const body = req.body || {};
+      if (!validHymnPayload(body, false)) {
+        return res.status(400).json({ success: false, error: 'VALIDATION_FAILED', message: 'Hymn fields must match the supported curriculum values.' });
+      }
+      const { data: existing, error: readError } = await db.from('hymns').select('*').eq('id', itemMatch[1]).maybeSingle();
+      if (readError) return sendDbError(readError, 'load Hymn for update');
+      if (!existing) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Hymn not found or not editable.' });
+      const desiredStatus = body.status || existing.status;
+      if (!['draft', 'published'].includes(desiredStatus)) {
+        return res.status(400).json({ success: false, error: 'INVALID_STATUS', message: 'Hymn status must be draft or published.' });
+      }
+      const now = new Date().toISOString();
+      const current = hymnFromDatabase(existing);
+      const updates = hymnToDatabase(body);
+      delete updates.status;
+      const { data: updated, error } = await db.from('hymns')
+        .update({
+          ...updates,
+          status: desiredStatus,
+          version: (existing.version || 1) + 1,
+          history: [...(existing.history || []), hymnSnapshot(current, authContext.userId, now)],
+          published_at: desiredStatus === 'published' ? existing.published_at || now : null,
+          updated_at: now
+        })
+        .eq('id', itemMatch[1])
+        .select('*')
+        .maybeSingle();
+      if (error) return sendDbError(error, 'update Hymn');
+      if (!updated) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Hymn not found or not editable.' });
+      return res.json({ success: true, hymn: hymnFromDatabase(updated) });
+    }
+
+    if (isItemRequest && itemMatch && req.method === 'POST' && itemMatch[2] === 'unpublish') {
+      const { data: existing, error: readError } = await db.from('hymns').select('*').eq('id', itemMatch[1]).maybeSingle();
+      if (readError) return sendDbError(readError, 'load Hymn for unpublishing');
+      if (!existing) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Hymn not found.' });
+      if (existing.status !== 'published') return res.status(409).json({ success: false, error: 'NOT_PUBLISHED', message: 'Only published Hymns can be unpublished.' });
+      const now = new Date().toISOString();
+      const { data: updated, error } = await db.from('hymns')
+        .update({
+          status: 'draft',
+          published_at: null,
+          version: (existing.version || 1) + 1,
+          history: [...(existing.history || []), hymnSnapshot(hymnFromDatabase(existing), authContext.userId, now)],
+          updated_at: now
+        })
+        .eq('id', itemMatch[1])
+        .select('*')
+        .maybeSingle();
+      if (error) return sendDbError(error, 'unpublish Hymn');
+      if (!updated) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Hymn not found or not editable.' });
+      return res.json({ success: true, hymn: hymnFromDatabase(updated) });
+    }
+
+    if (isItemRequest && itemMatch && req.method === 'POST' && itemMatch[2] === 'restore') {
+      const { data: existing, error: readError } = await db.from('hymns').select('*').eq('id', itemMatch[1]).maybeSingle();
+      if (readError) return sendDbError(readError, 'load Hymn history');
+      if (!existing) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Hymn not found.' });
+      const targetVersion = Number(req.body?.targetVersion);
+      const snapshot = (existing.history || []).find((entry: any) => entry.version === targetVersion);
+      if (!snapshot) return res.status(404).json({ success: false, error: 'VERSION_NOT_FOUND', message: `Version ${req.body?.targetVersion} was not found.` });
+      const now = new Date().toISOString();
+      const restored = hymnToDatabase(snapshot);
+      delete restored.status;
+      const { data: updated, error } = await db.from('hymns')
+        .update({
+          ...restored,
+          status: 'draft',
+          version: (existing.version || 1) + 1,
+          history: [...(existing.history || []), hymnSnapshot(hymnFromDatabase(existing), authContext.userId, now)],
+          published_at: null,
+          updated_at: now
+        })
+        .eq('id', itemMatch[1])
+        .select('*')
+        .maybeSingle();
+      if (error) return sendDbError(error, 'restore Hymn version');
+      if (!updated) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Hymn not found or not editable.' });
+      return res.json({ success: true, hymn: hymnFromDatabase(updated) });
+    }
+    return next();
+  } catch (error) {
+    console.error('Hymns Supabase API failed:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'SUPABASE_ERROR',
+      message: error instanceof Error ? error.message : 'Hymns request failed.'
+    });
+  }
+});
+
 // 5. Fetch hymns collection (filtered strictly by student approved level & draft privacy)
 app.get("/api/church/hymns", async (req, res) => {
   try {
@@ -14046,6 +14933,301 @@ app.post("/api/church/hymns/:id/restore", async (req, res) => {
 // ==============================================================================
 // COPTIC RITUALS / TAXIS (طقوس الكنيسة) API & EXPLICIT PERMISSION MODEL
 // ==============================================================================
+
+app.use(async (req, res, next) => {
+  const collectionPath = '/api/church/taxis';
+  const itemMatch = req.path.match(/^\/api\/church\/taxis\/([^/]+)(?:\/(submit-review|review|publish|unpublish|restore|versions))?$/);
+  const isCollectionRequest = req.path === collectionPath && ['GET', 'POST'].includes(req.method);
+  const isItemRequest = Boolean(itemMatch && (
+    (['GET', 'PUT'].includes(req.method) && (!itemMatch[2] || itemMatch[2] === 'versions')) ||
+    (req.method === 'POST' && ['submit-review', 'review', 'publish', 'unpublish', 'restore'].includes(itemMatch[2] || ''))
+  ));
+  if (!isCollectionRequest && !isItemRequest) return next();
+
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    const canManage = authContext.isAuthenticated && canManageHymnsTaxis(authContext.roles);
+    const studentView = authContext.isAuthenticated && authContext.roles.includes('student') && !canManage;
+    if (!authContext.isAuthenticated || !canReadHymnsTaxis(authContext.roles)) {
+      return res.status(authContext.isAuthenticated ? 403 : 401).json({
+        success: false,
+        error: authContext.isAuthenticated ? 'FORBIDDEN' : 'UNAUTHORIZED',
+        message: 'A verified student, teacher, or admin account is required.'
+      });
+    }
+    if (!canManage && req.method !== 'GET') {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Only teachers and admins can manage Taxis.' });
+    }
+
+    const db = getRoleRequestClient(req);
+    const getProfile = async () => {
+      const { data, error } = await db
+        .from('profiles')
+        .select('hymns_taxis_level, grade')
+        .eq('id', authContext.userId)
+        .maybeSingle();
+      if (error) throw new Error(`Could not load curriculum profile: ${error.message}`);
+      return data as { hymns_taxis_level: number | null; grade: string | null } | null;
+    };
+    const sendDbError = (error: { code?: string; message?: string }, operation: string) => {
+      console.error(`${operation} failed:`, error.message || error);
+      const status = error.code === '42501' ? 403 : error.code === '23505' ? 409 : 500;
+      return res.status(status).json({
+        success: false,
+        error: status === 403 ? 'FORBIDDEN' : status === 409 ? 'CONFLICT' : 'SUPABASE_ERROR',
+        message: error.message || `Supabase could not ${operation}.`
+      });
+    };
+    const validTaxisPayload = (payload: any, requireTitle: boolean) => {
+      const categories = ['liturgy', 'incense', 'sacraments', 'feasts', 'pascha', 'occasions', 'clergy'];
+      const audiences = ['all', 'deacons', 'preparatory', 'servants', 'clergy'];
+      return (!requireTitle || (typeof payload?.titleAr === 'string' && Boolean(payload.titleAr.trim()))) &&
+        (payload?.titleAr === undefined || (typeof payload.titleAr === 'string' && Boolean(payload.titleAr.trim()))) &&
+        (payload?.titleEn === undefined || typeof payload.titleEn === 'string') &&
+        (payload?.category === undefined || categories.includes(payload.category)) &&
+        (payload?.audience === undefined || audiences.includes(payload.audience)) &&
+        (payload?.season === undefined || typeof payload.season === 'string') &&
+        (payload?.level === undefined || parseHymnsTaxisLevel(payload.level) !== null) &&
+        (payload?.sections === undefined || Array.isArray(payload.sections)) &&
+        (payload?.references === undefined || (Array.isArray(payload.references) && payload.references.every((value: unknown) => typeof value === 'string'))) &&
+        (payload?.documents === undefined || Array.isArray(payload.documents));
+    };
+    const readItem = async (id: string) => {
+      const { data, error } = await db.from('coptic_taxis_items').select('*').eq('id', id).maybeSingle();
+      if (error) throw new Error(`Could not read Taxis item: ${error.message}`);
+      return data;
+    };
+    const canEditItem = (item: any) =>
+      canEditOwnedTaxisItem(authContext.roles, item.created_by === authContext.userId);
+    const canPublishItem = async (item: any) => {
+      const profile = await getProfile();
+      return canPublishOwnedTaxisItem(
+        authContext.roles,
+        item.created_by === authContext.userId,
+        profile?.grade
+      );
+    };
+    const itemSnapshot = (item: any, savedBy: string, savedAt: string) => ({
+      ...taxisFromDatabase(item),
+      savedBy,
+      savedByName: 'الخادم المسؤول',
+      savedAt
+    });
+
+    if (isCollectionRequest && req.method === 'GET') {
+      let studentLevel: number | null = null;
+      let studentGrade = '';
+      if (studentView) {
+        const profile = await getProfile();
+        studentLevel = parseHymnsTaxisLevel(profile?.hymns_taxis_level);
+        studentGrade = profile?.grade || '';
+        if (studentLevel === null) {
+          return res.status(409).json({ success: false, error: 'LEVEL_SETUP_REQUIRED', message: 'Choose your shared Hymns and Taxis level to view lessons.' });
+        }
+      }
+
+      const { data, error } = await db.from('coptic_taxis_items')
+        .select('*')
+        .order('updated_at', { ascending: false });
+      if (error) return sendDbError(error, 'load Taxis');
+      let items = (data || []).map(taxisFromDatabase);
+      if (studentView) {
+        const grade = studentGrade.toLowerCase();
+        items = items.filter(item =>
+          item.status === 'published' &&
+          item.level === studentLevel &&
+          (item.audience === 'all' ||
+            (item.audience === 'preparatory' && grade.includes('prep')) ||
+            (item.audience === 'deacons' && (studentLevel || 0) >= 2))
+        );
+      }
+      if (typeof req.query.category === 'string' && req.query.category !== 'ALL') {
+        items = items.filter(item => item.category === req.query.category);
+      }
+      if (typeof req.query.audience === 'string' && req.query.audience !== 'ALL') {
+        items = items.filter(item => item.audience === req.query.audience);
+      }
+      return res.json({ success: true, items });
+    }
+
+    if (isItemRequest && itemMatch && req.method === 'GET') {
+      if (itemMatch[2] === 'versions' && !canManage) {
+        return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Taxis version history is restricted to teachers and admins.' });
+      }
+      const item = await readItem(itemMatch[1]);
+      if (!item) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Taxis item not found.' });
+      const mapped = taxisFromDatabase(item);
+      if (studentView) {
+        const profile = await getProfile();
+        const level = parseHymnsTaxisLevel(profile?.hymns_taxis_level);
+        const grade = (profile?.grade || '').toLowerCase();
+        const audienceAllowed = mapped.audience === 'all' ||
+          (mapped.audience === 'preparatory' && grade.includes('prep')) ||
+          (mapped.audience === 'deacons' && (level || 0) >= 2);
+        if (level === null) return res.status(409).json({ success: false, error: 'LEVEL_SETUP_REQUIRED', message: 'Choose your shared Hymns and Taxis level to view lessons.' });
+        if (mapped.status !== 'published' || mapped.level !== level || !audienceAllowed) {
+          return res.status(403).json({ success: false, error: 'TAXIS_ACCESS_DENIED', message: 'This item is not available to this student.' });
+        }
+      }
+      if (itemMatch[2] === 'versions') return res.json({ success: true, history: mapped.history || [] });
+      return res.json({ success: true, item: mapped });
+    }
+
+    if (isCollectionRequest && req.method === 'POST') {
+      const body = req.body || {};
+      if (!validTaxisPayload(body, true) || parseHymnsTaxisLevel(body.level) === null) {
+        return res.status(400).json({ success: false, error: 'VALIDATION_FAILED', message: 'Arabic title, valid level, sections, references, and documents are required.' });
+      }
+      const id = typeof body.id === 'string' && body.id.trim() && !body.id.startsWith('new_')
+        ? body.id.trim()
+        : `taxis_${randomUUID()}`;
+      if (id.length > 200) return res.status(400).json({ success: false, error: 'INVALID_ID', message: 'Taxis ID is too long.' });
+      const insert = taxisToDatabase({
+        ...body,
+        titleEn: body.titleEn || body.titleAr,
+        titleCopt: body.titleCopt || '',
+        category: body.category || 'liturgy',
+        season: body.season || 'annual',
+        audience: body.audience || 'all',
+        summaryAr: body.summaryAr || '',
+        summaryEn: body.summaryEn || '',
+        sections: body.sections || [],
+        references: body.references || [],
+        documents: body.documents || []
+      });
+      const { data: created, error } = await db.from('coptic_taxis_items')
+        .insert({ id, ...insert, version: 1, history: [] })
+        .select('*')
+        .single();
+      if (error) return sendDbError(error, 'create Taxis item');
+      if (!created) return res.status(500).json({ success: false, error: 'WRITE_UNCONFIRMED', message: 'Supabase did not confirm the Taxis insert.' });
+      return res.status(201).json({ success: true, item: taxisFromDatabase(created) });
+    }
+
+    if (isItemRequest && itemMatch && req.method === 'PUT' && !itemMatch[2]) {
+      const body = req.body || {};
+      if (!validTaxisPayload(body, false)) {
+        return res.status(400).json({ success: false, error: 'VALIDATION_FAILED', message: 'Taxis fields must match the supported curriculum values.' });
+      }
+      const existing = await readItem(itemMatch[1]);
+      if (!existing) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Taxis item not found or not editable.' });
+      if (!canEditItem(existing)) return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Only the author or an admin can edit this Taxis item.' });
+      if (!['draft', 'unpublished'].includes(existing.status)) {
+        return res.status(409).json({ success: false, error: 'WORKFLOW_LOCKED', message: 'Return the item to draft or unpublished before editing.' });
+      }
+      if (body.status !== undefined && body.status !== existing.status) {
+        return res.status(409).json({ success: false, error: 'USE_WORKFLOW_ACTION', message: 'Use the review and publishing actions to change Taxis status.' });
+      }
+      if (body.level !== undefined && parseHymnsTaxisLevel(body.level) === null) {
+        return res.status(400).json({ success: false, error: 'INVALID_LEVEL', message: 'Level must be 1, 2, or 3.' });
+      }
+      const now = new Date().toISOString();
+      const updates = taxisToDatabase(body);
+      if (body.season === undefined) updates.season = existing.season;
+      const { data: updated, error } = await db.from('coptic_taxis_items')
+        .update({
+          ...updates,
+          version: (existing.version || 1) + 1,
+          history: [...(existing.history || []), itemSnapshot(existing, authContext.userId, now)],
+          updated_at: now
+        })
+        .eq('id', itemMatch[1])
+        .select('*')
+        .maybeSingle();
+      if (error) return sendDbError(error, 'update Taxis item');
+      if (!updated) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Taxis item not found or not editable.' });
+      return res.json({ success: true, item: taxisFromDatabase(updated) });
+    }
+
+    if (isItemRequest && itemMatch && req.method === 'POST') {
+      const existing = await readItem(itemMatch[1]);
+      if (!existing) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Taxis item not found.' });
+      const action = itemMatch[2];
+      const isReviewAction = action === 'review';
+      if (!canEditItem(existing) && !(isReviewAction && authContext.roles.includes('teacher'))) {
+        return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Only the author, another teacher reviewing the item, or an admin can change this Taxis workflow.' });
+      }
+      if (isReviewAction && !canReviewTaxisItem(authContext.roles, existing.created_by === authContext.userId)) {
+        return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'A different teacher or an admin must review this Taxis item.' });
+      }
+      const now = new Date().toISOString();
+      let updates: Record<string, unknown> = { updated_at: now };
+
+      if (action === 'submit-review') {
+        if (!['draft', 'unpublished'].includes(existing.status)) {
+          return res.status(409).json({ success: false, error: 'INVALID_WORKFLOW_STATE', message: 'Only draft or unpublished items can be submitted for review.' });
+        }
+        updates.status = 'under_review';
+      } else if (action === 'review') {
+        const reviewAction = req.body?.action;
+        if (!['APPROVE', 'REQUEST_CHANGES'].includes(reviewAction)) {
+          return res.status(400).json({ success: false, error: 'INVALID_ACTION', message: 'Review action must be APPROVE or REQUEST_CHANGES.' });
+        }
+        if (existing.status !== 'under_review' && !(reviewAction === 'REQUEST_CHANGES' && existing.status === 'approved')) {
+          return res.status(409).json({ success: false, error: 'REVIEW_REQUIRED', message: 'The item must be under review before this action.' });
+        }
+        updates = {
+          ...updates,
+          status: reviewAction === 'APPROVE' ? 'approved' : 'draft',
+          reviewed_by: authContext.userId,
+          approved_by: reviewAction === 'APPROVE' ? authContext.userId : null
+        };
+      } else if (action === 'publish') {
+        if (existing.status !== 'approved') return res.status(409).json({ success: false, error: 'APPROVAL_REQUIRED', message: 'Only approved Taxis items can be published.' });
+        if (parseHymnsTaxisLevel(existing.level) === null) return res.status(400).json({ success: false, error: 'LEVEL_REQUIRED', message: 'Assign a valid curriculum level before publishing.' });
+        if (!(await canPublishItem(existing))) return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'A head teacher, priest, or admin is required to publish.' });
+        updates = { ...updates, status: 'published', published_by: authContext.userId, published_at: now };
+      } else if (action === 'unpublish') {
+        if (existing.status !== 'published') return res.status(409).json({ success: false, error: 'NOT_PUBLISHED', message: 'Only published Taxis items can be unpublished.' });
+        if (!(await canPublishItem(existing))) return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'A head teacher, priest, or admin is required to unpublish.' });
+        updates = { ...updates, status: 'unpublished', unpublished_by: authContext.userId, unpublished_at: now };
+      } else if (action === 'restore') {
+        if (!['draft', 'unpublished'].includes(existing.status)) {
+          return res.status(409).json({ success: false, error: 'WORKFLOW_LOCKED', message: 'Return this item to draft or unpublished before restoring.' });
+        }
+        const targetVersion = Number(req.body?.targetVersion);
+        const snapshot = (existing.history || []).find((entry: any) => entry.version === targetVersion);
+        if (!snapshot) return res.status(404).json({ success: false, error: 'VERSION_NOT_FOUND', message: `Version ${req.body?.targetVersion} was not found.` });
+        const restored = taxisToDatabase(snapshot);
+        updates = {
+          ...restored,
+          status: 'draft',
+          reviewed_by: null,
+          approved_by: null,
+          published_by: null,
+          published_at: null,
+          unpublished_by: null,
+          unpublished_at: null,
+          updated_at: now
+        };
+      } else {
+        return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Unknown Taxis workflow action.' });
+      }
+
+      const history = [...(existing.history || []), itemSnapshot(existing, authContext.userId, now)];
+      const { data: updated, error } = await db.from('coptic_taxis_items')
+        .update({
+          ...updates,
+          version: (existing.version || 1) + 1,
+          history
+        })
+        .eq('id', itemMatch[1])
+        .select('*')
+        .maybeSingle();
+      if (error) return sendDbError(error, `update Taxis ${action}`);
+      if (!updated) return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Taxis item not found or not editable.' });
+      return res.json({ success: true, item: taxisFromDatabase(updated) });
+    }
+    return next();
+  } catch (error) {
+    console.error('Taxis Supabase API failed:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'SUPABASE_ERROR',
+      message: error instanceof Error ? error.message : 'Taxis request failed.'
+    });
+  }
+});
 
 // Explicit Taxis Permission evaluator on server
 function evaluateServerTaxisPermissions(authContext: ServerAuthContext, item?: any) {

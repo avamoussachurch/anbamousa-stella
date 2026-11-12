@@ -3,7 +3,8 @@ import { CopticHymnItem, COPTIC_HYMNS_COLLECTION } from '../data/hymnsData';
 import { filterItemsByHymnsTaxisLevel, parseHymnsTaxisLevel } from './hymnsTaxisLevel';
 import { hasRole } from './workspaces';
 
-const TOKEN_KEY = 'church_auth_token';
+import { getAuthenticatedApiHeaders } from './apiAuth';
+import { isSupabaseConfigured } from './supabase';
 
 function notifyHymnsUpdated(): void {
   if (typeof window !== 'undefined') {
@@ -11,12 +12,8 @@ function notifyHymnsUpdated(): void {
   }
 }
 
-function getAuthHeaders(): HeadersInit {
-  const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  };
+async function getAuthHeaders(): Promise<HeadersInit> {
+  return getAuthenticatedApiHeaders();
 }
 
 /**
@@ -25,34 +22,28 @@ function getAuthHeaders(): HeadersInit {
 export async function getMyHymnsEnrollment(studentId?: string): Promise<{
   success: boolean;
   membership: HymnsRosterMembership | null;
+  error?: string;
 }> {
   try {
     const q = studentId ? `?studentId=${encodeURIComponent(studentId)}` : '';
     const res = await fetch(`/api/church/hymns/my-enrollment${q}`, {
-      headers: getAuthHeaders()
+      headers: await getAuthHeaders()
     });
     if (res.ok) {
       const data = await res.json();
       if (data.success) {
         return { success: true, membership: data.membership };
       }
+      return { success: false, membership: null, error: data.message || data.error };
     }
+    return { success: false, membership: null, error: `Could not load Hymns enrollment (HTTP ${res.status}).` };
   } catch (err) {
-    console.warn("Failed to fetch my-enrollment from server:", err);
+    return {
+      success: false,
+      membership: null,
+      error: err instanceof Error ? err.message : 'Network error while loading Hymns enrollment.'
+    };
   }
-
-  // Fallback to local storage for offline resilience
-  try {
-    const saved = localStorage.getItem('church_hymns_memberships');
-    if (saved) {
-      const list: HymnsRosterMembership[] = JSON.parse(saved);
-      const idToFind = studentId || 'current_user';
-      const found = list.find(m => m.studentId === idToFind && m.status !== 'revoked') || null;
-      return { success: true, membership: found };
-    }
-  } catch (_) {}
-
-  return { success: true, membership: null };
 }
 
 /**
@@ -65,7 +56,7 @@ export async function submitHymnsEnrollment(
   try {
     const res = await fetch('/api/church/hymns/enroll', {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: await getAuthHeaders(),
       body: JSON.stringify({
         ...payload,
         studentName
@@ -90,7 +81,7 @@ export async function getHymnsRequests(): Promise<{
 }> {
   try {
     const res = await fetch('/api/church/hymns/requests', {
-      headers: getAuthHeaders()
+      headers: await getAuthHeaders()
     });
     if (res.ok) {
       const data = await res.json();
@@ -119,7 +110,7 @@ export async function reviewHymnsEnrollment(
   try {
     const res = await fetch('/api/church/hymns/review', {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: await getAuthHeaders(),
       body: JSON.stringify({
         membershipId,
         action,
@@ -151,7 +142,31 @@ export async function getHymns(
   isApproved?: boolean;
   error?: string;
 }> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
+  if (!isSupabaseConfigured) {
+    if (hasRole(viewer, 'student')) {
+      const assignedLevel = parseHymnsTaxisLevel(viewer!.hymnsTaxisLevel);
+      if (assignedLevel === null) {
+        return { success: false, items: [], error: 'Choose your shared Hymns and Taxis level to view lessons.' };
+      }
+      return {
+        success: true,
+        items: filterItemsByHymnsTaxisLevel(COPTIC_HYMNS_COLLECTION, assignedLevel)
+          .filter(hymn => hymn.status === 'published' && (!season || season === 'all' || hymn.occasionTag === season))
+      };
+    }
+
+    return {
+      success: true,
+      items: COPTIC_HYMNS_COLLECTION.filter(hymn =>
+        (!level || hymn.level === level) &&
+        (!season || season === 'all' || hymn.occasionTag === season) &&
+        (!status || status === 'all' || hymn.status === status)
+      ),
+      enrolledLevel: 1,
+      isApproved: true
+    };
+  }
+
   try {
     const q = new URLSearchParams();
     if (level) q.set('level', String(level));
@@ -159,58 +174,28 @@ export async function getHymns(
     if (status && status !== 'all') q.set('status', status);
 
     const res = await fetch(`/api/church/hymns?${q.toString()}`, {
-      headers: getAuthHeaders()
+      headers: await getAuthHeaders()
     });
-    if (!res.ok && token) {
+    if (!res.ok) {
       const data = await res.json().catch(() => null);
       return { success: false, items: [], error: data?.message || data?.error || `Could not load Hymns (HTTP ${res.status}).` };
     }
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && Array.isArray(data.items)) {
-        const items = hasRole(viewer, 'student')
-          ? filterItemsByHymnsTaxisLevel(data.items, viewer!.hymnsTaxisLevel)
-          : data.items;
-        return {
-          success: true,
-          items,
-          enrolledLevel: data.enrolledLevel,
-          isApproved: data.isApproved
-        };
-      }
-      if (token) {
-        return { success: false, items: [], error: data.message || data.error || 'Could not load Hymns.' };
-      }
+    const data = await res.json();
+    if (data.success && Array.isArray(data.items)) {
+      const items = hasRole(viewer, 'student')
+        ? filterItemsByHymnsTaxisLevel(data.items, viewer!.hymnsTaxisLevel)
+        : data.items;
+      return {
+        success: true,
+        items,
+        enrolledLevel: data.enrolledLevel,
+        isApproved: data.isApproved
+      };
     }
+    return { success: false, items: [], error: data.message || data.error || 'Could not load Hymns.' };
   } catch (err) {
-    if (token) {
-      return { success: false, items: [], error: err instanceof Error ? err.message : 'Network error while loading Hymns.' };
-    }
+    return { success: false, items: [], error: err instanceof Error ? err.message : 'Network error while loading Hymns.' };
   }
-
-  if (hasRole(viewer, 'student')) {
-    const assignedLevel = parseHymnsTaxisLevel(viewer!.hymnsTaxisLevel);
-    if (assignedLevel === null) {
-      return { success: false, items: [], error: 'Choose your shared Hymns and Taxis level to view lessons.' };
-    }
-    return {
-      success: true,
-      items: filterItemsByHymnsTaxisLevel(COPTIC_HYMNS_COLLECTION, assignedLevel)
-        .filter(hymn => hymn.status === 'published' && (!season || season === 'all' || hymn.occasionTag === season))
-    };
-  }
-
-  // Only unauthenticated demo mode can use the bundled collection.
-  return {
-    success: true,
-    items: COPTIC_HYMNS_COLLECTION.filter(hymn =>
-      (!level || hymn.level === level) &&
-      (!season || season === 'all' || hymn.occasionTag === season) &&
-      (!status || status === 'all' || hymn.status === status)
-    ),
-    enrolledLevel: 1,
-    isApproved: true
-  };
 }
 
 /**
@@ -223,7 +208,7 @@ export async function getHymnById(id: string): Promise<{
 }> {
   try {
     const res = await fetch(`/api/church/hymns/${encodeURIComponent(id)}`, {
-      headers: getAuthHeaders()
+      headers: await getAuthHeaders()
     });
     const data = await res.json();
     if (res.ok && data.success) {
@@ -245,7 +230,7 @@ export async function createHymn(
   try {
     const res = await fetch('/api/church/hymns', {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: await getAuthHeaders(),
       body: JSON.stringify(hymnData)
     });
     const data = await res.json();
@@ -269,7 +254,7 @@ export async function updateHymn(
   try {
     const res = await fetch(`/api/church/hymns/${encodeURIComponent(id)}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: await getAuthHeaders(),
       body: JSON.stringify(hymnData)
     });
     const data = await res.json();
@@ -285,17 +270,20 @@ export async function updateHymn(
 /**
  * Unpublish hymn
  */
-export async function unpublishHymn(id: string): Promise<{ success: boolean; hymn?: CopticHymnItem }> {
+export async function unpublishHymn(id: string): Promise<{ success: boolean; hymn?: CopticHymnItem; error?: string }> {
   try {
     const res = await fetch(`/api/church/hymns/${encodeURIComponent(id)}/unpublish`, {
       method: 'POST',
-      headers: getAuthHeaders()
+      headers: await getAuthHeaders()
     });
-    const data = await res.json();
-    if (res.ok && data.success) notifyHymnsUpdated();
-    return { success: Boolean(data.success), hymn: data.hymn };
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.success) {
+      return { success: false, error: data?.message || data?.error || `Could not unpublish Hymn (HTTP ${res.status}).` };
+    }
+    notifyHymnsUpdated();
+    return { success: true, hymn: data.hymn };
   } catch (err) {
-    return { success: false };
+    return { success: false, error: err instanceof Error ? err.message : 'Network error while unpublishing Hymn.' };
   }
 }
 
@@ -309,7 +297,7 @@ export async function restoreHymnVersion(
   try {
     const res = await fetch(`/api/church/hymns/${encodeURIComponent(id)}/restore`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: await getAuthHeaders(),
       body: JSON.stringify({ targetVersion })
     });
     const data = await res.json();
