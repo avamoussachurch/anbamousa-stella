@@ -748,7 +748,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
                   <span>{uploadingMediaField === 'audio' ? (isAr ? 'جارٍ رفع الصوت...' : 'Uploading audio...') : (isAr ? 'أو ارفع ملف صوتي إلى Supabase' : 'Or upload audio securely to Supabase')}</span>
                   <input
                     type="file"
-                    accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac"
+                    accept=".mp3,.m4a,.wav,.ogg,.aac,.webm,audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/aac,audio/webm"
                     className="sr-only"
                     disabled={uploadingMediaField !== null}
                     onChange={(event) => void handleHymnMediaUpload(event, 'audio')}
@@ -800,6 +800,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
                   <button
                     type="button"
                     onClick={togglePlayAudio}
+                    disabled={!resolvedStudioAudioUrl}
                     className="p-3 bg-[var(--mousa-teal)] hover:opacity-90 text-white rounded-2xl cursor-pointer shadow-xs"
                   >
                     {isPlaying ? <Pause size={18} /> : <Play size={18} />}
