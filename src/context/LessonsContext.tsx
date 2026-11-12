@@ -295,6 +295,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
   const [curriculumLoading, setCurriculumLoading] = useState<boolean>(false);
   const [curriculumError, setCurriculumError] = useState<string | null>(null);
   const [curriculumLoadedForUserId, setCurriculumLoadedForUserId] = useState<string | null>(null);
+  const curriculumWorkspaceRef = React.useRef(activeWorkspace);
 
   const loadOnlineCurriculum = React.useCallback(async () => {
     // Only attempt online fetch if user is authenticated and not in guest/demo mode
@@ -304,7 +305,11 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
     setCurriculumLoading(true);
     setCurriculumError(null);
-    setCurriculumLoadedForUserId(current => current === userData.id ? current : null);
+    const workspaceChanged = curriculumWorkspaceRef.current !== activeWorkspace;
+    curriculumWorkspaceRef.current = activeWorkspace;
+    setCurriculumLoadedForUserId(current =>
+      !workspaceChanged && current === userData.id ? current : null
+    );
 
     try {
       const isTeacher = activeWorkspace === 'teacher';
