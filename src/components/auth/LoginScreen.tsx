@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Lock, Mail, User, Check, Moon, Sun, Database, Sparkles, BookOpen } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -11,9 +11,11 @@ import { requestAccountActivation } from '../../lib/onboardingService';
 import { parseHymnsTaxisLevel, type HymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
 import { PrivacyPolicy } from '../legal/PrivacyPolicy';
 import { FAQ } from '../legal/FAQ';
+import { AmbientWorld } from '../layout/AmbientWorld';
 
 export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: Language) => void }) {
   const { isDark, toggleTheme } = useTheme();
+  const reduceMotion = useReducedMotion();
   const { loginAsGuest, setUserDirectly } = useAuth();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -148,9 +150,10 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-church-cream)] dark:bg-slate-950 flex flex-col justify-center items-center p-4 selection:bg-[var(--color-church-gold)] selection:text-white transition-colors duration-200">
+    <div className="relative isolate min-h-[100svh] bg-[var(--color-church-cream)] dark:bg-slate-950 flex flex-col justify-center items-center p-4 overflow-hidden selection:bg-[var(--color-church-gold)] selection:text-white transition-colors duration-200">
+      <AmbientWorld variant="login" />
       {/* Top action controls: Language & Dark mode */}
-      <div className="w-full max-w-md flex justify-between items-center mb-4 px-2">
+      <div className="relative z-10 w-full max-w-md flex justify-between items-center mb-4 px-2">
         <button 
           onClick={toggleTheme}
           aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
@@ -197,11 +200,20 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
 
       </div>
 
-      <div className="w-full max-w-md bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] rounded-3xl shadow-xl border-2 border-[var(--mousa-border-sand)] p-8 space-y-6">
+      <motion.div
+        className="relative z-10 w-full max-w-md bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] rounded-3xl shadow-[0_28px_90px_rgba(0,0,0,0.32)] border-2 border-[var(--mousa-border-sand)] p-8 space-y-6"
+        initial={reduceMotion ? false : { opacity: 0, y: 42, scale: 0.94, rotateX: 7 }}
+        animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
+        transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 105, damping: 18, mass: 0.9 }}
+      >
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 bg-gradient-to-tr from-[var(--mousa-teal-deep)] to-[var(--mousa-teal)] rounded-2xl mx-auto flex items-center justify-center text-white shadow-lg shadow-[var(--mousa-teal-deep)]/20 border-2 border-[var(--mousa-gold)]/50">
+          <motion.div
+            className="w-16 h-16 bg-gradient-to-tr from-[var(--mousa-teal-deep)] to-[var(--mousa-teal)] rounded-2xl mx-auto flex items-center justify-center text-white shadow-[0_0_38px_rgba(198,139,35,0.28)] border-2 border-[var(--mousa-gold)]/70"
+            animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [0, -2, 2, 0], boxShadow: ['0 0 20px rgba(198,139,35,.18)', '0 0 42px rgba(198,139,35,.42)', '0 0 20px rgba(198,139,35,.18)'] }}
+            transition={reduceMotion ? undefined : { duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
+          >
             <span className="text-2xl font-black tracking-tighter text-[var(--mousa-gold)]">ⲭⲣ</span>
-          </div>
+          </motion.div>
           <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] tracking-tight">
             {lang === 'copt' ? 'Ϯⲉⲕⲕⲗⲏⲥⲓⲁ ⲙ̀Ⲫⲁⲅⲓⲟⲥ Ⲙⲱⲩⲥⲏⲥ' : lang === 'ar' ? 'كنيسة القديس الأنبا موسى' : 'St. Moses Church'}
           </h1>
@@ -539,7 +551,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
             {lang === 'copt' ? 'Ⲛⲓϣⲉⲛϩⲏⲧ' : lang === 'ar' ? 'الأسئلة الشائعة' : 'FAQ'}
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Legal Modals */}
       <AnimatePresence>
