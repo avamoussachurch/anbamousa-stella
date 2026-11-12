@@ -30,6 +30,7 @@ import {
 import { publishApprovedTaxisItems, type TaxisBulkPublishResult } from '../../../lib/taxisBulkPublishing';
 import { useAuth } from '../../../context/AuthContext';
 import { parseHymnsTaxisLevel, type HymnsTaxisLevel } from '../../../lib/hymnsTaxisLevel';
+import { uploadSourceMedia } from '../../../lib/lessonSourceService';
 
 interface TaxisPublishingStudioProps {
   lang?: Language;
@@ -66,6 +67,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   const [sections, setSections] = useState<TaxisSection[]>([]);
   const [references, setReferences] = useState<string[]>([]);
   const [documents, setDocuments] = useState<TaxisAttachment[]>([]);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [status, setStatus] = useState<TaxisStatus>('draft');
   const [version, setVersion] = useState<number>(1);
   const [history, setHistory] = useState<any[]>([]);
@@ -261,9 +263,9 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
 
   // Document attachments
   const addDocument = () => {
-    const docTitle = prompt(isAr ? 'عنوان الملف المرفق (PDF):' : 'Document Title (PDF):');
+    const docTitle = prompt(isAr ? 'عنوان الملف المرفق:' : 'Document Title:');
     if (!docTitle) return;
-    const docUrl = prompt(isAr ? 'رابط الملف:' : 'Document URL:', '/uploads/sample_cross_lesson_handout.pdf');
+    const docUrl = prompt(isAr ? 'رابط الملف الخارجي:' : 'External document URL:');
     if (!docUrl) return;
 
     setDocuments([
@@ -277,6 +279,43 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       }
     ]);
     setHasUnsavedChanges(true);
+  };
+
+  const handleDocumentFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsUploadingDocument(true);
+    setStatusMessage(null);
+    try {
+      const result = await uploadSourceMedia(file);
+      if (!result.success || !result.fileUrl) {
+        throw new Error(result.error || 'The document could not be uploaded to Supabase.');
+      }
+      setDocuments(previous => [
+        ...previous,
+        {
+          id: `doc_${Date.now()}`,
+          title: file.name,
+          fileUrl: result.fileUrl!,
+          fileType: 'pdf',
+          fileSize: file.size,
+          mimeType: file.type || 'application/pdf'
+        }
+      ]);
+      setHasUnsavedChanges(true);
+      setStatusMessage({
+        text: isAr ? 'تم رفع الملف بأمان. احفظ الطقس لتثبيت المرفق.' : 'Document uploaded securely. Save the ritual to persist the attachment.',
+        type: 'success'
+      });
+    } catch (error) {
+      setStatusMessage({
+        text: error instanceof Error ? error.message : 'Document upload failed.',
+        type: 'error'
+      });
+    } finally {
+      setIsUploadingDocument(false);
+      event.target.value = '';
+    }
   };
 
   const removeDocument = (docId: string) => {
@@ -995,13 +1034,25 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
                 <FileText size={16} />
                 <span>{isAr ? '٣. المراجع المعتمدة والملفات المرفقة (PDF)' : '3. References & PDF Handouts'}</span>
               </h3>
-              <button
-                type="button"
-                onClick={addDocument}
-                className="px-3 py-1 bg-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-bold rounded-xl border border-amber-300/40 hover:bg-amber-500/30 cursor-pointer"
-              >
-                + {isAr ? 'إرفاق ملف' : 'Attach PDF'}
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={addDocument}
+                  className="px-3 py-1 bg-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-bold rounded-xl border border-amber-300/40 hover:bg-amber-500/30 cursor-pointer"
+                >
+                  + {isAr ? 'إضافة رابط خارجي' : 'Add external URL'}
+                </button>
+                <label className="px-3 py-1 bg-[var(--mousa-teal)] text-white text-xs font-bold rounded-xl cursor-pointer hover:opacity-90">
+                  <span>{isUploadingDocument ? (isAr ? 'جارٍ الرفع...' : 'Uploading...') : (isAr ? 'رفع ملف إلى Supabase' : 'Upload to Supabase')}</span>
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="sr-only"
+                    disabled={isUploadingDocument}
+                    onChange={(event) => void handleDocumentFileUpload(event)}
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="space-y-2">

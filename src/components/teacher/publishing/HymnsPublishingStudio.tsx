@@ -25,6 +25,8 @@ import { CopticHymnItem, HymnLyricLine } from '../../../data/hymnsData';
 import { HYMNS_LEVEL_DEFINITIONS } from '../../../lib/hymnsEnrollmentService';
 import { getHymns, createHymn, updateHymn, unpublishHymn, restoreHymnVersion } from '../../../lib/hymnsService';
 import { Language } from '../../../types';
+import { uploadSourceMedia } from '../../../lib/lessonSourceService';
+import { resolveCurriculumMediaUrl } from '../../../lib/curriculumMediaUrl';
 
 interface HymnsPublishingStudioProps {
   lang?: Language;
@@ -60,6 +62,9 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
   const [hazatExplanationEn, setHazatExplanationEn] = useState('');
   const [sheetMusicUrl, setSheetMusicUrl] = useState('');
   const [pdfUrl, setPdfUrl] = useState('');
+  const [uploadingMediaField, setUploadingMediaField] = useState<'audio' | 'pdf' | null>(null);
+  const [resolvedStudioAudioUrl, setResolvedStudioAudioUrl] = useState('');
+  const [studioAudioError, setStudioAudioError] = useState<string | null>(null);
   const [lines, setLines] = useState<HymnLyricLine[]>([]);
   const [version, setVersion] = useState<number>(1);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
@@ -182,6 +187,54 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
     setter(e.target.value);
     setHasUnsavedChanges(true);
   };
+
+  const handleHymnMediaUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    target: 'audio' | 'pdf'
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingMediaField(target);
+    setStatusMessage(null);
+    try {
+      const result = await uploadSourceMedia(file);
+      if (!result.success || !result.fileUrl) {
+        throw new Error(result.error || 'The file could not be uploaded to Supabase.');
+      }
+      if (target === 'audio') {
+        setAudioUrl(result.fileUrl);
+      } else {
+        setPdfUrl(result.fileUrl);
+        setSheetMusicUrl(result.fileUrl);
+      }
+      setHasUnsavedChanges(true);
+      setStatusMessage({
+        text: isAr ? 'تم رفع الملف بأمان إلى التخزين الخاص. احفظ اللحن لتثبيت الرابط.' : 'File uploaded securely. Save the hymn to persist its reference.',
+        type: 'success'
+      });
+    } catch (error) {
+      setStatusMessage({
+        text: error instanceof Error ? error.message : 'Media upload failed.',
+        type: 'error'
+      });
+    } finally {
+      setUploadingMediaField(null);
+      event.target.value = '';
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    setResolvedStudioAudioUrl('');
+    setStudioAudioError(null);
+    if (!audioUrl) return () => { active = false; };
+    resolveCurriculumMediaUrl(audioUrl)
+      .then(url => { if (active) setResolvedStudioAudioUrl(url); })
+      .catch(error => {
+        if (active) setStudioAudioError(error instanceof Error ? error.message : 'Audio preview could not be loaded.');
+      });
+    return () => { active = false; };
+  }, [audioUrl]);
 
   // Add line to lyrics editor
   const addLyricLine = () => {
@@ -690,6 +743,17 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
                   placeholder="https://example.com/hymn.mp3"
                   className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-white font-mono"
                 />
+                <label className="mt-2 flex items-center gap-2 text-[11px] font-bold text-[var(--mousa-teal-deep)] dark:text-amber-300 cursor-pointer">
+                  <Upload size={14} />
+                  <span>{uploadingMediaField === 'audio' ? (isAr ? 'جارٍ رفع الصوت...' : 'Uploading audio...') : (isAr ? 'أو ارفع ملف صوتي إلى Supabase' : 'Or upload audio securely to Supabase')}</span>
+                  <input
+                    type="file"
+                    accept=".mp3,.m4a,.wav,.ogg,.aac,.webm,audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/aac,audio/webm"
+                    className="sr-only"
+                    disabled={uploadingMediaField !== null}
+                    onChange={(event) => void handleHymnMediaUpload(event, 'audio')}
+                  />
+                </label>
               </div>
 
               <div>
@@ -707,15 +771,28 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
                   placeholder="/uploads/sample_cross_lesson_handout.pdf"
                   className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-white font-mono"
                 />
+                <label className="mt-2 flex items-center gap-2 text-[11px] font-bold text-[var(--mousa-teal-deep)] dark:text-amber-300 cursor-pointer">
+                  <Upload size={14} />
+                  <span>{uploadingMediaField === 'pdf' ? (isAr ? 'جارٍ رفع ملف PDF...' : 'Uploading PDF...') : (isAr ? 'أو ارفع ملف PDF إلى Supabase' : 'Or upload a PDF securely to Supabase')}</span>
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="sr-only"
+                    disabled={uploadingMediaField !== null}
+                    onChange={(event) => void handleHymnMediaUpload(event, 'pdf')}
+                  />
+                </label>
               </div>
             </div>
+
+            {studioAudioError && <p role="status" className="text-xs font-semibold text-rose-600">{studioAudioError}</p>}
 
             {/* In-Studio Audio Player */}
             {audioUrl && (
               <div className="bg-stone-50 dark:bg-stone-800/60 p-4 rounded-2xl border border-stone-200 dark:border-stone-700 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <audio
                   ref={audioRef}
-                  src={audioUrl}
+                  src={resolvedStudioAudioUrl || undefined}
                   onTimeUpdate={() => audioRef.current && setCurrentTime(audioRef.current.currentTime)}
                   onEnded={() => setIsPlaying(false)}
                 />
@@ -723,6 +800,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
                   <button
                     type="button"
                     onClick={togglePlayAudio}
+                    disabled={!resolvedStudioAudioUrl}
                     className="p-3 bg-[var(--mousa-teal)] hover:opacity-90 text-white rounded-2xl cursor-pointer shadow-xs"
                   >
                     {isPlaying ? <Pause size={18} /> : <Play size={18} />}

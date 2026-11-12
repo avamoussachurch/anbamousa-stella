@@ -4,7 +4,7 @@ import path from "path";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { isValidSundaySchoolGrade, parseHymnsTaxisLevel } from "./src/lib/hymnsTaxisLevel";
 import { createStorageReference, parseStorageReference } from "./src/lib/mediaStorageReference";
 import { hymnFromDatabase, hymnToDatabase, taxisFromDatabase, taxisToDatabase } from "./src/lib/hymnsTaxisPersistence";
@@ -34,15 +34,50 @@ type ServerAuthContext =
       isAuthenticated: false;
     };
 
-function getTrustedRoleClient() {
+let trustedServiceClient: SupabaseClient<any> | null = null;
+let trustedServiceClientConfig = '';
+let publicAuthClient: SupabaseClient<any> | null = null;
+let publicAuthClientConfig = '';
+
+const PERSISTED_STUDENT_SUMMARY_CACHE_TTL_MS = 3000;
+const persistedStudentSummaryCache = new Map<string, { expiresAt: number; value: any }>();
+const persistedStudentSummaryInflight = new Map<string, Promise<any>>();
+const persistedStudentSummaryGeneration = new Map<string, number>();
+
+function getTrustedServiceClient(errorMessage: string) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
   const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error('Trusted role authorization is not configured on the server.');
+  if (!supabaseUrl || !serviceKey) throw new Error(errorMessage);
+
+  // Reuse one server-only client per configuration. Recreating clients for every
+  // request adds avoidable allocation/auth overhead during high request volume.
+  const config = `${supabaseUrl}\u0000${serviceKey}`;
+  if (!trustedServiceClient || trustedServiceClientConfig !== config) {
+    trustedServiceClient = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+    trustedServiceClientConfig = config;
   }
-  return createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
+  return trustedServiceClient;
+}
+
+function getPublicAuthClient() {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+
+  const config = `${supabaseUrl}\u0000${supabaseAnonKey}`;
+  if (!publicAuthClient || publicAuthClientConfig !== config) {
+    publicAuthClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+    publicAuthClientConfig = config;
+  }
+  return publicAuthClient;
+}
+
+function getTrustedRoleClient() {
+  return getTrustedServiceClient('Trusted role authorization is not configured on the server.');
 }
 
 function hasServerRole(authContext: ServerAuthContext, role: ServerRole): boolean {
@@ -171,9 +206,8 @@ async function verifyServerRequestAuth(req: express.Request): Promise<ServerAuth
     }
 
     try {
-      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-        auth: { persistSession: false, autoRefreshToken: false }
-      });
+      const authClient = getPublicAuthClient();
+      if (!authClient) return { userId: null, roles: [], isAuthenticated: false };
       const { data: userData, error: userError } = await authClient.auth.getUser(token);
       if (userError || !userData?.user) {
         return { userId: null, roles: [], isAuthenticated: false };
@@ -189,16 +223,9 @@ async function verifyServerRequestAuth(req: express.Request): Promise<ServerAuth
 
   try {
     const trustedClient = getTrustedRoleClient();
-    const { data: profile, error: profileError } = await trustedClient
-      .from('profiles')
-      .select('id')
-      .eq('id', verifiedUserId)
-      .maybeSingle();
-    if (profileError || !profile?.id) {
-      if (profileError) console.error('Could not verify account profile:', profileError.message);
-      return { userId: null, roles: [], isAuthenticated: false };
-    }
-
+    // Supabase Auth verifies the identity, and profile_role_assignments.user_id
+    // has a foreign key to profiles.id. The active role lookup therefore also
+    // proves that the account has a profile; a second profiles request is redundant.
     const { data: assignments, error: assignmentsError } = await trustedClient
       .from('profile_role_assignments')
       .select('role')
@@ -1273,14 +1300,7 @@ const FEED_MEDIA_BUCKET = process.env.SUPABASE_FEED_MEDIA_BUCKET || 'stella-feed
 const CURRICULUM_MEDIA_BUCKET = process.env.SUPABASE_CURRICULUM_MEDIA_BUCKET || 'stella-curriculum-media-v1';
 
 function getTrustedMediaClient() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error('Persistent media storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the server.');
-  }
-  return createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
+  return getTrustedServiceClient('Persistent media storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the server.');
 }
 
 function mediaMimeType(extension: string, suppliedType: string): string {
@@ -5708,14 +5728,7 @@ async function resolveStudentProgressLesson(
 }
 
 function getTrustedProgressClient() {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error('Trusted Supabase configuration is required to persist lesson section progress.');
-  }
-  return createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
+  return getTrustedServiceClient('Trusted Supabase configuration is required to persist lesson section progress.');
 }
 
 async function loadPersistedLessonSections(
@@ -6520,8 +6533,41 @@ app.get("/api/church/student-progress/summary", async (req, res) => {
       return;
     }
     if (isUuidStudentId(targetStudentId)) {
-      const summary = await loadPersistedStudentProgressSummary(targetStudentId);
-      return res.json(summary);
+      const forceRefresh = req.query.refresh === '1';
+      const now = Date.now();
+      const cached = persistedStudentSummaryCache.get(targetStudentId);
+      if (!forceRefresh && cached && cached.expiresAt > now) {
+        return res.json(cached.value);
+      }
+
+      if (forceRefresh) {
+        persistedStudentSummaryCache.delete(targetStudentId);
+        persistedStudentSummaryGeneration.set(
+          targetStudentId,
+          (persistedStudentSummaryGeneration.get(targetStudentId) || 0) + 1
+        );
+      } else {
+        const inFlight = persistedStudentSummaryInflight.get(targetStudentId);
+        if (inFlight) return res.json(await inFlight);
+      }
+
+      const generation = persistedStudentSummaryGeneration.get(targetStudentId) || 0;
+      const summaryPromise = loadPersistedStudentProgressSummary(targetStudentId);
+      persistedStudentSummaryInflight.set(targetStudentId, summaryPromise);
+      try {
+        const summary = await summaryPromise;
+        if ((persistedStudentSummaryGeneration.get(targetStudentId) || 0) === generation) {
+          persistedStudentSummaryCache.set(targetStudentId, {
+            expiresAt: Date.now() + PERSISTED_STUDENT_SUMMARY_CACHE_TTL_MS,
+            value: summary
+          });
+        }
+        return res.json(summary);
+      } finally {
+        if (persistedStudentSummaryInflight.get(targetStudentId) === summaryPromise) {
+          persistedStudentSummaryInflight.delete(targetStudentId);
+        }
+      }
     }
 
     const studentProgressMap: Record<string, any> = {};
@@ -13582,8 +13628,13 @@ app.get("/api/media-url", async (req, res) => {
       return res.status(404).json({ success: false, error: 'MEDIA_NOT_FOUND', message: 'File was not found.' });
     }
 
-    let authorized = hasServerRole(authContext, 'admin') || media.owner_id === authContext.userId;
-    if (!authorized && (hasServerRole(authContext, 'student') || hasServerRole(authContext, 'parent'))) {
+    const isAdmin = hasServerRole(authContext, 'admin');
+    let authorized = isAdmin || media.owner_id === authContext.userId;
+    if (!authorized && (
+      hasServerRole(authContext, 'student') ||
+      hasServerRole(authContext, 'parent') ||
+      hasServerRole(authContext, 'teacher')
+    )) {
       const { data: sources, error: sourceError } = await client
         .from('lesson_sources')
         .select('lesson_id')
@@ -13600,7 +13651,7 @@ app.get("/api/media-url", async (req, res) => {
           .select('id, status, lesson_status')
           .in('id', lessonIds);
         if (lessonError) {
-          console.error('Private media publication lookup failed:', lessonError.message);
+          console.error('Private media lesson publication lookup failed:', lessonError.message);
           return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
         }
         authorized = (lessons || []).some((lesson: any) =>
@@ -13608,17 +13659,79 @@ app.get("/api/media-url", async (req, res) => {
         );
       }
 
-      const { data: linkedLessons, error: linkedLessonError } = await client
-        .from('lessons')
-        .select('id, status, lesson_status')
-        .or(`audio_url.eq.${req.query.reference},pdf_worksheet_url.eq.${req.query.reference}`);
-      if (linkedLessonError) {
-        console.error('Private media lesson-field lookup failed:', linkedLessonError.message);
-        return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+      if (!authorized) {
+        const { data: linkedLessons, error: linkedLessonError } = await client
+          .from('lessons')
+          .select('id, status, lesson_status')
+          .or(`audio_url.eq.${req.query.reference},pdf_worksheet_url.eq.${req.query.reference}`);
+        if (linkedLessonError) {
+          console.error('Private media lesson-field lookup failed:', linkedLessonError.message);
+          return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+        }
+        authorized = (linkedLessons || []).some((lesson: any) =>
+          lesson.status === 'published' || lesson.lesson_status === 'published'
+        );
       }
-      authorized = authorized || (linkedLessons || []).some((lesson: any) =>
-        lesson.status === 'published' || lesson.lesson_status === 'published'
-      );
+
+      // Hymns and Taxis store stable private Storage references in their own
+      // Supabase rows. Resolve access through the published curriculum record,
+      // not by making the curriculum bucket public.
+      if (!authorized) {
+        const [{ data: linkedHymns, error: hymnError }, { data: linkedTaxis, error: taxisError }] = await Promise.all([
+          client.from('hymns')
+            .select('id, status, level, created_by')
+            .or(`audio_url.eq.${req.query.reference},pdf_url.eq.${req.query.reference},sheet_music_url.eq.${req.query.reference}`),
+          client.from('coptic_taxis_items')
+            .select('id, status, level, target_audience, audience_detail, created_by, attachments')
+            .contains('attachments', [{ fileUrl: req.query.reference }])
+        ]);
+        if (hymnError || taxisError) {
+          console.error('Private Hymns/Taxis media lookup failed:', hymnError?.message || taxisError?.message);
+          return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+        }
+
+        const isStudent = hasServerRole(authContext, 'student');
+        const isTeacher = hasServerRole(authContext, 'teacher');
+        const isParent = hasServerRole(authContext, 'parent');
+        let studentLevel: number | null = null;
+        let studentGrade = '';
+        if (isStudent && !isTeacher && !isAdmin) {
+          const { data: profile, error: profileError } = await client
+            .from('profiles')
+            .select('hymns_taxis_level, grade')
+            .eq('id', authContext.userId)
+            .maybeSingle();
+          if (profileError) {
+            console.error('Private Hymns/Taxis profile lookup failed:', profileError.message);
+            return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+          }
+          studentLevel = parseHymnsTaxisLevel(profile?.hymns_taxis_level);
+          studentGrade = String(profile?.grade || '').toLowerCase();
+        }
+
+        const hymnAllowed = (linkedHymns || []).some((item: any) => {
+          if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
+          if (isTeacher) return true;
+          if (isStudent) return item.status === 'published' && studentLevel !== null && item.level === studentLevel;
+          return isParent && item.status === 'published';
+        });
+        const taxisAllowed = (linkedTaxis || []).some((item: any) => {
+          if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
+          if (isTeacher) return true;
+          if (isStudent) {
+            if (item.status !== 'published' || studentLevel === null || item.level !== studentLevel) return false;
+            const audience = String(item.target_audience || '').toUpperCase();
+            const audienceDetail = String(item.audience_detail || '').toLowerCase();
+            return (
+              (['ALL', 'CONGREGATION'].includes(audience) &&
+                (audienceDetail !== 'preparatory' || studentGrade.includes('prep')))
+              || (audience === 'DEACONS' && studentLevel >= 2)
+            );
+          }
+          return isParent && item.status === 'published';
+        });
+        authorized = hymnAllowed || taxisAllowed;
+      }
     }
 
     if (!authorized) {

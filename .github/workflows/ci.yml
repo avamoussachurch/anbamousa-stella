@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, "stella/**"]
+    branches: [main, "stella/**", release-readiness-hardening]
 
 permissions:
   contents: read
@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Type-check
         run: npm run lint
       - name: Run tests

@@ -27,6 +27,7 @@ import { recordStudentSchoolActivity } from '../../lib/studentProgressService';
 import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
 import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
+import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
 
 export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isAr = lang === 'ar';
@@ -38,6 +39,9 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const [hymnsList, setHymnsList] = useState<CopticHymnItem[]>(COPTIC_HYMNS_COLLECTION);
   const [hymnsLoadError, setHymnsLoadError] = useState<string | null>(null);
   const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem>(COPTIC_HYMNS_COLLECTION[0]);
+  const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
+  const [resolvedSheetMusicUrl, setResolvedSheetMusicUrl] = useState('');
+  const [audioUrlError, setAudioUrlError] = useState<string | null>(null);
 
   // Audio Playback
   const [isPlaying, setIsPlaying] = useState(false);
@@ -89,6 +93,33 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
 
     return () => { isMounted = false; };
   }, [levelFilter, seasonFilter, isTeacherOrAdmin, assignedLevel, userData?.id, userData?.roles, lang]);
+
+  // Private Storage references are not browser-playable URLs. Resolve them
+  // through the authenticated server endpoint and refresh on hymn selection.
+  useEffect(() => {
+    let active = true;
+    setResolvedAudioUrl('');
+    setAudioUrlError(null);
+    if (!selectedHymn?.audioUrl) return () => { active = false; };
+
+    resolveCurriculumMediaUrl(selectedHymn.audioUrl)
+      .then(url => { if (active) setResolvedAudioUrl(url); })
+      .catch(error => {
+        if (active) setAudioUrlError(error instanceof Error ? error.message : 'Audio could not be loaded.');
+      });
+    return () => { active = false; };
+  }, [selectedHymn?.id, selectedHymn?.audioUrl]);
+
+  useEffect(() => {
+    let active = true;
+    setResolvedSheetMusicUrl('');
+    const reference = selectedHymn?.sheetMusicUrl || selectedHymn?.pdfUrl;
+    if (!reference) return () => { active = false; };
+    resolveCurriculumMediaUrl(reference)
+      .then(url => { if (active) setResolvedSheetMusicUrl(url); })
+      .catch(() => { if (active) setResolvedSheetMusicUrl(''); });
+    return () => { active = false; };
+  }, [selectedHymn?.id, selectedHymn?.sheetMusicUrl, selectedHymn?.pdfUrl]);
 
   // Read mastered hymns
   useEffect(() => {
@@ -430,16 +461,30 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
             <div className="bg-stone-50 dark:bg-stone-800/50 p-4 rounded-2xl border border-stone-200 dark:border-stone-700 space-y-3">
               <audio
                 ref={audioRef}
-                src={selectedHymn.audioUrl}
+                src={resolvedAudioUrl || undefined}
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={() => setIsPlaying(false)}
               />
 
+              {audioUrlError && (
+                <p role="status" className="text-xs font-semibold text-rose-600">{audioUrlError}</p>
+              )}
+              {resolvedSheetMusicUrl && (
+                <a
+                  href={resolvedSheetMusicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--mousa-teal)]/30 text-[var(--mousa-teal-deep)] dark:text-amber-300 text-xs font-bold hover:bg-[var(--mousa-teal)]/10 transition-colors"
+                >
+                  {isAr ? 'عرض نوتة اللحن PDF' : 'View sheet music PDF'}
+                </a>
+              )}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={togglePlay}
+                    disabled={!resolvedAudioUrl}
                     className="p-3.5 bg-[var(--mousa-teal)] hover:opacity-90 text-white rounded-2xl cursor-pointer shadow-md transition-all active:scale-95"
                   >
                     {isPlaying ? <Pause size={20} /> : <Play size={20} />}

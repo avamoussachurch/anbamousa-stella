@@ -15,6 +15,7 @@ import {
 import { getEditableLessonVersion } from './lessonAuthoringService';
 import { parseStorageReference } from './mediaStorageReference';
 import { parsePersistentMediaUploadResponse } from './mediaUploadResponse';
+import { fetchWithTimeout } from './fetchWithTimeout';
 
 export interface AddLessonSourceInput {
   lessonId: string;
@@ -107,11 +108,11 @@ export async function uploadSourceMedia(
       return { success: false, error: 'Your session expired. Sign in again before uploading curriculum media.' };
     }
 
-    const response = await fetch('/api/upload-media', {
+    const response = await fetchWithTimeout('/api/upload-media', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formData
-    });
+    }, 120000);
 
     const result = await parsePersistentMediaUploadResponse(response);
     if (!result.success || !result.mediaUrl || !result.previewUrl) {
@@ -145,10 +146,10 @@ export async function getAuthorizedSourceUrl(fileUrl?: string): Promise<string> 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (sessionError || !token) return '';
-      const response = await fetch(`/api/media-url?reference=${encodeURIComponent(fileUrl)}`, {
+      const response = await fetchWithTimeout(`/api/media-url?reference=${encodeURIComponent(fileUrl)}`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store'
-      });
+      }, 12000);
       const result = await response.json().catch(() => null);
       if (!response.ok || !result?.success || typeof result.url !== 'string') {
         console.warn('Private curriculum media URL request failed:', result?.message || response.status);

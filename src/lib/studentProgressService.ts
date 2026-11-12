@@ -358,7 +358,8 @@ export async function recordStudentSchoolActivity(
  * Essential for cross-device synchronization and refresh persistence.
  */
 export async function getStudentProgressSummary(
-  studentId?: string
+  studentId?: string,
+  options: { force?: boolean } = {}
 ): Promise<{
   success: boolean;
   completedLessonIds: string[];
@@ -376,6 +377,7 @@ export async function getStudentProgressSummary(
     const headers = await getAuthHeader();
     const query = new URLSearchParams();
     if (studentId) query.set('studentId', studentId);
+    if (options.force) query.set('refresh', '1');
 
     const res = await fetch(`/api/church/student-progress/summary?${query.toString()}`, {
       method: 'GET',

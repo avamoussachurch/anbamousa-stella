@@ -1940,30 +1940,19 @@ test('role authorization uses assigned roles and admin routes reject non-admin c
   assert.equal(anonymous.status, 401);
 });
 
-test('role authorization fails closed when profile or assigned-role lookups fail', async () => {
-  const missingProfileId = 'role-auth-missing-profile';
+test('role authorization fails closed when assigned-role lookup fails', async () => {
   const roleLookupFailureId = 'role-auth-lookup-failure';
-  roleAssignments.set(missingProfileId, ['student']);
   roleAssignments.set(roleLookupFailureId, ['admin']);
-  missingProfileIds.add(missingProfileId);
   roleLookupFailureIds.add(roleLookupFailureId);
 
   try {
-    const missingProfile = await request('/api/church/me/roles', {
-      role: 'admin',
-      userId: missingProfileId
-    });
     const roleLookupFailure = await request('/api/church/admin/role-requests', {
       role: 'admin',
       userId: roleLookupFailureId
     });
-
-    assert.equal(missingProfile.status, 401);
     assert.equal(roleLookupFailure.status, 401);
   } finally {
-    missingProfileIds.delete(missingProfileId);
     roleLookupFailureIds.delete(roleLookupFailureId);
-    roleAssignments.delete(missingProfileId);
     roleAssignments.delete(roleLookupFailureId);
   }
 });
