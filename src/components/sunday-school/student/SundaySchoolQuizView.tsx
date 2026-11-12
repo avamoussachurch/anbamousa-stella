@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { QuizVictorySplash } from './QuizVictorySplash';
 import { 
   HelpCircle, 
   CheckCircle2, 
@@ -74,6 +75,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [showVictorySplash, setShowVictorySplash] = useState<boolean>(false);
   const [showExplanation, setShowExplanation] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -211,6 +213,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
         }
       });
       setIsSubmitted(true);
+      setShowVictorySplash(true);
       setIsSubmitting(false);
     } catch (err: any) {
       console.error('Quiz submission error:', err);
@@ -223,6 +226,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
     setSelectedAnswers({});
     setCurrentQuestionIndex(0);
     setIsSubmitted(false);
+    setShowVictorySplash(false);
     setShowExplanation(false);
     setSubmitError(null);
     setValidationWarning(null);
@@ -424,6 +428,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
               return (
                 <button
                   key={oIdx}
+                  data-sfx={isCorrectAnswer ? 'success' : 'tap'}
                   onClick={() => handleSelectOption(oIdx)}
                   disabled={hasAnswered || isSubmitting}
                   aria-pressed={isSelected}
@@ -841,6 +846,18 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
             </button>
           </div>
         </div>
+      )}
+      {showVictorySplash && showSavedResults && (
+        <QuizVictorySplash
+          percentage={displayPercentage}
+          correctCount={displayCorrectCount}
+          totalQuestions={displayTotalQuestions}
+          pointsEarned={submissionResult?.pointsEarned ?? 0}
+          totalPoints={submissionResult?.totalPoints ?? 0}
+          streakDays={submissionResult?.streak?.currentStreak ?? 0}
+          lang={lang}
+          onContinue={() => setShowVictorySplash(false)}
+        />
       )}
     </div>
   );
