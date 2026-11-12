@@ -431,7 +431,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
               return (
                 <button
                   key={oIdx}
-                  data-sfx={isCorrectAnswer ? 'success' : 'tap'}
+                  data-sfx="off"
                   onClick={() => handleSelectOption(oIdx)}
                   disabled={hasAnswered || isSubmitting}
                   aria-pressed={isSelected}
