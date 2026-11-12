@@ -74,7 +74,7 @@ test('publishing returns before its background curriculum refresh completes', ()
 });
 
 test('refreshes preserve already-loaded lessons while revalidating', () => {
-  assert.match(lessonsContext, /setCurriculumLoadedForUserId\(current => current === userData\.id \? current : null\)/);
+  assert.match(lessonsContext, /!workspaceChanged && current === userData\.id \? current : null/);
   assert.match(home, /curriculumReadyForUser \? lessons : \[\]/);
 });
 
