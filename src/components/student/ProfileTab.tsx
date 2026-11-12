@@ -3,6 +3,7 @@ import { Settings, LogOut, Shield, Info, Edit3, ArrowLeft, Save, HelpCircle, Fil
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useGlobalAudio } from '../../context/AudioContext';
 import { updateSupabaseProfile, uploadAvatarToSupabase } from '../../lib/supabaseDatabase';
 import { getShareableChildLink, getWhatsAppShareUrl, getOrCreateChildLinkCode } from '../../lib/parentChildService';
 import { ChildQrCodeModal } from '../common/ChildQrCodeModal';
@@ -37,6 +38,7 @@ export function ProfileTab({
 }) {
   const { userData, updateUserProfile, setUserDirectly, isGuest } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
+  const { soundEnabled, setSoundEnabled } = useGlobalAudio();
   const [screen, setScreen] = useState<ProfileScreen>('main');
   const [userName, setUserName] = useState(userData?.fullName || '');
   const [avatar, setAvatar] = useState(userData?.avatarUrl || DEFAULT_STUDENT_AVATAR);
@@ -1254,7 +1256,13 @@ export function ProfileTab({
 
                <div className="flex items-center justify-between pt-2">
                  <span className="font-bold text-gray-700 dark:text-[#FAF5EB]">{lang === 'ar' ? 'تأثيرات صوتية' : 'Sound Effects'}</span>
-                 <input type="checkbox" defaultChecked className="w-6 h-6 accent-[var(--mousa-teal-deep)]" />
+                 <input
+                   type="checkbox"
+                   checked={soundEnabled}
+                   onChange={event => setSoundEnabled(event.target.checked)}
+                   aria-label={lang === 'ar' ? 'تفعيل التأثيرات الصوتية' : 'Enable sound effects'}
+                   className="w-6 h-6 accent-[var(--mousa-teal-deep)]"
+                 />
                </div>
                <div className="flex items-center justify-between">
                  <span className="font-bold text-gray-700 dark:text-[#FAF5EB]">{lang === 'ar' ? 'إشعارات يومية' : 'Daily Notifications'}</span>

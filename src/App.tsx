@@ -21,7 +21,6 @@ import { RoleAccountProfile } from './components/profile/RoleAccountProfile';
 import { OfflineIndicator } from './components/layout/OfflineIndicator';
 import { AnbaMousaSplashScreen } from './components/layout/AnbaMousaSplashScreen';
 import { AmbientWorld } from './components/layout/AmbientWorld';
-import { SoundEffectsControl } from './components/layout/SoundEffectsControl';
 import { GlobalMusicPlayer } from './components/layout/GlobalMusicPlayer';
 import { useAuth } from './context/AuthContext';
 import { LessonsProvider } from './context/LessonsContext';
@@ -146,12 +145,7 @@ function AppContent() {
 
   if (!userData) {
     return (
-      <>
-        <div className="fixed right-4 top-4 z-[60]">
-          <SoundEffectsControl compact />
-        </div>
-        <LoginScreen lang={lang} setLang={setLang} />
-      </>
+      <LoginScreen lang={lang} setLang={setLang} />
     );
   }
 
@@ -296,9 +290,6 @@ function AppContent() {
       className="min-h-screen relative isolate bg-[var(--color-church-cream)] pb-safe overflow-x-hidden selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
     >
       <AmbientWorld variant="app" />
-      <div className="fixed bottom-24 left-4 z-50">
-        <SoundEffectsControl />
-      </div>
       <div className="relative z-10 min-h-screen">
       <TopBar 
         lang={lang} 

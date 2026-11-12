@@ -2294,3 +2294,42 @@ main {
     scale: 1 !important;
   }
 }
+
+
+/* Mobile rendering budget: preserve the atmosphere but avoid continuously animating
+   blurred full-screen layers and dozens of particles on low-power phones. */
+@media (max-width: 640px) {
+  .ambient-world--app {
+    opacity: .34;
+    mix-blend-mode: normal;
+  }
+
+  .ambient-world__glow {
+    filter: none;
+    animation: none;
+    opacity: .12;
+  }
+
+  .ambient-world__particles {
+    display: none;
+  }
+
+  .ambient-world__lantern {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) and (prefers-reduced-motion: no-preference) {
+  .ambient-world__cloud,
+  .ambient-world__spark,
+  .ambient-world__companion {
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    background-attachment: scroll;
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { QuizVictorySplash } from './QuizVictorySplash';
+import { useGlobalAudio } from '../../../context/AudioContext';
 import { 
   HelpCircle, 
   CheckCircle2, 
@@ -70,6 +71,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   onReviewSection
 }) => {
   const isAr = lang === 'ar';
+  const { playSound } = useGlobalAudio();
   const questions = quiz.questions || [];
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
@@ -105,6 +107,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   const handleSelectOption = (index: number) => {
     if (isSubmitted || isSubmitting) return;
     setValidationWarning(null);
+    playSound(index === currentQuestion.correctIndex ? 'correct' : 'incorrect');
     setSelectedAnswers(prev => selectQuizAnswer(prev, currentQuestion.id, index, false));
     setShowExplanation(true);
   };
@@ -428,7 +431,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
               return (
                 <button
                   key={oIdx}
-                  data-sfx={isCorrectAnswer ? 'success' : 'tap'}
+                  data-sfx="off"
                   onClick={() => handleSelectOption(oIdx)}
                   disabled={hasAnswered || isSubmitting}
                   aria-pressed={isSelected}

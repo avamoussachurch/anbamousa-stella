@@ -6,16 +6,15 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('sound effects are optional, persistent, synthesized locally and never block UI actions', async () => {
   const audio = await read('../src/context/AudioContext.tsx');
-  const control = await read('../src/components/layout/SoundEffectsControl.tsx');
   const app = await read('../src/App.tsx');
   assert.match(audio, /anba_mousa_sound_enabled/);
   assert.match(audio, /AudioContextConstructor/);
   assert.match(audio, /playSound/);
   assert.match(audio, /Sound is an enhancement only/);
   assert.match(audio, /document\.addEventListener\('click'/);
-  assert.match(control, /aria-pressed=\{soundEnabled\}/);
-  assert.match(app, /<SoundEffectsControl \/>/);
-  assert.match(app, /<SoundEffectsControl compact \/>/);
+  for (const event of ['correct', 'incorrect', 'open', 'close', 'streak', 'levelup', 'achievement', 'portal']) { assert.match(audio, new RegExp(event)); }
+  assert.doesNotMatch(app, /SoundEffectsControl/);
+  assert.doesNotMatch(app, /fixed bottom-24 left-4 z-50/);
 });
 
 test('shared world has visible playful decorations and keeps motion accessible', async () => {
@@ -30,6 +29,13 @@ test('shared world has visible playful decorations and keeps motion accessible',
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /Higher-contrast defaults/);
 });
+
+test('quiz answers play one specific result sound without a generic click sound', async () => {
+  const quiz = await read('../src/components/sunday-school/student/SundaySchoolQuizView.tsx');
+  assert.match(quiz, /playSound\(index === currentQuestion\.correctIndex \? 'correct' : 'incorrect'\)/);
+  assert.match(quiz, /data-sfx="off"/);
+});
+
 
 test('every saved quiz opens a motivational splash with verified performance, points and streak', async () => {
   const quiz = await read('../src/components/sunday-school/student/SundaySchoolQuizView.tsx');
