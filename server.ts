@@ -13628,7 +13628,8 @@ app.get("/api/media-url", async (req, res) => {
       return res.status(404).json({ success: false, error: 'MEDIA_NOT_FOUND', message: 'File was not found.' });
     }
 
-    let authorized = hasServerRole(authContext, 'admin') || media.owner_id === authContext.userId;
+    const isAdmin = hasServerRole(authContext, 'admin');
+    let authorized = isAdmin || media.owner_id === authContext.userId;
     if (!authorized && (
       hasServerRole(authContext, 'student') ||
       hasServerRole(authContext, 'parent') ||
