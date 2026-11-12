@@ -76,3 +76,8 @@ test('refreshes preserve already-loaded lessons while revalidating', () => {
   assert.match(lessonsContext, /setCurriculumLoadedForUserId\(current => current === userData\.id \? current : null\)/);
   assert.match(home, /curriculumReadyForUser \? lessons : \[\]/);
 });
+
+test('curriculum cache is not reused across workspace changes', () => {
+  assert.match(lessonsContext, /curriculumWorkspaceRef\.current !== activeWorkspace/);
+  assert.match(lessonsContext, /!workspaceChanged && current === userData\.id/);
+});
