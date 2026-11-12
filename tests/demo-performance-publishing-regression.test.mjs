@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const home = read('../src/components/student/HomeTab.tsx');
+const lessonsContext = read('../src/context/LessonsContext.tsx');
+const authoringService = read('../src/lib/lessonAuthoringService.ts');
 const auth = read('../src/context/AuthContext.tsx');
 const timeout = read('../src/lib/fetchWithTimeout.ts');
 const hymnsService = read('../src/lib/hymnsService.ts');
@@ -53,4 +55,24 @@ test('Taxis save and workflow actions always release the saving state', () => {
     const block = taxisStudio.slice(taxisStudio.indexOf(start), taxisStudio.indexOf(end));
     assert.match(block, /finally\s*\{[\s\S]*?setIsSaving\(false\)/);
   }
+});
+
+test('curriculum loading avoids duplicate progress-summary requests and serial per-lesson fetches', () => {
+  const loaderStart = lessonsContext.indexOf('const loadOnlineCurriculum');
+  const loaderEnd = lessonsContext.indexOf('useEffect(() => {\n    loadOnlineCurriculum();', loaderStart);
+  const loader = lessonsContext.slice(loaderStart, loaderEnd);
+  assert.doesNotMatch(loader, /getStudentProgressSummary/);
+  assert.match(loader, /Promise\.all\(batch\.map/);
+  assert.match(lessonsContext, /activeWorkspace !== 'student'/);
+  assert.match(authoringService, /Promise\.all\(lessonsForUser\.map/);
+});
+
+test('publishing returns before its background curriculum refresh completes', () => {
+  assert.match(lessonsContext, /void loadOnlineCurriculum\(\)\.catch/);
+  assert.doesNotMatch(lessonsContext, /await loadOnlineCurriculum\(\);/);
+});
+
+test('refreshes preserve already-loaded lessons while revalidating', () => {
+  assert.match(lessonsContext, /setCurriculumLoadedForUserId\(current => current === userData\.id \? current : null\)/);
+  assert.match(home, /curriculumReadyForUser \? lessons : \[\]/);
 });
