@@ -30,7 +30,7 @@ const CELEBRATION_COLORS = [
   '#FFFFFF'  // Pure White
 ];
 
-export const ConfettiCanvas: React.FC = () => {
+export const ConfettiCanvas: React.FC<{ layer?: 'top' | 'behind' }> = ({ layer = 'top' }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -201,7 +201,7 @@ export const ConfettiCanvas: React.FC = () => {
         left: 0,
         width: '100vw',
         height: '100vh',
-        zIndex: 9999
+        zIndex: layer === 'behind' ? 1 : 9999
       }}
       aria-hidden="true"
     />

@@ -248,12 +248,27 @@ export function ServantHomeDashboard({
                 <ServiceIllustration lang={lang} />
               </div>
             </div>
-            <div className="relative mt-5 grid grid-cols-2 gap-y-4 rounded-2xl border border-white/10 bg-black/10 p-4 sm:grid-cols-4 sm:gap-0 sm:p-5">
-              <SummaryMetric icon={GraduationCap} label={isArabic ? 'الفصول المسندة' : 'Assigned classes'} value={loading ? '—' : error ? '—' : String(summary?.classes.length ?? 0)} note={isArabic ? 'للسنة الكنسية النشطة' : 'Active church year'} />
-              <SummaryMetric icon={Users} label={isArabic ? 'التلاميذ المسجلون' : 'Enrolled students'} value={loading ? '—' : error ? '—' : String(summary?.totals.students ?? 0)} note={isArabic ? 'في فصولك المسندة' : 'In your assigned classes'} />
-              <SummaryMetric icon={CheckCircle2} label={isArabic ? 'إتمام الدروس المسجل' : 'Recorded completions'} value={loading ? '—' : error ? '—' : String(summary?.totals.completedLessons ?? 0)} note={isArabic ? 'من سجلات قاعدة البيانات' : 'Persisted lesson records'} />
-              <SummaryMetric icon={BookOpen} label={isArabic ? 'المنهج المنشور' : 'Published curriculum'} value={loading ? '—' : error ? '—' : String(summary?.totals.curriculumCount ?? 0)} note={isArabic ? 'للصفوف المسندة' : 'For assigned grade groups'} />
-            </div>
+            {!loading && !error && summary && summary.classes.length === 0 ? (
+              <div className="relative mt-5 flex items-start gap-3 rounded-2xl border border-amber-200/35 bg-amber-100/10 p-4 sm:p-5" role="status" aria-live="polite">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-200/15 text-amber-200"><GraduationCap size={22} /></span>
+                <div className="min-w-0">
+                  <p className="font-black text-amber-100">{isArabic ? 'لا يوجد فصل نشط مسند لهذا الحساب بعد' : 'No active class is assigned to this teacher account yet'}</p>
+                  <p className="mt-1 max-w-3xl text-xs leading-6 text-teal-50/90">
+                    {isArabic
+                      ? 'الأرقام لن تظهر قبل أن يربط المسؤول حساب الخادم بالفصل الصحيح في السنة الكنسية النشطة. لا نعرض بيانات فصول أخرى حفاظاً على خصوصية التلاميذ.'
+                      : 'The class, student and curriculum totals will appear after an administrator assigns this account to the correct class for the active church year. We do not mix in other teachers’ class data.'}
+                  </p>
+                  <p className="mt-2 text-[11px] font-bold text-amber-100/90">{isArabic ? 'السنة الكنسية النشطة:' : 'Active church year:'} {summary.churchYear || (isArabic ? 'غير محددة' : 'Not set')}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="relative mt-5 grid grid-cols-2 gap-y-4 rounded-2xl border border-white/10 bg-black/10 p-4 sm:grid-cols-4 sm:gap-0 sm:p-5">
+                <SummaryMetric icon={GraduationCap} label={isArabic ? 'الفصول المسندة' : 'Assigned classes'} value={loading ? '—' : error ? '—' : String(summary?.classes.length ?? 0)} note={isArabic ? 'للسنة الكنسية النشطة' : 'Active church year'} />
+                <SummaryMetric icon={Users} label={isArabic ? 'التلاميذ المسجلون' : 'Enrolled students'} value={loading ? '—' : error ? '—' : String(summary?.totals.students ?? 0)} note={isArabic ? 'في فصولك المسندة' : 'In your assigned classes'} />
+                <SummaryMetric icon={CheckCircle2} label={isArabic ? 'إتمام الدروس المسجل' : 'Recorded completions'} value={loading ? '—' : error ? '—' : String(summary?.totals.completedLessons ?? 0)} note={isArabic ? 'من سجلات قاعدة البيانات' : 'Persisted lesson records'} />
+                <SummaryMetric icon={BookOpen} label={isArabic ? 'المنهج المنشور' : 'Published curriculum'} value={loading ? '—' : error ? '—' : String(summary?.totals.curriculumCount ?? 0)} note={isArabic ? 'للصفوف المسندة' : 'For assigned grade groups'} />
+              </div>
+            )}
           </section>
 
           <section aria-labelledby="curriculum-areas-heading" className="space-y-4">

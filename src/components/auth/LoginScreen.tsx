@@ -207,16 +207,31 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
         transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 105, damping: 18, mass: 0.9 }}
       >
         <div className="text-center space-y-2">
-          <motion.div
-            className="w-16 h-16 bg-gradient-to-tr from-[var(--mousa-teal-deep)] to-[var(--mousa-teal)] rounded-2xl mx-auto flex items-center justify-center text-white shadow-[0_0_38px_rgba(198,139,35,0.28)] border-2 border-[var(--mousa-gold)]/70"
-            animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [0, -2, 2, 0], boxShadow: ['0 0 20px rgba(198,139,35,.18)', '0 0 42px rgba(198,139,35,.42)', '0 0 20px rgba(198,139,35,.18)'] }}
-            transition={reduceMotion ? undefined : { duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <span className="text-2xl font-black tracking-tighter text-[var(--mousa-gold)]">ⲭⲣ</span>
-          </motion.div>
+          <div className="relative mx-auto mb-2 grid h-24 w-24 place-items-center">
+            <motion.div
+              className="absolute inset-0 rounded-[2rem] border-2 border-dashed border-[var(--mousa-gold)]/70"
+              animate={reduceMotion ? undefined : { rotate: 360 }}
+              transition={reduceMotion ? undefined : { duration: 20, repeat: Infinity, ease: 'linear' }}
+            />
+            <motion.span
+              className="absolute -end-1 top-2 z-10 text-xl text-[var(--mousa-gold)] drop-shadow-lg"
+              animate={reduceMotion ? undefined : { y: [0, -8, 0], rotate: [0, 18, 0] }}
+              transition={reduceMotion ? undefined : { duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+            >✦</motion.span>
+            <motion.div
+              className="relative z-10 flex h-20 w-20 items-center justify-center rounded-[1.6rem] border-2 border-[var(--mousa-gold)]/80 bg-gradient-to-tr from-[var(--mousa-teal-deep)] to-[var(--mousa-teal)] text-white shadow-[0_0_48px_rgba(198,139,35,0.42)]"
+              animate={reduceMotion ? undefined : { y: [0, -8, 0], rotate: [0, -3, 3, 0], boxShadow: ['0 0 22px rgba(198,139,35,.22)', '0 0 54px rgba(198,139,35,.58)', '0 0 22px rgba(198,139,35,.22)'] }}
+              transition={reduceMotion ? undefined : { duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <span className="text-3xl font-black tracking-tighter text-[var(--mousa-gold)]">ⲭⲣ</span>
+            </motion.div>
+          </div>
           <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] tracking-tight">
-            {lang === 'copt' ? 'Ϯⲉⲕⲕⲗⲏⲥⲓⲁ ⲙ̀Ⲫⲁⲅⲓⲟⲥ Ⲙⲱⲩⲥⲏⲥ' : lang === 'ar' ? 'كنيسة القديس الأنبا موسى' : 'St. Moses Church'}
+            {lang === 'copt' ? 'Ⲁⲛⲃⲁ Ⲙⲱⲩⲥⲏ' : lang === 'ar' ? 'الأنبا موسى' : 'Anba Mousa'}
           </h1>
+          <p className="mx-auto max-w-xs text-[10px] font-black uppercase tracking-[.16em] text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold)]">
+            {lang === 'ar' ? 'ننمو في الإيمان، ونتعلم بمحبة' : lang === 'copt' ? 'Ⲧⲉⲛϣⲟⲩϣⲟⲩ ϧⲉⲛ ⲡⲓⲛⲁϩϯ ⲛⲉⲙ ⲡⲓⲙⲁⲑⲏⲧⲏⲥ' : 'Growing in Faith, Learning in Love'}
+          </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {isRegister 
               ? (lang === 'copt' ? 'Ⲁⲣⲓ ⲟⲩⲕⲗⲟⲙ ⲙ̀ⲃⲉⲣⲓ ⲉ̀ⲛⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲕⲩⲣⲓⲁⲕⲏ' : lang === 'ar' ? 'أنشئ حسابك الجديد للانضمام إلى مدارس الأحد' : 'Create your Sunday School account')
