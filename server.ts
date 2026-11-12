@@ -8223,10 +8223,14 @@ app.get("/api/church/my-class", async (req, res) => {
           });
         }
         try {
-          const client = createClient(supabaseUrl, supabaseAnonKey, {
-            global: { headers: { Authorization: `Bearer ${token}` } },
-            auth: { persistSession: false, autoRefreshToken: false }
-          });
+          // Admins use the trusted server client because legacy profiles.role can
+          // differ from profile_role_assignments; teacher reads remain user-scoped.
+          const client = hasServerRole(authContext, 'admin')
+            ? getTrustedRoleClient()
+            : createClient(supabaseUrl, supabaseAnonKey, {
+                global: { headers: { Authorization: `Bearer ${token}` } },
+                auth: { persistSession: false, autoRefreshToken: false }
+              });
           const { data: activeYear, error: yearError } = await client
             .from('church_years')
             .select('id, name')
@@ -8240,7 +8244,7 @@ app.get("/api/church/my-class", async (req, res) => {
           }
 
           const requestedCode = String(req.query.classCode || '').trim();
-          const requestedGroup = String(req.query.classGroupId || '').trim();
+          const requestedGroup = String(req.query.classGroupId || (!requestedCode && hasServerRole(authContext, 'admin') ? 'primary_2' : '')).trim();
           let assignedInstances: any[] = [];
           if (hasServerRole(authContext, 'admin')) {
             let query = client
