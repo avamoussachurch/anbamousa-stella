@@ -342,7 +342,7 @@ function normalizeGradeQuery(raw: string): string {
     .replace(/٨/g, '8')
     .replace(/٩/g, '9')
     .replace(/٠/g, '0')
-    .replace(/[-_]/g, ' ')
+    .replace(/[\-‐‑‒–—_]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
