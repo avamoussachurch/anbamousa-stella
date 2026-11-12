@@ -11,6 +11,7 @@ import { hymnFromDatabase, hymnToDatabase, taxisFromDatabase, taxisToDatabase } 
 import { canEditOwnedTaxisItem, canManageHymnsTaxis, canPublishOwnedTaxisItem, canReadHymnsTaxis, canReviewTaxisItem } from "./src/lib/hymnsTaxisAuthorization";
 import { randomUUID } from "crypto";
 import { findCanonicalGrade } from "./src/lib/classGroups";
+import { mergeStudentLessonProgress } from "./src/lib/teacherProgressSummary";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -8123,6 +8124,7 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
       const sectionProgressRows: Array<{
         student_id: string;
         lesson_id: string;
+        version_id: string;
         sections_completed: string[];
         total_sections: number;
         updated_at: string;
@@ -8130,7 +8132,7 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
       for (let offset = 0; studentIds.length > 0; offset += 1000) {
         const { data, error } = await client
           .from('lesson_section_progress')
-          .select('student_id, lesson_id, sections_completed, total_sections, updated_at')
+          .select('student_id, lesson_id, version_id, sections_completed, total_sections, updated_at')
           .in('student_id', studentIds)
           .order('updated_at', { ascending: false })
           .range(offset, offset + 999);
@@ -8140,42 +8142,21 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
         if (page.length < 1000) break;
       }
 
-      const progressByStudentLesson = new Map<string, {
-        student_id: string;
-        lesson_id: string;
-        completed: boolean;
-        completed_at: string | null;
-      }>();
-      for (const row of progressRows) {
-        const key = `${row.student_id}:${row.lesson_id}`;
-        const existing = progressByStudentLesson.get(key);
-        progressByStudentLesson.set(key, {
-          student_id: row.student_id,
-          lesson_id: row.lesson_id,
-          completed: Boolean(existing?.completed || row.completed),
-          completed_at: existing?.completed_at || row.completed_at || null
-        });
-      }
-      for (const row of sectionProgressRows) {
-        const key = `${row.student_id}:${row.lesson_id}`;
-        const existing = progressByStudentLesson.get(key);
-        const totalSections = Number(row.total_sections) || 0;
-        const completedSections = Array.isArray(row.sections_completed) ? row.sections_completed.length : 0;
-        const sectionLessonCompleted = totalSections > 0 && completedSections >= totalSections;
-        progressByStudentLesson.set(key, {
-          student_id: row.student_id,
-          lesson_id: row.lesson_id,
-          completed: Boolean(existing?.completed || sectionLessonCompleted),
-          completed_at: existing?.completed_at || (sectionLessonCompleted ? row.updated_at : null)
-        });
-      }
-      const authoritativeProgressRows = [...progressByStudentLesson.values()];
-      const lessonIds = [...new Set(authoritativeProgressRows.map(row => row.lesson_id).filter(Boolean))];
+      const lessonIds = [...new Set([
+        ...progressRows.map(row => row.lesson_id),
+        ...sectionProgressRows.map(row => row.lesson_id)
+      ].filter(Boolean))];
       const { data: progressLessons, error: progressLessonError } = lessonIds.length > 0
-        ? await client.from('lessons').select('id, title_en, title_ar').in('id', lessonIds)
+        ? await client.from('lessons').select('id, title_en, title_ar, active_version_id').in('id', lessonIds)
         : { data: [], error: null };
       if (progressLessonError) throw new Error(`Could not load activity lesson titles: ${progressLessonError.message}`);
       const progressLessonMap = new Map((progressLessons || []).map(lesson => [lesson.id, lesson]));
+      const activeVersionByLesson = new Map((progressLessons || []).map(lesson => [lesson.id, lesson.active_version_id]));
+      const authoritativeProgressRows = mergeStudentLessonProgress(
+        progressRows,
+        sectionProgressRows,
+        activeVersionByLesson
+      );
       const classesById = new Map(activeInstances.map(instance => [instance.id, instance]));
 
       const { data: curriculum, error: curriculumError } = await client
