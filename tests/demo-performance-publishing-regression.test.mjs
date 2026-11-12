@@ -27,6 +27,7 @@ test('HTTP requests have a finite timeout and always clear the timer', () => {
   assert.match(timeout, /new AbortController\(\)/);
   assert.match(timeout, /controller\.abort\(\)/);
   assert.match(timeout, /clearTimeout\(timeoutId\)/);
+  assert.match(timeout, /response\.clone\(\)\.arrayBuffer\(\)/);
 });
 
 test('all three publishing services use bounded HTTP requests', () => {
