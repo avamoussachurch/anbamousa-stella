@@ -26,6 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { publishExpressLesson } from '../../lib/lessonAuthoringService';
 import { uploadSourceMedia } from '../../lib/lessonSourceService';
+import { hasRole } from '../../lib/workspaces';
 
 interface ExpressLessonPublishModalProps {
   isOpen: boolean;
@@ -42,11 +43,10 @@ export function ExpressLessonPublishModal({
   lang = 'en',
   defaultGrade = '4th Grade'
 }: ExpressLessonPublishModalProps) {
-  if (!isOpen) return null;
-
   const isAr = lang === 'ar';
   const { userData, isGuest } = useAuth();
   const isOnlineAuth = !isGuest && Boolean(userData) && isSupabaseConfigured;
+  const canDirectPublish = isOnlineAuth && hasRole(userData, 'admin');
 
   // Stepper State (1: Core Details, 2: Media & Notes, 3: Tiered Quiz, 4: Review & Publish)
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -255,6 +255,12 @@ export function ExpressLessonPublishModal({
 
   // Final Action: Direct Publish or Draft Save
   const handleFinalPublish = async (directlyPublish: boolean) => {
+    if (directlyPublish && !canDirectPublish) {
+      setErrorMessage(isAr
+        ? 'النشر المباشر متاح للمسؤول فقط. احفظ الدرس كمسودة لإرساله للمراجعة.'
+        : 'Direct publishing is restricted to administrators. Save this lesson as a draft for review.');
+      return;
+    }
     if (!title.trim()) {
       setCurrentStep(1);
       setErrorMessage(isAr ? 'يرجى كتابة عنوان الدرس أولاً' : 'Please provide a lesson title');
@@ -304,6 +310,8 @@ export function ExpressLessonPublishModal({
       setIsSubmitting(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -814,17 +822,28 @@ export function ExpressLessonPublishModal({
               </div>
             </div>
 
-            <div className="p-4 bg-emerald-950/20 border border-emerald-800/40 rounded-2xl text-xs text-emerald-300 space-y-1">
-              <div className="font-bold flex items-center gap-1.5">
-                <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-                <span>{isAr ? 'نشر رسمي مباشر ومضمون في Supabase' : 'Official Fast Publishing to Supabase'}</span>
+            {canDirectPublish ? (
+              <div className="p-4 bg-emerald-950/20 border border-emerald-800/40 rounded-2xl text-xs text-emerald-300 space-y-1">
+                <div className="font-bold flex items-center gap-1.5">
+                  <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                  <span>{isAr ? 'النشر المباشر متاح للمسؤول' : 'Administrator direct publishing'}</span>
+                </div>
+                <p className="text-emerald-400/80 leading-relaxed">
+                  {isAr
+                    ? 'سيتم تفعيل الدرس للطلاب بعد تأكيد عملية النشر في قاعدة البيانات.'
+                    : 'The lesson becomes available to students only after Supabase confirms publication.'}
+                </p>
               </div>
-              <p className="text-emerald-400/80 leading-relaxed">
-                {isAr
-                  ? 'بالنقر على "نشر الدرس فوراً"، يظهر الدرس مباشرة لجميع طلاب الفصل في جدول مناهج مدارس الأحد وتفعل الأسئلة التفاعلية بنقاط الصعوبة.'
-                  : 'Clicking "Publish Lesson Directly" activates the lesson immediately for all students on the class roster without AI latency.'}
-              </p>
-            </div>
+            ) : (
+              <div className="p-4 bg-amber-950/20 border border-amber-800/40 rounded-2xl text-xs text-amber-200 space-y-1">
+                <div className="font-bold">{isAr ? 'النشر المباشر للمسؤول فقط' : 'Direct publishing is administrator-only'}</div>
+                <p className="leading-relaxed">
+                  {isAr
+                    ? 'احفظ الدرس كمسودة ثم أرسله للمراجعة والاعتماد قبل ظهوره للطلاب.'
+                    : 'Save this lesson as a draft, then submit it through the review and approval workflow before students can see it.'}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -878,19 +897,21 @@ export function ExpressLessonPublishModal({
                   {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : (isAr ? 'حفظ كمسودة' : 'Save as Draft')}
                 </button>
 
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => handleFinalPublish(true)}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-xs flex items-center gap-1.5 shadow-lg transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <Loader2 size={15} className="animate-spin" />
-                  ) : (
-                    <Send size={14} />
-                  )}
-                  <span>{isSubmitting ? (isAr ? 'جاري النشر...' : 'Publishing...') : (isAr ? 'نشر الدرس فوراً للطلاب' : 'Publish Lesson Directly')}</span>
-                </button>
+                {canDirectPublish && (
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => handleFinalPublish(true)}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-xs flex items-center gap-1.5 shadow-lg transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <Send size={14} />
+                    )}
+                    <span>{isSubmitting ? (isAr ? 'جاري النشر...' : 'Publishing...') : (isAr ? 'نشر الدرس فوراً للطلاب' : 'Publish Lesson Directly')}</span>
+                  </button>
+                )}
               </>
             )}
           </div>
