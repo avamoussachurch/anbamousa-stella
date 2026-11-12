@@ -2246,3 +2246,51 @@ textarea:focus-visible {
   .quiz-victory-orbit,
   .quiz-victory-star { animation: none !important; }
 }
+
+/* Playful tactile feedback throughout the site, not only on the student home page. */
+button:not(:disabled),
+a[href],
+[role="button"]:not([aria-disabled="true"]) {
+  transition-property: translate, scale, filter, box-shadow;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(.2,.75,.25,1);
+}
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled):hover,
+  a[href]:hover,
+  [role="button"]:not([aria-disabled="true"]):hover {
+    translate: 0 -2px;
+    filter: brightness(1.045);
+  }
+  .card-church:hover,
+  .stella-card:hover,
+  [data-motion-card]:hover {
+    translate: 0 -4px;
+    box-shadow: 0 18px 42px rgba(22, 55, 60, .14);
+  }
+}
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active {
+  translate: 0 0;
+  scale: .97;
+}
+main {
+  animation: anba-page-arrive 520ms cubic-bezier(.2,.75,.25,1) both;
+}
+@keyframes anba-page-arrive {
+  from { opacity: .72; translate: 0 10px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled),
+  a[href],
+  [role="button"],
+  main,
+  .card-church,
+  .stella-card {
+    animation: none !important;
+    transition-duration: .01ms !important;
+    translate: none !important;
+    scale: 1 !important;
+  }
+}
