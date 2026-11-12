@@ -1099,27 +1099,36 @@ export async function approveLessonVersion(
 
     // 6. Theological Safety Gate: Unresolved source conflicts check
     // Query evidence map
-    const { data: eMapRow } = await supabase
+    const { data: eMapRow, error: evidenceMapError } = await supabase
       .from('evidence_maps')
       .select('id')
       .eq('lesson_id', input.lessonId)
       .maybeSingle();
 
-    if (eMapRow) {
-      const { data: conflicts } = await supabase
-        .from('source_conflicts')
-        .select('id, status, conflict_description_en')
-        .eq('evidence_map_id', eMapRow.id);
+    if (evidenceMapError) {
+      return { data: null, error: new Error(`Approval blocked: Could not verify the lesson evidence map: ${evidenceMapError.message}`) };
+    }
+    if (!eMapRow) {
+      return { data: null, error: new Error('Approval blocked: A verified evidence map is required before approval.') };
+    }
 
-      const unresolved = (conflicts || []).filter((c: any) => c.status === 'UNRESOLVED');
-      if (unresolved.length > 0) {
-        return {
-          data: null,
-          error: new Error(
-            `Theological Safety Gate: Cannot approve version with ${unresolved.length} unresolved source conflict(s). Servants must officially resolve all theological discrepancies first.`
-          )
-        };
-      }
+    const { data: conflicts, error: conflictsError } = await supabase
+      .from('source_conflicts')
+      .select('id, status, conflict_description_en')
+      .eq('evidence_map_id', eMapRow.id);
+
+    if (conflictsError) {
+      return { data: null, error: new Error(`Approval blocked: Could not verify theological source conflicts: ${conflictsError.message}`) };
+    }
+
+    const unresolved = (conflicts || []).filter((c: any) => c.status === 'UNRESOLVED');
+    if (unresolved.length > 0) {
+      return {
+        data: null,
+        error: new Error(
+          `Theological Safety Gate: Cannot approve version with ${unresolved.length} unresolved source conflict(s). Servants must officially resolve all theological discrepancies first.`
+        )
+      };
     }
 
     // 7. Transition status from SERVANT_REVIEW -> APPROVED
