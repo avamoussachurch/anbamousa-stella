@@ -32,7 +32,7 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          mapfile -t test_files < <(find src tests -type f \\( -name '*.test.ts' -o -name '*.test.tsx' -o -name '*.test.mjs' \\) -print 2>/dev/null | sort)
+          mapfile -t test_files < <(find src tests -type f \( -name '*.test.ts' -o -name '*.test.tsx' -o -name '*.test.mjs' \) -print 2>/dev/null | sort)
           if [ "${#test_files[@]}" -eq 0 ]; then
             echo "No test files found."
             exit 1
