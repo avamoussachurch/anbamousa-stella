@@ -1950,9 +1950,8 @@ test('accounts without active roles receive an empty role list and failed role l
   roleLookupFailureIds.add(roleLookupFailureId);
 
   try {
-    const noActiveRole = await request('/api/church/me/roles', {
-      role: 'admin',
-      userId: missingRoleId
+    const noActiveRole = await fetch(`${baseUrl}/api/church/me/roles`, {
+      headers: { authorization: `Bearer test_jwt_student|${missingRoleId}` }
     });
     const roleLookupFailure = await request('/api/church/admin/role-requests', {
       role: 'admin',
