@@ -34,15 +34,45 @@ type ServerAuthContext =
       isAuthenticated: false;
     };
 
-function getTrustedRoleClient() {
+let trustedServiceClient: ReturnType<typeof createClient> | null = null;
+let trustedServiceClientConfig = '';
+let publicAuthClient: ReturnType<typeof createClient> | null = null;
+let publicAuthClientConfig = '';
+
+function getTrustedServiceClient(errorMessage: string) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
   const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error('Trusted role authorization is not configured on the server.');
+  if (!supabaseUrl || !serviceKey) throw new Error(errorMessage);
+
+  // Reuse one server-only client per configuration. Recreating clients for every
+  // request adds avoidable allocation/auth overhead during high request volume.
+  const config = `${supabaseUrl}\u0000${serviceKey}`;
+  if (!trustedServiceClient || trustedServiceClientConfig !== config) {
+    trustedServiceClient = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+    trustedServiceClientConfig = config;
   }
-  return createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
+  return trustedServiceClient;
+}
+
+function getPublicAuthClient() {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+
+  const config = `${supabaseUrl}\u0000${supabaseAnonKey}`;
+  if (!publicAuthClient || publicAuthClientConfig !== config) {
+    publicAuthClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+    publicAuthClientConfig = config;
+  }
+  return publicAuthClient;
+}
+
+function getTrustedRoleClient() {
+  return getTrustedServiceClient('Trusted role authorization is not configured on the server.');
 }
 
 function hasServerRole(authContext: ServerAuthContext, role: ServerRole): boolean {
@@ -171,9 +201,8 @@ async function verifyServerRequestAuth(req: express.Request): Promise<ServerAuth
     }
 
     try {
-      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-        auth: { persistSession: false, autoRefreshToken: false }
-      });
+      const authClient = getPublicAuthClient();
+      if (!authClient) return { userId: null, roles: [], isAuthenticated: false };
       const { data: userData, error: userError } = await authClient.auth.getUser(token);
       if (userError || !userData?.user) {
         return { userId: null, roles: [], isAuthenticated: false };
@@ -189,21 +218,26 @@ async function verifyServerRequestAuth(req: express.Request): Promise<ServerAuth
 
   try {
     const trustedClient = getTrustedRoleClient();
-    const { data: profile, error: profileError } = await trustedClient
-      .from('profiles')
-      .select('id')
-      .eq('id', verifiedUserId)
-      .maybeSingle();
+    // Identity is already verified by Supabase Auth. Run the profile integrity
+    // check and authoritative role lookup concurrently to avoid serial DB latency.
+    const [profileResult, assignmentsResult] = await Promise.all([
+      trustedClient
+        .from('profiles')
+        .select('id')
+        .eq('id', verifiedUserId)
+        .maybeSingle(),
+      trustedClient
+        .from('profile_role_assignments')
+        .select('role')
+        .eq('user_id', verifiedUserId)
+        .is('revoked_at', null)
+    ]);
+    const { data: profile, error: profileError } = profileResult;
+    const { data: assignments, error: assignmentsError } = assignmentsResult;
     if (profileError || !profile?.id) {
       if (profileError) console.error('Could not verify account profile:', profileError.message);
       return { userId: null, roles: [], isAuthenticated: false };
     }
-
-    const { data: assignments, error: assignmentsError } = await trustedClient
-      .from('profile_role_assignments')
-      .select('role')
-      .eq('user_id', verifiedUserId)
-      .is('revoked_at', null);
     if (assignmentsError || !Array.isArray(assignments) || assignments.length === 0) {
       if (assignmentsError) console.error('Could not load assigned account roles:', assignmentsError.message);
       return { userId: null, roles: [], isAuthenticated: false };
@@ -1273,14 +1307,7 @@ const FEED_MEDIA_BUCKET = process.env.SUPABASE_FEED_MEDIA_BUCKET || 'stella-feed
 const CURRICULUM_MEDIA_BUCKET = process.env.SUPABASE_CURRICULUM_MEDIA_BUCKET || 'stella-curriculum-media-v1';
 
 function getTrustedMediaClient() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error('Persistent media storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the server.');
-  }
-  return createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
+  return getTrustedServiceClient('Persistent media storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the server.');
 }
 
 function mediaMimeType(extension: string, suppliedType: string): string {
@@ -5708,14 +5735,7 @@ async function resolveStudentProgressLesson(
 }
 
 function getTrustedProgressClient() {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error('Trusted Supabase configuration is required to persist lesson section progress.');
-  }
-  return createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
+  return getTrustedServiceClient('Trusted Supabase configuration is required to persist lesson section progress.');
 }
 
 async function loadPersistedLessonSections(
