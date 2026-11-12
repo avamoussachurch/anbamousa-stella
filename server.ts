@@ -10,6 +10,7 @@ import { createStorageReference, parseStorageReference } from "./src/lib/mediaSt
 import { hymnFromDatabase, hymnToDatabase, taxisFromDatabase, taxisToDatabase } from "./src/lib/hymnsTaxisPersistence";
 import { canEditOwnedTaxisItem, canManageHymnsTaxis, canPublishOwnedTaxisItem, canReadHymnsTaxis, canReviewTaxisItem } from "./src/lib/hymnsTaxisAuthorization";
 import { randomUUID } from "crypto";
+import { findCanonicalGrade } from "./src/lib/classGroups";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -5598,13 +5599,28 @@ function isUuidStudentId(studentId: string): boolean {
 }
 
 function classGroupForLessonGrade(grade: string): string | null {
-  if (grade === 'KG1' || grade === 'KG2') return 'angels';
-  if (['Grade 1', 'Grade 2', 'Grade 3'].includes(grade)) return 'primary_1';
-  if (['Grade 4', 'Grade 5', 'Grade 6'].includes(grade)) return 'primary_2';
-  if (['Prep 1', 'Prep 2', 'Prep 3'].includes(grade)) return 'preparatory';
-  if (['Secondary 1', 'Secondary 2', 'Secondary 3'].includes(grade)) return 'secondary';
-  if (grade === 'University' || grade === 'Youth') return 'university';
-  return null;
+  if (!grade || typeof grade !== 'string') return null;
+
+  // Use the same canonical grade resolver as curriculum authoring and student
+  // enrollment. This accepts persisted lesson labels such as "5th-6th Grade",
+  // Arabic aliases, ordinal labels, and canonical grade IDs consistently.
+  const canonical = findCanonicalGrade(grade);
+  if (canonical) return canonical.classGroupId;
+
+  // Also accept an already-resolved class group identifier or display label.
+  const normalized = grade.trim().toLowerCase().replace(/[_–—-]+/g, ' ').replace(/\\s+/g, ' ');
+  const directGroups: Record<string, string> = {
+    angels: 'angels',
+    'primary 1': 'primary_1',
+    primary_1: 'primary_1',
+    'primary 2': 'primary_2',
+    primary_2: 'primary_2',
+    preparatory: 'preparatory',
+    secondary: 'secondary',
+    university: 'university',
+    youth: 'university'
+  };
+  return directGroups[normalized] || null;
 }
 
 interface ProgressLessonVersion {
