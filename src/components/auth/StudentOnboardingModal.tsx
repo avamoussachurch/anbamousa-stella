@@ -66,7 +66,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
       if (!isMounted) return;
       if (res.success && res.request) {
         setExistingRequest(res.request);
-        setSelectedGradeCode(res.request.requestedGrade);
+        setSelectedGradeCode(res.request.assignedGrade || res.request.requestedGrade);
         if (res.request.notes) setNotes(res.request.notes);
       }
       setLoadingStatus(false);
