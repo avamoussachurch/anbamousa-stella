@@ -316,7 +316,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       const isAuthoringCurriculum = shouldLoadAuthoringCurriculum(activeWorkspace, userData.roles);
       const result = isAuthoringCurriculum
         ? await getTeacherCurriculumLessons()
-        : await getPublishedLessonsForCurrentUser();
+        : await getPublishedLessonsForCurrentUser(activeWorkspace === 'parent');
 
       if (result.error) {
         console.warn('Online curriculum load note from Supabase:', result.error);
