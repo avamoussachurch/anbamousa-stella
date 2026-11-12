@@ -9,6 +9,7 @@ const taxisStudio = read('../src/components/teacher/publishing/TaxisPublishingSt
 const hymnStudent = read('../src/components/hymns/HymnsSchoolTab.tsx');
 const taxisStudent = read('../src/components/taxis/CopticTaxisTab.tsx');
 const classRls = read('../scripts/migrations/phase27_student_parent_class_read_access.sql');
+const roleAlignment = read('../scripts/migrations/phase28_role_assignment_function_alignment.sql');
 
 test('Hymns teacher studio uploads audio and PDF to private curriculum storage', () => {
   assert.match(hymnStudio, /uploadSourceMedia\(file\)/);
@@ -33,6 +34,15 @@ test('student Hymns and Taxis views resolve private references before browser ac
 test('media access preserves teacher multi-role access and denies unassigned accounts', () => {
   assert.match(server, /if \(isTeacher\) return true;/);
   assert.match(server, /return isParent && item\.status === 'published'/);
+});
+
+test('security-definer authorization helpers use active role assignments, not the legacy single role', () => {
+  assert.match(roleAlignment, /public\.has_role\('teacher'\)/);
+  assert.match(roleAlignment, /target_role\.role = 'student'/);
+  assert.match(roleAlignment, /role = 'parent' AND revoked_at IS NULL/);
+  assert.match(roleAlignment, /role = 'student' AND revoked_at IS NULL/);
+  assert.doesNotMatch(roleAlignment, /caller\.role = 'teacher'/);
+  assert.doesNotMatch(roleAlignment, /AND role = 'student'\s*\)/);
 });
 
 test('student and parent class RLS is limited to own or verified linked memberships', () => {
