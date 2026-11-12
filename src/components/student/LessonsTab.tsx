@@ -3,6 +3,7 @@ import { BookOpen, CheckCircle, Clock, Search, Plus, Sparkles, Edit3, Eye, Filte
 import { motion, AnimatePresence } from 'motion/react';
 import { useLessons } from '../../context/LessonsContext';
 import { useAuth } from '../../context/AuthContext';
+import { isSupabaseConfigured } from '../../lib/supabase';
 import { Lesson, Language } from '../../types';
 import { LessonEditModal } from '../teacher/LessonEditModal';
 import { ExpressLessonPublishModal } from '../teacher/ExpressLessonPublishModal';
@@ -20,9 +21,12 @@ interface LessonsTabProps {
 }
 
 export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: LessonsTabProps) {
-  const { userData } = useAuth();
+  const { userData, isGuest } = useAuth();
   const workspace = useActiveWorkspace();
-  const { lessons, updateLesson, refreshCurriculum, contentProgress } = useLessons();
+  const { lessons, updateLesson, refreshCurriculum, contentProgress, curriculumLoading, curriculumError, curriculumLoadedForUserId } = useLessons();
+  const isOnlineCurriculumReady = isGuest || !isSupabaseConfigured || curriculumLoadedForUserId === userData?.id;
+  const isOnlineCurriculumLoading = !isGuest && isSupabaseConfigured && (curriculumLoading || !isOnlineCurriculumReady);
+  const isOnlineCurriculumFailed = !isGuest && isSupabaseConfigured && isOnlineCurriculumReady && Boolean(curriculumError);
   const [selectedSchool, setSelectedSchool] = useState<'sunday_school' | 'hymns' | 'taxis'>('sunday_school');
   const [displayMode, setDisplayMode] = useState<'roadmap' | 'cards'>('roadmap');
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +47,9 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
   };
 
   const filteredLessons = useMemo(() => {
+    // Never briefly render localStorage/mock lessons for an authenticated account.
+    // Wait for this user's authoritative Supabase curriculum snapshot first.
+    if (!isOnlineCurriculumReady || isOnlineCurriculumFailed) return [];
     let result = lessons;
 
     // Filter by status if teacher chooses to filter
@@ -73,7 +80,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
       (lesson.summary && lesson.summary.toLowerCase().includes(query)) ||
       (lesson.summaryAr && lesson.summaryAr.toLowerCase().includes(query))
     );
-  }, [lessons, searchQuery, filterMode, isTeacher, userData?.requestedGrade, userData?.grade, userData?.requestedClassGroupId]);
+  }, [lessons, searchQuery, filterMode, isTeacher, isOnlineCurriculumReady, isOnlineCurriculumFailed, userData?.requestedGrade, userData?.grade, userData?.requestedClassGroupId]);
 
   const decoratedLessons = useMemo(() => {
     return filteredLessons.map(l => ({
@@ -277,6 +284,25 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
         </div>
       </div>
 
+      {/* Authenticated curriculum must finish loading before rendering any cached lesson cards. */}
+      {isOnlineCurriculumLoading ? (
+        <div role="status" className="rounded-3xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-8 text-center space-y-3">
+          <div className="text-3xl">📚</div>
+          <p className="font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
+            {lang === 'ar' ? 'جاري تحميل دروس فصلك...' : 'Loading your class curriculum...'}
+          </p>
+          <p className="text-xs text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'نعرض الدروس المعتمدة من قاعدة البيانات فقط.' : 'Only lessons confirmed by Supabase will appear here.'}</p>
+        </div>
+      ) : isOnlineCurriculumFailed ? (
+        <div role="alert" className="rounded-3xl border border-red-300 bg-red-50 p-6 text-center space-y-3 dark:border-red-900 dark:bg-red-950/30">
+          <p className="font-bold text-red-900 dark:text-red-200">{lang === 'ar' ? 'تعذر تحميل المنهج المعتمد.' : 'Could not load the published curriculum.'}</p>
+          <p className="text-xs text-red-800 dark:text-red-300">{curriculumError}</p>
+          <button type="button" onClick={() => void refreshCurriculum()} className="rounded-xl bg-red-700 px-4 py-2 text-xs font-bold text-white">
+            {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+          </button>
+        </div>
+      ) : (
+      <>
       {/* Main Content: Either Candy Crush Roadmap or Cards Grid */}
       {displayMode === 'roadmap' ? (
         <StudentRoadmapView
@@ -419,6 +445,9 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
       )}
 
       {/* Teacher Lesson Edit Modal */}
+      </>
+      )}
+
       {editingLesson && (
         <LessonEditModal
           lesson={editingLesson}
