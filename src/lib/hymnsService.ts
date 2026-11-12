@@ -1,4 +1,5 @@
 import { HymnsRosterMembership, HymnsEnrollmentRequestPayload, Language, User } from '../types';
+import { fetchWithTimeout } from './fetchWithTimeout';
 import { CopticHymnItem, COPTIC_HYMNS_COLLECTION } from '../data/hymnsData';
 import { filterItemsByHymnsTaxisLevel, parseHymnsTaxisLevel } from './hymnsTaxisLevel';
 import { hasRole } from './workspaces';
@@ -26,7 +27,7 @@ export async function getMyHymnsEnrollment(studentId?: string): Promise<{
 }> {
   try {
     const q = studentId ? `?studentId=${encodeURIComponent(studentId)}` : '';
-    const res = await fetch(`/api/church/hymns/my-enrollment${q}`, {
+    const res = await fetchWithTimeout(`/api/church/hymns/my-enrollment${q}`, {
       headers: await getAuthHeaders()
     });
     if (res.ok) {
@@ -54,7 +55,7 @@ export async function submitHymnsEnrollment(
   studentName?: string
 ): Promise<{ success: boolean; membership?: HymnsRosterMembership; error?: string }> {
   try {
-    const res = await fetch('/api/church/hymns/enroll', {
+    const res = await fetchWithTimeout('/api/church/hymns/enroll', {
       method: 'POST',
       headers: await getAuthHeaders(),
       body: JSON.stringify({
@@ -80,7 +81,7 @@ export async function getHymnsRequests(): Promise<{
   requests: HymnsRosterMembership[];
 }> {
   try {
-    const res = await fetch('/api/church/hymns/requests', {
+    const res = await fetchWithTimeout('/api/church/hymns/requests', {
       headers: await getAuthHeaders()
     });
     if (res.ok) {
@@ -108,7 +109,7 @@ export async function reviewHymnsEnrollment(
   }
 ): Promise<{ success: boolean; membership?: HymnsRosterMembership; error?: string }> {
   try {
-    const res = await fetch('/api/church/hymns/review', {
+    const res = await fetchWithTimeout('/api/church/hymns/review', {
       method: 'POST',
       headers: await getAuthHeaders(),
       body: JSON.stringify({
@@ -173,7 +174,7 @@ export async function getHymns(
     if (season && season !== 'all') q.set('season', season);
     if (status && status !== 'all') q.set('status', status);
 
-    const res = await fetch(`/api/church/hymns?${q.toString()}`, {
+    const res = await fetchWithTimeout(`/api/church/hymns?${q.toString()}`, {
       headers: await getAuthHeaders()
     });
     if (!res.ok) {
@@ -207,7 +208,7 @@ export async function getHymnById(id: string): Promise<{
   error?: string;
 }> {
   try {
-    const res = await fetch(`/api/church/hymns/${encodeURIComponent(id)}`, {
+    const res = await fetchWithTimeout(`/api/church/hymns/${encodeURIComponent(id)}`, {
       headers: await getAuthHeaders()
     });
     const data = await res.json();
@@ -228,7 +229,7 @@ export async function createHymn(
   hymnData: Partial<CopticHymnItem>
 ): Promise<{ success: boolean; hymn?: CopticHymnItem; error?: string }> {
   try {
-    const res = await fetch('/api/church/hymns', {
+    const res = await fetchWithTimeout('/api/church/hymns', {
       method: 'POST',
       headers: await getAuthHeaders(),
       body: JSON.stringify(hymnData)
@@ -252,7 +253,7 @@ export async function updateHymn(
   hymnData: Partial<CopticHymnItem>
 ): Promise<{ success: boolean; hymn?: CopticHymnItem; error?: string }> {
   try {
-    const res = await fetch(`/api/church/hymns/${encodeURIComponent(id)}`, {
+    const res = await fetchWithTimeout(`/api/church/hymns/${encodeURIComponent(id)}`, {
       method: 'PUT',
       headers: await getAuthHeaders(),
       body: JSON.stringify(hymnData)
@@ -272,7 +273,7 @@ export async function updateHymn(
  */
 export async function unpublishHymn(id: string): Promise<{ success: boolean; hymn?: CopticHymnItem; error?: string }> {
   try {
-    const res = await fetch(`/api/church/hymns/${encodeURIComponent(id)}/unpublish`, {
+    const res = await fetchWithTimeout(`/api/church/hymns/${encodeURIComponent(id)}/unpublish`, {
       method: 'POST',
       headers: await getAuthHeaders()
     });
@@ -295,7 +296,7 @@ export async function restoreHymnVersion(
   targetVersion: number
 ): Promise<{ success: boolean; hymn?: CopticHymnItem; error?: string }> {
   try {
-    const res = await fetch(`/api/church/hymns/${encodeURIComponent(id)}/restore`, {
+    const res = await fetchWithTimeout(`/api/church/hymns/${encodeURIComponent(id)}/restore`, {
       method: 'POST',
       headers: await getAuthHeaders(),
       body: JSON.stringify({ targetVersion })
