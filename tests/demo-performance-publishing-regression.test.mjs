@@ -82,3 +82,16 @@ test('curriculum cache is not reused across workspace changes', () => {
   assert.match(lessonsContext, /curriculumWorkspaceRef\.current !== activeWorkspace/);
   assert.match(lessonsContext, /!workspaceChanged && current === userData\.id/);
 });
+
+test('bulk and scheduled Sunday School publishing always release the working state', () => {
+  const manager = read('../src/components/teacher/LessonPublicationManager.tsx');
+  for (const [start, end] of [
+    ['const handlePublish = async', 'const handleSchedule = async'],
+    ['const handleSchedule = async', 'const handleCancel = async'],
+    ['const handleCancel = async', 'const handleReschedule = async'],
+    ['const handleReschedule = async', 'const parsedScheduleTime']
+  ]) {
+    const block = manager.slice(manager.indexOf(start), manager.indexOf(end));
+    assert.match(block, /finally\s*\{[\s\S]*?setWorking\(false\)/);
+  }
+});
