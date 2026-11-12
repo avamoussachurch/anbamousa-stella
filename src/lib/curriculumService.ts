@@ -360,7 +360,7 @@ function assembleLessonVersion(
  * - Never returns stale historical versions (e.g. V1 if active is V2)
  * - Returns adapted Lesson objects matching existing UI requirements
  */
-export async function getPublishedLessonsForCurrentUser(): Promise<{
+export async function getPublishedLessonsForCurrentUser(includeLinkedStudents = false): Promise<{
   data: Lesson[] | null;
   error: Error | null;
 }> {
@@ -369,33 +369,35 @@ export async function getPublishedLessonsForCurrentUser(): Promise<{
   }
 
   try {
-    const { data: authData, error: authError } = await supabase.auth.getUser();
+    // Authentication and active-year lookup are independent; run them together.
+    const [authResult, yearResult] = await Promise.all([
+      supabase.auth.getUser(),
+      supabase.from('church_years').select('id').eq('is_active', true).maybeSingle()
+    ]);
+    const { data: authData, error: authError } = authResult;
+    const { data: activeYear, error: yearError } = yearResult;
     if (authError || !authData.user) {
       return { data: null, error: new Error(authError?.message || 'An authenticated student session is required') };
     }
-
-    const { data: activeYear, error: yearError } = await supabase
-      .from('church_years')
-      .select('id')
-      .eq('is_active', true)
-      .maybeSingle();
     if (yearError) {
       return { data: null, error: new Error(`Failed to query the active church year: ${yearError.message}`) };
     }
     if (!activeYear) return { data: [], error: null };
 
-    const { data: relationships, error: relationshipsError } = await supabase
-      .from('user_relationships')
-      .select('child_id')
-      .eq('parent_id', authData.user.id)
-      .in('relationship_type', ['parent_child', 'guardian_student']);
-    if (relationshipsError) {
-      return { data: null, error: new Error(`Failed to query linked students: ${relationshipsError.message}`) };
+    // Student workspaces do not need parent/guardian relationship lookups.
+    let linkedStudentIds: string[] = [];
+    if (includeLinkedStudents) {
+      const { data: relationships, error: relationshipsError } = await supabase
+        .from('user_relationships')
+        .select('child_id')
+        .eq('parent_id', authData.user.id)
+        .in('relationship_type', ['parent_child', 'guardian_student']);
+      if (relationshipsError) {
+        return { data: null, error: new Error(`Failed to query linked students: ${relationshipsError.message}`) };
+      }
+      linkedStudentIds = (relationships || []).map((relationship: any) => relationship.child_id);
     }
-    const studentIds = [...new Set([
-      authData.user.id,
-      ...(relationships || []).map((relationship: any) => relationship.child_id)
-    ])];
+    const studentIds = [...new Set([authData.user.id, ...linkedStudentIds])];
     const { data: memberships, error: membershipError } = await supabase
       .from('class_memberships')
       .select('class_instance_id')
@@ -407,36 +409,37 @@ export async function getPublishedLessonsForCurrentUser(): Promise<{
     }
     if (!memberships?.length) return { data: [], error: null };
 
-    const { data: classInstances, error: classError } = await supabase
-      .from('class_instances')
-      .select('class_group_id')
-      .in('id', [...new Set(memberships.map((membership: any) => membership.class_instance_id))])
-      .eq('church_year_id', activeYear.id);
+    // Class-group lookup and published lesson retrieval are independent once
+    // active memberships are known, so execute them concurrently. Filter out
+    // drafts and unused columns at the database boundary to reduce payload size.
+    const [classResult, lessonsResult] = await Promise.all([
+      supabase
+        .from('class_instances')
+        .select('class_group_id')
+        .in('id', [...new Set(memberships.map((membership: any) => membership.class_instance_id))])
+        .eq('church_year_id', activeYear.id),
+      supabase
+        .from('lessons')
+        .select('id,title_en,title_ar,grade_level,summary_en,summary_ar,scripture_verse_en,scripture_verse_ar,verse_reference,audio_url,pdf_worksheet_url,points_reward,quiz_questions,active_version_id,created_at,lesson_status,status,approved_servant_name,approved_at,video_url,teacher_notes')
+        .not('active_version_id', 'is', null)
+        .or('status.ilike.published,lesson_status.ilike.published')
+    ]);
+    const { data: classInstances, error: classError } = classResult;
+    const { data: dbLessons, error: lessonsErr } = lessonsResult;
     if (classError) {
       return { data: null, error: new Error(`Failed to query assigned class instances: ${classError.message}`) };
     }
-    const assignedClassGroups = new Set((classInstances || []).map((instance: any) => instance.class_group_id));
-    if (!assignedClassGroups.size) return { data: [], error: null };
-
-    // 1. Fetch lessons from public.lessons that have an active version pointer and published status
-    const { data: dbLessons, error: lessonsErr } = await supabase
-      .from('lessons')
-      .select('*');
-
     if (lessonsErr) {
-      return { data: null, error: new Error(`Failed to query lessons: ${lessonsErr.message}`) };
+      return { data: null, error: new Error(`Failed to query published lessons: ${lessonsErr.message}`) };
     }
+    const assignedClassGroups = new Set((classInstances || []).map((instance: any) => instance.class_group_id));
+    if (!assignedClassGroups.size || !dbLessons?.length) return { data: [], error: null };
 
-    if (!dbLessons || dbLessons.length === 0) {
-      return { data: [], error: null };
-    }
-
-    // Filter to only lessons that have an active version pointer and are marked published
     const publishedDbLessons = dbLessons.filter(
-      (l: any) => Boolean(l.active_version_id) && 
-        ((l.status && l.status.toLowerCase() === 'published') || 
-         (l.lesson_status && l.lesson_status.toLowerCase() === 'published')) &&
-        assignedClassGroups.has(findClassGroupForGrade(l.grade_level)?.id)
+      (lesson: any) => Boolean(lesson.active_version_id) &&
+        ((lesson.status && lesson.status.toLowerCase() === 'published') ||
+         (lesson.lesson_status && lesson.lesson_status.toLowerCase() === 'published')) &&
+        assignedClassGroups.has(findClassGroupForGrade(lesson.grade_level)?.id)
     );
 
     if (publishedDbLessons.length === 0) {
