@@ -12,7 +12,10 @@ export async function fetchWithTimeout(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    return await fetch(input, { ...init, signal: controller.signal });
+    const response = await fetch(input, { ...init, signal: controller.signal });
+    // Keep the timeout active until the entire JSON response body has arrived.
+    await response.clone().arrayBuffer();
+    return response;
   } catch (error) {
     if (controller.signal.aborted) {
       throw new Error(
