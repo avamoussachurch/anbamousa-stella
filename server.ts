@@ -5603,7 +5603,7 @@ function classGroupForLessonGrade(grade: string): string | null {
 
   // A grade range must stay within one class group. For example, 5th-6th
   // Grade is Primary 4-6, while a range crossing Grade 3 to Grade 4 is invalid.
-  const rangeMatch = grade.match(/(?:grade\\s*)?(\\d{1,2})(?:st|nd|rd|th)?\\s*[-–—]\\s*(?:grade\\s*)?(\\d{1,2})(?:st|nd|rd|th)?/i);
+  const rangeMatch = grade.match(/(?:grade\s*)?(\d{1,2})(?:st|nd|rd|th)?\s*[-–—]\s*(?:grade\s*)?(\d{1,2})(?:st|nd|rd|th)?/i);
   if (rangeMatch) {
     const first = findCanonicalGrade(`Grade ${rangeMatch[1]}`);
     const last = findCanonicalGrade(`Grade ${rangeMatch[2]}`);
