@@ -13681,7 +13681,7 @@ app.get("/api/media-url", async (req, res) => {
             .select('id, status, level, created_by')
             .or(`audio_url.eq.${req.query.reference},pdf_url.eq.${req.query.reference},sheet_music_url.eq.${req.query.reference}`),
           client.from('coptic_taxis_items')
-            .select('id, status, level, target_audience, created_by, attachments')
+            .select('id, status, level, target_audience, audience_detail, created_by, attachments')
             .contains('attachments', [{ fileUrl: req.query.reference }])
         ]);
         if (hymnError || taxisError) {
@@ -13717,9 +13717,13 @@ app.get("/api/media-url", async (req, res) => {
           if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
           if (isStudent) {
             if (item.status !== 'published' || studentLevel === null || item.level !== studentLevel) return false;
-            return item.target_audience === 'all' ||
-              (item.target_audience === 'preparatory' && studentGrade.includes('prep')) ||
-              (item.target_audience === 'deacons' && studentLevel >= 2);
+            const audience = String(item.target_audience || '').toUpperCase();
+            const audienceDetail = String(item.audience_detail || '').toLowerCase();
+            return (
+              (['ALL', 'CONGREGATION'].includes(audience) &&
+                (audienceDetail !== 'preparatory' || studentGrade.includes('prep')))
+              || (audience === 'DEACONS' && studentLevel >= 2)
+            );
           }
           return isParent ? item.status === 'published' : true;
         });
