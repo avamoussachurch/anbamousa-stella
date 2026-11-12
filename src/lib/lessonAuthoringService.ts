@@ -455,6 +455,9 @@ export async function getEditableLessonVersion(
 
       // Fetch sections for this draft
       const sectionsResult = await getLessonSections(editableDraft.id);
+      if (sectionsResult.error) {
+        return { data: null, error: new Error(`Failed to load editable draft sections: ${sectionsResult.error.message}`) };
+      }
       const sections = sectionsResult.data || [];
 
       const assembled: LessonVersion = {
@@ -545,6 +548,9 @@ export async function getEditableLessonVersion(
     let clonedSections: LessonSectionItem[] = [];
     if (highestVersion) {
       const prevSectionsResult = await getLessonSections(highestVersion.id);
+      if (prevSectionsResult.error) {
+        return { data: null, error: new Error(`Draft revision was created, but the previous version's sections could not be loaded: ${prevSectionsResult.error.message}`) };
+      }
       const prevSections = prevSectionsResult.data || [];
 
       if (prevSections.length > 0) {
