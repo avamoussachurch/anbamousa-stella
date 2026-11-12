@@ -63,6 +63,8 @@ export function HomeTab({ onNavigate, lang }: HomeTabProps) {
 
   const studentLessons = sourceLessons
     .filter(lesson => {
+      // Online lessons have already been scoped to the student's active class membership by curriculumService.
+      if (isOnlineAuth) return true;
       const lessonGroup = lesson.classGroupId ||
         (lesson.grade ? getClassGroupForGrade(lesson.grade)?.id : null);
       return !classGroupId || !lessonGroup || lessonGroup === classGroupId;
