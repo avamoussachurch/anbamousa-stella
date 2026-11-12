@@ -339,10 +339,9 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                         key={doc.id}
                         href={resolvedDocumentUrls[doc.id] || undefined}
                         aria-disabled={!resolvedDocumentUrls[doc.id]}
-                        className={!resolvedDocumentUrls[doc.id] ? 'pointer-events-none opacity-50' : undefined}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 rounded-lg font-black transition-colors"
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 rounded-lg font-black transition-colors ${resolvedDocumentUrls[doc.id] ? '' : 'pointer-events-none opacity-50'}`}
                       >
                         <FileText size={13} />
                         <span>{doc.title}</span>
