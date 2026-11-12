@@ -1097,97 +1097,65 @@ export async function getTeacherCurriculumLessons(): Promise<AuthoringResult<Les
           assignedGroups!.has(findClassGroupForGrade(lesson.grade_level)?.id || '')
         )
       : dbLessons as DbLesson[];
-    const adaptedLessons: Lesson[] = [];
+    const adaptedLessons = await Promise.all(lessonsForUser.map(async (lesson) => {
+      // Resolve the active version first; if missing, fall back to the newest draft.
+      const activeVersionResult = lesson.active_version_id
+        ? await supabase
+            .from('lesson_versions')
+            .select('*')
+            .eq('id', lesson.active_version_id)
+            .maybeSingle()
+        : { data: null, error: null };
 
-    for (const l of lessonsForUser) {
-      // For each lesson, resolve its authoritative active version or its latest draft version
-      let versionToUse: LessonVersion | null = null;
-
-      if (l.active_version_id) {
-        // Fetch active published version
-        const { data: verRow } = await supabase
+      let versionRow = activeVersionResult.data as DbLessonVersion | null;
+      if (!versionRow) {
+        const { data: latestVersion } = await supabase
           .from('lesson_versions')
           .select('*')
-          .eq('id', l.active_version_id)
-          .maybeSingle();
-
-        if (verRow) {
-          const secRes = await getLessonSections(verRow.id);
-          versionToUse = {
-            id: verRow.id,
-            lessonId: l.id,
-            versionNumber: verRow.version_number,
-            status: verRow.status,
-            createdBy: verRow.created_by,
-            createdAt: verRow.created_at,
-            approvedBy: verRow.approved_by || undefined,
-            approvedAt: verRow.approved_at || undefined,
-            summaryEn: verRow.summary_en || '',
-            summaryAr: verRow.summary_ar || '',
-            summaryCop: verRow.summary_cop || undefined,
-            bigIdeaEn: verRow.big_idea_en || '',
-            bigIdeaAr: verRow.big_idea_ar || '',
-            objectivesEn: verRow.objectives_en || [],
-            objectivesAr: verRow.objectives_ar || [],
-            sections: secRes.data || [],
-            recapEn: verRow.recap_en || '',
-            recapAr: verRow.recap_ar || '',
-            flashcards: verRow.flashcards || [],
-            slides: verRow.slides || [],
-            quizDraft: verRow.quiz_draft || null,
-            narrationScriptEn: verRow.narration_script_en || '',
-            narrationScriptAr: verRow.narration_script_ar || '',
-            ttsStatus: verRow.tts_status || 'NONE'
-          };
-        }
-      }
-
-      if (!versionToUse) {
-        // Fall back to latest version (e.g. AI_DRAFT) for this lesson
-        const { data: latestVer } = await supabase
-          .from('lesson_versions')
-          .select('*')
-          .eq('lesson_id', l.id)
+          .eq('lesson_id', lesson.id)
           .order('version_number', { ascending: false })
           .limit(1)
           .maybeSingle();
-
-        if (latestVer) {
-          const secRes = await getLessonSections(latestVer.id);
-          versionToUse = {
-            id: latestVer.id,
-            lessonId: l.id,
-            versionNumber: latestVer.version_number,
-            status: latestVer.status,
-            createdBy: latestVer.created_by,
-            createdAt: latestVer.created_at,
-            approvedBy: latestVer.approved_by || undefined,
-            approvedAt: latestVer.approved_at || undefined,
-            summaryEn: latestVer.summary_en || '',
-            summaryAr: latestVer.summary_ar || '',
-            summaryCop: latestVer.summary_cop || undefined,
-            bigIdeaEn: latestVer.big_idea_en || '',
-            bigIdeaAr: latestVer.big_idea_ar || '',
-            objectivesEn: latestVer.objectives_en || [],
-            objectivesAr: latestVer.objectives_ar || [],
-            sections: secRes.data || [],
-            recapEn: latestVer.recap_en || '',
-            recapAr: latestVer.recap_ar || '',
-            flashcards: latestVer.flashcards || [],
-            slides: latestVer.slides || [],
-            quizDraft: latestVer.quiz_draft || null,
-            narrationScriptEn: latestVer.narration_script_en || '',
-            narrationScriptAr: latestVer.narration_script_ar || '',
-            ttsStatus: latestVer.tts_status || 'NONE'
-          };
-        }
+        versionRow = latestVersion as DbLessonVersion | null;
       }
 
-      const sourcesRes = await getLessonSourcesForLesson(l.id);
-      const sources = sourcesRes.data || [];
+      const [sectionsResult, sourcesResult] = await Promise.all([
+        versionRow ? getLessonSections(versionRow.id) : Promise.resolve({ data: [], error: null }),
+        getLessonSourcesForLesson(lesson.id)
+      ]);
 
-      adaptedLessons.push(adaptDbLessonToAppLesson(l, versionToUse, sources));
-    }
+      let versionToUse: LessonVersion | null = null;
+      if (versionRow) {
+        versionToUse = {
+          id: versionRow.id,
+          lessonId: lesson.id,
+          versionNumber: versionRow.version_number,
+          status: versionRow.status,
+          createdBy: versionRow.created_by,
+          createdAt: versionRow.created_at,
+          approvedBy: versionRow.approved_by || undefined,
+          approvedAt: versionRow.approved_at || undefined,
+          summaryEn: versionRow.summary_en || '',
+          summaryAr: versionRow.summary_ar || '',
+          summaryCop: versionRow.summary_cop || undefined,
+          bigIdeaEn: versionRow.big_idea_en || '',
+          bigIdeaAr: versionRow.big_idea_ar || '',
+          objectivesEn: versionRow.objectives_en || [],
+          objectivesAr: versionRow.objectives_ar || [],
+          sections: sectionsResult.data || [],
+          recapEn: versionRow.recap_en || '',
+          recapAr: versionRow.recap_ar || '',
+          flashcards: versionRow.flashcards || [],
+          slides: versionRow.slides || [],
+          quizDraft: versionRow.quiz_draft || null,
+          narrationScriptEn: versionRow.narration_script_en || '',
+          narrationScriptAr: versionRow.narration_script_ar || '',
+          ttsStatus: versionRow.tts_status || 'NONE'
+        };
+      }
+
+      return adaptDbLessonToAppLesson(lesson, versionToUse, sourcesResult.data || []);
+    }));
 
     return { data: adaptedLessons, error: null };
   } catch (err: any) {
