@@ -20,6 +20,7 @@ import { AdminWorkspace } from './components/admin/AdminWorkspace';
 import { RoleAccountProfile } from './components/profile/RoleAccountProfile';
 import { OfflineIndicator } from './components/layout/OfflineIndicator';
 import { AnbaMousaSplashScreen } from './components/layout/AnbaMousaSplashScreen';
+import { AmbientWorld } from './components/layout/AmbientWorld';
 import { GlobalMusicPlayer } from './components/layout/GlobalMusicPlayer';
 import { useAuth } from './context/AuthContext';
 import { LessonsProvider } from './context/LessonsContext';
@@ -284,8 +285,10 @@ function AppContent() {
     <PointsProvider>
     <div 
       dir={getLanguageDirection(lang)}
-      className="min-h-screen relative bg-[var(--color-church-cream)] pb-safe overflow-x-hidden selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
+      className="min-h-screen relative isolate bg-[var(--color-church-cream)] pb-safe overflow-x-hidden selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
     >
+      <AmbientWorld variant="app" />
+      <div className="relative z-10 min-h-screen">
       <TopBar 
         lang={lang} 
         onHomeClick={handleBackToHome}
@@ -394,6 +397,7 @@ function AppContent() {
           workspace={activeWorkspace}
         />
       )}
+      </div>
     </div>
     </PointsProvider>
     </LessonsProvider>
