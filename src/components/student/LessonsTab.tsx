@@ -64,7 +64,9 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
       result = result.filter(l => l.status === 'published');
       const studentGrade = userData?.requestedGrade || userData?.grade;
       const studentGroupId = userData?.requestedClassGroupId || (studentGrade ? getClassGroupForGrade(studentGrade)?.id : null);
-      if (studentGroupId) {
+      // Authenticated curriculum is already filtered by the active Supabase membership.
+      // Only guest/offline previews need a local profile-grade filter.
+      if (studentGroupId && (isGuest || !isSupabaseConfigured)) {
         result = result.filter(l => {
           const lessonGroupId = l.classGroupId || (l.grade ? getClassGroupForGrade(l.grade)?.id : null);
           return !lessonGroupId || lessonGroupId === studentGroupId;
