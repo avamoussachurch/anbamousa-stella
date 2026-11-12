@@ -11,6 +11,7 @@ import { hymnFromDatabase, hymnToDatabase, taxisFromDatabase, taxisToDatabase } 
 import { canEditOwnedTaxisItem, canManageHymnsTaxis, canPublishOwnedTaxisItem, canReadHymnsTaxis, canReviewTaxisItem } from "./src/lib/hymnsTaxisAuthorization";
 import { randomUUID } from "crypto";
 import { findCanonicalGrade } from "./src/lib/classGroups";
+import { mergeStudentLessonProgress } from "./src/lib/teacherProgressSummary";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -3442,7 +3443,7 @@ function getClassGroupIdForGrade(grade?: string | null): string {
   }
 
   if (g.includes('prep') || g.includes('grade 7') || g.includes('grade 8') || g.includes('grade 9') || g.includes('إعدادي')) return 'preparatory';
-  if (g.includes('sec') || g.includes('grade 10') || g.includes('grade 11') || g.includes('grade 12') || g.includes('ثانوي')) return 'secondary';
+  if (g.includes('sec') || g.includes('high school') || g.includes('youth') || g.includes('grade 10') || g.includes('grade 11') || g.includes('grade 12') || g.includes('ثانوي')) return 'secondary';
   if (g.includes('univ') || g.includes('college') || g.includes('جامع')) return 'university';
   return 'primary_2';
 }
@@ -8117,12 +8118,45 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
         if (page.length < 1000) break;
       }
 
-      const lessonIds = [...new Set(progressRows.map(row => row.lesson_id).filter(Boolean))];
+      // Student reading completion is persisted in lesson_section_progress.
+      // Merge it with legacy lesson_progress so the teacher dashboard reflects
+      // real section reads while counting each student/lesson pair only once.
+      const sectionProgressRows: Array<{
+        student_id: string;
+        lesson_id: string;
+        version_id: string;
+        sections_completed: string[];
+        total_sections: number;
+        updated_at: string;
+      }> = [];
+      for (let offset = 0; studentIds.length > 0; offset += 1000) {
+        const { data, error } = await client
+          .from('lesson_section_progress')
+          .select('student_id, lesson_id, version_id, sections_completed, total_sections, updated_at')
+          .in('student_id', studentIds)
+          .order('updated_at', { ascending: false })
+          .range(offset, offset + 999);
+        if (error) throw new Error(`Could not load assigned students' section progress: ${error.message}`);
+        const page = data || [];
+        sectionProgressRows.push(...page);
+        if (page.length < 1000) break;
+      }
+
+      const lessonIds = [...new Set([
+        ...progressRows.map(row => row.lesson_id),
+        ...sectionProgressRows.map(row => row.lesson_id)
+      ].filter(Boolean))];
       const { data: progressLessons, error: progressLessonError } = lessonIds.length > 0
-        ? await client.from('lessons').select('id, title_en, title_ar').in('id', lessonIds)
+        ? await client.from('lessons').select('id, title_en, title_ar, active_version_id').in('id', lessonIds)
         : { data: [], error: null };
       if (progressLessonError) throw new Error(`Could not load activity lesson titles: ${progressLessonError.message}`);
       const progressLessonMap = new Map((progressLessons || []).map(lesson => [lesson.id, lesson]));
+      const activeVersionByLesson = new Map((progressLessons || []).map(lesson => [lesson.id, lesson.active_version_id]));
+      const authoritativeProgressRows = mergeStudentLessonProgress(
+        progressRows,
+        sectionProgressRows,
+        activeVersionByLesson
+      );
       const classesById = new Map(activeInstances.map(instance => [instance.id, instance]));
 
       const { data: curriculum, error: curriculumError } = await client
@@ -8178,7 +8212,7 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
 
       classes = activeInstances.map(instance => {
         const classRoster = roster.filter(member => member.class_instance_id === instance.id);
-        const groupProgress = progressRows.filter(row => classRoster.some(member => member.student_id === row.student_id));
+        const groupProgress = authoritativeProgressRows.filter(row => classRoster.some(member => member.student_id === row.student_id));
         const groupCompleted = groupProgress.filter(row => row.completed);
         const groupCurriculum = (curriculum || []).filter(lesson =>
           getClassGroupIdForGrade(lesson.grade_level) === instance.class_group_id
@@ -8199,16 +8233,16 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
 
       totals = {
         students: studentIds.length,
-        completedLessons: progressRows.filter(row => row.completed).length,
-        progressRecords: progressRows.length,
+        completedLessons: authoritativeProgressRows.filter(row => row.completed).length,
+        progressRecords: authoritativeProgressRows.length,
         curriculumCount: (curriculum || []).filter(lesson =>
           activeInstances.some(instance => getClassGroupIdForGrade(lesson.grade_level) === instance.class_group_id)
           && (lesson.status === 'published' || lesson.lesson_status === 'published')
         ).length
       };
-      const studentsWithProgress = new Set(progressRows.map(row => row.student_id));
+      const studentsWithProgress = new Set(authoritativeProgressRows.map(row => row.student_id));
       studentsWithoutProgress = studentIds.filter(id => !studentsWithProgress.has(id)).length;
-      recentActivity = progressRows
+      recentActivity = authoritativeProgressRows
         .filter(row => row.completed && row.completed_at && classesById.has(roster.find(member => member.student_id === row.student_id)?.class_instance_id || ''))
         .map(row => {
           const member = roster.find(item => item.student_id === row.student_id);
