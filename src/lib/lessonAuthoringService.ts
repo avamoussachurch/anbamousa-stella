@@ -325,7 +325,10 @@ export async function createLessonDraft(
         .insert(sectionRows)
         .select('*');
 
-      if (!secErr && secData) {
+      if (secErr) {
+        return { data: null, error: new Error(`Failed to save initial lesson sections: ${secErr.message}`) };
+      }
+      if (secData) {
         for (const s of secData as DbLessonSection[]) {
           insertedSections.push({
             id: s.id,
@@ -452,6 +455,9 @@ export async function getEditableLessonVersion(
 
       // Fetch sections for this draft
       const sectionsResult = await getLessonSections(editableDraft.id);
+      if (sectionsResult.error) {
+        return { data: null, error: new Error(`Failed to load editable draft sections: ${sectionsResult.error.message}`) };
+      }
       const sections = sectionsResult.data || [];
 
       const assembled: LessonVersion = {
@@ -542,6 +548,9 @@ export async function getEditableLessonVersion(
     let clonedSections: LessonSectionItem[] = [];
     if (highestVersion) {
       const prevSectionsResult = await getLessonSections(highestVersion.id);
+      if (prevSectionsResult.error) {
+        return { data: null, error: new Error(`Draft revision was created, but the previous version's sections could not be loaded: ${prevSectionsResult.error.message}`) };
+      }
       const prevSections = prevSectionsResult.data || [];
 
       if (prevSections.length > 0) {
@@ -877,10 +886,14 @@ export async function saveLessonSections(
     }
 
     // Fetch existing sections in DB
-    const { data: existingRows } = await supabase!
+    const { data: existingRows, error: existingRowsError } = await supabase!
       .from('lesson_sections')
       .select('id')
       .eq('lesson_version_id', versionId);
+
+    if (existingRowsError) {
+      return { data: null, error: new Error(`Failed to load existing lesson sections: ${existingRowsError.message}`) };
+    }
 
     const existingIds = new Set((existingRows || []).map((r: any) => r.id));
     const incomingIds = new Set(sections.map((s) => s.id).filter(Boolean));
@@ -904,19 +917,34 @@ export async function saveLessonSections(
       };
 
       if (existingIds.has(sectionId)) {
-        await supabase!.from('lesson_sections').update(payload).eq('id', sectionId);
+        const { error: updateError } = await supabase!
+          .from('lesson_sections')
+          .update(payload)
+          .eq('id', sectionId);
+        if (updateError) {
+          return { data: null, error: new Error(`Failed to update lesson section "${s.titleEn}": ${updateError.message}`) };
+        }
       } else {
-        await supabase!.from('lesson_sections').insert(payload);
+        const { error: insertError } = await supabase!.from('lesson_sections').insert(payload);
+        if (insertError) {
+          return { data: null, error: new Error(`Failed to insert lesson section "${s.titleEn}": ${insertError.message}`) };
+        }
       }
     }
 
     // Delete any sections that were removed in authoring
     const toDelete = Array.from(existingIds).filter((id) => !incomingIds.has(id));
     if (toDelete.length > 0) {
-      await supabase!.from('lesson_sections').delete().in('id', toDelete);
+      const { error: deleteError } = await supabase!.from('lesson_sections').delete().in('id', toDelete);
+      if (deleteError) {
+        return { data: null, error: new Error(`Failed to remove deleted lesson sections: ${deleteError.message}`) };
+      }
     }
 
     const refreshedSections = await getLessonSections(versionId);
+    if (refreshedSections.error) {
+      return { data: null, error: refreshedSections.error };
+    }
     return { data: refreshedSections.data || [], error: null };
   } catch (err: any) {
     return { data: null, error: new Error(err?.message || 'Failed to save sections') };
