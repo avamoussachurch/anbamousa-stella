@@ -64,7 +64,7 @@ test('curriculum loading avoids duplicate progress-summary requests and serial p
   assert.doesNotMatch(loader, /getStudentProgressSummary/);
   assert.match(loader, /Promise\.all\(batch\.map/);
   assert.match(lessonsContext, /activeWorkspace !== 'student'/);
-  assert.match(authoringService, /Promise\.all\(lessonsForUser\.map/);
+  assert.match(authoringService, /Promise\.all\(lessonsForUser\.slice/);
 });
 
 test('publishing returns before its background curriculum refresh completes', () => {
