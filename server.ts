@@ -3442,7 +3442,7 @@ function getClassGroupIdForGrade(grade?: string | null): string {
   }
 
   if (g.includes('prep') || g.includes('grade 7') || g.includes('grade 8') || g.includes('grade 9') || g.includes('إعدادي')) return 'preparatory';
-  if (g.includes('sec') || g.includes('grade 10') || g.includes('grade 11') || g.includes('grade 12') || g.includes('ثانوي')) return 'secondary';
+  if (g.includes('sec') || g.includes('high school') || g.includes('youth') || g.includes('grade 10') || g.includes('grade 11') || g.includes('grade 12') || g.includes('ثانوي')) return 'secondary';
   if (g.includes('univ') || g.includes('college') || g.includes('جامع')) return 'university';
   return 'primary_2';
 }
