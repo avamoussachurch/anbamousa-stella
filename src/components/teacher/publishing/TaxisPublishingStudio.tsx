@@ -305,6 +305,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
     setIsSaving(true);
     setStatusMessage(null);
 
+    try {
     const payload: Partial<TaxisItem> & { titleAr: string; titleEn: string } = {
       id: selectedItemId || `taxis_${Date.now()}`,
       titleAr,
@@ -322,7 +323,6 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
     };
 
     const res = await saveTaxisItem(payload);
-    setIsSaving(false);
     if (res.success && res.item) {
       setHasUnsavedChanges(false);
       populateForm(res.item);
@@ -330,12 +330,17 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
         text: isAr ? `تم حفظ مسودة الطقس بأمان (v${res.item.version})` : `Ritual saved safely (v${res.item.version})`,
         type: 'success'
       });
-      await loadItems();
+      void loadItems();
     } else {
       setStatusMessage({
         text: res.error || (isAr ? 'تعذر حفظ الطقس' : 'Failed to save ritual'),
         type: 'error'
       });
+    }
+    } catch (error) {
+      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'تعذر حفظ الطقس' : 'Failed to save ritual'), type: 'error' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -346,9 +351,8 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
     setIsSaving(true);
     setStatusMessage(null);
 
+    try {
     const res = await executeTaxisStatusAction(selectedItemId, action, { restoreVersion: vNum });
-    setIsSaving(false);
-
     if (res.success && res.item) {
       populateForm(res.item);
       const actionLabels: Record<string, string> = {
@@ -363,12 +367,17 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
         text: actionLabels[action] || 'Action completed',
         type: 'success'
       });
-      await loadItems();
+      void loadItems();
     } else {
       setStatusMessage({
         text: res.error || 'Failed to execute status action',
         type: 'error'
       });
+    }
+    } catch (error) {
+      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'تعذر تنفيذ الإجراء' : 'Could not complete the publishing action.'), type: 'error' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
