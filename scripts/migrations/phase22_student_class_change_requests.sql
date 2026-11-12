@@ -29,11 +29,11 @@ CREATE TABLE IF NOT EXISTS public.student_class_change_requests (
   requested_class_group_id text NOT NULL CHECK (
     requested_class_group_id IN ('angels', 'primary_1', 'primary_2', 'preparatory', 'secondary', 'university')
   ),
-  requested_grade text NOT NULL,
-  student_name text NOT NULL,
+  requested_grade text NOT NULL CHECK (pg_catalog.char_length(pg_catalog.btrim(requested_grade)) BETWEEN 1 AND 80),
+  student_name text NOT NULL CHECK (pg_catalog.char_length(pg_catalog.btrim(student_name)) BETWEEN 2 AND 100),
   contact_email text,
   contact_phone text,
-  notes text,
+  notes text CHECK (notes IS NULL OR pg_catalog.char_length(notes) <= 1000),
   status text NOT NULL DEFAULT 'PENDING_APPROVAL'
     CHECK (status IN ('PENDING_APPROVAL', 'APPROVED', 'REJECTED')),
   requested_at timestamptz NOT NULL DEFAULT now(),
@@ -140,7 +140,7 @@ BEGIN
     RAISE EXCEPTION 'Unauthenticated: sign in before reviewing a class request.';
   END IF;
 
-  IF p_action NOT IN ('APPROVE', 'REJECT') THEN
+  IF p_action IS NULL OR p_action NOT IN ('APPROVE', 'REJECT') THEN
     RAISE EXCEPTION 'Invalid action. Use APPROVE or REJECT.';
   END IF;
 
