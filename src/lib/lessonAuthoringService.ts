@@ -1097,7 +1097,7 @@ export async function getTeacherCurriculumLessons(): Promise<AuthoringResult<Les
           assignedGroups!.has(findClassGroupForGrade(lesson.grade_level)?.id || '')
         )
       : dbLessons as DbLesson[];
-    const adaptedLessons = await Promise.all(lessonsForUser.map(async (lesson) => {
+    const loadLesson = async (lesson: DbLesson): Promise<Lesson> => {
       // Resolve the active version first; if missing, fall back to the newest draft.
       const activeVersionResult = lesson.active_version_id
         ? await supabase
@@ -1155,7 +1155,13 @@ export async function getTeacherCurriculumLessons(): Promise<AuthoringResult<Les
       }
 
       return adaptDbLessonToAppLesson(lesson, versionToUse, sourcesResult.data || []);
-    }));
+    };
+
+    const adaptedLessons: Lesson[] = [];
+    for (let offset = 0; offset < lessonsForUser.length; offset += 4) {
+      const batch = await Promise.all(lessonsForUser.slice(offset, offset + 4).map(loadLesson));
+      adaptedLessons.push(...batch);
+    }
 
     return { data: adaptedLessons, error: null };
   } catch (err: any) {
