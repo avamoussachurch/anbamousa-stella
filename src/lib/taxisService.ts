@@ -1,4 +1,5 @@
 import { TaxisItem, TaxisUserPermissions, TaxisAudience, TaxisCategory, TaxisStatus, User } from '../types';
+import { fetchWithTimeout } from './fetchWithTimeout';
 import { filterTaxisItemsByLevel, parseHymnsTaxisLevel } from './hymnsTaxisLevel';
 import { markCurriculumImportDraft } from './curriculumImport';
 import { hasRole } from './workspaces';
@@ -282,7 +283,7 @@ export async function getTaxisItems(category?: string, audience?: string, viewer
     if (category && category !== 'ALL') q.set('category', category);
     if (audience && audience !== 'ALL') q.set('audience', audience);
 
-    const res = await fetch(`/api/church/taxis?${q.toString()}`, {
+    const res = await fetchWithTimeout(`/api/church/taxis?${q.toString()}`, {
       headers: await getAuthenticatedApiHeaders()
     });
 
@@ -325,7 +326,7 @@ export async function saveTaxisItem(
     const url = isNew ? '/api/church/taxis' : `/api/church/taxis/${encodeURIComponent(item.id!)}`;
     const method = isNew ? 'POST' : 'PUT';
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -347,7 +348,7 @@ export async function createTaxisDraft(
   item: Partial<TaxisItem> & { id: string; titleAr: string; titleEn: string }
 ): Promise<{ success: boolean; item?: TaxisItem; error?: string }> {
   try {
-    const response = await fetch('/api/church/taxis', {
+    const response = await fetchWithTimeout('/api/church/taxis', {
       method: 'POST',
       headers: {
         ...(await getAuthenticatedApiHeaders())
@@ -395,7 +396,7 @@ export async function executeTaxisStatusAction(
     }
 
     if (endpoint) {
-      const res = await fetch(endpoint, {
+      const res = await fetchWithTimeout(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

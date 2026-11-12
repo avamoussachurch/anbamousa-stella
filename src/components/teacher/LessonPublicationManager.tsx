@@ -186,20 +186,29 @@ export function LessonPublicationManager({
       ? `سيتم نشر النسخ المعتمدة التالية الآن:\n${affectedItems.join('\n')}\n\nهل تريد المتابعة؟`
       : `These approved versions will be published now:\n${affectedItems.join('\n')}\n\nContinue?`;
     if (!window.confirm(confirmation)) return;
+
     setWorking(true);
     clearResults();
-    const outcome = await publishLessonsInBulk(
-      selectedRows.map(row => ({ lessonId: row.lesson.id, versionId: row.version!.id })),
-      publishLessonVersion
-    );
-    setResults(outcome.map(item => ({
-      lessonId: item.lessonId,
-      success: item.success,
-      error: item.error
-    })));
-    setWorking(false);
-    setSelectedIds(new Set());
-    await Promise.all([onRefresh(), refreshJobs()]);
+    try {
+      const outcome = await publishLessonsInBulk(
+        selectedRows.map(row => ({ lessonId: row.lesson.id, versionId: row.version!.id })),
+        publishLessonVersion
+      );
+      setResults(outcome.map(item => ({
+        lessonId: item.lessonId,
+        success: item.success,
+        error: item.error
+      })));
+      setSelectedIds(new Set());
+      void Promise.all([onRefresh(), refreshJobs()]).catch(error => {
+        console.warn('Post-publish refresh failed:', error);
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Bulk publication failed';
+      setResults(selectedRows.map(row => ({ lessonId: row.lesson.id, success: false, error: message })));
+    } finally {
+      setWorking(false);
+    }
   };
 
   const handleSchedule = async () => {
@@ -212,21 +221,28 @@ export function LessonPublicationManager({
       ? `ستُجدول النسخ المعتمدة التالية للنشر في ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'ar-EG')} (${timezone}):\n${affectedItems.join('\n')}\n\nهل تريد المتابعة؟`
       : `These approved versions will be scheduled for ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'en')} (${timezone}):\n${affectedItems.join('\n')}\n\nContinue?`;
     if (!window.confirm(confirmation)) return;
+
     setWorking(true);
     clearResults();
-    const outcome = await scheduleLessonsInBulk(
-      selectedRows.map(row => ({ lessonId: row.lesson.id, versionId: row.version!.id })),
-      scheduledDate,
-      scheduleLessonPublication
-    );
-    setResults(outcome.map(item => ({
-      lessonId: item.lessonId,
-      success: item.success,
-      error: item.error
-    })));
-    setWorking(false);
-    setSelectedIds(new Set());
-    await refreshJobs();
+    try {
+      const outcome = await scheduleLessonsInBulk(
+        selectedRows.map(row => ({ lessonId: row.lesson.id, versionId: row.version!.id })),
+        scheduledDate,
+        scheduleLessonPublication
+      );
+      setResults(outcome.map(item => ({
+        lessonId: item.lessonId,
+        success: item.success,
+        error: item.error
+      })));
+      setSelectedIds(new Set());
+      void refreshJobs().catch(error => console.warn('Post-schedule refresh failed:', error));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Bulk scheduling failed';
+      setResults(selectedRows.map(row => ({ lessonId: row.lesson.id, success: false, error: message })));
+    } finally {
+      setWorking(false);
+    }
   };
 
   const handleCancel = async (job: ScheduledLessonPublication) => {
@@ -235,16 +251,26 @@ export function LessonPublicationManager({
       ? `إلغاء موعد نشر "${title}" في ${formatPublicationTime(job.scheduled_at, timezone, 'ar-EG')}؟`
       : `Cancel the scheduled publication for "${title}" at ${formatPublicationTime(job.scheduled_at, timezone, 'en')}?`;
     if (!window.confirm(confirmation)) return;
+
     setWorking(true);
-    const response = await cancelLessonPublication(job.id);
-    const success = Boolean(response.data && !response.error);
-    setResults([{
-      lessonId: job.lesson_id,
-      success,
-      error: success ? undefined : response.error?.message || (isAr ? 'لم يؤكد الخادم إلغاء الموعد.' : 'The server did not confirm cancellation.')
-    }]);
-    setWorking(false);
-    await refreshJobs();
+    try {
+      const response = await cancelLessonPublication(job.id);
+      const success = Boolean(response.data && !response.error);
+      setResults([{
+        lessonId: job.lesson_id,
+        success,
+        error: success ? undefined : response.error?.message || (isAr ? 'لم يؤكد الخادم إلغاء الموعد.' : 'The server did not confirm cancellation.')
+      }]);
+      void refreshJobs().catch(error => console.warn('Post-cancel refresh failed:', error));
+    } catch (error) {
+      setResults([{
+        lessonId: job.lesson_id,
+        success: false,
+        error: error instanceof Error ? error.message : 'Cancellation failed'
+      }]);
+    } finally {
+      setWorking(false);
+    }
   };
 
   const handleReschedule = async (job: ScheduledLessonPublication) => {
@@ -255,11 +281,21 @@ export function LessonPublicationManager({
       ? `إعادة جدولة "${title}" إلى ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'ar-EG')} (${timezone})؟`
       : `Reschedule "${title}" to ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'en')} (${timezone})?`;
     if (!window.confirm(confirmation)) return;
+
     setWorking(true);
-    const response = await rescheduleLessonPublication(job.id, scheduledDate);
-    setResults([{ lessonId: job.lesson_id, success: Boolean(response.data && !response.error), error: response.error?.message }]);
-    setWorking(false);
-    await refreshJobs();
+    try {
+      const response = await rescheduleLessonPublication(job.id, scheduledDate);
+      setResults([{ lessonId: job.lesson_id, success: Boolean(response.data && !response.error), error: response.error?.message }]);
+      void refreshJobs().catch(error => console.warn('Post-reschedule refresh failed:', error));
+    } catch (error) {
+      setResults([{
+        lessonId: job.lesson_id,
+        success: false,
+        error: error instanceof Error ? error.message : 'Rescheduling failed'
+      }]);
+    } finally {
+      setWorking(false);
+    }
   };
 
   const parsedScheduleTime = parsePublicationLocalDateTime(scheduledLocalTime, timezone);

@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import { mockLessons } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { useLessons } from '../../context/LessonsContext';
@@ -16,20 +15,11 @@ export function HomeTab({ onNavigate, lang }: HomeTabProps) {
   const { userData, isGuest } = useAuth();
   const {
     lessons,
-    curriculumLoading,
     curriculumError,
     curriculumLoadedForUserId,
     refreshCurriculum,
-    contentProgress,
-    refreshProgressSummary
+    contentProgress
   } = useLessons();
-
-  useEffect(() => {
-    if (!refreshProgressSummary || !userData?.id) return;
-    refreshProgressSummary().catch(error => {
-      console.warn('Could not refresh student progress for Home:', error);
-    });
-  }, [userData?.id, refreshProgressSummary]);
 
   if (!userData) return null;
 
@@ -40,12 +30,12 @@ export function HomeTab({ onNavigate, lang }: HomeTabProps) {
     (!isGuest && !isSupabaseConfigured && curriculumLoadedForUserId !== userData.id)
   );
   const curriculumIsLoading = Boolean(
-    isOnlineAuth && (curriculumLoading || !curriculumReadyForUser)
+    isOnlineAuth && !curriculumReadyForUser && !curriculumError
   );
   const sourceLessons = isGuest
     ? (lessons?.length ? lessons : mockLessons)
     : isOnlineAuth
-      ? (curriculumIsLoading || curriculumError ? [] : lessons)
+      ? (curriculumReadyForUser ? lessons : [])
       : curriculumLoadedForUserId === userData.id && !curriculumError
         ? lessons
         : [];
