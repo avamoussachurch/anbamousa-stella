@@ -1915,3 +1915,171 @@
     }
   }
 }
+
+/* =========================================================
+   ANBA MOUSA — Living Coptic-inspired atmosphere
+   GPU-friendly transforms/opacity only; no pointer capture.
+   ========================================================= */
+.ambient-world {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  isolation: isolate;
+  color: #e9c77e;
+  --ambient-speed: 1;
+}
+.ambient-world--app {
+  opacity: .58;
+  mix-blend-mode: multiply;
+}
+.dark .ambient-world--app,
+[data-theme="dark"] .ambient-world--app {
+  opacity: .76;
+  mix-blend-mode: screen;
+}
+.ambient-world--login {
+  opacity: 1;
+  background:
+    radial-gradient(ellipse at 50% 5%, rgba(90, 137, 133, .34), transparent 43%),
+    radial-gradient(ellipse at 8% 82%, rgba(195, 137, 58, .16), transparent 32%),
+    linear-gradient(145deg, #0b2731 0%, #153e49 48%, #102b37 100%);
+}
+.ambient-world__glow {
+  position: absolute;
+  width: clamp(15rem, 35vw, 34rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(42px);
+  opacity: .22;
+  will-change: transform;
+  background: radial-gradient(circle, rgba(229, 184, 99, .7), rgba(229, 184, 99, 0) 68%);
+  animation: ambient-drift 22s ease-in-out infinite alternate;
+}
+.ambient-world__glow--one { top: -18%; left: -8%; }
+.ambient-world__glow--two {
+  right: -12%;
+  bottom: -28%;
+  width: clamp(18rem, 42vw, 40rem);
+  animation-delay: -9s;
+  animation-duration: 28s;
+  background: radial-gradient(circle, rgba(68, 151, 153, .65), rgba(68, 151, 153, 0) 68%);
+}
+.ambient-world__arch {
+  position: absolute;
+  bottom: -24%;
+  width: clamp(12rem, 27vw, 28rem);
+  height: 76%;
+  border: 1px solid rgba(212, 177, 111, .14);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0;
+  opacity: .58;
+  box-shadow: inset 0 0 45px rgba(214, 177, 111, .045), 0 0 34px rgba(214, 177, 111, .035);
+}
+.ambient-world__arch--left { left: -9%; transform: rotate(8deg); }
+.ambient-world__arch--right { right: -9%; transform: rotate(-8deg); }
+.ambient-world__horizon {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -29%;
+  height: 48%;
+  border-radius: 50% 50% 0 0;
+  border-top: 1px solid rgba(213, 181, 119, .16);
+  background: radial-gradient(ellipse at 50% 0%, rgba(213, 181, 119, .09), transparent 66%);
+}
+.ambient-world__lantern {
+  position: absolute;
+  top: 17%;
+  width: 13px;
+  height: 21px;
+  border: 1px solid rgba(236, 198, 119, .5);
+  border-radius: 5px 5px 7px 7px;
+  background: linear-gradient(180deg, rgba(255, 224, 150, .22), rgba(183, 116, 37, .1));
+  box-shadow: 0 0 18px rgba(247, 194, 91, .2), inset 0 0 9px rgba(255, 217, 137, .22);
+  animation: ambient-lantern 4.8s ease-in-out infinite;
+}
+.ambient-world__lantern::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: -7px;
+  width: 4px;
+  height: 6px;
+  border: 1px solid rgba(236, 198, 119, .42);
+  border-bottom: 0;
+}
+.ambient-world__lantern span {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: #ffd98c;
+  filter: blur(5px);
+  opacity: .85;
+}
+.ambient-world__lantern--left { left: 8%; }
+.ambient-world__lantern--right { right: 8%; top: 29%; animation-delay: -2.4s; }
+.ambient-world__particles { position: absolute; inset: 0; }
+.ambient-world__particle {
+  position: absolute;
+  left: var(--particle-x);
+  top: var(--particle-y);
+  width: var(--particle-size, 3px);
+  height: var(--particle-size, 3px);
+  border-radius: 1px;
+  background: #f1d18e;
+  box-shadow: 0 0 9px rgba(244, 203, 124, .8);
+  opacity: .0;
+  animation: ambient-firefly var(--particle-duration, 12s) ease-in-out var(--particle-delay, 0s) infinite;
+}
+.ambient-world__particle--1 { --particle-x: 8%; --particle-y: 63%; --particle-duration: 13s; --particle-delay: -2s; }
+.ambient-world__particle--2 { --particle-x: 17%; --particle-y: 31%; --particle-size: 2px; --particle-duration: 16s; --particle-delay: -8s; }
+.ambient-world__particle--3 { --particle-x: 24%; --particle-y: 78%; --particle-duration: 11s; --particle-delay: -4s; }
+.ambient-world__particle--4 { --particle-x: 34%; --particle-y: 19%; --particle-size: 2px; --particle-duration: 15s; --particle-delay: -11s; }
+.ambient-world__particle--5 { --particle-x: 43%; --particle-y: 72%; --particle-duration: 14s; --particle-delay: -6s; }
+.ambient-world__particle--6 { --particle-x: 51%; --particle-y: 37%; --particle-size: 2px; --particle-duration: 12s; --particle-delay: -3s; }
+.ambient-world__particle--7 { --particle-x: 62%; --particle-y: 83%; --particle-duration: 17s; --particle-delay: -13s; }
+.ambient-world__particle--8 { --particle-x: 69%; --particle-y: 23%; --particle-size: 2px; --particle-duration: 13s; --particle-delay: -7s; }
+.ambient-world__particle--9 { --particle-x: 77%; --particle-y: 61%; --particle-duration: 15s; --particle-delay: -1s; }
+.ambient-world__particle--10 { --particle-x: 88%; --particle-y: 43%; --particle-size: 2px; --particle-duration: 18s; --particle-delay: -10s; }
+.ambient-world__particle--11 { --particle-x: 94%; --particle-y: 75%; --particle-duration: 12s; --particle-delay: -5s; }
+.ambient-world__particle--12 { --particle-x: 12%; --particle-y: 11%; --particle-size: 2px; --particle-duration: 17s; --particle-delay: -14s; }
+.ambient-world__particle--13 { --particle-x: 57%; --particle-y: 9%; --particle-duration: 14s; --particle-delay: -9s; }
+.ambient-world__particle--14 { --particle-x: 82%; --particle-y: 13%; --particle-size: 2px; --particle-duration: 16s; --particle-delay: -12s; }
+.ambient-world__grain {
+  position: absolute;
+  inset: 0;
+  opacity: .08;
+  background-image: radial-gradient(rgba(245, 223, 180, .7) .55px, transparent .7px);
+  background-size: 7px 7px;
+}
+@keyframes ambient-drift {
+  from { transform: translate3d(-3%, 1%, 0) scale(.94); }
+  to { transform: translate3d(7%, -5%, 0) scale(1.08); }
+}
+@keyframes ambient-lantern {
+  0%, 100% { transform: translateY(0) rotate(-1deg); filter: brightness(.9); }
+  50% { transform: translateY(9px) rotate(1deg); filter: brightness(1.22); }
+}
+@keyframes ambient-firefly {
+  0%, 100% { opacity: 0; transform: translate3d(0, 10px, 0) scale(.65); }
+  20%, 72% { opacity: .72; }
+  50% { opacity: .95; transform: translate3d(15px, -28px, 0) scale(1.2); }
+}
+@media (max-width: 640px) {
+  .ambient-world--app { opacity: .34; }
+  .ambient-world__arch { opacity: .3; }
+  .ambient-world__lantern { transform: scale(.8); }
+  .ambient-world__grain { opacity: .035; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambient-world *,
+  .ambient-world *::before,
+  .ambient-world *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .ambient-world__particle { opacity: .22; }
+}
