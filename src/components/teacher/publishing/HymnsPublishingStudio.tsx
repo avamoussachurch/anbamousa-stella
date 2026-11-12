@@ -224,6 +224,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
     setIsSaving(true);
     setStatusMessage(null);
 
+    try {
     const payload: Partial<CopticHymnItem> = {
       id: selectedHymnId || `hymn_${Date.now()}`,
       titleAr,
@@ -252,7 +253,6 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
       res = await createHymn(payload);
     }
 
-    setIsSaving(false);
     if (res.success && res.hymn) {
       setHasUnsavedChanges(false);
       populateForm(res.hymn);
@@ -262,12 +262,17 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
           : `Hymn ${publishImmediate ? 'published successfully' : 'draft saved'} (v${res.hymn.version || 1})`,
         type: 'success'
       });
-      await loadLibrary();
+      void loadLibrary();
     } else {
       setStatusMessage({
         text: res.error || (isAr ? 'حدث خطأ أثناء الحفظ' : 'Failed to save hymn'),
         type: 'error'
       });
+    }
+    } catch (error) {
+      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'حدث خطأ أثناء الحفظ' : 'Failed to save hymn'), type: 'error' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -276,8 +281,8 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
     if (!window.confirm(isAr ? 'هل تريد إلغاء نشر هذا اللحن وإعادته لمسودة؟' : 'Unpublish this hymn to draft?')) return;
 
     setIsSaving(true);
+    try {
     const res = await unpublishHymn(selectedHymnId);
-    setIsSaving(false);
     if (res.success && res.hymn) {
       setStatus('draft');
       populateForm(res.hymn);
@@ -285,12 +290,17 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
         text: isAr ? 'تم إلغاء نشر اللحن وإعادته كمسودة.' : 'Hymn unpublished to draft.',
         type: 'success'
       });
-      await loadLibrary();
+      void loadLibrary();
     } else {
       setStatusMessage({
         text: res.error || (isAr ? 'تعذر إلغاء نشر اللحن' : 'Could not unpublish hymn.'),
         type: 'error'
       });
+    }
+    } catch (error) {
+      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'تعذر إلغاء نشر اللحن' : 'Could not unpublish hymn.'), type: 'error' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -299,15 +309,22 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
     if (!window.confirm(isAr ? `استعادة النسخة ${vNumber}؟` : `Restore version ${vNumber}?`)) return;
 
     setIsSaving(true);
+    try {
     const res = await restoreHymnVersion(selectedHymnId, vNumber);
-    setIsSaving(false);
     if (res.success && res.hymn) {
       populateForm(res.hymn);
       setStatusMessage({
         text: isAr ? `تمت استعادة اللحن من النسخة ${vNumber}.` : `Restored hymn from v${vNumber}.`,
         type: 'success'
       });
-      await loadLibrary();
+      void loadLibrary();
+    } else {
+      setStatusMessage({ text: res.error || (isAr ? 'تعذر استعادة النسخة' : 'Could not restore hymn version.'), type: 'error' });
+    }
+    } catch (error) {
+      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'تعذر استعادة النسخة' : 'Could not restore hymn version.'), type: 'error' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
