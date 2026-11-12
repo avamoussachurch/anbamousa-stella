@@ -8,6 +8,7 @@ const hymnStudio = read('../src/components/teacher/publishing/HymnsPublishingStu
 const taxisStudio = read('../src/components/teacher/publishing/TaxisPublishingStudio.tsx');
 const hymnStudent = read('../src/components/hymns/HymnsSchoolTab.tsx');
 const taxisStudent = read('../src/components/taxis/CopticTaxisTab.tsx');
+const classRls = read('../scripts/migrations/phase27_student_parent_class_read_access.sql');
 
 test('Hymns teacher studio uploads audio and PDF to private curriculum storage', () => {
   assert.match(hymnStudio, /uploadSourceMedia\(file\)/);
@@ -27,6 +28,17 @@ test('student Hymns and Taxis views resolve private references before browser ac
   assert.match(hymnStudent, /src=\{resolvedAudioUrl \|\| undefined\}/);
   assert.match(taxisStudent, /resolveCurriculumMediaUrl\(document\.fileUrl\)/);
   assert.match(taxisStudent, /href=\{resolvedDocumentUrls\[doc\.id\] \|\| undefined\}/);
+});
+
+test('media access preserves teacher multi-role access and denies unassigned accounts', () => {
+  assert.match(server, /if \(isTeacher\) return true;/);
+  assert.match(server, /return isParent && item\.status === 'published'/);
+});
+
+test('student and parent class RLS is limited to own or verified linked memberships', () => {
+  assert.match(classRls, /student_id = \(SELECT auth\.uid\(\)\)/);
+  assert.match(classRls, /relationship\.verified_at IS NOT NULL/);
+  assert.match(classRls, /membership\.status = 'active'/);
 });
 
 test('server stores private media metadata and authorizes Hymns/Taxis attachments by publication and audience', () => {
