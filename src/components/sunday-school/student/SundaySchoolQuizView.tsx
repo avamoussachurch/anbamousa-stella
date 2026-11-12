@@ -855,7 +855,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
           pointsEarned={submissionResult?.pointsEarned ?? 0}
           totalPoints={submissionResult?.totalPoints ?? 0}
           streakDays={submissionResult?.streak?.currentStreak ?? 0}
-          lang={lang}
+          lang={isAr ? 'ar' : 'en'}
           onContinue={() => setShowVictorySplash(false)}
         />
       )}
