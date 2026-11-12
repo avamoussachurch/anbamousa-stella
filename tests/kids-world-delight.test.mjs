@@ -51,4 +51,5 @@ test('teacher dashboard explains missing assignments instead of presenting misle
   assert.match(dashboard, /We do not mix in other teachers’ class data/);
   assert.match(server, /\.eq\('servant_id', authContext\.userId\)/);
   assert.match(server, /\.eq\('is_active', true\)/);
+  assert.match(server, /g\.includes\('high school'\).*g\.includes\('youth'/);
 });
