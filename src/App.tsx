@@ -19,6 +19,7 @@ import { StudentOnboardingModal } from './components/auth/StudentOnboardingModal
 import { AdminWorkspace } from './components/admin/AdminWorkspace';
 import { RoleAccountProfile } from './components/profile/RoleAccountProfile';
 import { OfflineIndicator } from './components/layout/OfflineIndicator';
+import { AnbaMousaSplashScreen } from './components/layout/AnbaMousaSplashScreen';
 import { GlobalMusicPlayer } from './components/layout/GlobalMusicPlayer';
 import { useAuth } from './context/AuthContext';
 import { LessonsProvider } from './context/LessonsContext';
@@ -138,11 +139,7 @@ function AppContent() {
   }, [activeWorkspace, activeTab, userData?.roles]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[var(--color-church-cream)] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-[var(--color-church-blue)] border-t-[var(--color-church-gold)] rounded-full animate-spin"></div>
-      </div>
-    );
+    return <AnbaMousaSplashScreen lang={lang} />;
   }
 
   if (!userData) {

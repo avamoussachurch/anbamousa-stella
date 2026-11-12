@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   BookOpen,
   CheckCircle2,
@@ -81,6 +82,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
   previewMode = false
 }) => {
   const isAr = lang === 'ar';
+  const reduceMotion = useReducedMotion();
 
   const [showDocumentModal, setShowDocumentModal] = useState<boolean>(false);
   const [activeFlashcardIndex, setActiveFlashcardIndex] = useState<number>(0);
@@ -510,9 +512,11 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             aria-valuemax={sectionProgress.totalCount}
             aria-valuenow={sectionProgress.completedCount}
           >
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[var(--mousa-teal)] to-[var(--mousa-gold)] transition-[width] duration-500 motion-reduce:transition-none"
-              style={{ width: `${sectionProgress.completionPercent}%` }}
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-[var(--mousa-teal)] to-[var(--mousa-gold)]"
+              initial={reduceMotion ? false : { width: 0 }}
+              animate={{ width: `${sectionProgress.completionPercent}%` }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.65, ease: 'easeOut' }}
             />
           </div>
 
@@ -523,7 +527,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               const isSaving = savingSectionId === section.id;
 
               return (
-                <button
+                <motion.button
                   type="button"
                   key={section.id}
                   id={`section-${section.id}`}
@@ -554,6 +558,10 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                       ? 'border-[var(--mousa-teal)] bg-emerald-50 dark:bg-emerald-950/30 shadow-md'
                       : 'border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] hover:border-[var(--mousa-gold)] hover:shadow-md dark:bg-[#1E1914] dark:hover:border-[var(--mousa-gold)]'
                   }`}
+                  initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={reduceMotion ? { duration: 0 } : { duration: 0.24, delay: Math.min(idx * 0.035, 0.18) }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.992 }}
                 >
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="space-y-1">
@@ -593,7 +601,15 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                       {isSaving
                         ? <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin motion-reduce:animate-none" />
                         : isCompleted
-                          ? <CheckCircle2 className="w-6 h-6 animate-in zoom-in-75 duration-300 motion-reduce:animate-none" />
+                          ? (
+                              <motion.span
+                                initial={reduceMotion ? false : { scale: 0.55, rotate: -18 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 360, damping: 18 }}
+                              >
+                                <CheckCircle2 className="w-6 h-6" />
+                              </motion.span>
+                            )
                           : <span className="text-xl font-black">○</span>}
                     </span>
                   </div>
@@ -628,7 +644,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                           ? (isAr ? 'اضغط بعد القراية لتجربة التقدم المؤقت' : 'Tap after reading to simulate progress')
                           : (isAr ? 'اضغط هنا بعد ما تخلص القراية' : 'Tap here when you finish reading'))}
                   </span>
-                </button>
+                </motion.button>
               );
             })}
           </div>
