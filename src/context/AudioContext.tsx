@@ -14,7 +14,7 @@ interface AudioContextType {
   playSound: (sound?: UiSound) => void;
 }
 
-const AudioContext = createContext<AudioContextType | null>(null);
+const GlobalAudioContext = createContext<AudioContextType | null>(null);
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -183,14 +183,14 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AudioContext.Provider value={{ currentTrackUrl, isPlaying, volume, playTrack, togglePlay, setVolume, soundEnabled, setSoundEnabled, playSound }}>
+    <GlobalAudioContext.Provider value={{ currentTrackUrl, isPlaying, volume, playTrack, togglePlay, setVolume, soundEnabled, setSoundEnabled, playSound }}>
       {children}
-    </AudioContext.Provider>
+    </GlobalAudioContext.Provider>
   );
 }
 
 export function useGlobalAudio() {
-  const context = useContext(AudioContext);
+  const context = useContext(GlobalAudioContext);
   if (!context) throw new Error('useGlobalAudio must be used within an AudioProvider');
   return context;
 }
