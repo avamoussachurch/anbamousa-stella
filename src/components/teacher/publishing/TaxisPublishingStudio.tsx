@@ -297,7 +297,8 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
           id: `doc_${Date.now()}`,
           title: file.name,
           fileUrl: result.fileUrl!,
-          fileType: file.name.split('.').pop()?.toLowerCase() || 'pdf',
+          fileType: 'pdf',
+          fileSize: file.size,
           mimeType: file.type || 'application/pdf'
         }
       ]);
