@@ -1346,7 +1346,7 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
       refreshProgressSummary: async () => {
         if (!userData) return;
         try {
-          const summaryData = await getStudentProgressSummary(userData.id);
+          const summaryData = await getStudentProgressSummary(userData.id, { force: true });
           if (summaryData.success && summaryData.completedLessonIds) {
             const completedSet = new Set(summaryData.completedLessonIds);
             setLessons(prev => prev.map(l => ({
