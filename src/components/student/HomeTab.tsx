@@ -15,7 +15,6 @@ export function HomeTab({ onNavigate, lang }: HomeTabProps) {
   const { userData, isGuest } = useAuth();
   const {
     lessons,
-    curriculumLoading,
     curriculumError,
     curriculumLoadedForUserId,
     refreshCurriculum,
