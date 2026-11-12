@@ -16,7 +16,7 @@ test('admin Express Lesson insert is permitted only as an authenticated, self-ap
   assert.match(migration, /public\.can_review_curriculum_lesson\(lesson_id\)/);
   assert.match(migration, /status = 'AI_DRAFT'/);
   assert.match(migration, /status = 'APPROVED'[\s\S]*?public\.has_role\('admin'\)/);
-  assert.match(migration, /approved_by = \(SELECT auth\.uid\(\)\)/);
+  assert.match(migration, /approved_by::text = \(SELECT auth\.uid\(\)\)::text/);
   assert.match(migration, /approved_at IS NOT NULL/);
   assert.doesNotMatch(migration, /status = 'PUBLISHED'/);
 
