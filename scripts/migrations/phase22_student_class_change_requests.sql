@@ -2,6 +2,26 @@
 -- Requests are visible to the student and to servants assigned to the requested class.
 -- Approval updates the authoritative class_memberships row and profile grade atomically.
 
+-- Repair two live curriculum helpers that incorrectly schema-qualified COALESCE.
+-- COALESCE is SQL syntax, not a pg_catalog function; the old definitions raise 42883.
+DO $phase22_fix_curriculum_coalesce$
+DECLARE
+  v_definition text;
+BEGIN
+  SELECT pg_catalog.pg_get_functiondef('public.curriculum_grade_class_group(text)'::regprocedure)
+    INTO v_definition;
+  IF pg_catalog.strpos(pg_catalog.lower(v_definition), 'pg_catalog.coalesce') > 0 THEN
+    EXECUTE pg_catalog.replace(v_definition, 'pg_catalog.coalesce', 'COALESCE');
+  END IF;
+
+  SELECT pg_catalog.pg_get_functiondef('public.can_read_curriculum_lesson(uuid)'::regprocedure)
+    INTO v_definition;
+  IF pg_catalog.strpos(pg_catalog.lower(v_definition), 'pg_catalog.coalesce') > 0 THEN
+    EXECUTE pg_catalog.replace(v_definition, 'pg_catalog.coalesce', 'COALESCE');
+  END IF;
+END;
+$phase22_fix_curriculum_coalesce$;
+
 CREATE TABLE IF NOT EXISTS public.student_class_change_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
