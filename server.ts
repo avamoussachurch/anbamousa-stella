@@ -4,7 +4,7 @@ import path from "path";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { isValidSundaySchoolGrade, parseHymnsTaxisLevel } from "./src/lib/hymnsTaxisLevel";
 import { createStorageReference, parseStorageReference } from "./src/lib/mediaStorageReference";
 import { hymnFromDatabase, hymnToDatabase, taxisFromDatabase, taxisToDatabase } from "./src/lib/hymnsTaxisPersistence";
@@ -34,9 +34,9 @@ type ServerAuthContext =
       isAuthenticated: false;
     };
 
-let trustedServiceClient: ReturnType<typeof createClient> | null = null;
+let trustedServiceClient: SupabaseClient<any> | null = null;
 let trustedServiceClientConfig = '';
-let publicAuthClient: ReturnType<typeof createClient> | null = null;
+let publicAuthClient: SupabaseClient<any> | null = null;
 let publicAuthClientConfig = '';
 
 const PERSISTED_STUDENT_SUMMARY_CACHE_TTL_MS = 2000;
