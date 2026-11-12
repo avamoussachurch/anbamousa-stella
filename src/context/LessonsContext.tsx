@@ -321,7 +321,13 @@ export function LessonsProvider({ children }: { children: React.ReactNode }) {
 
       const onlineLessons = result.data || [];
       if (onlineLessons.length > 0) {
-        setLessons(onlineLessons.map(l => ({ ...l, isCompleted: Boolean(l.isCompleted) })));
+        setLessons(prev => {
+          const previousCompletion = new Map(prev.map(lesson => [lesson.id, lesson.isCompleted]));
+          return onlineLessons.map(lesson => ({
+            ...lesson,
+            isCompleted: Boolean(lesson.isCompleted) || Boolean(previousCompletion.get(lesson.id))
+          }));
+        });
       } else {
         setLessons([]);
       }
