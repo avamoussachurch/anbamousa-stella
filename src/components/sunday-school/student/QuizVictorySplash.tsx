@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Award, Flame, Sparkles, Star, Trophy, X } from 'lucide-react';
 import { ConfettiCanvas } from './ConfettiCanvas';
 import { useGlobalAudio } from '../../../context/AudioContext';
@@ -28,6 +28,7 @@ export function QuizVictorySplash({
 }: QuizVictorySplashProps) {
   const isAr = lang === 'ar';
   const { playSound } = useGlobalAudio();
+  const reduceMotion = useReducedMotion();
   const played = useRef(false);
   const passed = percentage >= 50;
   const perfect = percentage === 100;
@@ -57,9 +58,9 @@ export function QuizVictorySplash({
       role="dialog"
       aria-modal="true"
       aria-labelledby="quiz-victory-title"
-      initial={{ opacity: 0 }}
+      initial={reduceMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      exit={reduceMotion ? undefined : { opacity: 0 }}
     >
       {(passed || perfect) && <ConfettiCanvas layer="behind" />}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -73,9 +74,9 @@ export function QuizVictorySplash({
 
       <motion.section
         className="relative z-10 my-auto w-full max-w-2xl rounded-[2rem] border-2 border-amber-200/50 bg-[linear-gradient(155deg,#174c55_0%,#0e3540_58%,#172d3a_100%)] p-5 shadow-[0_30px_100px_rgba(0,0,0,.42)] sm:p-9"
-        initial={{ y: 45, scale: .88, rotateX: 8 }}
+        initial={reduceMotion ? false : { y: 45, scale: .88, rotateX: 8 }}
         animate={{ y: 0, scale: 1, rotateX: 0 }}
-        transition={{ type: 'spring', stiffness: 170, damping: 17 }}
+        transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 170, damping: 17 }}
       >
         <button type="button" data-sfx="off" onClick={onContinue} aria-label={isAr ? 'إغلاق' : 'Close'} className="absolute end-4 top-4 grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20">
           <X size={19} />
@@ -83,8 +84,8 @@ export function QuizVictorySplash({
 
         <motion.div
           className="mx-auto mb-4 grid h-24 w-24 place-items-center rounded-[2rem] border-4 border-amber-100 bg-gradient-to-br from-amber-200 via-amber-400 to-orange-500 text-amber-950 shadow-[0_0_55px_rgba(246,196,94,.45)]"
-          animate={{ y: [0, -9, 0], rotate: [0, -4, 4, 0] }}
-          transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+          animate={reduceMotion ? undefined : { y: [0, -9, 0], rotate: [0, -4, 4, 0] }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
         >
           {perfect ? <Trophy size={48} /> : passed ? <Award size={48} /> : <Star size={48} />}
         </motion.div>
