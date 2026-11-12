@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { fetchWithTimeout } from './fetchWithTimeout';
 import { LessonVersion } from '../types';
 import { DbLessonVersion } from './curriculumService';
 
@@ -426,7 +427,7 @@ export async function publishLessonVersion(
       return { data: null, error: new Error('An active teacher session is required to publish a lesson.') };
     }
 
-    const res = await fetch('/api/church/publish-approved-lesson-version', {
+    const res = await fetchWithTimeout('/api/church/publish-approved-lesson-version', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ lessonId, versionId })
