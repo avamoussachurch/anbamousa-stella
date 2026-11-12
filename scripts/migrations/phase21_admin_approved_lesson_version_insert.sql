@@ -41,7 +41,7 @@ CREATE POLICY lesson_versions_insert_authorized_teacher
       OR (
         status = 'APPROVED'
         AND public.has_role('admin')
-        AND approved_by = (SELECT auth.uid())
+        AND approved_by::text = (SELECT auth.uid())::text
         AND approved_at IS NOT NULL
       )
     )
