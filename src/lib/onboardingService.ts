@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { OnboardingActivationRequest, ClassGroupId } from '../types';
-import { getClassGroupForGrade } from './classGroups';
+import { findClassGroupForGrade, getClassGroupForGrade } from './classGroups';
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -72,6 +72,15 @@ export async function requestAccountActivation(
 ): Promise<{ success: boolean; request?: OnboardingActivationRequest; error?: string }> {
   if (supabase && isSupabaseConfigured) {
     try {
+      if (params.studentName.trim().length < 2 || params.studentName.trim().length > 100) {
+        return { success: false, error: 'Student name must contain 2 to 100 characters.' };
+      }
+      if (params.notes && params.notes.length > 1000) {
+        return { success: false, error: 'Notes must be 1000 characters or fewer.' };
+      }
+      if (findClassGroupForGrade(params.requestedGrade)?.id !== params.requestedClassGroupId) {
+        return { success: false, error: 'The selected grade does not match its Sunday School class group.' };
+      }
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const session = sessionData?.session;
       if (sessionError || !session?.user) {
