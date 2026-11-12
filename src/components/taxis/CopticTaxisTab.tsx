@@ -20,6 +20,7 @@ import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
 import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
 import { hasRole } from '../../lib/workspaces';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
+import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
 
 interface CopticTaxisTabProps {
   lang?: Language;
@@ -35,6 +36,8 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<TaxisItem | null>(null);
+  const [resolvedDocumentUrls, setResolvedDocumentUrls] = useState<Record<string, string>>({});
+  const [documentUrlError, setDocumentUrlError] = useState<string | null>(null);
   const [completedRituals, setCompletedRituals] = useState<Record<string, boolean>>({});
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
@@ -68,6 +71,29 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
     });
     return () => { isMounted = false; };
   }, [selectedCategory, userData?.id, userData?.roles, userData?.hymnsTaxisLevel, userData?.grade, workspace]);
+
+  // Private curriculum files need a short-lived signed URL before a browser
+  // link can open them. Resolve only the currently selected item's attachments.
+  useEffect(() => {
+    let active = true;
+    setResolvedDocumentUrls({});
+    setDocumentUrlError(null);
+    const documents = selectedItem?.documents || [];
+    if (documents.length === 0) return () => { active = false; };
+
+    Promise.all(documents.map(async document => [
+      document.id,
+      await resolveCurriculumMediaUrl(document.fileUrl)
+    ] as const))
+      .then(entries => {
+        if (active) setResolvedDocumentUrls(Object.fromEntries(entries));
+      })
+      .catch(error => {
+        if (active) setDocumentUrlError(error instanceof Error ? error.message : 'A document could not be opened.');
+      });
+
+    return () => { active = false; };
+  }, [selectedItem?.id, selectedItem?.documents]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -300,6 +326,9 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                 {/* References & Documents */}
                 {(selectedItem.references?.length > 0 || selectedItem.documents?.length > 0) && (
                   <div className="pt-2 flex items-center gap-3 flex-wrap text-xs text-stone-500">
+                    {documentUrlError && (
+                      <p role="status" className="w-full text-rose-600 font-semibold">{documentUrlError}</p>
+                    )}
                     {selectedItem.references?.map((ref, idx) => (
                       <span key={idx} className="inline-flex items-center gap-1 font-bold">
                         📖 {ref}
@@ -308,7 +337,9 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                     {selectedItem.documents?.map((doc) => (
                       <a
                         key={doc.id}
-                        href={doc.fileUrl}
+                        href={resolvedDocumentUrls[doc.id] || undefined}
+                        aria-disabled={!resolvedDocumentUrls[doc.id]}
+                        className={!resolvedDocumentUrls[doc.id] ? 'pointer-events-none opacity-50' : undefined}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 rounded-lg font-black transition-colors"
