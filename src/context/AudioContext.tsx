@@ -22,6 +22,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const currentTrackUrlRef = useRef<string | null>(null);
   const isPlayingRef = useRef(false);
   const [currentTrackUrl, setCurrentTrackUrl] = useState<string | null>(null);
+  const playPromiseRef = useRef<Promise<void> | void>();
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolumeState] = useState(0.5);
   const [soundEnabled, setSoundEnabledState] = useState(() => {
@@ -32,7 +33,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const setSoundEnabled = useCallback((enabled: boolean) => {
     setSoundEnabledState(enabled);
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('anba_mousa_sound_enabled', String(enabled));
+      try { window.localStorage.setItem('anba_mousa_sound_enabled', String(enabled)); } catch { /* Preference storage is optional. */ }
     }
   }, []);
 
@@ -144,6 +145,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     if (!audioRef.current) return;
     const playPromise = audioRef.current.play();
     if (playPromise !== undefined) {
+      playPromiseRef.current = playPromise;
       playPromise.catch(e => {
         if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') console.error('Play failed:', e);
       });
@@ -152,7 +154,15 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
   const safePause = () => {
     if (!audioRef.current) return;
-    audioRef.current.pause();
+    if (playPromiseRef.current !== undefined) {
+      playPromiseRef.current.then(() => {
+        audioRef.current?.pause();
+      }).catch(() => {
+        // The browser already aborted this playback request.
+      });
+    } else {
+      audioRef.current.pause();
+    }
   };
 
   const playTrack = (url: string) => {
@@ -162,12 +172,16 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       else safePlay();
       return;
     }
-    audioRef.current.pause();
-    audioRef.current.src = url;
-    audioRef.current.load();
-    currentTrackUrlRef.current = url;
-    setCurrentTrackUrl(url);
-    safePlay();
+    if (isPlayingRef.current) safePause();
+    // Keep the original player hand-off delay so rapid track changes remain reliable.
+    setTimeout(() => {
+      if (!audioRef.current) return;
+      audioRef.current.src = url;
+      audioRef.current.load();
+      currentTrackUrlRef.current = url;
+      setCurrentTrackUrl(url);
+      safePlay();
+    }, 50);
   };
 
   const togglePlay = () => {
