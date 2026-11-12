@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import { mockLessons } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { useLessons } from '../../context/LessonsContext';
@@ -20,16 +19,8 @@ export function HomeTab({ onNavigate, lang }: HomeTabProps) {
     curriculumError,
     curriculumLoadedForUserId,
     refreshCurriculum,
-    contentProgress,
-    refreshProgressSummary
+    contentProgress
   } = useLessons();
-
-  useEffect(() => {
-    if (!refreshProgressSummary || !userData?.id) return;
-    refreshProgressSummary().catch(error => {
-      console.warn('Could not refresh student progress for Home:', error);
-    });
-  }, [userData?.id, refreshProgressSummary]);
 
   if (!userData) return null;
 
