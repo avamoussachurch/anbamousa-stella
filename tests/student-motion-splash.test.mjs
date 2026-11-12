@@ -19,3 +19,4 @@ test('lesson reading progress uses reduced-motion-aware transitions', async () =
   assert.match(lesson, /sectionProgress\.completionPercent/);
   assert.match(lesson, /<motion\.button/);
 });
+// Regression tests intentionally avoid timing-sensitive animation snapshots.
