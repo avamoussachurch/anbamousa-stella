@@ -13722,7 +13722,7 @@ app.get("/api/media-url", async (req, res) => {
             return (
               (['ALL', 'CONGREGATION'].includes(audience) &&
                 (audienceDetail !== 'preparatory' || studentGrade.includes('prep')))
-              || (audience === 'DEACONS' && studentLevel >= 2)
+              || audience === 'DEACONS'
             );
           }
           return isParent ? item.status === 'published' : true;
