@@ -40,6 +40,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const [hymnsLoadError, setHymnsLoadError] = useState<string | null>(null);
   const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem>(COPTIC_HYMNS_COLLECTION[0]);
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
+  const [resolvedSheetMusicUrl, setResolvedSheetMusicUrl] = useState('');
   const [audioUrlError, setAudioUrlError] = useState<string | null>(null);
 
   // Audio Playback
@@ -108,6 +109,17 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       });
     return () => { active = false; };
   }, [selectedHymn?.id, selectedHymn?.audioUrl]);
+
+  useEffect(() => {
+    let active = true;
+    setResolvedSheetMusicUrl('');
+    const reference = selectedHymn?.sheetMusicUrl || selectedHymn?.pdfUrl;
+    if (!reference) return () => { active = false; };
+    resolveCurriculumMediaUrl(reference)
+      .then(url => { if (active) setResolvedSheetMusicUrl(url); })
+      .catch(() => { if (active) setResolvedSheetMusicUrl(''); });
+    return () => { active = false; };
+  }, [selectedHymn?.id, selectedHymn?.sheetMusicUrl, selectedHymn?.pdfUrl]);
 
   // Read mastered hymns
   useEffect(() => {
@@ -456,6 +468,16 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
 
               {audioUrlError && (
                 <p role="status" className="text-xs font-semibold text-rose-600">{audioUrlError}</p>
+              )}
+              {resolvedSheetMusicUrl && (
+                <a
+                  href={resolvedSheetMusicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--mousa-teal)]/30 text-[var(--mousa-teal-deep)] dark:text-amber-300 text-xs font-bold hover:bg-[var(--mousa-teal)]/10 transition-colors"
+                >
+                  {isAr ? 'عرض نوتة اللحن PDF' : 'View sheet music PDF'}
+                </a>
               )}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
