@@ -342,7 +342,7 @@ function normalizeGradeQuery(raw: string): string {
     .replace(/٨/g, '8')
     .replace(/٩/g, '9')
     .replace(/٠/g, '0')
-    .replace(/[-_]/g, ' ')
+    .replace(/[\-‐‑‒–—_]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -377,8 +377,8 @@ export function findCanonicalGrade(rawGrade?: string | null): GradeItem | null {
   // 3. Substring matching with stage context
   const isKindergarten = query.includes('kg') || query.includes('حضانه') || query.includes('kindergarten') || query.includes('كي جي');
   const isPrep = query.includes('prep') || query.includes('اعداد') || query.includes('preparatory');
-  const isSecondary = query.includes('sec') || query.includes('ثانو') || query.includes('secondary');
-  const isUniversity = query.includes('univ') || query.includes('جامع') || query.includes('college');
+  const isSecondary = query.includes('sec') || query.includes('ثانو') || query.includes('secondary') || query.includes('high school');
+  const isUniversity = query.includes('univ') || query.includes('جامع') || query.includes('college') || query.includes('youth');
 
   if (isUniversity) {
     return CANONICAL_GRADES.university;
@@ -406,7 +406,9 @@ export function findCanonicalGrade(rawGrade?: string | null): GradeItem | null {
   }
 
   // Numerical extraction for standard grade representations (e.g. "Grade 4", "4th Grade Elementary")
-  const numMatch = query.match(/\b([0-9]{1,2})\b/);
+  // Accept ordinal grade labels and ranges such as "5th-6th Grade".
+  // Both endpoints in a normal school-grade range belong to the same class group.
+  const numMatch = query.match(/(?:^|\D)([0-9]{1,2})(?:st|nd|rd|th)?(?=\D|$)/);
   if (numMatch) {
     const num = parseInt(numMatch[1], 10);
     switch (num) {
