@@ -1,4 +1,6 @@
 import { HymnsRosterMembership, HymnsEnrollmentRequestPayload, Language } from '../types';
+import { getAuthenticatedApiHeaders } from './apiAuth';
+import { isSupabaseConfigured } from './supabase';
 
 export interface HymnsLevelDefinition {
   level: 1 | 2 | 3;
@@ -82,14 +84,13 @@ function saveStoredMemberships(list: HymnsRosterMembership[]) {
 export async function getMyHymnsEnrollment(studentId?: string): Promise<{
   success: boolean;
   membership: HymnsRosterMembership | null;
+  error?: string;
 }> {
   // Try server API first
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+    const headers = await getAuthenticatedApiHeaders();
     const res = await fetch(`/api/church/hymns/my-enrollment${studentId ? `?studentId=${studentId}` : ''}`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      }
+      headers
     });
     if (res.ok) {
       const data = await res.json();
@@ -97,7 +98,12 @@ export async function getMyHymnsEnrollment(studentId?: string): Promise<{
         return { success: true, membership: data.membership };
       }
     }
-  } catch (_) {}
+    if (isSupabaseConfigured) return { success: false, membership: null, error: `Could not load Hymns enrollment (HTTP ${res.status}).` };
+  } catch (error) {
+    if (isSupabaseConfigured) {
+      return { success: false, membership: null, error: error instanceof Error ? error.message : 'Could not load Hymns enrollment.' };
+    }
+  }
 
   // Fallback to local storage
   const list = getStoredMemberships();
@@ -115,13 +121,10 @@ export async function submitHymnsEnrollment(
   studentName?: string
 ): Promise<{ success: boolean; membership?: HymnsRosterMembership; error?: string }> {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+    const headers = await getAuthenticatedApiHeaders();
     const res = await fetch('/api/church/hymns/enroll', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
+      headers,
       body: JSON.stringify({
         level: payload.level,
         rosterGroup: payload.rosterGroup || 'general',
@@ -141,7 +144,12 @@ export async function submitHymnsEnrollment(
         return { success: false, error: data.message || data.error };
       }
     }
-  } catch (_) {}
+  } catch (error) {
+    if (isSupabaseConfigured) {
+      return { success: false, error: error instanceof Error ? error.message : 'Could not submit Hymns enrollment.' };
+    }
+  }
+  if (isSupabaseConfigured) return { success: false, error: 'Could not submit Hymns enrollment.' };
 
   // Offline/Demo fallback
   const fallbackId = studentId || 'u1';
@@ -173,13 +181,12 @@ export async function submitHymnsEnrollment(
 export async function getHymnsRosterRequests(level?: number): Promise<{
   success: boolean;
   requests: HymnsRosterMembership[];
+  error?: string;
 }> {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+    const headers = await getAuthenticatedApiHeaders();
     const res = await fetch(`/api/church/hymns/roster-requests${level ? `?level=${level}` : ''}`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      }
+      headers
     });
     if (res.ok) {
       const data = await res.json();
@@ -187,7 +194,13 @@ export async function getHymnsRosterRequests(level?: number): Promise<{
         return { success: true, requests: data.requests };
       }
     }
-  } catch (_) {}
+    if (isSupabaseConfigured) return { success: false, requests: [], error: `Could not load Hymns roster (HTTP ${res.status}).` };
+  } catch (error) {
+    if (isSupabaseConfigured) {
+      return { success: false, requests: [], error: error instanceof Error ? error.message : 'Could not load Hymns roster.' };
+    }
+  }
+  if (isSupabaseConfigured) return { success: false, requests: [], error: 'Could not load Hymns roster.' };
 
   const local = getStoredMemberships();
   const filtered = level ? local.filter(r => r.level === level) : local;
@@ -207,13 +220,10 @@ export async function executeHymnsRosterAction(
   }
 ): Promise<{ success: boolean; membership?: HymnsRosterMembership; error?: string }> {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('church_auth_token') : null;
+    const headers = await getAuthenticatedApiHeaders();
     const res = await fetch('/api/church/hymns/roster-action', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
+      headers,
       body: JSON.stringify({
         membershipId,
         action,
@@ -229,7 +239,12 @@ export async function executeHymnsRosterAction(
         return { success: false, error: data.message || data.error };
       }
     }
-  } catch (_) {}
+  } catch (error) {
+    if (isSupabaseConfigured) {
+      return { success: false, error: error instanceof Error ? error.message : 'Could not update Hymns enrollment.' };
+    }
+  }
+  if (isSupabaseConfigured) return { success: false, error: 'Could not update Hymns enrollment.' };
 
   // Local fallback
   const list = getStoredMemberships();

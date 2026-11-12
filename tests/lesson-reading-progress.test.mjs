@@ -115,6 +115,7 @@ test('repeated completion requests rely on server-confirmed idempotent rewards',
       progress: {
         studentId: 'student-1',
         lessonId: 'lesson-3',
+        versionId: 'version-3',
         status: 'COMPLETED',
         sectionsCompleted: ['section-1'],
         totalSections: 1,

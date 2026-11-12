@@ -22,6 +22,7 @@ import { getHymnById, getHymns, createHymn, updateHymn } from '../../../lib/hymn
 import { createTaxisDraft, getTaxisItems, saveTaxisItem } from '../../../lib/taxisService';
 import { useAuth } from '../../../context/AuthContext';
 import { isSupabaseConfigured, supabase } from '../../../lib/supabase';
+import { getAuthenticatedApiHeaders } from '../../../lib/apiAuth';
 import {
   CurriculumImportCategory,
   CurriculumImportCheckpoint,
@@ -245,19 +246,11 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
       updateItem(item.id, { error: isAr ? 'انتهت الجلسة. سجل الدخول مرة أخرى.' : 'Your session expired. Sign in again.', stage: 'error' });
       return;
     }
-    let serverToken: string | null = null;
     try {
-      serverToken = localStorage.getItem('church_auth_token');
+      await getAuthenticatedApiHeaders();
     } catch (error) {
       updateItem(item.id, {
-        error: error instanceof Error ? error.message : 'تعذر قراءة جلسة الدخول.',
-        stage: 'error'
-      });
-      return;
-    }
-    if (!serverToken) {
-      updateItem(item.id, {
-        error: isAr ? 'انتهت الجلسة. سجل الدخول مرة أخرى.' : 'Your session expired. Sign in again.',
+        error: error instanceof Error ? error.message : 'Could not verify the authenticated session.',
         stage: 'error'
       });
       return;
@@ -460,7 +453,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
         ...current,
         documents: [...current.documents, attachment],
         status: 'draft'
-      }, userData);
+      });
       if (!updated.success || !updated.item) throw new Error(updated.error || 'تعذر ربط الملف بمسودة الطقس.');
     };
 

@@ -47,7 +47,7 @@ export async function getClassRoster(
     const query = new URLSearchParams();
     if (classGroupId) query.set('classGroupId', classGroupId);
 
-    const res = await fetch(`/api/church/class-roster?${query.toString()}`, {
+    const res = await fetch(`/api/church/my-class?${query.toString()}`, {
       method: 'GET',
       headers
     });
@@ -62,7 +62,16 @@ export async function getClassRoster(
 
     return { data: json.roster, error: null };
   } catch (err: any) {
-    if (!allowDemoFallback) {
+    let hasOnlineSession = isSupabaseConfigured;
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        hasOnlineSession = hasOnlineSession || Boolean(error || data.session?.user);
+      } catch {
+        hasOnlineSession = true;
+      }
+    }
+    if (!allowDemoFallback || hasOnlineSession) {
       return {
         data: null,
         error: err instanceof Error ? err : new Error('Network error fetching class roster')

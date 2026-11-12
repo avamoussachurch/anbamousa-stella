@@ -9,13 +9,19 @@ export interface ServantPreviewSchoolContent {
   taxis: TaxisItem[];
 }
 
+interface ServantPreviewLoader {
+  getHymns: typeof getHymns;
+  getTaxisItems: typeof getTaxisItems;
+}
+
 export async function loadServantPreviewSchoolContent(
   level: 1 | 2 | 3,
-  grade: string
+  grade: string,
+  loader: ServantPreviewLoader = { getHymns, getTaxisItems }
 ): Promise<ServantPreviewSchoolContent> {
   const [hymnsResult, taxisResult] = await Promise.all([
-    getHymns(level, 'all', 'published'),
-    getTaxisItems()
+    loader.getHymns(level, 'all', 'published'),
+    loader.getTaxisItems()
   ]);
 
   if (!hymnsResult.success) {

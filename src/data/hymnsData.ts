@@ -44,6 +44,11 @@ export interface CopticHymnItem {
   }>;
   updatedAt?: string;
   publishedAt?: string;
+  history?: Array<Partial<CopticHymnItem> & {
+    version: number;
+    savedAt: string;
+    savedBy?: string;
+  }>;
 }
 
 export const COPTIC_HYMNS_COLLECTION: CopticHymnItem[] = [

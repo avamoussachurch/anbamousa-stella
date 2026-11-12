@@ -6,9 +6,7 @@ import { useLessons } from '../../context/LessonsContext';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { 
   Language, 
-  LessonVersion, 
-  QuizDraft,
-  QuestionDifficulty
+  LessonVersion
 } from '../../types';
 import { SundaySchoolLessonView } from '../sunday-school/student/SundaySchoolLessonView';
 import { SundaySchoolQuizView } from '../sunday-school/student/SundaySchoolQuizView';
@@ -18,7 +16,6 @@ import { getStudentMastery, evaluateStudentMastery } from '../../lib/studentMast
 import { getClassGroupForGrade, getClassGroupLabel, getClassGroupById } from '../../lib/classGroups';
 import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../../lib/pointsService';
 import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
-import { calculateSectionProgress, toggleReadSection } from '../../lib/lessonReadingProgress';
 import { hasRole } from '../../lib/workspaces';
 
 export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: { lessonId: string; onBack: () => void; lang?: Language; readOnly?: boolean }) {
@@ -34,139 +31,132 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
     setStudentMastery,
     updateStudentContentProgress,
     recordQuizAttempt,
-    refreshProgressSummary
+    refreshProgressSummary,
+    curriculumLoading,
+    curriculumError,
+    curriculumLoadedForUserId
   } = useLessons();
 
-  const lesson = lessons.find(l => l.id === lessonId) || mockLessons.find(l => l.id === lessonId);
+  const isOnlineAuth = Boolean(!isGuest && userData && isSupabaseConfigured);
+  const curriculumReady = !isOnlineAuth ||
+    (!curriculumLoading && curriculumLoadedForUserId === userData?.id);
+  const lesson = (curriculumReady ? lessons.find(l => l.id === lessonId) : undefined) ||
+    (isGuest ? mockLessons.find(l => l.id === lessonId) : undefined);
   
-  // Sunday School Vertical Slice States
+  const currentStudentId = userData?.id || 'u1';
+  const versions = (lessonVersions && lessonVersions[lessonId]) || [];
+
+  const activePublishedVersion = useMemo<LessonVersion | null>(() => {
+    if (isOnlineAuth) {
+      if (!lesson?.currentVersionId) return null;
+      const activeVersion = lesson.latestVersion?.id === lesson.currentVersionId
+        ? lesson.latestVersion
+        : versions.find(version => version.id === lesson.currentVersionId);
+      return activeVersion?.status === 'PUBLISHED' && activeVersion.sections.length > 0
+        ? activeVersion
+        : null;
+    }
+
+    const previewVersion = (lesson?.currentVersionId
+      ? versions.find(version => version.id === lesson.currentVersionId)
+      : null) || lesson?.latestVersion ||
+      versions.find(version => version.status === 'PUBLISHED');
+    return previewVersion?.status === 'PUBLISHED' && previewVersion.sections.length > 0
+      ? previewVersion
+      : null;
+  }, [lesson, versions, isOnlineAuth, lessonId]);
+
   const [isTakingQuiz, setIsTakingQuiz] = useState<boolean>(false);
   const [isTransitioningToQuiz, setIsTransitioningToQuiz] = useState<boolean>(false);
   const [targetSectionId, setTargetSectionId] = useState<string | undefined>(undefined);
+  const [isFinishing, setIsFinishing] = useState<boolean>(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
+  const [finishSuccess, setFinishSuccess] = useState<boolean>(false);
+  const [sectionProgressError, setSectionProgressError] = useState<string | null>(null);
+  const completionInFlightRef = useRef(false);
 
-  const currentStudentId = userData?.id || 'u1';
-  const versions = (lessonVersions && lessonVersions[lessonId]) || [];
-  const isOnlineAuth = Boolean(!isGuest && userData && isSupabaseConfigured);
-
-  // Authoritative Version Resolution for ALL Lessons
-  const activePublishedVersion = useMemo<LessonVersion>(() => {
-    let resolved: LessonVersion | null = null;
-
-    if (isOnlineAuth) {
-      if (lesson?.currentVersionId) {
-        if (lesson.latestVersion && lesson.latestVersion.id === lesson.currentVersionId && lesson.latestVersion.status === 'PUBLISHED') {
-          resolved = lesson.latestVersion;
-        } else {
-          resolved = versions.find(v => v.id === lesson.currentVersionId && v.status === 'PUBLISHED') || null;
+  useEffect(() => {
+    if (activePublishedVersion && userData && !readOnly && isOnlineAuth) {
+      startLessonProgress({
+        lessonId,
+        versionId: activePublishedVersion.id,
+        studentId: currentStudentId
+      }).then(({ data, error }) => {
+        if (error) {
+          setSectionProgressError(error.message);
+          return;
         }
-      }
-    } else {
-      // Offline / Demo / Guest fallback
-      resolved = (lesson?.currentVersionId ? versions.find(v => v.id === lesson.currentVersionId) : null) ||
-        lesson?.latestVersion ||
-        versions.find(v => v.status === 'APPROVED' || v.status === 'PUBLISHED') ||
-        versions[versions.length - 1] ||
-        null;
+        if (data) {
+          updateStudentContentProgress(
+            currentStudentId,
+            lessonId,
+            data.sectionsCompleted,
+            data.completionPercent,
+            data.status === 'COMPLETED'
+          );
+        }
+      });
+
+      getStudentMastery(lessonId, currentStudentId, activePublishedVersion.id).then(({ data }) => {
+        if (data) {
+          setStudentMastery(
+            currentStudentId,
+            lessonId,
+            data.status,
+            data.evaluatedBy || 'Automated Curriculum Engine',
+            data.teacherNotes
+          );
+        }
+      });
+
+      getStudentQuizAttempts(lessonId, currentStudentId).then(({ data }) => {
+        if (data && data.length > 0) {
+          data.forEach(att => recordQuizAttempt(att));
+        }
+      });
     }
+  }, [lessonId, activePublishedVersion?.id, userData?.id, currentStudentId, readOnly, isOnlineAuth]);
 
-    if (resolved && resolved.sections && resolved.sections.length > 0) {
-      return resolved;
-    }
-
-    // Build authentic version using only the teacher's actual data
-    const lessonTitle = lesson?.title || 'Sunday School Lesson';
-    const lessonTitleAr = lesson?.titleAr || lessonTitle;
-    const lessonSummary = lesson?.summary || 'Spiritual curriculum lesson for our Sunday School class.';
-    const lessonSummaryAr = lesson?.summaryAr || lessonSummary;
-
-    // Only construct quizDraft if the servant actually defined quiz questions
-    const hasQuiz = Boolean(lesson?.quiz && lesson.quiz.length > 0);
-    const quizDraftQuestions = hasQuiz
-      ? lesson!.quiz!.map((q, idx) => ({
-          id: q.id || `q-${lessonId}-${idx}`,
-          type: 'multiple_choice' as const,
-          difficulty: q.difficulty || (idx === 0 ? 'EASY' : idx === 1 ? 'MEDIUM' : 'HARD') as QuestionDifficulty,
-          points: q.points || (idx === 0 ? 10 : idx === 1 ? 20 : 30),
-          questionEn: q.question,
-          questionAr: q.question,
-          optionsEn: q.options,
-          optionsAr: q.options,
-          correctIndex: q.correctIndex,
-          explanationEn: `Key takeaway for ${lessonTitle}.`,
-          explanationAr: `النقطة الأساسية لدرس ${lessonTitleAr}.`
-        }))
-      : [];
-
-    const generatedQuiz: QuizDraft | undefined = hasQuiz ? {
-      id: `quiz-gen-${lessonId}`,
-      lessonId,
-      titleEn: `${lessonTitle} Review Quiz`,
-      titleAr: `اختبار مراجعة ${lessonTitleAr}`,
-      status: 'APPROVED',
-      questions: quizDraftQuestions
-    } : undefined;
-
-    const mainExplanationAr = lesson?.writtenExplanation || lesson?.teacherNotes || lessonSummaryAr;
-    const mainExplanationEn = lesson?.writtenExplanation || lesson?.teacherNotes || lessonSummary;
-
-    return {
-      id: `ver-auto-${lessonId}`,
-      lessonId,
-      versionNumber: 1,
-      status: 'PUBLISHED',
-      createdBy: lesson?.teacherName || 'Sunday School Servant',
-      createdAt: lesson?.date || new Date().toISOString(),
-      approvedBy: lesson?.approvedServantName || 'Sunday School Servant',
-      approvedAt: lesson?.approvedAt || new Date().toISOString(),
-      summaryEn: lessonSummary,
-      summaryAr: lessonSummaryAr,
-      summaryCop: lesson?.summaryCop,
-      bigIdeaEn: lessonSummary,
-      bigIdeaAr: lessonSummaryAr,
-      objectivesEn: [
-        `Learn the spiritual lessons of ${lessonTitle}`,
-        'Practice Christian love and obedience at home and church'
-      ],
-      objectivesAr: [
-        `تعلم الدروس الروحية لـ ${lessonTitleAr}`,
-        'ممارسة المحبة والطاعة المسيحية في بيوتنا وكنيستنا'
-      ],
-      sections: [
-        {
-          id: `sec-${lessonId}-1`,
-          order: 1,
-          titleEn: `1. The Story of ${lessonTitle}`,
-          titleAr: `١. القصة والشرح الإيماني: ${lessonTitleAr}`,
-          titleCop: lesson?.titleCop || 'Ⲡⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲉⲕⲕⲗⲏⲥⲓⲁ',
-          contentEn: mainExplanationEn,
-          contentAr: mainExplanationAr,
-          contentCop: lesson?.summaryCop,
-          teacherNotes: lesson?.teacherNotes || undefined
-        }
-      ],
-      // Only attach slides if the servant provided slides or slidesUrl
-      slides: lesson?.slidesUrl ? [
-        {
-          number: 1,
-          titleEn: lessonTitle,
-          titleAr: lessonTitleAr,
-          bulletsEn: [lessonSummary, lesson?.grade || 'Class Lesson'],
-          bulletsAr: [lessonSummaryAr, lesson?.grade || 'درس المرحلة الدراسية'],
-          speakerNotesEn: 'Guide the children through the key points of the lesson.',
-          speakerNotesAr: 'توجيه الأولاد للتأمل في النقاط الروحية للدرس.'
-        }
-      ] : [],
-      flashcards: [],
-      quizDraft: generatedQuiz
-    };
-  }, [lesson, versions, isOnlineAuth, lessonId]);
+  if (isOnlineAuth && !curriculumReady) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <BookOpen className="w-12 h-12 text-gray-400" />
+        <h2 className="text-lg font-bold text-gray-800">
+          {curriculumError || (lang === 'ar' ? 'جارٍ تحميل الدروس المنشورة...' : 'Loading published lessons...')}
+        </h2>
+        <button
+          onClick={onBack}
+          className="px-4 py-2 rounded-xl bg-[var(--color-church-blue)] text-white text-xs font-bold"
+        >
+          {lang === 'ar' ? 'الرجوع للدروس' : 'Back to Lessons'}
+        </button>
+      </div>
+    );
+  }
 
   if (!lesson) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
         <BookOpen className="w-12 h-12 text-gray-400" />
         <h2 className="text-lg font-bold text-gray-800">
-          {lang === 'ar' ? 'الدرس غير موجود' : 'Lesson not found'}
+          {curriculumError || (lang === 'ar' ? 'الدرس غير موجود' : 'Lesson not found')}
+        </h2>
+        <button
+          onClick={onBack}
+          className="px-4 py-2 rounded-xl bg-[var(--color-church-blue)] text-white text-xs font-bold"
+        >
+          {lang === 'ar' ? 'الرجوع للدروس' : 'Back to Lessons'}
+        </button>
+      </div>
+    );
+  }
+
+  if (!activePublishedVersion) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <BookOpen className="w-12 h-12 text-gray-400" />
+        <h2 className="text-lg font-bold text-gray-800">
+          {lang === 'ar' ? 'لا يوجد إصدار منشور لهذا الدرس' : 'No active published lesson version is available'}
         </h2>
         <button
           onClick={onBack}
@@ -225,53 +215,13 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
   const userQuizAttempts = readOnly ? [] : (quizAttempts && quizAttempts[userProgressKey]) || [];
   const currentMastery = !readOnly && studentMasteries ? studentMasteries[userProgressKey] : undefined;
 
-  const [isFinishing, setIsFinishing] = useState<boolean>(false);
-  const [finishError, setFinishError] = useState<string | null>(null);
-  const [finishSuccess, setFinishSuccess] = useState<boolean>(false);
-  const [sectionProgressError, setSectionProgressError] = useState<string | null>(null);
-  const completionInFlightRef = useRef(false);
-
-  useEffect(() => {
-    if (activePublishedVersion && userData && !readOnly) {
-      startLessonProgress({
-        lessonId,
-        versionId: activePublishedVersion.id,
-        studentId: currentStudentId
-      }).then(({ data }) => {
-        if (data && data.sectionsCompleted) {
-          updateStudentContentProgress(
-            currentStudentId,
-            lessonId,
-            data.sectionsCompleted,
-            data.completionPercent,
-            data.status === 'COMPLETED'
-          );
-        }
-      });
-
-      getStudentMastery(lessonId, currentStudentId, activePublishedVersion.id).then(({ data }) => {
-        if (data) {
-          setStudentMastery(
-            currentStudentId,
-            lessonId,
-            data.status,
-            data.evaluatedBy || 'Automated Curriculum Engine',
-            data.teacherNotes
-          );
-        }
-      });
-
-      // Load persisted quiz attempts and scores for this student
-      getStudentQuizAttempts(lessonId, currentStudentId).then(({ data }) => {
-        if (data && data.length > 0) {
-          data.forEach(att => recordQuizAttempt(att));
-        }
-      });
-    }
-  }, [lessonId, activePublishedVersion?.id, userData?.id, currentStudentId, readOnly]);
-
   const handleFinishLesson = async () => {
-    if (readOnly) return;
+    if (readOnly || !isOnlineAuth) {
+      setFinishError(lang === 'ar'
+        ? 'يجب تسجيل الدخول والاتصال بقاعدة البيانات لحفظ إتمام الدرس.'
+        : 'Sign in and connect to Supabase to save lesson completion.');
+      return;
+    }
     if (completionInFlightRef.current || isFinishing || !activePublishedVersion) return;
     completionInFlightRef.current = true;
     setIsFinishing(true);
@@ -484,7 +434,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
         onBack={onBack}
         lang={lang}
         isOnlineAuth={isOnlineAuth}
-        readOnly={readOnly}
+        readOnly={readOnly || !isOnlineAuth}
         targetSectionId={targetSectionId}
         onFinishLesson={handleFinishLesson}
         isFinishing={isFinishing}
@@ -494,7 +444,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
         onNavigateHome={onBack}
         previewMode={isGuest}
         onMarkSectionRead={async sectionId => {
-          if (readOnly) return;
+          if (readOnly || !isOnlineAuth) return;
           const existingSections = currentProgress?.sectionsCompleted || [];
           const isRead = !existingSections.includes(sectionId);
           setSectionProgressError(null);
@@ -525,10 +475,6 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
             return;
           }
 
-          const sectionIds = activePublishedVersion?.sections.map(section => section.id) || [];
-          const newSections = toggleReadSection(existingSections, sectionId);
-          const { completionPercent } = calculateSectionProgress(sectionIds, newSections);
-          updateStudentContentProgress(currentStudentId, lessonId, newSections, completionPercent);
         }}
         onStartQuiz={() => {
           if (readOnly) return;

@@ -299,24 +299,7 @@ export function ExpressLessonPublishModal({
       onClose();
     } catch (err: any) {
       console.error('Express publishing error:', err);
-      // Resilient fallback in demo/guest mode
-      const fallbackLesson: Lesson = {
-        id: `l-exp-${Date.now()}`,
-        title: title.trim(),
-        titleAr: titleAr.trim() || title.trim(),
-        summary: teacherNotes.trim() || title.trim(),
-        grade: gradeLevel,
-        status: directlyPublish ? 'published' : 'draft',
-        date: new Date().toISOString().split('T')[0],
-        pointsAvailable: totalLessonPoints,
-        videoUrl: videoUrl.trim() || undefined,
-        slidesUrl: slidesUrl || undefined,
-        audioUrl: audioUrl || undefined,
-        teacherNotes: teacherNotes.trim() || undefined,
-        quiz: quizQuestions
-      };
-      onLessonCreated(fallbackLesson);
-      onClose();
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to save the lesson.');
     } finally {
       setIsSubmitting(false);
     }

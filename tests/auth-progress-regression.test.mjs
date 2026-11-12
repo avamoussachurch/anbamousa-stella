@@ -137,6 +137,7 @@ test('lesson completion is not reported as successful without server-confirmed p
   const progress = {
     studentId: 'student-1',
     lessonId: 'lesson-4',
+    versionId: 'version-4',
     status: 'COMPLETED',
     sectionsCompleted: ['section-1'],
     totalSections: 1,

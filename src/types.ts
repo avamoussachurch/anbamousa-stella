@@ -830,8 +830,8 @@ export interface HymnsEnrollmentRequestPayload {
 // COPTIC RITUALS / TAXIS DOMAIN & EXPLICIT PERMISSION MODEL
 // ==============================================================================
 export type TaxisAudience = 'all' | 'deacons' | 'preparatory' | 'servants' | 'clergy';
-export type TaxisCategory = 'liturgy' | 'incense' | 'sacraments' | 'feasts' | 'pascha' | 'occasions';
-export type TaxisStatus = 'draft' | 'under_review' | 'approved' | 'published' | 'unpublished';
+export type TaxisCategory = 'liturgy' | 'incense' | 'sacraments' | 'feasts' | 'pascha' | 'occasions' | 'clergy';
+export type TaxisStatus = 'draft' | 'under_review' | 'approved' | 'published' | 'unpublished' | 'archived';
 
 export type TaxisCapability = 
   | 'view'
@@ -886,6 +886,7 @@ export interface TaxisItem {
   titleEn: string;
   titleCopt?: string;
   category: TaxisCategory;
+  season?: string;
   level?: 1 | 2 | 3 | null;
   audience: TaxisAudience;
   status: TaxisStatus;
