@@ -1940,7 +1940,7 @@ test('role authorization uses assigned roles and admin routes reject non-admin c
   assert.equal(anonymous.status, 401);
 });
 
-test('role authorization fails closed when no active role exists or the assigned-role lookup fails', async () => {
+test('accounts without active roles receive an empty role list and failed role lookups fail closed', async () => {
   const missingRoleId = 'role-auth-no-active-role';
   const roleLookupFailureId = 'role-auth-lookup-failure';
   // profile_role_assignments.user_id has a foreign key to profiles.id, so a
@@ -1959,7 +1959,8 @@ test('role authorization fails closed when no active role exists or the assigned
       userId: roleLookupFailureId
     });
 
-    assert.equal(noActiveRole.status, 401);
+    assert.equal(noActiveRole.status, 200);
+    assert.deepEqual((await noActiveRole.json()).roles, []);
     assert.equal(roleLookupFailure.status, 401);
   } finally {
     roleLookupFailureIds.delete(roleLookupFailureId);
