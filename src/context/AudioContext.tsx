@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useRef, useState, useEffect, useCallback } from 'react';
 
-type UiSound = 'tap' | 'success' | 'celebration' | 'navigation' | 'reward';
+type UiSound = 'tap' | 'success' | 'celebration' | 'navigation' | 'reward' | 'correct' | 'incorrect' | 'open' | 'close' | 'streak' | 'levelup' | 'achievement' | 'portal';
 
 interface AudioContextType {
   currentTrackUrl: string | null;
@@ -47,42 +47,90 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       const context = soundContextRef.current;
       if (context.state === 'suspended') void context.resume();
 
-      const patterns: Record<UiSound, Array<{ frequency: number; delay: number; duration: number; wave: OscillatorType }>> = {
-        tap: [{ frequency: 520, delay: 0, duration: 0.045, wave: 'sine' }],
+      type Note = { frequency: number; delay: number; duration: number; wave: OscillatorType };
+      const patterns: Record<UiSound, Note[]> = {
+        tap: [{ frequency: 560, delay: 0, duration: 0.035, wave: 'sine' }],
         navigation: [
-          { frequency: 440, delay: 0, duration: 0.055, wave: 'sine' },
-          { frequency: 660, delay: 0.045, duration: 0.07, wave: 'sine' }
+          { frequency: 392, delay: 0, duration: 0.06, wave: 'sine' },
+          { frequency: 587.33, delay: 0.045, duration: 0.075, wave: 'sine' }
+        ],
+        open: [
+          { frequency: 440, delay: 0, duration: 0.07, wave: 'triangle' },
+          { frequency: 554.37, delay: 0.055, duration: 0.09, wave: 'triangle' },
+          { frequency: 659.25, delay: 0.11, duration: 0.11, wave: 'sine' }
+        ],
+        close: [
+          { frequency: 659.25, delay: 0, duration: 0.06, wave: 'sine' },
+          { frequency: 493.88, delay: 0.05, duration: 0.085, wave: 'triangle' }
+        ],
+        correct: [
+          { frequency: 659.25, delay: 0, duration: 0.075, wave: 'triangle' },
+          { frequency: 783.99, delay: 0.065, duration: 0.095, wave: 'triangle' },
+          { frequency: 987.77, delay: 0.13, duration: 0.13, wave: 'sine' }
+        ],
+        incorrect: [
+          { frequency: 311.13, delay: 0, duration: 0.09, wave: 'triangle' },
+          { frequency: 261.63, delay: 0.075, duration: 0.13, wave: 'sine' }
         ],
         success: [
-          { frequency: 523.25, delay: 0, duration: 0.12, wave: 'triangle' },
-          { frequency: 659.25, delay: 0.09, duration: 0.14, wave: 'triangle' },
-          { frequency: 783.99, delay: 0.18, duration: 0.2, wave: 'triangle' }
+          { frequency: 523.25, delay: 0, duration: 0.11, wave: 'triangle' },
+          { frequency: 659.25, delay: 0.085, duration: 0.13, wave: 'triangle' },
+          { frequency: 783.99, delay: 0.17, duration: 0.17, wave: 'sine' }
         ],
         reward: [
-          { frequency: 587.33, delay: 0, duration: 0.11, wave: 'triangle' },
-          { frequency: 739.99, delay: 0.08, duration: 0.12, wave: 'triangle' },
-          { frequency: 880, delay: 0.16, duration: 0.16, wave: 'triangle' }
+          { frequency: 587.33, delay: 0, duration: 0.09, wave: 'triangle' },
+          { frequency: 739.99, delay: 0.07, duration: 0.11, wave: 'triangle' },
+          { frequency: 880, delay: 0.14, duration: 0.15, wave: 'sine' },
+          { frequency: 1174.66, delay: 0.22, duration: 0.12, wave: 'sine' }
+        ],
+        streak: [
+          { frequency: 523.25, delay: 0, duration: 0.09, wave: 'triangle' },
+          { frequency: 659.25, delay: 0.08, duration: 0.09, wave: 'triangle' },
+          { frequency: 783.99, delay: 0.16, duration: 0.09, wave: 'triangle' },
+          { frequency: 1046.5, delay: 0.24, duration: 0.2, wave: 'sine' }
+        ],
+        levelup: [
+          { frequency: 392, delay: 0, duration: 0.1, wave: 'triangle' },
+          { frequency: 523.25, delay: 0.09, duration: 0.1, wave: 'triangle' },
+          { frequency: 659.25, delay: 0.18, duration: 0.1, wave: 'triangle' },
+          { frequency: 783.99, delay: 0.27, duration: 0.22, wave: 'sine' }
+        ],
+        achievement: [
+          { frequency: 659.25, delay: 0, duration: 0.1, wave: 'sine' },
+          { frequency: 880, delay: 0.1, duration: 0.12, wave: 'triangle' },
+          { frequency: 1108.73, delay: 0.2, duration: 0.16, wave: 'sine' },
+          { frequency: 1318.51, delay: 0.3, duration: 0.22, wave: 'sine' }
+        ],
+        portal: [
+          { frequency: 349.23, delay: 0, duration: 0.12, wave: 'sine' },
+          { frequency: 523.25, delay: 0.08, duration: 0.13, wave: 'triangle' },
+          { frequency: 698.46, delay: 0.16, duration: 0.16, wave: 'sine' },
+          { frequency: 1046.5, delay: 0.24, duration: 0.2, wave: 'sine' }
         ],
         celebration: [
-          { frequency: 523.25, delay: 0, duration: 0.14, wave: 'triangle' },
-          { frequency: 659.25, delay: 0.1, duration: 0.14, wave: 'triangle' },
-          { frequency: 783.99, delay: 0.2, duration: 0.14, wave: 'triangle' },
-          { frequency: 1046.5, delay: 0.3, duration: 0.28, wave: 'sine' }
+          { frequency: 523.25, delay: 0, duration: 0.12, wave: 'triangle' },
+          { frequency: 659.25, delay: 0.09, duration: 0.13, wave: 'triangle' },
+          { frequency: 783.99, delay: 0.18, duration: 0.13, wave: 'triangle' },
+          { frequency: 1046.5, delay: 0.27, duration: 0.26, wave: 'sine' }
         ]
       };
 
       const now = context.currentTime;
+      const duration = Math.max(...patterns[sound].map(note => note.delay + note.duration));
       const master = context.createGain();
       master.gain.setValueAtTime(0.0001, now);
-      master.gain.linearRampToValueAtTime(sound === 'tap' ? 0.035 : 0.07, now + 0.012);
-      master.gain.exponentialRampToValueAtTime(0.0001, now + (sound === 'celebration' ? 0.75 : 0.42));
+      const peak = sound === 'tap' ? 0.025 : sound === 'incorrect' ? 0.035 : 0.055;
+      master.gain.linearRampToValueAtTime(peak, now + 0.012);
+      master.gain.exponentialRampToValueAtTime(0.0001, now + duration + 0.08);
       master.connect(context.destination);
 
+      // Tiny pitch variation keeps repeated interactions from sounding mechanically identical.
+      const variation = sound === 'tap' ? 1 + (Math.random() - 0.5) * 0.035 : 1;
       patterns[sound].forEach(note => {
         const oscillator = context.createOscillator();
         const envelope = context.createGain();
         oscillator.type = note.wave;
-        oscillator.frequency.setValueAtTime(note.frequency, now + note.delay);
+        oscillator.frequency.setValueAtTime(note.frequency * variation, now + note.delay);
         envelope.gain.setValueAtTime(0.0001, now + note.delay);
         envelope.gain.linearRampToValueAtTime(1, now + note.delay + 0.012);
         envelope.gain.exponentialRampToValueAtTime(0.0001, now + note.delay + note.duration);
@@ -131,8 +179,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       if (!control || control.hasAttribute('disabled') || control.getAttribute('aria-disabled') === 'true') return;
       if (control.dataset.sfx === 'off') return;
       const sound = control.dataset.sfx;
-      if (sound === 'success' || sound === 'celebration' || sound === 'reward' || sound === 'navigation') {
-        playSound(sound);
+      if (sound && ['success', 'celebration', 'reward', 'navigation', 'correct', 'incorrect', 'open', 'close', 'streak', 'levelup', 'achievement', 'portal'].includes(sound)) {
+        playSound(sound as UiSound);
       } else {
         playSound('tap');
       }
