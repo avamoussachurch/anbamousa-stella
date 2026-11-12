@@ -391,7 +391,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // Live Screen Time Counter (Ticks every second while user is actively viewing)
+  // Live Screen Time Counter (ticks every 10 seconds to avoid rerendering the whole app every second)
   useEffect(() => {
     if (!userData) return;
 
@@ -407,10 +407,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserData((prev) => {
         if (!prev) return null;
         const currentSecs = prev.screenTimeSeconds || 0;
-        const nextSecs = currentSecs + 1;
+        const nextSecs = currentSecs + 10;
 
-        // Persist to localStorage every 5 seconds to reduce write overhead
-        if (nextSecs % 5 === 0) {
+        // Persist to localStorage every 30 seconds to reduce write overhead
+        if (nextSecs % 30 === 0) {
           try {
             const key = isGuest ? 'church_guest_user' : 'church_auth_user';
             const saved = localStorage.getItem(key);
@@ -433,7 +433,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         return { ...prev, screenTimeSeconds: nextSecs };
       });
-    }, 1000);
+    }, 10000);
 
     return () => {
       if (screenTimeTimer.current) {
