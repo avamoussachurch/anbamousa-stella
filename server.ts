@@ -3415,6 +3415,8 @@ function loadPersistentClassState() {
 function getClassGroupIdForGrade(grade?: string | null): string {
   if (!grade) return 'primary_2';
   const g = grade.toLowerCase().trim();
+  const resolvedGroup = findClassGroupForGrade(g);
+  if (resolvedGroup) return resolvedGroup.id;
   if (g.includes('kg') || g.includes('kindergarten') || g.includes('حضانة') || g.includes('كي جي')) return 'angels';
   
   // Primary 1–3
