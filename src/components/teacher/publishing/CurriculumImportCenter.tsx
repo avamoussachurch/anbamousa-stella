@@ -77,11 +77,11 @@ function sourceTypeForFile(file: File): SourceType {
 function stageText(stage: CurriculumImportStage, isAr: boolean): string {
   const labels: Record<CurriculumImportStage, [string, string]> = {
     ready: ['جاهز للاستيراد', 'Ready to import'],
-    creating: ['إنشاء المسودة', 'Creating draft'],
-    uploading: ['رفع الملف إلى التخزين الآمن', 'Uploading to secure storage'],
-    saving: ['حفظ بيانات الملف', 'Saving attachment metadata'],
-    success: ['تم الاستيراد كمسودة', 'Imported as a draft'],
-    error: ['تعذر إكمال الاستيراد', 'Import failed']
+    creating: ['بننشئ المسودة', 'Creating draft'],
+    uploading: ['بنرفع الملف للتخزين الآمن', 'Uploading to secure storage'],
+    saving: ['بنحفظ بيانات الملف', 'Saving attachment metadata'],
+    success: ['اتستورد كمسودة', 'Imported as a draft'],
+    error: ['مش قادرين نكمّل الاستيراد.', 'Import failed']
   };
   return labels[stage][isAr ? 0 : 1];
 }
@@ -136,19 +136,19 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
           if (active) setExistingTitles(new Set((data || []).map(lesson => normalizeImportTitle(lesson.title_ar || ''))));
         } else if (category === 'hymns') {
           const result = await getHymns(undefined, undefined, 'all');
-          if (!result.success) throw new Error(result.error || 'تعذر التحقق من مكتبة الألحان.');
+          if (!result.success) throw new Error(result.error || 'مش قادرين نراجع مكتبة الألحان.');
           if (active) {
             setExistingTitles(new Set((result.items || []).map(hymn => normalizeImportTitle(hymn.titleAr))));
           }
         } else {
           const result = await getTaxisItems();
-          if (!result.success) throw new Error(result.error || 'تعذر التحقق من مكتبة الطقس.');
+          if (!result.success) throw new Error(result.error || 'مش قادرين نراجع مكتبة الطقس.');
           if (active) {
             setExistingTitles(new Set((result.items || []).map(item => normalizeImportTitle(item.titleAr))));
           }
         }
       } catch (error) {
-        if (active) setDuplicateCheckError(error instanceof Error ? error.message : 'تعذر التحقق من العناصر الموجودة.');
+        if (active) setDuplicateCheckError(error instanceof Error ? error.message : 'مش قادرين نراجع العناصر الموجودة.');
       } finally {
         if (active) setIsCheckingDuplicates(false);
       }
@@ -202,22 +202,22 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
   };
 
   const validationMessage = (item: ImportItem): string | null => {
-    if (item.duplicate) return isAr ? 'هذا الملف مضاف بالفعل في الدفعة.' : 'This file is already in this batch.';
+    if (item.duplicate) return isAr ? 'الملف ده موجود بالفعل في الدفعة.' : 'This file is already in this batch.';
     const fileError = validateImportFile(category, item.file);
     if (fileError) return fileError;
-    if (!item.titleAr.trim()) return isAr ? 'اكتب عنواناً واضحاً للعنصر.' : 'Enter a clear title for this item.';
+    if (!item.titleAr.trim()) return isAr ? 'اكتب عنوان واضح للعنصر.' : 'Enter a clear title for this item.';
     if (category === 'sunday_school' && !grade) return isAr ? 'اختار الصف الدراسي.' : 'Choose a Sunday School grade.';
     if (category !== 'sunday_school' && !level) return isAr ? 'اختار المستوى.' : 'Choose a level.';
     const normalizedTitle = normalizeImportTitle(item.titleAr);
     if (existingTitles.has(normalizedTitle)) {
-      return isAr ? 'يوجد عنصر بهذا العنوان بالفعل في المكتبة.' : 'An item with this title already exists in the library.';
+      return isAr ? 'فيه عنصر بنفس العنوان موجود في المكتبة بالفعل.' : 'An item with this title already exists in the library.';
     }
     if (isDuplicateImportTitle(
       item.titleAr,
       existingTitles,
       items.filter(other => other.id !== item.id).map(other => other.titleAr)
     )) {
-      return isAr ? 'يوجد عنصر آخر في الدفعة بنفس العنوان.' : 'Another item in this batch has the same title.';
+      return isAr ? 'فيه عنصر تاني في الدفعة بنفس العنوان.' : 'Another item in this batch has the same title.';
     }
     return null;
   };
@@ -232,7 +232,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
   const importItem = async (item: ImportItem) => {
     if (duplicateCheckError) {
       updateItem(item.id, {
-        error: isAr ? 'تعذر التحقق من المكتبة. أعد المحاولة قبل الاستيراد.' : 'The library could not be checked. Retry the check before importing.',
+        error: isAr ? 'مش قادرين نراجع المكتبة. جرّب تاني قبل الاستيراد.' : 'The library could not be checked. Retry the check before importing.',
         stage: 'error'
       });
       return;
@@ -243,7 +243,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
       return;
     }
     if (!userData) {
-      updateItem(item.id, { error: isAr ? 'انتهت الجلسة. سجل الدخول مرة أخرى.' : 'Your session expired. Sign in again.', stage: 'error' });
+      updateItem(item.id, { error: isAr ? 'جلستك انتهت. سجّل دخولك تاني.' : 'Your session expired. Sign in again.', stage: 'error' });
       return;
     }
     try {
@@ -266,7 +266,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
     const sourceUpload = async (lessonId?: string) => {
       const uploaded = await uploadSourceMedia(item.file, lessonId);
       if (!uploaded.success || !uploaded.fileUrl) {
-        throw new Error(uploaded.error || (isAr ? 'تعذر حفظ الملف في التخزين الآمن.' : 'The file could not be saved to secure storage.'));
+        throw new Error(uploaded.error || (isAr ? 'مش قادرين نحفظ الملف في التخزين الآمن.' : 'The file could not be saved to secure storage.'));
       }
       return uploaded.fileUrl;
     };
@@ -326,7 +326,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
           summaryEn: item.description.trim() || '',
           summaryAr: item.description.trim() || ''
         });
-        if (!created.data || created.error) throw created.error || new Error('تعذر إنشاء مسودة الدرس.');
+        if (!created.data || created.error) throw created.error || new Error('مش قادرين ننشئ مسودة الدرس.');
         return created.data.lesson.id;
       }
 
@@ -335,7 +335,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
         const existing = await getHymnById(recordKey);
         if (existing.success && existing.hymn) {
           if (existing.hymn.createdBy !== userData.id || existing.hymn.status !== 'draft') {
-            throw new Error('لا يمكن استكمال عنصر لا تملكه أو لم يعد مسودة.');
+            throw new Error('مينفعش تكمل عنصر مش بتملكه أو مبقاش مسودة.');
           }
           return recordKey;
         }
@@ -360,18 +360,18 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
           if (afterFailure.success && afterFailure.hymn?.createdBy === userData.id && afterFailure.hymn.status === 'draft') {
             return recordKey;
           }
-          throw new Error(created.error || 'تعذر إنشاء مسودة اللحن.');
+          throw new Error(created.error || 'مش قادرين ننشئ مسودة اللحن.');
         }
         return recordKey;
       }
 
       const recordKey = recordId || item.id;
       const currentItems = await getTaxisItems();
-      if (!currentItems.success) throw new Error(currentItems.error || 'تعذر تحميل مكتبة الطقس.');
+      if (!currentItems.success) throw new Error(currentItems.error || 'مش قادرين نحمّل مكتبة الطقس.');
       const existing = currentItems.items?.find(current => current.id === recordKey);
       if (existing) {
         if (existing.createdBy !== userData.id || existing.status !== 'draft') {
-          throw new Error('لا يمكن استكمال عنصر لا تملكه أو لم يعد مسودة.');
+          throw new Error('مينفعش تكمل عنصر مش بتملكه أو مبقاش مسودة.');
         }
         return recordKey;
       }
@@ -396,7 +396,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
           current.id === recordKey && current.createdBy === userData.id && current.status === 'draft'
         );
         if (recovered) return recordKey;
-        throw new Error(created.error || 'تعذر إنشاء مسودة الطقس.');
+        throw new Error(created.error || 'مش قادرين ننشئ مسودة الطقس.');
       }
       return recordKey;
     };
@@ -474,7 +474,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
   const handleImportBatch = async () => {
     if (!authorized || isImporting || isCheckingDuplicates) return;
     if (duplicateCheckError) {
-      setNotice(isAr ? 'تعذر التحقق من العناصر الموجودة. أعد المحاولة قبل الاستيراد.' : 'Existing items could not be checked. Retry before importing.');
+      setNotice(isAr ? 'مش قادرين نراجع العناصر الموجودة. أعد المحاولة قبل الاستيراد.' : 'Existing items could not be checked. Retry before importing.');
       return;
     }
     const invalidById = validateCurriculumImportBatch(
