@@ -143,11 +143,11 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
         setPendingRequests(pending);
       } else {
         setPendingRequests([]);
-        setRequestsError(res.error || (isAr ? 'تعذر تحميل طلبات الانضمام.' : 'Could not load enrollment requests.'));
+        setRequestsError(res.error || (isAr ? 'مش قادرين نحمّل طلبات الانضمام دلوقتي.' : 'Could not load enrollment requests.'));
       }
     } catch (error) {
       setPendingRequests([]);
-      setRequestsError(error instanceof Error ? error.message : (isAr ? 'تعذر تحميل طلبات الانضمام.' : 'Could not load enrollment requests.'));
+      setRequestsError(error instanceof Error ? error.message : (isAr ? 'مش قادرين نحمّل طلبات الانضمام دلوقتي.' : 'Could not load enrollment requests.'));
     } finally {
       setLoadingRequests(false);
     }
@@ -180,7 +180,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
       ]);
 
       if (error || !data) {
-        setLoadError(error?.message || (isAr ? 'تعذر تحميل بيانات الفصل' : 'Failed to load class data'));
+        setLoadError(error?.message || (isAr ? 'مش قادرين نحمّل بيانات الفصل.' : 'Failed to load class data'));
         return;
       }
 
@@ -216,7 +216,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
 
       await loadRequests(info?.classGroupId);
     } catch (err: any) {
-      setLoadError(err?.message || (isAr ? 'حدث خطأ غير متوقع' : 'Unexpected error loading class'));
+      setLoadError(err?.message || (isAr ? 'حصلت مشكلة غير متوقعة.' : 'Unexpected error loading class'));
     } finally {
       setLoading(false);
     }
@@ -226,7 +226,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
   const handleSwitchClassByCode = async (codeToUse?: string) => {
     const code = (codeToUse || classCodeInput).trim();
     if (!code) {
-      setSwitchClassError(isAr ? 'يرجى كتابة كود الفصل' : 'Please enter a class code');
+      setSwitchClassError(isAr ? 'اكتب كود الفصل.' : 'Please enter a class code');
       return;
     }
     setIsSwitchingClass(true);
@@ -234,7 +234,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
     try {
       const res = await lookupClassByCode(code);
       if (!res.success || !res.classGroupId) {
-        setSwitchClassError(res.error || (isAr ? `لم يتم العثور على فصل بالكود "${code}"` : `No class found with code "${code}"`));
+        setSwitchClassError(res.error || (isAr ? `ملقيناش فصل بالكود ده "${code}"` : `No class found with code "${code}"`));
         return;
       }
       await loadClassData(res.classGroupId, code);
@@ -242,7 +242,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
       setShowSwitchClassModal(false);
       setRequestActionSuccess(
         isAr 
-          ? `تم الانتقال وتشغيل فصل "${res.classInfo?.className || res.classGroupId}" بنجاح!` 
+          ? `تم فتح الفصل "${res.classInfo?.className || res.classGroupId}" بنجاح!` 
           : `Successfully entered and operating class "${res.classInfo?.className || res.classGroupId}"!`
       );
     } catch (err: any) {
@@ -257,7 +257,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
     e.preventDefault();
     const cleanTeacher = teacherInput.trim();
     if (!cleanTeacher || !classInfo?.classInstanceId) {
-      setAddTeacherError(isAr ? 'يرجى إدخال بريد أو اسم أو كود الخادم' : 'Please enter a servant email, name, or code');
+      setAddTeacherError(isAr ? 'اكتب إيميل الخادم أو اسمه أو الكود بتاعه.' : 'Please enter a servant email, name, or code');
       return;
     }
     setAddingTeacher(true);
@@ -266,7 +266,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
     try {
       const res = await addTeacherToClass(classInfo.classInstanceId, cleanTeacher, classInfo.classGroupId);
       if (!res.success) {
-        setAddTeacherError(res.error || (isAr ? 'فشل إضافة الخادم' : 'Failed to add teacher'));
+        setAddTeacherError(res.error || (isAr ? 'مش قادرين نضيف الخادم.' : 'Failed to add teacher'));
         return;
       }
       setAddTeacherSuccess(
@@ -296,7 +296,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
       const res = await regenerateClassCode(classInfo.classGroupId);
       if (res.success && res.newCode) {
         setJoinCode(res.newCode);
-        setCodeSuccessMessage(isAr ? 'تم إنشاء كود جديد بنجاح! تم إلغاء الكود القديم دون التأثير على الطلاب المقيدين.' : 'New join code generated! Old code is invalidated; enrolled students remain safe.');
+        setCodeSuccessMessage(isAr ? 'الكود الجديد اتعمل بنجاح! الكود القديم اتلغى، والطلاب المسجلين مفيش حاجة اتغيرت عندهم.' : 'New join code generated! Old code is invalidated; enrolled students remain safe.');
       } else {
         setLoadError(res.error || 'Failed to regenerate join code');
       }
@@ -318,7 +318,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
         studentToRemove.membershipId
       );
       if (res.success) {
-        setRequestActionSuccess(isAr ? `تم إخراج الطالب "${studentToRemove.name}" من كشف هذا العام. السجلات التاريخية محفوظة.` : `Student "${studentToRemove.name}" removed from this year's roster. History preserved.`);
+        setRequestActionSuccess(isAr ? `الطالب اتشال "${studentToRemove.name}" من كشف السنة دي، وسجلات السنين اللي فاتت محفوظة.` : `Student "${studentToRemove.name}" removed from this year's roster. History preserved.`);
         setStudentToRemove(null);
         setRemovalReason('');
         await loadClassData();
@@ -353,7 +353,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
 
   const handleConfirmStartNewYear = async () => {
     if (confirmTypedYear.trim() !== targetNewYear.trim()) {
-      setYearActionError(isAr ? `يرجى كتابة العام الدراسي الجديد (${targetNewYear}) للتأكيد.` : `Please type "${targetNewYear}" exactly to confirm.`);
+      setYearActionError(isAr ? `اكتب السنة الكنسية الجديدة (${targetNewYear}) للتأكيد.` : `Please type "${targetNewYear}" exactly to confirm.`);
       return;
     }
     setStartingNewYear(true);
@@ -361,7 +361,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
     try {
       const res = await startNewChurchYear(targetNewYear.trim(), studentExceptions);
       if (res.success) {
-        setYearActionSuccess(isAr ? `تم بدء العام الكنسي الجديد (${targetNewYear}) بنجاح وتسكين الفصول والترقيات!` : `Church year "${targetNewYear}" successfully started! Classes created & students promoted.`);
+        setYearActionSuccess(isAr ? `بدأنا السنة الكنسية الجديدة (${targetNewYear}) بنجاح وتسكين الفصول والترقيات!` : `Church year "${targetNewYear}" successfully started! Classes created & students promoted.`);
         setCurrentYear(targetNewYear.trim());
         setShowAdminYearModal(false);
         setConfirmTypedYear('');
@@ -393,7 +393,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
       });
 
       if (!res.success) {
-        setAssignmentError(res.error || (isAr ? 'فشل معالجة الطلب' : 'Failed to process request'));
+        setAssignmentError(res.error || (isAr ? 'مش قادرين ننفّذ الطلب.' : 'Failed to process request'));
         // Rollback request list on failure
         await loadRequests(classInfo?.classGroupId);
         return;
@@ -401,8 +401,8 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
 
       setRequestActionSuccess(
         action === 'APPROVE'
-          ? (isAr ? 'تمت الموافقة على الطالب وتسكينه في كشف الفصل بنجاح!' : 'Student approved and enrolled into official roster successfully!')
-          : (isAr ? 'تم رفض الطلب بنجاح وتمت إزالته من القائمة' : 'Request rejected and removed from pending list')
+          ? (isAr ? 'تمت الموافقة على التلميذ واتسجل في كشف الفصل بنجاح!' : 'Student approved and enrolled into official roster successfully!')
+          : (isAr ? 'تم رفض الطلب واتشال من القائمة.' : 'Request rejected and removed from pending list')
       );
 
       // Refresh both pending requests and authoritative roster
@@ -422,12 +422,12 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
 
     const trimmedId = studentIdInput.trim();
     if (!trimmedId) {
-      setAssignmentError(isAr ? 'يرجى إدخال معرّف أو كود الطالب' : 'Please enter student ID or code');
+      setAssignmentError(isAr ? 'اكتب رقم التلميذ أو الكود بتاعه.' : 'Please enter student ID or code');
       return;
     }
 
     if (!classInfo?.classGroupId || !selectedGrade) {
-      setAssignmentError(isAr ? 'يرجى اختيار المرحلة الدراسية المناسبة' : 'Please select an eligible grade');
+      setAssignmentError(isAr ? 'اختار المرحلة الدراسية المناسبة.' : 'Please select an eligible grade');
       return;
     }
 
@@ -442,27 +442,27 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
 
       if (!success || error) {
         const rawErr = error?.message || '';
-        let friendlyMsg = isAr ? 'فشل قيد وتسكين الطالب' : 'Failed to enroll student';
+        let friendlyMsg = isAr ? 'مش قادرين نسجل التلميذ في الفصل.' : 'Failed to enroll student';
 
         if (rawErr.includes('UNAUTHORIZED_SERVANT') || rawErr.includes('Servant is not assigned')) {
           friendlyMsg = isAr
-            ? 'ليس لديك الصلاحية: الخادم غير مسكن رسمياً على هذا الفصل في العام الكنسي الحالي.'
+            ? 'مش معاك الصلاحية دي: إنت مش متكلف رسمي بالفصل ده في السنة الكنسية الحالية.'
             : 'You are not assigned to this class instance in the active church year.';
         } else if (rawErr.includes('INCOMPATIBLE_GRADE') || rawErr.includes('Grade Incompatibility') || rawErr.includes('INVALID_GRADE')) {
           friendlyMsg = isAr 
-            ? 'المرحلة الدراسية المختارة غير مطابقة لهذا الفصل الدراسي وفقاً للائحة الكنسية.' 
+            ? 'المرحلة الدراسية اللي اخترتها مش مناسبة للفصل ده حسب قواعد الكنيسة.' 
             : 'The selected grade is not compatible with this class group.';
         } else if (rawErr.includes('ALREADY_ENROLLED') || rawErr.includes('already has an active class membership')) {
           friendlyMsg = isAr
-            ? 'الطالب مسجل بالفعل في كشف فصل نشط لهذا العام الكنسي.'
+            ? 'التلميذ مسجل بالفعل في فصل شغال السنة الكنسية دي.'
             : 'The student already has an active class membership in this church year.';
         } else if (rawErr.includes('NOT_A_STUDENT') || rawErr.includes('does not hold the student role')) {
           friendlyMsg = isAr
-            ? 'المستخدم المحدد ليس في مرحلة طالب.'
+            ? 'الحساب اللي اخترته مش حساب تلميذ.'
             : 'The selected user does not hold the student role.';
         } else if (rawErr.includes('NO_ACTIVE_YEAR')) {
           friendlyMsg = isAr
-            ? 'لا يوجد عام كنسي نشط ومفعل حالياً في قاعدة البيانات.'
+            ? 'مفيش سنة كنسية نشطة ومتفعّلة في قاعدة البيانات دلوقتي.'
             : 'No active church year configured in the database.';
         } else if (rawErr.includes('STUDENT_NOT_FOUND')) {
           friendlyMsg = isAr 
