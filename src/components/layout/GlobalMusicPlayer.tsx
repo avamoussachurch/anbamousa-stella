@@ -33,7 +33,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
       const result = await getHymns(undefined, undefined, userData && !isGuest ? 'published' : undefined, viewer);
       if (requestId !== hymnRequestId.current) return;
       if (!result.success) {
-        setHymnsError(result.error || (lang === 'ar' ? 'تعذر تحميل الألحان.' : 'Unable to load hymns.'));
+        setHymnsError(result.error || (lang === 'ar' ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Unable to load hymns.'));
         setHymns([]);
         return;
       }
@@ -43,7 +43,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
       ));
     } catch {
       if (requestId !== hymnRequestId.current) return;
-      setHymnsError(lang === 'ar' ? 'تعذر تحميل الألحان. حاول مرة أخرى.' : 'Unable to load hymns. Please try again.');
+      setHymnsError(lang === 'ar' ? 'مش قادرين نحمّل الألحان دلوقتي. حاول مرة أخرى.' : 'Unable to load hymns. Please try again.');
       setHymns([]);
     } finally {
       if (requestId === hymnRequestId.current) setIsLoadingHymns(false);
@@ -82,7 +82,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-[var(--color-church-blue)] flex items-center gap-2">
                 <Music size={18} className="text-[var(--color-church-gold)]" />
-                {lang === 'ar' ? 'الألحان الكنسية' : 'Church Hymns'}
+                {lang === 'ar' ? 'ألحان الكنيسة' : 'Church Hymns'}
               </h3>
               <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1 transition-colors">
                 <X size={16} />
@@ -92,7 +92,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
             <div className="space-y-2 max-h-60 overflow-y-auto pr-2 mb-4">
               {isLoadingHymns && hymns.length === 0 ? (
                 <p className="py-5 text-center text-sm text-[var(--text-secondary)]" role="status">
-                  {lang === 'ar' ? 'جارٍ تحميل الألحان...' : 'Loading hymns...'}
+                  {lang === 'ar' ? 'بنحمّل الألحان...' : 'Loading hymns...'}
                 </p>
               ) : hymnsError ? (
                 <div className="py-4 text-center" role="alert">
@@ -103,12 +103,12 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
                     className="mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-[var(--mousa-teal)] hover:bg-[var(--mousa-sand-100)]"
                   >
                     <RefreshCw size={13} />
-                    {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+                    {lang === 'ar' ? 'جرّب تاني' : 'Retry'}
                   </button>
                 </div>
               ) : hymns.length === 0 ? (
                 <p className="py-5 text-center text-sm text-[var(--text-secondary)]">
-                  {lang === 'ar' ? 'لا توجد ألحان منشورة بها تسجيل صوتي بعد.' : 'No published hymns with audio are available yet.'}
+                  {lang === 'ar' ? 'لسه مفيش ألحان منشورة بتسجيل صوتي.' : 'No published hymns with audio are available yet.'}
                 </p>
               ) : hymns.map((hymn) => (
                 <button
@@ -141,7 +141,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
                 type="button"
                 onClick={() => void refreshHymns()}
                 disabled={isLoadingHymns}
-                aria-label={lang === 'ar' ? 'تحديث قائمة الألحان' : 'Refresh hymn list'}
+                aria-label={lang === 'ar' ? 'حدّث قائمة الألحان' : 'Refresh hymn list'}
                 className="rounded-full p-1.5 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
               >
                 <RefreshCw size={14} className={isLoadingHymns ? 'animate-spin' : ''} />
