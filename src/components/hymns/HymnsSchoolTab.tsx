@@ -314,9 +314,9 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             { id: 'all' as const, levelNum: 0, labelAr: 'كل المستويات', labelEn: 'All Levels', subAr: 'كل الألحان', subEn: 'Complete' },
-            { id: 1 as const, levelNum: 1, labelAr: 'المستوى الأول', labelEn: 'Level 1: Novice', subAr: 'تمهيدي ومبتدئين', subEn: 'Foundational' },
-            { id: 2 as const, levelNum: 2, labelAr: 'المستوى الثاني', labelEn: 'Level 2: Intermediate', subAr: 'متوسط وشمامسة', subEn: 'Deacon Service' },
-            { id: 3 as const, levelNum: 3, labelAr: 'المستوى الثالث', labelEn: 'Level 3: Advanced', subAr: 'متقدم والمناسبات الكبرى', subEn: 'Solemn Rites' },
+            { id: 1 as const, levelNum: 1, labelAr: 'المستوى الأول', labelEn: 'Level 1: Novice', subAr: 'تمهيدي وللمبتدئين', subEn: 'Foundational' },
+            { id: 2 as const, levelNum: 2, labelAr: 'المستوى التاني', labelEn: 'Level 2: Intermediate', subAr: 'متوسط وللشمامسة', subEn: 'Deacon Service' },
+            { id: 3 as const, levelNum: 3, labelAr: 'المستوى التالت', labelEn: 'Level 3: Advanced', subAr: 'متقدم والمناسبات الكبيرة', subEn: 'Solemn Rites' },
           ].filter(lvl => isTeacherOrAdmin || (assignedLevel !== null && lvl.levelNum === assignedLevel)).map(lvl => {
             return (
               <button
@@ -447,7 +447,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 }`}
               >
                 <CheckCircle2 size={16} />
-                <span>{masteredHymns[selectedHymn.id] ? (isAr ? 'أتقنت اللحن (٧٥ نقطة)' : 'Mastered (75 pts)') : (isAr ? 'أكد إنك حفظت اللحن وأتقنته' : 'Mark as Mastered')}</span>
+                <span>{masteredHymns[selectedHymn.id] ? (isAr ? 'أتقنت اللحن (٧٥ نقطة)' : 'Mastered (75 pts)') : (isAr ? 'سجّل إنك حفظت اللحن وأتقنته' : 'Mark as Mastered')}</span>
               </button>
             </div>
 
