@@ -83,6 +83,18 @@ The organization usage snapshot supplied for the current billing cycle showed:
 
 The concentrated Node/Google Cloud traffic included repeated leaderboard-related reads. PR #70 removes the screen-time-driven refresh dependency, but its impact cannot be measured until the merged code is deployed. Recheck quota consumption and request volume after deployment; do not assume the fix alone will bring all quota meters below plan limits.
 
+## Authenticated publishing smoke test
+
+A new script, `scripts/smoke-test-hymns-taxis-production.mjs`, exercises the live authenticated path end-to-end:
+
+1. Teacher creates a Hymn draft; teacher reads it back; teacher publishes it; a student with the matching assigned level retrieves it.
+2. Teacher creates a Taxis draft; teacher submits it for review; a separate admin reviews and publishes it; a student with the matching assigned level retrieves it.
+3. Unique QA records are deleted using a server-only service-role key in a `finally` cleanup path.
+
+The script requires real, short-lived access tokens for a teacher, admin, and student, plus the Supabase service-role key for cleanup. It does not use fake test JWTs and must be run against the deployed app with dedicated QA accounts. CI syntax-checks the script, but the live E2E has **not** been run because this session has no real teacher/admin/student access tokens or Cloud Run request/log access.
+
+Example environment variable names are documented in the script header. Never commit tokens or service-role keys.
+
 ## Remaining release blockers
 
 1. **Curriculum content:** no Hymns or Taxis records exist. Load verified, church-approved content and perform one authenticated teacher create/update/publish plus student retrieval test for each system.
