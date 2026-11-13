@@ -92,7 +92,7 @@ test('main and quick navigation expose localized landmarks and selected destinat
   assert.match(roleProfileShared, /<LanguageSettings lang=\{lang\} setLang=\{setLang\} \/>/);
   assert.match(app, /localStorage\.setItem\('church_app_lang', newLang\)/);
   assert.match(app, /applyLanguagePreference\(document\.documentElement, newLang\)/);
-  assert.match(app, /<div\\s+dir="rtl"/);
+  assert.match(app, /<div\s+dir="rtl"\s+className="min-h-screen relative isolate/);
   assert.doesNotMatch(app, /dir=\{getLanguageDirection\(lang\)\}/);
   assert.match(styles, /--state-selected:/);
   assert.match(styles, /:focus-visible/);
