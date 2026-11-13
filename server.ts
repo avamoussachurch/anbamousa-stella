@@ -5556,6 +5556,49 @@ function checkStudentLessonAccess(studentId: string, lessonRecord: any): { allow
   };
 }
 
+async function checkStudentLessonAccessWithDatabase(
+  studentId: string,
+  lessonRecord: any,
+  trustedClient: any
+): Promise<{ allowed: boolean; reason?: string }> {
+  const lessonClassGroupId = lessonRecord?.classGroupId;
+  if (!lessonClassGroupId) {
+    return { allowed: false, reason: 'This lesson is not assigned to a valid class group.' };
+  }
+
+  const { data: memberships, error: membershipError } = await trustedClient
+    .from('class_memberships')
+    .select('class_instance_id')
+    .eq('student_id', studentId)
+    .eq('status', 'active')
+    .is('left_at', null);
+
+  if (membershipError) {
+    console.error('Quiz class membership lookup failed:', membershipError.message);
+    throw new Error('Could not verify your class enrollment. Please try again.');
+  }
+
+  const instanceIds = (memberships || []).map((row: any) => row.class_instance_id).filter(Boolean);
+  if (instanceIds.length === 0) {
+    return { allowed: false, reason: 'Join your Sunday School class before taking this quiz.' };
+  }
+
+  const { data: instances, error: instanceError } = await trustedClient
+    .from('class_instances')
+    .select('class_group_id')
+    .in('id', instanceIds);
+
+  if (instanceError) {
+    console.error('Quiz class lookup failed:', instanceError.message);
+    throw new Error('Could not verify your class enrollment. Please try again.');
+  }
+
+  const enrolledGroups = new Set((instances || []).map((row: any) => row.class_group_id));
+  return enrolledGroups.has(lessonClassGroupId)
+    ? { allowed: true }
+    : { allowed: false, reason: 'This lesson is assigned to a different class.' };
+}
+
 
 async function persistLessonCompletion(
   studentId: string,
@@ -7357,7 +7400,18 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       });
     }
 
-    const access = checkStudentLessonAccess(targetStudentId, lessonRecord);
+    let access;
+    try {
+      access = process.env.NODE_ENV === 'test'
+        ? checkStudentLessonAccess(targetStudentId, lessonRecord)
+        : await checkStudentLessonAccessWithDatabase(targetStudentId, lessonRecord, trustedClient);
+    } catch (error: any) {
+      return res.status(503).json({
+        success: false,
+        error: "CLASS_ACCESS_CHECK_FAILED",
+        message: error?.message || "Could not verify your class enrollment."
+      });
+    }
     if (!access.allowed) {
       return res.status(403).json({
         success: false,
