@@ -13,8 +13,8 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         manifest: {
           id: '/',
-          name: 'Anba Mousa',
-          short_name: 'Anba Mousa',
+          name: 'Anba Moussa',
+          short_name: 'Anba Moussa',
           description: 'Growing in Faith, Learning in Love. A joyful Coptic Orthodox learning and community experience.',
           theme_color: '#0D373F',
           background_color: '#FAF6EC',
@@ -23,22 +23,22 @@ export default defineConfig(() => {
           scope: '/',
           icons: [
             {
-              src: '/pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
+              src: '/icon.svg',
+              sizes: '512x512',
+              type: 'image/svg+xml',
               purpose: 'any',
             },
             {
-              src: '/pwa-512x512.png',
+              src: '/icon.svg',
               sizes: '512x512',
-              type: 'image/png',
+              type: 'image/svg+xml',
               purpose: 'any',
             },
             {
-              src: '/pwa-maskable-512x512.png',
+              src: '/icon.svg',
               sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
+              type: 'image/svg+xml',
+              purpose: 'any',
             }
           ],
         },
