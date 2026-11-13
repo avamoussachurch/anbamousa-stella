@@ -14,6 +14,7 @@ const manualStudio = read('../src/components/sunday-school/teacher/ManualLessonS
 const sourceStudio = read('../src/components/sunday-school/teacher/SourceIngestionStudio.tsx');
 const expressStudio = read('../src/components/teacher/ExpressLessonPublishModal.tsx');
 const sundaySchoolAudio = read('../src/components/sunday-school/viewers/SundaySchoolAudioPlayer.tsx');
+const universalAudio = read('../src/components/design-system/UniversalAudioPlayer.tsx');
 const documentViewer = read('../src/components/sunday-school/viewers/InAppDocumentViewer.tsx');
 const lessonSourceRls = read('../scripts/migrations/phase31_read_lesson_sources_for_accessible_published_lessons.sql');
 
@@ -89,7 +90,17 @@ test('PDF viewer uses the browser PDF renderer and provides a direct open fallba
   assert.match(taxisStudent, /InAppDocumentViewer/);
 });
 
-test('Sunday School audio player reports media loading and playback failures', () => {
-  assert.match(sundaySchoolAudio, /audio\.addEventListener\('error'/);
-  assert.match(sundaySchoolAudio, /setPlaybackError/);
+test('shared audio player provides seek, speed presets, fine speed, and playback errors', () => {
+  assert.match(universalAudio, /type="range"/);
+  assert.match(universalAudio, /SPEED_PRESETS/);
+  assert.match(universalAudio, /min={0.5}[\\s\\S]*max={2}[\\s\\S]*step={0.05}/);
+  assert.match(universalAudio, /audio\.playbackRate = next/);
+  assert.match(universalAudio, /onError/);
+  assert.match(sundaySchoolAudio, /UniversalAudioPlayer/);
+});
+
+test('feed audio uses the shared player rather than browser-default controls', () => {
+  const feed = read('../src/components/student/FeedTab.tsx');
+  assert.match(feed, /UniversalAudioPlayer/);
+  assert.doesNotMatch(feed, /<audio src={attachment\.mediaUrl} controls/);
 });
