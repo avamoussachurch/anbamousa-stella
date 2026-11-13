@@ -65,7 +65,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
       } else {
         setItems([]);
         setSelectedItem(null);
-        setLoadError(res.error || (isAr ? 'تعذر تحميل الطقوس.' : 'Could not load Taxis lessons.'));
+        setLoadError(res.error || (isAr ? 'مش قادرين نحمّل دروس الطقوس دلوقتي.' : 'Could not load Taxis lessons.'));
       }
       setLoading(false);
     });
@@ -190,7 +190,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
           </h1>
           <p className="text-xs sm:text-base text-stone-200 leading-relaxed font-medium">
             {isAr
-              ? 'دليل شامل لترتيب صلوات القداس، رفع بخور عشية وباكر، الأسرار السبعة، حركات وأفعال الكاهن ومردات الشماس المعتمدة وفقاً للتقليد السكندري العريق.'
+              ? 'اتعرّف على ترتيب صلوات القداس، ورفع بخور عشية وباكر، والأسرار الكنسية، وحركات الكاهن ومردات الشماس حسب التقليد السكندري.'
               : 'Official order of liturgical services, priest actions, deacon responses, and ecclesiastical rubrics.'}
           </p>
         </div>
@@ -236,7 +236,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={isAr ? 'ابحث في خطوات الطقس والمردات...' : 'Search rituals & rubrics...'}
+              placeholder={isAr ? 'دوّر في خطوات الطقس ومردات الشمامسة...' : 'Search rituals & rubrics...'}
               className="w-full pl-3 pr-9 py-2 text-xs rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-white"
             />
           </div>
@@ -249,11 +249,11 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
         <div className="space-y-3">
           {loading ? (
             <div className="p-8 text-center text-xs text-stone-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-stone-200">
-              {isAr ? 'جاري تحميل الطقوس...' : 'Loading rituals...'}
+              {isAr ? 'بنحمّل دروس الطقوس...' : 'Loading rituals...'}
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="p-8 text-center text-xs text-stone-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-stone-200">
-              {isAr ? 'لم يتم العثور على طقوس مطابقة للبحث.' : 'No matching rituals found.'}
+              {isAr ? 'ملقيناش طقوس مطابقة للبحث.' : 'No matching rituals found.'}
             </div>
           ) : (
             filteredItems.map((item) => {
@@ -449,7 +449,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
             </div>
           ) : (
             <div className="p-12 text-center text-xs text-stone-400 font-bold bg-white dark:bg-slate-900 rounded-3xl border border-stone-200">
-              {isAr ? 'اختر طقساً من القائمة لعرض تفاصيله.' : 'Select a ritual to view.'}
+              {isAr ? 'اختار طقس من القائمة عشان تشوف تفاصيله.' : 'Select a ritual to view.'}
             </div>
           )}
         </div>
