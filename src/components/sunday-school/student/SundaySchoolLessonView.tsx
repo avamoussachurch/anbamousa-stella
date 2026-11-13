@@ -455,6 +455,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             type="TEACHER_VOICE"
             title={isAr ? 'شرح الخادم الصوتي في فصل مدارس الأحد' : 'Classroom Voice Explanation'}
             titleAr="شرح الخادم الصوتي في فصل مدارس الأحد"
+            lang={isAr ? 'ar' : 'en'}
             subTitle={isAr ? 'تسجيل صوتي من الخادم لشرح الدرس للأولاد.' : 'Real audio recorded by Sunday School servant during session.'}
             audioUrl={displayedAudioUrl}
             durationSeconds={teacherVoiceSource?.durationSeconds || 320}
