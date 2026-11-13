@@ -27,18 +27,18 @@ export async function registerWithSupabase(
     };
   }
 
-  if (role !== 'student') {
-    return {
-      success: false,
-      error: 'Teacher and parent accounts must be provisioned by a church administrator.',
-    };
+  if (!['student', 'teacher', 'parent'].includes(role)) {
+    return { success: false, error: 'Choose a valid account type.' };
   }
-  const normalizedGrade = grade?.trim();
-  if (!isValidSundaySchoolGrade(normalizedGrade)) {
+
+  // Only students provide class/grade and Hymns & Taxis onboarding details.
+  // Teacher and parent registrations intentionally create unassigned blank accounts.
+  const normalizedGrade = role === 'student' ? grade?.trim() : undefined;
+  if (role === 'student' && !isValidSundaySchoolGrade(normalizedGrade)) {
     return { success: false, error: 'Select your Sunday School grade before registering.' };
   }
-  const parsedLevel = parseHymnsTaxisLevel(hymnsTaxisLevel);
-  if (!parsedLevel) {
+  const parsedLevel = role === 'student' ? parseHymnsTaxisLevel(hymnsTaxisLevel) : null;
+  if (role === 'student' && !parsedLevel) {
     return { success: false, error: 'Select a valid Hymns & Taxis level.' };
   }
 
@@ -48,9 +48,14 @@ export async function registerWithSupabase(
       password: password,
       options: {
         data: {
-          full_name: fullName,
-          grade: normalizedGrade,
-          hymns_taxis_level: parsedLevel,
+          full_name: fullName.trim(),
+          // This is an explicit signup choice, not a trusted authorization claim.
+          // The database trigger allowlists student/parent/teacher and never accepts admin.
+          account_role: role,
+          ...(role === 'student' ? {
+            grade: normalizedGrade,
+            hymns_taxis_level: parsedLevel,
+          } : {}),
         },
       },
     });
@@ -69,9 +74,9 @@ export async function registerWithSupabase(
       fullName: fullName,
       email: authData.user.email || undefined,
       roles: [],
-      role: 'student',
+      role,
       grade: normalizedGrade,
-      hymnsTaxisLevel: parsedLevel,
+      hymnsTaxisLevel: parsedLevel || undefined,
       avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
       points: 0,
       currentStreak: 0,
