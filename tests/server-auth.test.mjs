@@ -420,6 +420,10 @@ before(async () => {
       const requestedStudentId = (url.searchParams.get('student_id') || '').replace(/^eq\./, '');
       const requestedProfileId = (url.searchParams.get('id') || '').replace(/^eq\./, '');
       const requestedClassIds = (url.searchParams.get('id') || '').match(/^in\.\((.*)\)$/)?.[1].split(',') || [];
+      const classInstanceFilter = url.searchParams.get('class_instance_id') || '';
+      const requestedClassInstanceIds = classInstanceFilter.startsWith('eq.')
+        ? [classInstanceFilter.slice(3)]
+        : classInstanceFilter.match(/^in\.\((.*)\)$/)?.[1].split(',') || [];
       const usePersistedFixture =
         tableName === 'lessons' && (persistedLessons.has(requestedId) || persistedLessons.size > 0) ||
         tableName === 'lesson_versions' &&
@@ -431,9 +435,10 @@ before(async () => {
         tableName === 'profiles' && persistedProfiles.has(requestedProfileId) ||
         tableName === 'church_years' ||
         tableName === 'class_memberships' &&
-          persistedClassMemberships.length > 0 ||
+          (persistedClassMemberships.some(row => row.student_id === requestedStudentId) ||
+            requestedClassInstanceIds.some(id => persistedClassMemberships.some(row => row.class_instance_id === id))) ||
         tableName === 'class_instances' &&
-          persistedClassInstances.size > 0 ||
+          requestedClassIds.some(id => persistedClassInstances.has(id)) ||
         ['lesson_section_progress', 'lesson_progress'].includes(tableName);
       if (usePersistedFixture) {
         return respondPostgrestRows(req, res, 200, filterPostgrestRows(persistedProgressRows(tableName), url));
