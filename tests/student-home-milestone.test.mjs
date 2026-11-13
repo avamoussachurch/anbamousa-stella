@@ -22,7 +22,7 @@ test('guest student surfaces label demo data as preview-only', async () => {
   assert.match(home, /isGuest=\{isGuest\}/);
   assert.match(adventureHome, /\{isGuest && \(/);
   assert.match(adventureHome, /Guest preview · demo data/);
-  assert.match(adventureHome, /نسخة تجريبية للضيف/);
+  assert.match(adventureHome, /معاينة ضيف · بيانات تجريبية/);
   assert.match(adventureHome, /const displayName = isGuest\s*\?/);
   assert.match(profile, /\{isGuest && \(/);
   assert.match(profile, /Guest preview · demo data/);
