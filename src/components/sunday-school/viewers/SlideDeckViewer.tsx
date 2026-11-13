@@ -114,7 +114,7 @@ export const SlideDeckViewer: React.FC<SlideDeckViewerProps> = ({
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                 <span className="text-xs uppercase tracking-widest text-amber-400 font-medium">
-                  St. Musa Coptic Sunday School • 4th Grade
+                  Anba Mousa Sunday School • 4th Grade
                 </span>
               </div>
               <span className="text-xs font-mono text-stone-500">#{activeSlide.number}</span>
