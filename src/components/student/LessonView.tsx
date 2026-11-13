@@ -17,6 +17,7 @@ import { getClassGroupForGrade, getClassGroupLabel, getClassGroupById } from '..
 import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../../lib/pointsService';
 import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 import { hasRole } from '../../lib/workspaces';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 
 export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: { lessonId: string; onBack: () => void; lang?: Language; readOnly?: boolean }) {
   const { userData, isGuest, setUserDirectly } = useAuth();
@@ -83,7 +84,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
         studentId: currentStudentId
       }).then(({ data, error }) => {
         if (error) {
-          setSectionProgressError(error.message);
+          setSectionProgressError(getLocalizedErrorMessage(error, lang));
           return;
         }
         if (data) {
@@ -252,7 +253,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       });
 
       if (res.error) {
-        setFinishError(res.error.message || (lang === 'ar' ? 'مش قادرين نحفظ إنك خلّصت الدرس.' : 'Failed to save lesson completion'));
+        setFinishError(getLocalizedErrorMessage(res.error.message, lang) || (lang === 'ar' ? 'مش قادرين نحفظ إنك خلّصت الدرس.' : 'Failed to save lesson completion'));
         setIsFinishing(false);
         completionInFlightRef.current = false;
         return;
