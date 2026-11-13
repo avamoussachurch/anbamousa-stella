@@ -42,6 +42,14 @@ This report deliberately separates verified code checks from live-data and deplo
 - CI run #295 passed TypeScript, 281 tests, trusted bootstrap syntax, and production build.
 - Reduced the entry JavaScript from 2,276.54 kB raw / 619.17 kB gzip to 960.23 kB raw / 273.80 kB gzip. The shared entry chunk still exceeds Vite's 500 kB raw warning threshold.
 
+### Phase 30 — feed SECURITY DEFINER hardening (applied to production)
+
+- Applied migration `20261113140543_phase30_harden_feed_security_definer_functions`.
+- Pinned `edit_feed_post`, `moderate_feed_post_announcement`, `moderate_feed_post_pin`, and `toggle_feed_reaction` to an empty `search_path`.
+- Tightened `can_attach_owned_feed_media` and its reference helper to require the supplied owner ID to match `auth.uid()`; the existing feed attachment RLS policy already enforces that same owner constraint.
+- Verified all six functions now have an empty search path, no `anon` EXECUTE grant, and retain `authenticated` execution where the app/RLS policies need it.
+- Security Advisor still reports 26 authenticated-executable SECURITY DEFINER functions. This is a generic lint warning; do not revoke the grants wholesale because several are deliberate RLS helpers and application RPCs. Keep the remaining functions under periodic source-level review.
+
 ## Supabase checks
 
 - Applied the existing Phase 21 policy migration so the live migration history records `phase21_admin_approved_lesson_version_insert`. The intended policy is recreated; no curriculum rows were changed.
@@ -82,6 +90,25 @@ The organization usage snapshot supplied for the current billing cycle showed:
 - Egress: 5.749 GB / 5 GB.
 
 The concentrated Node/Google Cloud traffic included repeated leaderboard-related reads. PR #70 removes the screen-time-driven refresh dependency, but its impact cannot be measured until the merged code is deployed. Recheck quota consumption and request volume after deployment; do not assume the fix alone will bring all quota meters below plan limits.
+
+## Hymns/Taxis write-path diagnosis
+
+- The current Hymns service obtains its bearer token from `supabase.auth.getSession()`; the current Taxis service uses the same authenticated session token. The older fake/local-storage token path described in the historical Friday audit is no longer present in these service functions.
+- The current Express middleware handles `/api/church/hymns` and `/api/church/taxis` by writing through a user-scoped Supabase client, so database RLS remains in force. The legacy in-memory route handlers are downstream fallbacks and are not reached for the recognized collection/item requests handled by the middleware.
+- The Supabase edge-log sample for the last 30 days showed 34 successful GETs and **no POST/PATCH requests** to either table. That means the database never received the observed create/update attempts; this does not support a schema/column failure as the cause. The remaining likely failure boundary is before the PostgREST write: browser event path, API request, Cloud Run runtime auth configuration, or server-side role validation.
+- This is why the new real-token smoke test is necessary. Cloud Run request logs and a real teacher save are needed to distinguish those pre-database causes. Do not seed or publish unreviewed content as a workaround.
+
+## Authenticated publishing smoke test
+
+A new script, `scripts/smoke-test-hymns-taxis-production.mjs`, exercises the live authenticated path end-to-end:
+
+1. Teacher creates a Hymn draft; teacher reads it back; teacher publishes it; a student with the matching assigned level retrieves it.
+2. Teacher creates a Taxis draft; teacher submits it for review; a separate admin reviews and publishes it; a student with the matching assigned level retrieves it.
+3. Unique QA records are deleted using a server-only service-role key in a `finally` cleanup path.
+
+The script requires real, short-lived access tokens for a teacher, admin, and student, plus the Supabase service-role key for cleanup. It does not use fake test JWTs and must be run against the deployed app with dedicated QA accounts. CI syntax-checks the script, but the live E2E has **not** been run because this session has no real teacher/admin/student access tokens or Cloud Run request/log access.
+
+Example environment variable names are documented in the script header. Never commit tokens or service-role keys.
 
 ## Remaining release blockers
 
