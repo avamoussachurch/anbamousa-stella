@@ -597,6 +597,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 </div>
               </div>
             </div>
+            </div>
 
             {/* Synced 3-Language Karaoke Lyrics */}
             <div className="space-y-3">
