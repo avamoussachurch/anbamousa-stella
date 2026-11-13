@@ -160,7 +160,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
           className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 shadow-sm border border-[var(--color-church-cream-dark)] dark:border-slate-700 text-xs font-semibold hover:opacity-80 transition-all cursor-pointer"
         >
           {isDark ? <Sun size={15} className="text-[var(--color-church-gold)]" /> : <Moon size={15} className="text-[var(--color-church-blue)]" />}
-          <span>{isDark ? (lang === 'copt' ? 'Ⲡⲓⲟⲩⲱⲓⲛⲓ' : lang === 'ar' ? 'الوضع المضيء' : 'Light Mode') : (lang === 'copt' ? 'Ⲡⲓⲉ̀ϫⲱⲣϩ' : lang === 'ar' ? 'الوضع الليلي' : 'Dark Mode')}</span>
+          <span>{isDark ? (lang === 'copt' ? 'Ⲡⲓⲟⲩⲱⲓⲛⲓ' : lang === 'ar' ? 'الوضع الفاتح' : 'Light Mode') : (lang === 'copt' ? 'Ⲡⲓⲉ̀ϫⲱⲣϩ' : lang === 'ar' ? 'الوضع الداكن' : 'Dark Mode')}</span>
         </button>
 
         {/* 3-Language Selector */}
@@ -235,7 +235,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {isRegister 
               ? (lang === 'copt' ? 'Ⲁⲣⲓ ⲟⲩⲕⲗⲟⲙ ⲙ̀ⲃⲉⲣⲓ ⲉ̀ⲛⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲕⲩⲣⲓⲁⲕⲏ' : lang === 'ar' ? 'اعمل حساب جديد وانضم لمدارس الأحد' : 'Create your Sunday School account')
-              : (lang === 'copt' ? 'Ϣⲉ ⲉ̀ϧⲟⲩⲛ ⲉ̀ⲛⲓⲥⲃⲱ ⲟⲩⲟϩ ϭⲓ ⲛⲓⲧⲁⲓⲟ' : lang === 'ar' ? 'سجل دخولك عشان تتابع دروسك وتجمع نقاط' : 'Sign in to follow lessons & earn points')
+              : (lang === 'copt' ? 'Ϣⲉ ⲉ̀ϧⲟⲩⲛ ⲉ̀ⲛⲓⲥⲃⲱ ⲟⲩⲟϩ ϭⲓ ⲛⲓⲧⲁⲓⲟ' : lang === 'ar' ? 'سجّل دخولك عشان تتابع دروسك وتكسب نقاط' : 'Sign in to follow lessons & earn points')
             }
           </p>
         </div>
@@ -315,7 +315,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
             <div className="space-y-3 p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40">
               <div>
                 <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5 flex items-center justify-between">
-                  <span>{lang === 'copt' ? 'Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ϯⲕⲩⲣⲓⲁⲕⲏ:' : lang === 'ar' ? 'فصل مدارس الأحد:' : 'Sunday School Class Group:'}</span>
+                  <span>{lang === 'copt' ? 'Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ϯⲕⲩⲣⲓⲁⲕⲏ:' : lang === 'ar' ? 'فصلك في مدارس الأحد:' : 'Sunday School Class Group:'}</span>
                   <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold">
                     {CLASS_GROUPS[selectedClassGroupId]?.name[lang === 'ar' ? 'ar' : 'en']}
                   </span>
@@ -381,8 +381,8 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
                 >
                   <option value="">{lang === 'ar' ? 'اختار مستواك' : 'Select a level'}</option>
                   <option value={1}>{lang === 'ar' ? 'المستوى الأول' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲛ̀ϩⲟⲩⲓⲧ' : 'Level 1'}</option>
-                  <option value={2}>{lang === 'ar' ? 'المستوى الثاني' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲙ̀ⲙⲁϩⲥⲛⲟⲩϯ' : 'Level 2'}</option>
-                  <option value={3}>{lang === 'ar' ? 'المستوى الثالث' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲙ̀ⲙⲁϩϣⲟⲙϯ' : 'Level 3'}</option>
+                  <option value={2}>{lang === 'ar' ? 'المستوى التاني' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲙ̀ⲙⲁϩⲥⲛⲟⲩϯ' : 'Level 2'}</option>
+                  <option value={3}>{lang === 'ar' ? 'المستوى التالت' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲙ̀ⲙⲁϩϣⲟⲙϯ' : 'Level 3'}</option>
                 </select>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
                   {lang === 'ar'

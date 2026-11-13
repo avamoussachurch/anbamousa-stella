@@ -151,7 +151,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
             <div className="text-xs sm:text-sm text-stone-800 dark:text-stone-200 font-bold">
               <span>
                 {lang === 'ar' 
-                  ? '📅 الخدام بيكمّلوا منهج مدارس الأحد لكل الفصول. الدروس المنشورة لمرحلتك موجودة تحت، تقدر تشوفها وتذاكرها.' 
+                  ? '📅 الخدام بيجهّزوا منهج مدارس الأحد لكل الفصول. الدروس الدروس المنشورة لمرحلتك هتلاقيها تحت، تقدر تفتحها وتذاكرها.' 
                   : '📅 The Sunday School weekly curriculum for each class is being finalized by servants — published lessons for your class are available below.'}
               </span>
             </div>
@@ -165,10 +165,10 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
               </div>
               <div>
                 <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] md:text-3xl">
-                  {lang === 'copt' ? 'Ⲛⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲉⲕⲕⲗⲏⲥⲓⲁ' : lang === 'ar' ? 'محطات دروس مدارس الأحد' : 'Sunday School Milestones'}
+                  {lang === 'copt' ? 'Ⲛⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲉⲕⲕⲗⲏⲥⲓⲁ' : lang === 'ar' ? 'محطات رحلة مدارس الأحد' : 'Sunday School Milestones'}
                 </h1>
                 <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)]">
-                  {lang === 'copt' ? 'Ϩⲁⲛⲥⲃⲱ ⲙ̀ⲡⲛⲉⲩⲙⲁⲧⲓⲕⲟⲛ ⲛⲉⲙ ⲛⲓⲇⲟⲕⲓⲙⲏ' : lang === 'ar' ? 'رحلة الأنبا موسى، وقصص من الكتاب المقدس واختبارات تفاعلية' : 'Journey of Moses spiritual trail, Bible stories & interactive quizzes'}
+                  {lang === 'copt' ? 'Ϩⲁⲛⲥⲃⲱ ⲙ̀ⲡⲛⲉⲩⲙⲁⲧⲓⲕⲟⲛ ⲛⲉⲙ ⲛⲓⲇⲟⲕⲓⲙⲏ' : lang === 'ar' ? 'رحلة الأنبا موسى، وقصص من الكتاب المقدس، واختبارات تفاعلية' : 'Journey of Moses spiritual trail, Bible stories & interactive quizzes'}
                 </p>
               </div>
             </div>
@@ -181,7 +181,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer"
             >
               <Plus size={16} className="stroke-[3]" />
-              <span>{lang === 'copt' ? '+ Ϩⲓⲱⲓϣ ⲛ̀ϯⲥⲃⲱ' : lang === 'ar' ? '+ نشر درس جديد' : '+ Publish Lesson'}</span>
+              <span>{lang === 'copt' ? '+ Ϩⲓⲱⲓϣ ⲛ̀ϯⲥⲃⲱ' : lang === 'ar' ? '+ انشر درس جديد' : '+ Publish Lesson'}</span>
             </button>
 
             {onOpenTeacherStudio && (
@@ -207,7 +207,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
             <span>
               {userData?.grade 
                 ? (userData.activationStatus === 'PENDING_APPROVAL' 
-                    ? (lang === 'ar' ? `قيد المراجعة: ${userData.grade}` : `Pending: ${userData.grade}`) 
+                    ? (lang === 'ar' ? `مستني المراجعة: ${userData.grade}` : `Pending: ${userData.grade}`) 
                     : (lang === 'ar' ? `فصلي: ${userData.grade}` : `Class: ${userData.grade}`))
                 : (lang === 'ar' ? 'اختار فصل مدارس الأحد' : 'Select Class')}
             </span>
@@ -245,7 +245,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
               }`}
             >
               <Compass size={14} />
-              <span>{lang === 'ar' ? '🗺️ خريطة المسيرة' : '🗺️ Roadmap'}</span>
+              <span>{lang === 'ar' ? '🗺️ خريطة الرحلة' : '🗺️ Roadmap'}</span>
             </button>
             <button
               onClick={() => setDisplayMode('cards')}
@@ -256,7 +256,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
               }`}
             >
               <LayoutGrid size={14} />
-              <span>{lang === 'ar' ? '📋 البطاقات' : '📋 Cards'}</span>
+              <span>{lang === 'ar' ? '📋 عرض البطاقات' : '📋 Cards'}</span>
             </button>
           </div>
 
@@ -273,7 +273,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
                 onClick={() => setFilterMode('published')}
                 className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${filterMode === 'published' ? 'bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-black shadow-2xs' : 'hover:text-[var(--mousa-teal-deep)]'}`}
               >
-                {lang === 'copt' ? 'Ⲉⲧϩⲓⲱⲓϣ' : lang === 'ar' ? 'المنشورة' : 'Published'}
+                {lang === 'copt' ? 'Ⲉⲧϩⲓⲱⲓϣ' : lang === 'ar' ? 'الدروس المنشورة' : 'Published'}
               </button>
               <button
                 onClick={() => setFilterMode('drafts')}
@@ -293,11 +293,11 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
           <p className="font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
             {lang === 'ar' ? 'بنحمّل دروس فصلك...' : 'Loading your class curriculum...'}
           </p>
-          <p className="text-xs text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'هتلاقي هنا الدروس المنشورة والمعتمدة بس.' : 'Only lessons confirmed by Supabase will appear here.'}</p>
+          <p className="text-xs text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'هتلاقي هنا الدروس الدروس المنشورة والمعتمدة بس.' : 'Only lessons confirmed by Supabase will appear here.'}</p>
         </div>
       ) : isOnlineCurriculumFailed ? (
         <div role="alert" className="rounded-3xl border border-red-300 bg-red-50 p-6 text-center space-y-3 dark:border-red-900 dark:bg-red-950/30">
-          <p className="font-bold text-red-900 dark:text-red-200">{lang === 'ar' ? 'مش قادرين نحمّل المنهج المنشور.' : 'Could not load the published curriculum.'}</p>
+          <p className="font-bold text-red-900 dark:text-red-200">{lang === 'ar' ? 'مش قادرين نحمّل الدروس المنشورة.' : 'Could not load the published curriculum.'}</p>
           <p className="text-xs text-red-800 dark:text-red-300">{curriculumError}</p>
           <button type="button" onClick={() => void refreshCurriculum()} className="rounded-xl bg-red-700 px-4 py-2 text-xs font-bold text-white">
             {lang === 'ar' ? 'جرّب تاني' : 'Retry'}

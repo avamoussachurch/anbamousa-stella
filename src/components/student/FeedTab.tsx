@@ -237,7 +237,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     const res = await toggleFeedReactionInSupabase(reactionType, { postId });
     if (res.error) {
       console.warn('Reaction write note:', res.error.message);
-      setActionError(lang === 'ar' ? `تعذر تسجيل التفاعل على السحابة: ${res.error.message}` : `Reaction failed: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل دلوقتي: ${res.error.message}` : `Reaction failed: ${res.error.message}`);
       setPosts(prev => prev.map(p => {
         if (p.id === postId) {
           return {
@@ -281,7 +281,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     const res = await toggleFeedReactionInSupabase(reactionType, { commentId });
     if (res.error) {
       console.warn('Comment reaction write note:', res.error.message);
-      setActionError(lang === 'ar' ? `تعذر تسجيل التفاعل: ${res.error.message}` : `Comment reaction failed: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل: ${res.error.message}` : `Comment reaction failed: ${res.error.message}`);
       setPosts(prev => prev.map(p => {
         if (p.id === postId) {
           return {
@@ -410,7 +410,7 @@ export function FeedTab({ lang }: { lang: Language }) {
 
     if (res.error) {
       console.warn('Comment write error:', res.error);
-      setActionError(lang === 'ar' ? `تعذر حفظ التعليق على السحابة: ${res.error.message}` : `Failed to save comment to cloud: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نحفظ التعليق دلوقتي: ${res.error.message}` : `Failed to save comment to cloud: ${res.error.message}`);
       setPosts(previousPosts);
     } else if (res.data?.id) {
       setPosts(prev => prev.map(p => {
@@ -453,7 +453,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     if (files.length === 0 || !userData) return;
     if (!canAddFeedAttachments(composerAttachments.length, files.length)) {
       setMediaError(lang === 'ar'
-        ? `يمكنك إرفاق ${MAX_FEED_ATTACHMENTS} ملفات كحد أقصى في المنشور الواحد.`
+        ? `تقدر ترفق ${MAX_FEED_ATTACHMENTS} ملفات بالكتير في المنشور الواحد.`
         : `You can attach up to ${MAX_FEED_ATTACHMENTS} files to one post.`);
       return;
     }
@@ -480,7 +480,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       for (let index = 0; index < queued.length; index += 1) {
         const item = queued[index];
         setUploadStatusText(lang === 'ar'
-          ? `جارٍ رفع الملف ${index + 1} من ${queued.length}...`
+          ? `بنرفع الملف ${index + 1} من ${queued.length}...`
           : `Uploading file ${index + 1} of ${queued.length}...`);
         const result = await uploadFeedAttachmentFile(item.file!, userData.id, uploadFeedMediaToSupabase);
         setComposerAttachments(previous => previous.map(current => {
@@ -555,7 +555,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     if (!linkInputValue.trim()) return;
     if (!canAddFeedAttachments(composerAttachments.length, 1)) {
       setMediaError(lang === 'ar'
-        ? `يمكنك إرفاق ${MAX_FEED_ATTACHMENTS} ملفات كحد أقصى في المنشور الواحد.`
+        ? `تقدر ترفق ${MAX_FEED_ATTACHMENTS} ملفات بالكتير في المنشور الواحد.`
         : `You can attach up to ${MAX_FEED_ATTACHMENTS} files to one post.`);
       return;
     }
@@ -573,7 +573,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       setLinkInputValue('');
       setShowLinkInput(false);
     } else {
-      setMediaError(lang === 'ar' ? 'اكتب رابط صحيح ليوتيوب أو جوجل درايف أو ملف فيديو أو صوت' : 'Please enter a valid YouTube, Google Drive, video or audio link');
+      setMediaError(lang === 'ar' ? 'اكتب رابط صحيح ليوتيوب أو جوجل درايف أو ملف فيديو أو صوت.' : 'Please enter a valid YouTube, Google Drive, video or audio link');
     }
   };
 
@@ -583,7 +583,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     const cleanupError = await clearComposerAttachments();
     if (cleanupError) {
       setActionError(lang === 'ar'
-        ? `تم إغلاق المنشور، لكن تعذر تنظيف بعض الملفات المرفوعة: ${cleanupError.message}`
+        ? `المنشور اتقفل، لكن مش قادرين نمسح بعض الملفات المرفوعة: ${cleanupError.message}`
         : `The composer was closed, but some uploaded files could not be cleaned up: ${cleanupError.message}`);
     }
     setLinkInputValue('');
@@ -595,7 +595,7 @@ export function FeedTab({ lang }: { lang: Language }) {
   const handleCreatePost = async () => {
     if ((!newPostText.trim() && composerAttachments.length === 0) || !userData || isCreatingPost) return;
     if (composerAttachments.some(attachment => attachment.status !== 'ready')) {
-      setMediaError(lang === 'ar' ? 'استنى لحد ما الملفات تترفع، أو جرّب ترفع الملفات اللي حصل فيها مشكلة تاني.' : 'Finish or retry every attachment upload before publishing.');
+      setMediaError(lang === 'ar' ? 'استنى لحد ما الملفات تترفع، أو جرّب ترفع تاني الملفات اللي حصل فيها مشكلة.' : 'Finish or retry every attachment upload before publishing.');
       return;
     }
     setActionError(null);
@@ -629,7 +629,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       if (res.error || !res.data) {
         const errorMessage = res.error?.message || 'The post was not confirmed by the server.';
         console.warn('Post creation error:', errorMessage);
-        setActionError(lang === 'ar' ? `تعذر حفظ المشاركة على السحابة: ${errorMessage}` : `Failed to save post to cloud: ${errorMessage}`);
+        setActionError(lang === 'ar' ? `مش قادرين نحفظ المشاركة دلوقتي: ${errorMessage}` : `Failed to save post to cloud: ${errorMessage}`);
         return;
       }
       setPosts(previous => [res.data!, ...previous]);
@@ -646,7 +646,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       setIsComposeModalOpen(false);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'The post could not be saved.';
-      setActionError(lang === 'ar' ? `تعذر حفظ المشاركة: ${errorMessage}` : `Failed to save post: ${errorMessage}`);
+      setActionError(lang === 'ar' ? `مش قادرين نحفظ المشاركة: ${errorMessage}` : `Failed to save post: ${errorMessage}`);
     } finally {
       setIsCreatingPost(false);
     }
@@ -663,7 +663,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     const res = await deleteFeedPostFromSupabase(postId);
     if (res.error) {
       console.warn('Post deletion error:', res.error);
-      setActionError(lang === 'ar' ? `تعذر حذف المنشور: ${res.error.message}` : `Failed to delete post: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نحذف المنشور: ${res.error.message}` : `Failed to delete post: ${res.error.message}`);
       setPosts(previousPosts);
     }
   };
@@ -680,7 +680,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     const res = await toggleFeedPostPinInSupabase(postId, nextPinned);
     if (res.error) {
       console.warn('Pin toggle error:', res.error);
-      setActionError(lang === 'ar' ? `تعذر تعديل التثبيت: ${res.error.message}` : `Pin toggle failed: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نغيّر تثبيت المنشور: ${res.error.message}` : `Pin toggle failed: ${res.error.message}`);
       setPosts(previousPosts);
     }
   };

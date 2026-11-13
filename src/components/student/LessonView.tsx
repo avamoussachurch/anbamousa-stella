@@ -128,7 +128,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
           onClick={onBack}
           className="px-4 py-2 rounded-xl bg-[var(--color-church-blue)] text-white text-xs font-bold"
         >
-          {lang === 'ar' ? 'ارجع للدروس' : 'Back to Lessons'}
+          {lang === 'ar' ? 'ارجع لقائمة الدروس' : 'Back to Lessons'}
         </button>
       </div>
     );
@@ -139,13 +139,13 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
         <BookOpen className="w-12 h-12 text-gray-400" />
         <h2 className="text-lg font-bold text-gray-800">
-          {curriculumError || (lang === 'ar' ? 'مش لاقيين الدرس ده' : 'Lesson not found')}
+          {curriculumError || (lang === 'ar' ? 'مش لاقيين الدرس ده.' : 'Lesson not found')}
         </h2>
         <button
           onClick={onBack}
           className="px-4 py-2 rounded-xl bg-[var(--color-church-blue)] text-white text-xs font-bold"
         >
-          {lang === 'ar' ? 'ارجع للدروس' : 'Back to Lessons'}
+          {lang === 'ar' ? 'ارجع لقائمة الدروس' : 'Back to Lessons'}
         </button>
       </div>
     );
@@ -156,13 +156,13 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
         <BookOpen className="w-12 h-12 text-gray-400" />
         <h2 className="text-lg font-bold text-gray-800">
-          {lang === 'ar' ? 'الدرس ده لسه ملوش نسخة منشورة' : 'No active published lesson version is available'}
+          {lang === 'ar' ? 'الدرس ده لسه ملوش نسخة منشورة.' : 'No active published lesson version is available'}
         </h2>
         <button
           onClick={onBack}
           className="px-4 py-2 rounded-xl bg-[var(--color-church-blue)] text-white text-xs font-bold"
         >
-          {lang === 'ar' ? 'ارجع للدروس' : 'Back to Lessons'}
+          {lang === 'ar' ? 'ارجع لقائمة الدروس' : 'Back to Lessons'}
         </button>
       </div>
     );
@@ -192,18 +192,18 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
           🔒
         </div>
         <h2 className="text-xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-          {lang === 'ar' ? 'الدرس ده مخصص لمرحلة دراسية تانية' : 'Restricted Lesson Milestone'}
+          {lang === 'ar' ? 'الدرس ده مخصص لمرحلة دراسية تانية.' : 'Restricted Lesson Milestone'}
         </h2>
         <p className="text-xs sm:text-sm text-[var(--mousa-sand-500)] leading-relaxed">
           {lang === 'ar'
-            ? `المحطة دي مخصصة لطلاب مرحلة (${getClassGroupLabel(lessonClass, lang)})، وفصلك المسجل هو (${getClassGroupLabel(studentClass, lang)}). تقدر تشوف الدروس المخصصة لصفك بس.`
+            ? `المحطة دي مخصصة لطلاب مرحلة (${getClassGroupLabel(lessonClass, lang)})، وفصلك المسجل هو (${getClassGroupLabel(studentClass, lang)}). تقدر تشوف الدروس المخصصة لصفّك بس.`
             : `This milestone is assigned to ${getClassGroupLabel(lessonClass, 'en')}. You are currently registered in ${getClassGroupLabel(studentClass, 'en')}.`}
         </p>
         <button
           onClick={onBack}
           className="px-5 py-2.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--mousa-teal-deep)] text-white text-xs font-black shadow-xs cursor-pointer"
         >
-          {lang === 'ar' ? 'ارجع لدروس فصلي' : 'Back to My Class Lessons'}
+          {lang === 'ar' ? 'ارجع لدروس فصلك' : 'Back to My Class Lessons'}
         </button>
       </div>
     );
@@ -218,7 +218,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
   const handleFinishLesson = async () => {
     if (readOnly || !isOnlineAuth) {
       setFinishError(lang === 'ar'
-        ? 'لازم تسجّل دخولك وتكون متصل بالإنترنت عشان نحفظ إتمام الدرس.'
+        ? 'لازم تسجّل دخولك وتكون متصل بالإنترنت عشان نحفظ إنك خلّصت الدرس.'
         : 'Sign in and connect to Supabase to save lesson completion.');
       return;
     }
@@ -236,7 +236,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       if (allSections.length > 0 && remainingSections.length > 0) {
         setFinishError(
           lang === 'ar'
-            ? `اقرأ كل الأقسام (${currentSections.length} من ${allSections.length} مقروء) قبل إنهاء محطة الدرس.`
+            ? `كمّل قراءة كل الأقسام (${currentSections.length} من ${allSections.length} مقروء) قبل إنهاء محطة الدرس.`
             : `Please read all sections (${currentSections.length} of ${allSections.length} read) before finishing the lesson.`
         );
         setIsFinishing(false);
@@ -252,7 +252,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       });
 
       if (res.error) {
-        setFinishError(res.error.message || (lang === 'ar' ? 'مش قادرين نحفظ إتمام الدرس' : 'Failed to save lesson completion'));
+        setFinishError(res.error.message || (lang === 'ar' ? 'مش قادرين نحفظ إنك خلّصت الدرس.' : 'Failed to save lesson completion'));
         setIsFinishing(false);
         completionInFlightRef.current = false;
         return;
@@ -319,7 +319,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       }
     } catch (err: any) {
       console.error(err);
-      setFinishError(err?.message || (lang === 'ar' ? 'حصلت مشكلة وإحنا بنحفظ إتمام الدرس' : 'Error saving completion'));
+      setFinishError(err?.message || (lang === 'ar' ? 'حصلت مشكلة وإحنا بنحفظ إكمال الدرس.' : 'Error saving completion'));
       setIsFinishing(false);
       completionInFlightRef.current = false;
     }
@@ -460,7 +460,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
             if (result.error || !result.data) {
               setSectionProgressError(
                 lang === 'ar'
-                  ? 'مش قادرين نحفظ التغيير دلوقتي. جرّب تاني، وتأكد إن اتصالك بالإنترنت شغال.'
+                  ? 'مش قادرين نحفظ التغيير دلوقتي. جرّب تاني واتأكد إن الإنترنت شغال.'
                   : 'We could not save that change. Please try again and check your connection.'
               );
               return;
@@ -522,7 +522,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
                     {lang === 'ar' ? 'يلا ابدأ اختبار المراجعة! ⚡' : 'Start Review Quiz'}
                   </span>
                   <span className="text-[11px] sm:text-xs font-bold text-amber-100 opacity-95">
-                    {lang === 'ar' ? 'أكمل الاختبار لكسب النقاط • Complete the quiz to earn points.' : 'Complete the quiz to earn points.'}
+                    {lang === 'ar' ? 'كمّل الاختبار عشان تكسب نقاط.' : 'Complete the quiz to earn points.'}
                   </span>
                 </div>
 
@@ -539,7 +539,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
                 onClick={() => setIsTransitioningToQuiz(false)}
                 className="w-full py-2 px-4 text-xs font-bold text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal-deep)] dark:hover:text-white transition-colors cursor-pointer rounded-xl hover:bg-black/5 dark:hover:bg-white/5"
               >
-                {lang === 'ar' ? 'ارجع لقراءة الدرس' : 'Stay on lesson reading text'}
+                {lang === 'ar' ? 'ارجع كمّل قراءة الدرس' : 'Stay on lesson reading text'}
               </button>
             </div>
           </div>
