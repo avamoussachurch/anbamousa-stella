@@ -102,7 +102,10 @@ export function t(key: string, lang: Language | string): string {
     if (norm === 'en' && legacyEntry.en) return legacyEntry.en;
   }
 
-  // 3. Fallback to clean human-readable key representation
+  // 3. Never expose raw translation keys to end users.
+  // Arabic uses a friendly Egyptian Arabic notice; English remains clear and complete.
+  if (norm === 'ar') return 'النص ده لسه مش مترجم';
+  if (norm === 'en') return 'Translation not available';
   return key;
 }
 
