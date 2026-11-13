@@ -572,7 +572,7 @@ export function TeacherDashboard({
             <div className="flex items-start gap-3">
               <Award className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
               <div>
-                <h2 className="font-black">{lang === 'ar' ? 'نتائج التقدم والاختبارات غير متاحة' : 'Progress and quiz reports are unavailable'}</h2>
+                <h2 className="font-black">{lang === 'ar' ? 'تقارير تقدم التلاميذ والاختبارات مش متاحة' : 'Progress and quiz reports are unavailable'}</h2>
                 <p className="mt-2 text-sm leading-relaxed">
                   {lang === 'ar'
                     ? 'مش هنعرض بيانات محفوظة على المتصفح على إنها نتائج مؤكدة. التقرير ده مفيهوش قراءة مباشرة وموثوقة من سجلات التلاميذ والاختبارات في قاعدة البيانات.'
