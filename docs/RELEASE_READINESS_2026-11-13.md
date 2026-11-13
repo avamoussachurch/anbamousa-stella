@@ -2,7 +2,7 @@
 
 ## Executive status
 
-**Code candidate:** ready for combined CI verification on `main`.
+**Code candidate:** merged to `main`; combined CI run #295 passed 281/281 tests and the production build.
 
 **Production launch:** not yet approved. The live data does not currently contain enough verified curriculum or student/parent relationships for a real-school launch, and the Cloud Run revision cannot be inspected or smoke-tested from the connected GitHub/Supabase access.
 
@@ -34,6 +34,13 @@ This report deliberately separates verified code checks from live-data and deplo
 - Student Home is a responsive adventure/journey experience with ambient decoration. The full isometric Coptic village remains a **proposed specification**, not an implemented runtime map; do not represent the full village-world design as complete.
 - PR #73 added route-level lazy loading. Entry JavaScript fell from 2,276.54 kB raw / 619.17 kB gzip to 960.23 kB raw / 273.80 kB gzip. Teacher, parent, admin, lesson viewer, and student feature screens are separate on-demand chunks. Vite still reports the shared entry chunk above its 500 kB raw warning threshold.
 - The combined code-splitting CI run #295 passed TypeScript, 281 tests (0 failures, 0 skipped), trusted bootstrap syntax, and production build.
+
+### PR #73 — on-demand workspace loading
+
+- Lazy-loaded student feature tabs, lesson viewer, teacher/parent/admin workspaces, and profile/onboarding screens.
+- Added a localized, accessible loading fallback.
+- CI run #295 passed TypeScript, 281 tests, trusted bootstrap syntax, and production build.
+- Reduced the entry JavaScript from 2,276.54 kB raw / 619.17 kB gzip to 960.23 kB raw / 273.80 kB gzip. The shared entry chunk still exceeds Vite's 500 kB raw warning threshold.
 
 ## Supabase checks
 
