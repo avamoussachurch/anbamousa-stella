@@ -64,6 +64,7 @@ test('server stores private media metadata and authorizes Hymns/Taxis attachment
   assert.match(server, /from\('coptic_taxis_items'\)[\s\S]{0,300}attachments/);
   assert.match(server, /item\.status !== 'published'/);
   assert.match(server, /item\.level !== studentLevel/);
+  assert.match(server, /safeType\.startsWith\('audio\/webm'\) \? 'audio\/webm' : 'video\/webm'/);
 });
 
 test('Sunday School teacher recording captures and uploads real microphone audio', () => {
