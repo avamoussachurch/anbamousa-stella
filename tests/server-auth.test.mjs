@@ -428,7 +428,7 @@ before(async () => {
           ([...persistedLessonVersions.values()].some(version => version.id === requestedVersionId) ||
             [...persistedLessonVersions.values()].some(version => version.id === requestedLessonId) ||
             persistedLessonSections.size > 0) ||
-        tableName === 'profiles' && persistedProfiles.size > 0 ||
+        tableName === 'profiles' && persistedProfiles.has(requestedProfileId) ||
         tableName === 'church_years' ||
         tableName === 'class_memberships' &&
           persistedClassMemberships.length > 0 ||
