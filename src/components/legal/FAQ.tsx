@@ -66,7 +66,7 @@ export function FAQ({ lang, onClose }: { lang: Language, onClose: () => void }) 
           </button>
         </div>
 
-        <div className="p-6 md:p-10 flex-1 overflow-y-auto space-y-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <div className="p-6 md:p-10 flex-1 overflow-y-auto space-y-4" dir="rtl">
           {faqs.map((faq, index) => (
             <details key={index} className="group bg-gray-50 rounded-2xl border border-gray-100 [&_summary::-webkit-details-marker]:hidden">
               <summary className="flex items-center justify-between p-5 font-bold text-[var(--color-church-blue)] cursor-pointer hover:bg-gray-100 rounded-2xl transition-colors">
