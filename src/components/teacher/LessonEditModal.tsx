@@ -28,7 +28,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
     if (lesson.quiz && lesson.quiz.length > 0) return lesson.quiz;
     return [
       {
-        question: lang === 'ar' ? 'ما الفكرة الروحية الرئيسية للدرس؟' : 'What is the main spiritual takeaway of this lesson?',
+        question: lang === 'ar' ? 'إيه الفكرة الروحية الأساسية في الدرس؟' : 'What is the main spiritual takeaway of this lesson?',
         options: [
           lang === 'ar' ? 'الإيمان ومحبة الله' : 'Faith and loving God',
           lang === 'ar' ? 'الابتعاد عن الصلاة' : 'Avoiding prayer',
@@ -91,7 +91,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
       {
         question: lang === 'ar' ? 'سؤال جديد' : 'New Question',
         options: [
-          lang === 'ar' ? 'الإجابة الأولى (صحيحة)' : 'Option 1 (Correct)',
+          lang === 'ar' ? 'الإجابة الأولى (صح)' : 'Option 1 (Correct)',
           lang === 'ar' ? 'الإجابة الثانية' : 'Option 2',
           lang === 'ar' ? 'الإجابة الثالثة' : 'Option 3',
           lang === 'ar' ? 'الإجابة الرابعة' : 'Option 4'
@@ -126,7 +126,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      alert(lang === 'ar' ? 'يرجى إدخال عنوان الدرس' : 'Please provide a lesson title');
+      alert(lang === 'ar' ? 'اكتب عنوان الدرس.' : 'Please provide a lesson title');
       return;
     }
 
@@ -229,12 +229,12 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
             <div>
               <h3 className="text-lg font-bold text-[var(--color-church-blue)] dark:text-white">
                 {isNew 
-                  ? (lang === 'ar' ? 'إعداد درس جديد (مسار يدوي مباشر)' : 'Create New Lesson (Direct Manual)')
-                  : (lang === 'ar' ? 'تعديل مسودة الدرس وإدارتها' : 'Edit & Manage Lesson Draft')}
+                  ? (lang === 'ar' ? 'إنشاء درس جديد (إعداد يدوي)' : 'Create New Lesson (Direct Manual)')
+                  : (lang === 'ar' ? 'تعديل مسودة الدرس' : 'Edit & Manage Lesson Draft')}
               </h3>
               <p className="text-xs text-gray-500">
                 {isOnlineAuth 
-                  ? (lang === 'ar' ? 'مسودة الإصدار المحمية • تعديل آمن وحفظ في Supabase' : 'Versioned Draft Foundation • Safe Supabase Storage')
+                  ? (lang === 'ar' ? 'مسودة إصدار محفوظة • تعديل آمن وحفظ على Supabase' : 'Versioned Draft Foundation • Safe Supabase Storage')
                   : (lang === 'ar' ? 'صلاحيات خادم مدارس الأحد' : 'Servant permissions')}
               </p>
             </div>
@@ -251,7 +251,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
         {loadingDraft && (
           <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl text-blue-700 dark:text-blue-300 text-xs flex items-center gap-2 font-medium">
             <Loader2 size={16} className="animate-spin shrink-0" />
-            <span>{lang === 'ar' ? 'جاري تحميل مسودة الإصدار القابلة للتعديل...' : 'Loading authorized editable draft version...'}</span>
+            <span>{lang === 'ar' ? 'بنحمّل مسودة الإصدار اللي تقدر تعدّلها...' : 'Loading authorized editable draft version...'}</span>
           </div>
         )}
 
@@ -268,7 +268,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
-                {lang === 'ar' ? 'عنوان الدرس (بيانات المسودة)' : 'Lesson Title (Draft Metadata)'}
+                {lang === 'ar' ? 'عنوان الدرس' : 'Lesson Title (Draft Metadata)'}
               </label>
               <input
                 type="text"
@@ -286,10 +286,10 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
                 <div>
                   <div className="w-full text-xs font-bold px-3 py-2.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                     <Lock size={12} className="shrink-0" />
-                    <span>{lang === 'ar' ? 'مسودة قيد الإعداد 📝' : 'Draft 📝'}</span>
+                    <span>{lang === 'ar' ? 'مسودة لسه بتتجهز 📝' : 'Draft 📝'}</span>
                   </div>
                   <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold block mt-1">
-                    {lang === 'ar' ? 'النشر محمي بنظام الاعتماد' : 'Publication protected'}
+                    {lang === 'ar' ? 'النشر بيتم بعد الاعتماد' : 'Publication protected'}
                   </span>
                 </div>
               ) : (
@@ -298,8 +298,8 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
                   onChange={(e) => setStatus(e.target.value as any)}
                   className="w-full text-sm font-semibold px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-church-gold)] text-gray-900 dark:text-white"
                 >
-                  <option value="published">{lang === 'ar' ? 'منشور للطلاب ✅' : 'Published ✅'}</option>
-                  <option value="draft">{lang === 'ar' ? 'مسودة قيد الإعداد 📝' : 'Draft 📝'}</option>
+                  <option value="published">{lang === 'ar' ? 'منشور للتلاميذ ✅' : 'Published ✅'}</option>
+                  <option value="draft">{lang === 'ar' ? 'مسودة لسه بتتجهز 📝' : 'Draft 📝'}</option>
                 </select>
               )}
             </div>
@@ -308,7 +308,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
           {/* Points Available */}
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
-              {lang === 'ar' ? 'النقاط الممنوحة' : 'Points Available'}
+              {lang === 'ar' ? 'النقاط المتاحة' : 'Points Available'}
             </label>
             {isOnlineAuth ? (
               <div className="flex items-center gap-2">
@@ -319,7 +319,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
                   className="w-36 text-sm font-semibold px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-800 text-gray-500 cursor-not-allowed"
                 />
                 <span className="text-[11px] text-gray-400 italic">
-                  {lang === 'ar' ? '(محددة بنظام الاعتماد الرسمي)' : '(Governed by publication rules)'}
+                  {lang === 'ar' ? '(حسب قواعد الاعتماد الرسمية)' : '(Governed by publication rules)'}
                 </span>
               </div>
             ) : (
@@ -338,7 +338,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
           {/* Summary */}
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
-              {lang === 'ar' ? 'ملخص ومحتوى الإصدار (محتوى الدرس)' : 'Version Summary & Content (Curriculum)'}
+              {lang === 'ar' ? 'ملخص ومحتوى الدرس' : 'Version Summary & Content (Curriculum)'}
             </label>
             <textarea
               rows={3}
