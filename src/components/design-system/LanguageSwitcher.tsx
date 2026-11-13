@@ -64,7 +64,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         aria-haspopup="true"
         aria-expanded={isOpen}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/25 hover:bg-black/35 text-white border border-white/15 transition-all text-xs font-bold cursor-pointer shadow-xs focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
-        title="Switch Language / اختر لغة العرض / Ⲥⲱⲧⲡ ⲛ̀ϯⲁⲥⲡⲓ"
+        title="Switch language / اختار اللغة / Ⲥⲱⲧⲡ ⲛ̀ϯⲁⲥⲡⲓ"
       >
         <Globe size={15} className="text-[var(--brand-gold)] shrink-0" />
         <span className="text-sm">{currentConfig.symbol}</span>
