@@ -96,7 +96,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
       if (submittedName !== userData.fullName) {
         const profileResult = await updateUserProfile({ fullName: submittedName });
         if (!profileResult.success) {
-          setErrorMessage(profileResult.error || (isAr ? 'تعذر حفظ الاسم.' : 'Could not save your name.'));
+          setErrorMessage(profileResult.error || (isAr ? 'مش قادرين نحفظ الاسم.' : 'Could not save your name.'));
           setSubmitting(false);
           return;
         }
@@ -113,7 +113,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
       });
 
       if (!res.success || !res.request) {
-        setErrorMessage(res.error || (isAr ? 'فشل إرسال طلب التفعيل' : 'Failed to submit activation request'));
+        setErrorMessage(res.error || (isAr ? 'مش قادرين نبعت طلب تفعيل الحساب.' : 'Failed to submit activation request'));
         setSubmitting(false);
         return;
       }
@@ -122,7 +122,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
       setIsEditing(false);
       setSuccessMessage(
         isAr 
-          ? 'تم إرسال طلب تفعيل الحساب وتحديد الصف بنجاح! تم إشعار الخدام المسؤولين للموافقة اليدوية وتسكينك في كشف الفصل.'
+          ? 'طلب تفعيل الحساب وتحديد الصف اتبعت بنجاح! خدام الفصل وصلهم إشعار عشان يراجعوا الطلب ويسجلوك في الفصل.'
           : 'Activation request submitted successfully! Your class servants have been notified for manual approval and roster assignment.'
       );
 
@@ -130,7 +130,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
         onSuccess();
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || (isAr ? 'حدث خطأ في الاتصال' : 'Connection error'));
+      setErrorMessage(err?.message || (isAr ? 'حصلت مشكلة في الاتصال. جرّب تاني.' : 'Connection error'));
     } finally {
       setSubmitting(false);
     }
@@ -201,7 +201,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 rounded-full text-[var(--mousa-sand-500)] hover:text-[var(--mousa-coral)] hover:bg-[var(--mousa-sand-100)] transition-colors cursor-pointer"
-          title={isAr ? 'إغلاق' : 'Close'}
+          title={isAr ? 'اقفل' : 'Close'}
         >
           <X size={18} />
         </button>
@@ -214,12 +214,12 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg sm:text-xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-                {isAr ? 'أهلاً بك في رحلة القديس الأنبا موسى!' : 'Welcome to The Journey of Moses!'}
+                {isAr ? 'أهلاً بيك في رحلة الأنبا موسى!' : 'Welcome to The Journey of Moses!'}
               </h2>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
               {isAr 
-                ? 'لنقم بإعداد حسابك لمدارس الأحد وتحديد صفك الدراسي'
+                ? 'يلا نجهّز حسابك لمدارس الأحد ونحدد صفّك الدراسي.'
                 : "Let's set up your Sunday School account."}
             </p>
           </div>
@@ -247,7 +247,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300/50">
                   <Clock size={13} className="animate-pulse" />
-                  {isAr ? 'الطلب قيد المراجعة لدى الخادم' : 'Pending Servant Approval'}
+                  {isAr ? 'طلبك مستني مراجعة الخادم' : 'Pending Servant Approval'}
                 </span>
                 <span className="text-[11px] text-gray-400 font-medium">
                   {new Date(existingRequest.requestedAt).toLocaleDateString()}
@@ -256,13 +256,13 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
 
               <div className="text-xs text-gray-700 dark:text-gray-300 space-y-2 pt-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">{isAr ? 'الصف الدراسي المحدد:' : 'Exact Grade:'}</span>
+                  <span className="text-gray-500">{isAr ? 'صفّك الدراسي:' : 'Exact Grade:'}</span>
                   <span className="font-bold text-gray-900 dark:text-white">
                     {existingRequest.requestedGrade}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">{isAr ? 'فصل مدارس الأحد الكنسي:' : 'Church Class Group:'}</span>
+                  <span className="text-gray-500">{isAr ? 'فصل مدارس الأحد:' : 'Church Class Group:'}</span>
                   <span className="font-bold text-[var(--mousa-teal)] dark:text-amber-300">
                     {CLASS_GROUPS[existingRequest.requestedClassGroupId]?.name[isAr ? 'ar' : 'en'] || existingRequest.requestedClassGroupId}
                   </span>
@@ -278,7 +278,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
                 <Sparkles size={14} className="shrink-0 text-amber-600 mt-0.5" />
                 <span>
                   {isAr 
-                    ? 'سيقوم الخادم المسؤول بمراجعة طلبك واعتماد تسكينك في كشف الفصل، لتظهر لك دروس مدارس الأحد فوراً.'
+                    ? 'الخادم المسؤول هيراجع طلبك ويسجّلك في الفصل، وبعدها دروس مدارس الأحد هتظهرلك.'
                     : 'Your Sunday School servant will review and approve your enrollment to unlock your curriculum lessons and quizzes.'}
                 </span>
               </div>
