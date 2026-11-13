@@ -7,6 +7,7 @@ const html = read('../index.html');
 const vite = read('../vite.config.ts');
 const metadata = JSON.parse(read('../metadata.json'));
 const packageJson = JSON.parse(read('../package.json'));
+const packageLock = JSON.parse(read('../package-lock.json'));
 const topBar = read('../src/components/layout/TopBar.tsx');
 const profile = read('../src/components/student/ProfileTab.tsx');
 const slides = read('../src/components/sunday-school/viewers/SlideDeckViewer.tsx');
@@ -30,6 +31,8 @@ test('app-facing brand labels are consistent', () => {
   assert.equal(metadata.name, 'Anba Mousa');
   assert.match(metadata.description, /Growing in Faith, Learning in Love/);
   assert.equal(packageJson.name, 'anba-mousa');
+  assert.equal(packageLock.name, 'anba-mousa');
+  assert.equal(packageLock.packages[''].name, 'anba-mousa');
   assert.match(topBar, /: 'Anba Mousa'/);
   assert.match(profile, /log out of your Anba Mousa account/);
   assert.match(slides, /Anba Mousa Sunday School • 4th Grade/);
