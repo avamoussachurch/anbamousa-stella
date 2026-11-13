@@ -475,6 +475,8 @@ export async function getAuthoritativeLeaderboard(options?: {
   timeframe: string;
   leaderboard: any[];
   currentUserEntry: any | null;
+  streakLeaderboard: any[];
+  currentUserStreakEntry: any | null;
   totalParticipants: number;
   cairoDate: string;
   cairoWeekReset: string;
@@ -500,6 +502,8 @@ export async function getAuthoritativeLeaderboard(options?: {
       timeframe: json.timeframe,
       leaderboard: json.leaderboard || [],
       currentUserEntry: json.currentUserEntry || null,
+      streakLeaderboard: json.streakLeaderboard || [],
+      currentUserStreakEntry: json.currentUserStreakEntry || null,
       totalParticipants: json.totalParticipants || 0,
       cairoDate: json.cairoDate,
       cairoWeekReset: json.cairoWeekReset
@@ -511,6 +515,8 @@ export async function getAuthoritativeLeaderboard(options?: {
       timeframe: options?.timeframe || 'weekly',
       leaderboard: [],
       currentUserEntry: null,
+      streakLeaderboard: [],
+      currentUserStreakEntry: null,
       totalParticipants: 0,
       cairoDate: new Date().toISOString().split('T')[0],
       cairoWeekReset: '',
