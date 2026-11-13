@@ -154,7 +154,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
     return [
       {
         id: 'q-1',
-        question: isAr ? 'ما الفكرة الروحية الرئيسية المستفادة من هذا الدرس؟' : 'What is the main spiritual lesson taught today?',
+        question: isAr ? 'إيه الفكرة الروحية الأساسية اللي بنتعلمها من الدرس؟' : 'What is the main spiritual lesson taught today?',
         options: [
           isAr ? 'محبة الله والأمانة في الصلاة' : 'Loving God and faithful prayer',
           isAr ? 'الابتعاد عن الكنيسة' : 'Neglecting church and sacraments',
@@ -204,7 +204,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
     setShowLoadLessonModal(false);
     setFeedbackMessage({
       type: 'success',
-      text: isAr ? `تم تحميل درس "${targetLesson.titleAr || targetLesson.title}" إلى استوديو النشر!` : `Loaded "${targetLesson.title}" into the Manual Studio!`
+      text: isAr ? `الدرس اتحمّل "${targetLesson.titleAr || targetLesson.title}" في استوديو النشر!` : `Loaded "${targetLesson.title}" into the Manual Studio!`
     });
   };
 
@@ -230,14 +230,14 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
     if (!file) return;
 
     setIsUploadingMedia(true);
-    setUploadNote(isAr ? `جاري رفع الملف: ${file.name}...` : `Uploading ${file.name}...`);
+    setUploadNote(isAr ? `بنرفع الملف: ${file.name}...` : `Uploading ${file.name}...`);
 
     try {
       const upload = await uploadSourceMedia(file, `manual-${Date.now()}`);
       if (!upload.success || !upload.fileUrl) {
         setFeedbackMessage({
           type: 'error',
-          text: upload.error || (isAr ? 'تعذر حفظ الملف بشكل دائم. حاول مرة أخرى.' : 'The file could not be saved persistently. Please try again.')
+          text: upload.error || (isAr ? 'مش قادرين نحفظ الملف بشكل دائم. جرّب تاني.' : 'The file could not be saved persistently. Please try again.')
         });
         return;
       }
@@ -257,7 +257,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
     } catch (err: any) {
       setFeedbackMessage({
         type: 'error',
-        text: err?.message || (isAr ? 'تعذر رفع الملف. حاول مرة أخرى.' : 'The file upload failed. Please try again.')
+        text: err?.message || (isAr ? 'مش قادرين نرفع الملف. جرّب تاني.' : 'The file upload failed. Please try again.')
       });
     } finally {
       setIsUploadingMedia(false);
@@ -275,7 +275,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
         id: `q-${Date.now()}-${nextIdx}`,
         question: isAr ? `سؤال تعليمي جديد #${nextIdx}` : `New Quiz Question #${nextIdx}`,
         options: [
-          isAr ? 'الخيار الأول (الصحيح)' : 'Option 1 (Correct)',
+          isAr ? 'الخيار الأول (صح)' : 'Option 1 (Correct)',
           isAr ? 'الخيار الثاني' : 'Option 2',
           isAr ? 'الخيار الثالث' : 'Option 3',
           isAr ? 'الخيار الرابع' : 'Option 4'
@@ -338,9 +338,9 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
         }
       ];
       setQuizQuestions(prev => [...prev, ...newSuggested]);
-      setAiHelperMessage(isAr ? '✨ تم اقتراح سؤال تطبيقي إضافي يمكنك تعديله بالكامل.' : '✨ Added 1 practical application question suggestion. You can customize it freely.');
+      setAiHelperMessage(isAr ? '✨ اقترحنا سؤال تطبيقي زيادة، وتقدر تعدّله زي ما تحب.' : '✨ Added 1 practical application question suggestion. You can customize it freely.');
     } catch {
-      setAiHelperMessage(isAr ? 'تعذر استدعاء الاقتراح.' : 'Could not generate suggestion.');
+      setAiHelperMessage(isAr ? 'مش قادرين نجهّز اقتراح دلوقتي.' : 'Could not generate suggestion.');
     } finally {
       setIsAiGeneratingQuiz(false);
     }
@@ -387,7 +387,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
   // Save as Draft
   const handleSaveDraft = async () => {
     if (!title.trim()) {
-      setFeedbackMessage({ type: 'error', text: isAr ? 'يرجى إدخال عنوان الدرس' : 'Please provide a lesson title' });
+      setFeedbackMessage({ type: 'error', text: isAr ? 'اكتب عنوان الدرس.' : 'Please provide a lesson title' });
       return;
     }
     setIsSaving(true);
@@ -396,7 +396,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
     setIsSaving(false);
     setFeedbackMessage({
       type: 'success',
-      text: isAr ? 'تم حفظ مسودة الدرس بنجاح!' : 'Lesson draft saved successfully!'
+      text: isAr ? 'مسودة الدرس اتحفظت بنجاح!' : 'Lesson draft saved successfully!'
     });
     setTimeout(() => setFeedbackMessage(null), 4000);
   };
@@ -404,7 +404,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
   // 1-Click Publish to Class Session & Universal Curriculum
   const handlePublishToClass = async () => {
     if (!title.trim()) {
-      setFeedbackMessage({ type: 'error', text: isAr ? 'يرجى كتابة عنوان الدرس أولاً' : 'Please enter a lesson title before publishing' });
+      setFeedbackMessage({ type: 'error', text: isAr ? 'اكتب عنوان الدرس الأول.' : 'Please enter a lesson title before publishing' });
       return;
     }
 
