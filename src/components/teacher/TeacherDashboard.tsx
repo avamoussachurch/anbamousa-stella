@@ -29,6 +29,7 @@ import { ExpressLessonPublishModal } from './ExpressLessonPublishModal';
 import { AttendanceVisitationTracker } from './AttendanceVisitationTracker';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { createLessonDraft } from '../../lib/lessonAuthoringService';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 
 import { ManualLessonStudio } from '../sunday-school/teacher/ManualLessonStudio';
 import { TeacherMasteryReview } from '../sunday-school/teacher/TeacherMasteryReview';
@@ -230,12 +231,12 @@ export function TeacherDashboard({
         setPendingRequestsCount(res.requests.filter(r => r.status === 'PENDING_APPROVAL').length);
       } else {
         setPendingRequestsCount(null);
-        setPendingRequestsError(res.error || (lang === 'ar' ? 'مش قادرين نحمّل طلبات التفعيل دلوقتي.' : 'Could not load activation requests.'));
+        setPendingRequestsError(getLocalizedErrorMessage(res.error, lang));
       }
     }).catch((error: unknown) => {
       if (!isMounted) return;
       setPendingRequestsCount(null);
-      setPendingRequestsError(error instanceof Error ? error.message : (lang === 'ar' ? 'مش قادرين نحمّل طلبات التفعيل دلوقتي.' : 'Could not load activation requests.'));
+      setPendingRequestsError(getLocalizedErrorMessage(error, lang));
     });
 
     return () => { isMounted = false; };
@@ -376,7 +377,7 @@ export function TeacherDashboard({
       });
 
       if (result.error) {
-        alert(lang === 'ar' ? `مش قادرين نحفظ مسودة الدرس: ${result.error.message}` : `Failed to save draft: ${result.error.message}`);
+        alert(lang === 'ar' ? `مش قادرين نحفظ مسودة الدرس: ${getLocalizedErrorMessage(result.error.message, lang)}` : `Failed to save draft: ${result.error.message}`);
         return;
       }
 

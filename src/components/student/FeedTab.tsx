@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { getFeedDisplayState } from '../../lib/feedDisplayState';
@@ -97,7 +98,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       setIsLoadingServerPosts(false);
 
       if (res.error || !res.data) {
-        setFeedLoadError(res.error?.message || (lang === 'ar' ? 'مش قادرين نحمّل منشورات المجتمع دلوقتي.' : 'The community feed could not be loaded.'));
+        setFeedLoadError(res.error?.message ? getLocalizedErrorMessage(res.error.message, lang) : (lang === 'ar' ? 'مش قادرين نحمّل منشورات المجتمع دلوقتي.' : 'The community feed could not be loaded.'));
         setFeedResultScope(userData?.id || 'guest');
         return;
       }
@@ -111,7 +112,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     loadFeed().catch(error => {
       if (!isMounted) return;
       setIsLoadingServerPosts(false);
-      setFeedLoadError(error instanceof Error ? error.message : (lang === 'ar' ? 'مش قادرين نحمّل منشورات المجتمع دلوقتي.' : 'The community feed could not be loaded.'));
+      setFeedLoadError(getLocalizedErrorMessage(error, lang) || (lang === 'ar' ? 'مش قادرين نحمّل منشورات المجتمع دلوقتي.' : 'The community feed could not be loaded.'));
       setFeedResultScope(userData?.id || 'guest');
     });
 
@@ -237,7 +238,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     const res = await toggleFeedReactionInSupabase(reactionType, { postId });
     if (res.error) {
       console.warn('Reaction write note:', res.error.message);
-      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل دلوقتي: ${res.error.message}` : `Reaction failed: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل دلوقتي: ${getLocalizedErrorMessage(res.error.message, lang)}` : `Reaction failed: ${res.error.message}`);
       setPosts(prev => prev.map(p => {
         if (p.id === postId) {
           return {
@@ -281,7 +282,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     const res = await toggleFeedReactionInSupabase(reactionType, { commentId });
     if (res.error) {
       console.warn('Comment reaction write note:', res.error.message);
-      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل: ${res.error.message}` : `Comment reaction failed: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل: ${getLocalizedErrorMessage(res.error.message, lang)}` : `Comment reaction failed: ${res.error.message}`);
       setPosts(prev => prev.map(p => {
         if (p.id === postId) {
           return {
@@ -410,7 +411,7 @@ export function FeedTab({ lang }: { lang: Language }) {
 
     if (res.error) {
       console.warn('Comment write error:', res.error);
-      setActionError(lang === 'ar' ? `مش قادرين نحفظ التعليق دلوقتي: ${res.error.message}` : `Failed to save comment to cloud: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نحفظ التعليق دلوقتي: ${getLocalizedErrorMessage(res.error.message, lang)}` : `Failed to save comment to cloud: ${res.error.message}`);
       setPosts(previousPosts);
     } else if (res.data?.id) {
       setPosts(prev => prev.map(p => {
@@ -530,7 +531,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       const cleanup = await cleanupFeedMediaReferences([item.storageReference]);
       if (cleanup.error) {
         setMediaError(lang === 'ar'
-          ? `تمت إزالة الملف من المنشور، لكن تعذر تنظيف الملف المرفوع: ${cleanup.error.message}`
+          ? `الملف اتشال من المنشور، لكن مش قادرين نمسح الملف المرفوع: ${getLocalizedErrorMessage(cleanup.error.message, lang)}`
           : `The attachment was removed, but the uploaded file could not be cleaned up: ${cleanup.error.message}`);
       }
     }
@@ -645,7 +646,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       postDraftIdRef.current = null;
       setIsComposeModalOpen(false);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'The post could not be saved.';
+      const errorMessage = getLocalizedErrorMessage(error, lang);
       setActionError(lang === 'ar' ? `مش قادرين نحفظ المشاركة: ${errorMessage}` : `Failed to save post: ${errorMessage}`);
     } finally {
       setIsCreatingPost(false);
@@ -663,7 +664,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     const res = await deleteFeedPostFromSupabase(postId);
     if (res.error) {
       console.warn('Post deletion error:', res.error);
-      setActionError(lang === 'ar' ? `مش قادرين نحذف المنشور: ${res.error.message}` : `Failed to delete post: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نحذف المنشور: ${getLocalizedErrorMessage(res.error.message, lang)}` : `Failed to delete post: ${res.error.message}`);
       setPosts(previousPosts);
     }
   };
@@ -680,7 +681,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     const res = await toggleFeedPostPinInSupabase(postId, nextPinned);
     if (res.error) {
       console.warn('Pin toggle error:', res.error);
-      setActionError(lang === 'ar' ? `مش قادرين نغيّر تثبيت المنشور: ${res.error.message}` : `Pin toggle failed: ${res.error.message}`);
+      setActionError(lang === 'ar' ? `مش قادرين نغيّر تثبيت المنشور: ${getLocalizedErrorMessage(res.error.message, lang)}` : `Pin toggle failed: ${res.error.message}`);
       setPosts(previousPosts);
     }
   };

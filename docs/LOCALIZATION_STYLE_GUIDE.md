@@ -84,6 +84,7 @@ Audit and localize every user-facing surface, not only the student home:
 - [x] Localize administrative role names in Arabic instead of leaking raw English role identifiers.
 - [x] Correct the localization QA dashboard so registry completeness is not presented as whole-app translation coverage.
 - [ ] Continue screen-by-screen copy review for remaining student, teacher, parent, and admin sub-screens.
+- [x] Added a safe Egyptian Arabic mapping for common backend/service errors and applied it to student feed/lesson, teacher dashboard/authoring, and parent workspace feedback.
 - [ ] Dynamic AI/server messages localization audit.
 - [ ] Legal/privacy policy plain-language review; preserve legal precision and do not colloquialize policy text without approval.
 - [ ] Full RTL-shell visual QA in Arabic and English on mobile and desktop.
