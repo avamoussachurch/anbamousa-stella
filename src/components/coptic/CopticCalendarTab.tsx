@@ -81,7 +81,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-xs font-bold mb-3">
             <Sparkles size={14} className="text-amber-300" />
-            <span>{lang === 'ar' ? 'التقويم القبطي الكنسي وتاريخ الشهداء' : 'Coptic Orthodox Ecclesiastical Calendar'}</span>
+            <span>{lang === 'ar' ? 'التقويم القبطي الكنسي وسنكسار الشهداء' : 'Coptic Orthodox Ecclesiastical Calendar'}</span>
           </div>
 
           <div className="flex flex-wrap items-baseline gap-3 mb-2">
@@ -101,7 +101,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
 
           {/* Quick Date Stepper to browse any day */}
           <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/15">
-            <span className="text-xs text-gray-300 font-bold">{lang === 'ar' ? 'تاريخ اليوم الميلادي:' : 'Gregorian:'}</span>
+            <span className="text-xs text-gray-300 font-bold">{lang === 'ar' ? 'تاريخ النهارده الميلادي:' : 'Gregorian:'}</span>
             <button
               onClick={() => changeDateByDays(-1)}
               className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
@@ -128,7 +128,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
               }}
               className="text-xs font-bold text-amber-300 hover:text-white underline ml-auto mr-0 px-2 py-1"
             >
-              {lang === 'ar' ? 'العودة لليوم' : 'Today'}
+              {lang === 'ar' ? 'ارجع لنهارده' : 'Today'}
             </button>
           </div>
         </div>
@@ -140,10 +140,10 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-[var(--color-church-blue)] dark:text-amber-200 flex items-center gap-2">
               <Clock className="text-amber-500" size={24} />
-              <span>{lang === 'ar' ? 'العد التنازلي للأعياد والأصوام القادمة' : 'Feasts & Fasting Countdown'}</span>
+              <span>{lang === 'ar' ? 'العد التنازلي للأعياد والأصوام الجاية' : 'Feasts & Fasting Countdown'}</span>
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              {lang === 'ar' ? 'متابعة حية بالأيام والساعات والدقائق لمواعيد الأعياد وطقوسها وقواعد الصيام' : 'Live countdown with liturgical tones and fasting regulations'}
+              {lang === 'ar' ? 'تابع فاضل قد إيه على الأعياد والأصوام بالأيام والساعات والدقايق، واعرف طقوسها وقواعد الصيام.' : 'Live countdown with liturgical tones and fasting regulations'}
             </p>
           </div>
 
@@ -206,7 +206,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
                   {/* Fasting Guideline Pill */}
                   <div className="mb-4 p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800/70 border border-gray-100 dark:border-slate-700 text-xs">
                     <span className="font-bold text-gray-700 dark:text-gray-300 block mb-0.5">
-                      {lang === 'ar' ? 'طبيعة الصوم والأطعمة:' : 'Dietary Fasting Rule:'}
+                      {lang === 'ar' ? 'قواعد الصوم والأكل:' : 'Dietary Fasting Rule:'}
                     </span>
                     <span className={feast.isFishPermitted ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-rose-700 dark:text-rose-400 font-semibold'}>
                       {lang === 'ar' ? feast.fastingRuleAr : feast.fastingRuleEn}
@@ -217,11 +217,11 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
                 {/* Live Countdown Clock Badge */}
                 <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
                   <span className="text-xs font-bold text-gray-400">
-                    {lang === 'ar' ? 'المتبقي:' : 'Time Left:'}
+                    {lang === 'ar' ? 'فاضل:' : 'Time Left:'}
                   </span>
                   {isToday ? (
                     <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-extrabold text-xs animate-pulse">
-                      {lang === 'ar' ? 'اليوم نحتفل بالبركة!' : 'Celebrating Today!'}
+                      {lang === 'ar' ? 'النهارده بنحتفل بالعيد!' : 'Celebrating Today!'}
                     </span>
                   ) : (
                     <div className="flex items-center gap-1.5 font-bold text-sm">
@@ -246,7 +246,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
       {/* Coptic Months Overview */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-amber-200/60 dark:border-slate-800 shadow-sm">
         <h3 className="text-lg sm:text-xl font-bold text-[var(--color-church-blue)] dark:text-amber-200 mb-4 flex items-center gap-2">
-          <span>{lang === 'ar' ? 'شهور السنة القبطية الـ ١٣' : 'The 13 Coptic Months'}</span>
+          <span>{lang === 'ar' ? 'شهور السنة القبطية الـ١٣' : 'The 13 Coptic Months'}</span>
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {COPTIC_MONTHS.map((m) => (
@@ -260,7 +260,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold opacity-80">#{m.number}</span>
-                <span className="text-xs font-extrabold">{m.daysCount} {lang === 'ar' ? 'يوماً' : 'days'}</span>
+                <span className="text-xs font-extrabold">{m.daysCount} {lang === 'ar' ? 'يوم' : 'days'}</span>
               </div>
               <h4 className="font-bold text-base">{lang === 'ar' ? m.nameAr : m.nameEn}</h4>
               <p className="text-[11px] opacity-80 mt-0.5">{m.nameCopt}</p>

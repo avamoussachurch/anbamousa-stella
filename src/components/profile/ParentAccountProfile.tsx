@@ -12,10 +12,10 @@ import {
 } from './RoleProfileShared';
 
 const parentPreferences = (lang: Language) => [
-  { field: 'pushNotificationsEnabled' as const, label: lang === 'ar' ? 'التنبيهات داخل التطبيق' : 'In-app notifications', description: lang === 'ar' ? 'تشغيل أو إيقاف تنبيهات Stella داخل التطبيق.' : 'Turn Stella in-app notifications on or off.' },
-  { field: 'notifyLessonCompletion' as const, label: lang === 'ar' ? 'تنبيهات إتمام التعلّم' : 'Learning completion notifications', description: lang === 'ar' ? 'تلقي تنبيه عند تسجيل إتمام الطفل لدرس.' : 'Receive a notice when a child’s lesson completion is recorded.' },
-  { field: 'notifyEventReminders' as const, label: lang === 'ar' ? 'تذكيرات الفعاليات' : 'Event reminders', description: lang === 'ar' ? 'تلقي تذكيرات الفعاليات الكنسية المتاحة.' : 'Receive reminders for available church events.' },
-  { field: 'requireRewardApproval' as const, label: lang === 'ar' ? 'طلب موافقتي على المكافآت' : 'Require my approval for rewards', description: lang === 'ar' ? 'استخدام موافقتك في تدفق طلبات المكافآت المدعوم.' : 'Use your approval in the supported reward-request workflow.' },
+  { field: 'pushNotificationsEnabled' as const, label: lang === 'ar' ? 'التنبيهات داخل التطبيق' : 'In-app notifications', description: lang === 'ar' ? 'شغّل أو اقفل تنبيهات التطبيق.' : 'Turn Stella in-app notifications on or off.' },
+  { field: 'notifyLessonCompletion' as const, label: lang === 'ar' ? 'تنبيهات إتمام التعلّم' : 'Learning completion notifications', description: lang === 'ar' ? 'استقبل تنبيه لما يتسجل إن ابنك خلّص درس.' : 'Receive a notice when a child’s lesson completion is recorded.' },
+  { field: 'notifyEventReminders' as const, label: lang === 'ar' ? 'تذكيرات الفعاليات' : 'Event reminders', description: lang === 'ar' ? 'استقبل تذكيرات الفعاليات الكنسية المتاحة.' : 'Receive reminders for available church events.' },
+  { field: 'requireRewardApproval' as const, label: lang === 'ar' ? 'طلب موافقتي على المكافآت' : 'Require my approval for rewards', description: lang === 'ar' ? 'خلّي موافقتك مطلوبة في طلبات المكافآت المدعومة.' : 'Use your approval in the supported reward-request workflow.' },
 ];
 
 export function ParentAccountProfile({ lang, setLang, onNavigate, onLogout }: RoleProfileProps) {
@@ -33,13 +33,13 @@ export function ParentAccountProfile({ lang, setLang, onNavigate, onLogout }: Ro
       const result = await getAuthoritativeParentChildren();
       if (result.error || !result.data) {
         setChildren([]);
-        setChildrenError(result.error?.message || (isArabic ? 'تعذر تحميل الأبناء المرتبطين.' : 'Could not load linked children.'));
+        setChildrenError(result.error?.message || (isArabic ? 'مش قادرين نحمّل الأولاد المرتبطين بالحساب.' : 'Could not load linked children.'));
       } else {
         setChildren(result.data);
       }
     } catch (error) {
       setChildren([]);
-      setChildrenError(error instanceof Error ? error.message : (isArabic ? 'تعذر تحميل الأبناء المرتبطين.' : 'Could not load linked children.'));
+      setChildrenError(error instanceof Error ? error.message : (isArabic ? 'مش قادرين نحمّل الأولاد المرتبطين بالحساب.' : 'Could not load linked children.'));
     } finally {
       setChildrenLoading(false);
     }
@@ -56,7 +56,7 @@ export function ParentAccountProfile({ lang, setLang, onNavigate, onLogout }: Ro
       lang={lang}
       roleLabel={isArabic ? 'ولي أمر' : 'Parent'}
       title={isArabic ? 'ملف ولي الأمر' : 'Parent profile'}
-      subtitle={isArabic ? 'إدارة بيانات حسابك وروابط الأسرة وتفضيلات التواصل.' : 'Manage your account, family connections, and communication preferences.'}
+      subtitle={isArabic ? 'إدارة بيانات حسابك وروابط العيلة وتفضيلات التواصل.' : 'Manage your account, family connections, and communication preferences.'}
       icon={<Heart size={28} />}
       onLogout={onLogout}
     >
@@ -78,7 +78,7 @@ export function ParentAccountProfile({ lang, setLang, onNavigate, onLogout }: Ro
           fields={parentPreferences(lang)}
           savingPreference={account.savingPreference}
           onTogglePreference={field => void account.togglePreference(field)}
-          title={isArabic ? 'تفضيلات الأسرة والتنبيهات' : 'Family and notification preferences'}
+          title={isArabic ? 'تفضيلات العيلة والتنبيهات' : 'Family and notification preferences'}
         />
       </div>
 
@@ -88,12 +88,12 @@ export function ParentAccountProfile({ lang, setLang, onNavigate, onLogout }: Ro
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--state-selected)] text-[var(--action-primary)]"><Users size={19} /></span>
             <div>
               <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'الأسرة' : 'Family'}</p>
-              <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'الأبناء المرتبطون' : 'Linked children'}</h2>
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'تُحمّل الروابط من خدمة الأسرة الموثّقة.' : 'Family links are loaded from the authenticated family service.'}</p>
+              <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'الأولاد المرتبطين بالحساب' : 'Linked children'}</h2>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'الروابط بتتحمّل من خدمة الأسرة الموثّقة.' : 'Family links are loaded from the authenticated family service.'}</p>
             </div>
           </div>
           <button type="button" onClick={() => onNavigate('children')} className="rounded-xl border border-[var(--border-default)] px-3 py-2 text-xs font-black text-[var(--text-primary)] hover:bg-[var(--state-hover)]">
-            {isArabic ? 'إدارة وربط الأبناء' : 'Manage or connect children'}
+            {isArabic ? 'إدارة وربط الأولاد' : 'Manage or connect children'}
           </button>
         </div>
         {childrenLoading
@@ -101,10 +101,10 @@ export function ParentAccountProfile({ lang, setLang, onNavigate, onLogout }: Ro
           : childrenError
             ? <div role="alert" className="rounded-xl border border-[var(--feedback-error)]/30 p-4 text-sm text-[var(--feedback-error)]">
               {childrenError}
-              <button type="button" onClick={() => void loadChildren()} className="ms-3 inline-flex items-center gap-1 font-bold underline"><RefreshCw size={13} />{isArabic ? 'إعادة المحاولة' : 'Retry'}</button>
+              <button type="button" onClick={() => void loadChildren()} className="ms-3 inline-flex items-center gap-1 font-bold underline"><RefreshCw size={13} />{isArabic ? 'جرّب تاني' : 'Retry'}</button>
             </div>
             : children.length === 0
-              ? <p className="rounded-xl bg-[var(--surface-secondary)]/60 p-4 text-sm text-[var(--text-secondary)]">{isArabic ? 'لا توجد حسابات أبناء مرتبطة حالياً.' : 'No linked child accounts were found.'}</p>
+              ? <p className="rounded-xl bg-[var(--surface-secondary)]/60 p-4 text-sm text-[var(--text-secondary)]">{isArabic ? 'مفيش حسابات أولاد مرتبطة دلوقتي.' : 'No linked child accounts were found.'}</p>
               : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {children.map(child => (
                   <article key={child.id} className="flex items-center gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)]/45 p-3">
@@ -113,7 +113,7 @@ export function ParentAccountProfile({ lang, setLang, onNavigate, onLogout }: Ro
                       : <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--state-selected)] text-sm font-black text-[var(--action-primary)]">{child.name.slice(0, 1)}</span>}
                     <div className="min-w-0">
                       <p className="truncate text-sm font-black text-[var(--text-primary)]">{child.name}</p>
-                      <p className="mt-1 truncate text-xs text-[var(--text-secondary)]">{child.grade || (isArabic ? 'الصف غير متاح' : 'Grade unavailable')} · {isArabic ? child.classNameAr || 'الفصل غير متاح' : child.className || 'Class unavailable'}</p>
+                      <p className="mt-1 truncate text-xs text-[var(--text-secondary)]">{child.grade || (isArabic ? 'الصف مش متاح' : 'Grade unavailable')} · {isArabic ? child.classNameAr || 'الفصل مش متاح' : child.className || 'Class unavailable'}</p>
                     </div>
                   </article>
                 ))}

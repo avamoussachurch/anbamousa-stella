@@ -12,9 +12,9 @@ import {
 } from './RoleProfileShared';
 
 const servantPreferences = (lang: Language) => [
-  { field: 'pushNotificationsEnabled' as const, label: lang === 'ar' ? 'التنبيهات داخل التطبيق' : 'In-app notifications', description: lang === 'ar' ? 'تشغيل أو إيقاف تنبيهات Stella داخل التطبيق.' : 'Turn Stella in-app notifications on or off.' },
-  { field: 'notifyLessonCompletion' as const, label: lang === 'ar' ? 'تنبيهات إتمام التعلّم' : 'Learning completion notifications', description: lang === 'ar' ? 'تلقي تحديثات إتمام الدروس عند دعمها.' : 'Receive lesson-completion updates where supported.' },
-  { field: 'notifyEventReminders' as const, label: lang === 'ar' ? 'تذكيرات الفعاليات' : 'Event reminders', description: lang === 'ar' ? 'تلقي تذكيرات الفعاليات الكنسية المتاحة.' : 'Receive reminders for available church events.' },
+  { field: 'pushNotificationsEnabled' as const, label: lang === 'ar' ? 'التنبيهات داخل التطبيق' : 'In-app notifications', description: lang === 'ar' ? 'شغّل أو اقفل تنبيهات التطبيق.' : 'Turn Stella in-app notifications on or off.' },
+  { field: 'notifyLessonCompletion' as const, label: lang === 'ar' ? 'تنبيهات إتمام التعلّم' : 'Learning completion notifications', description: lang === 'ar' ? 'استقبل تحديث لما التلاميذ يكمّلوا الدروس، لما الخاصية تكون متاحة.' : 'Receive lesson-completion updates where supported.' },
+  { field: 'notifyEventReminders' as const, label: lang === 'ar' ? 'تذكيرات الفعاليات' : 'Event reminders', description: lang === 'ar' ? 'استقبل تذكيرات الفعاليات الكنسية المتاحة.' : 'Receive reminders for available church events.' },
 ];
 
 export function ServantAccountProfile({ lang, setLang, onNavigate, onLogout }: RoleProfileProps) {
@@ -31,7 +31,7 @@ export function ServantAccountProfile({ lang, setLang, onNavigate, onLogout }: R
     const result = await getServantAssignedClasses();
     if (result.error || !result.data) {
       setClasses([]);
-      setClassesError(result.error?.message || (isArabic ? 'تعذر تحميل الفصول المسندة.' : 'Could not load assigned classes.'));
+      setClassesError(result.error?.message || (isArabic ? 'مش قادرين نحمّل الفصول اللي مسؤول عنها.' : 'Could not load assigned classes.'));
     } else {
       setClasses(result.data.classes);
     }
@@ -49,7 +49,7 @@ export function ServantAccountProfile({ lang, setLang, onNavigate, onLogout }: R
       lang={lang}
       roleLabel={isArabic ? 'الخادم' : 'Servant'}
       title={isArabic ? 'ملف الخادم' : 'Servant profile'}
-      subtitle={isArabic ? 'بيانات الخدمة والفصول المسندة وتفضيلات حسابك.' : 'Your service identity, assigned classes, and account preferences.'}
+      subtitle={isArabic ? 'بيانات خدمتك والفصول اللي مسؤول عنها وتفضيلات حسابك.' : 'Your service identity, assigned classes, and account preferences.'}
       icon={<GraduationCap size={28} />}
       onLogout={onLogout}
     >
@@ -81,11 +81,11 @@ export function ServantAccountProfile({ lang, setLang, onNavigate, onLogout }: R
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--state-selected)] text-[var(--action-primary)]"><BookOpen size={19} /></span>
             <div>
               <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'الخدمة' : 'Service'}</p>
-              <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'الفصول المسندة' : 'Assigned classes'}</h2>
+              <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'الفصول اللي مسؤول عنها' : 'Assigned classes'}</h2>
             </div>
           </div>
           <button type="button" onClick={() => onNavigate('home')} className="rounded-xl border border-[var(--border-default)] px-3 py-2 text-xs font-black text-[var(--text-primary)] hover:bg-[var(--state-hover)]">
-            {isArabic ? 'فتح مساحة الخادم' : 'Open Servant workspace'}
+            {isArabic ? 'افتح مساحة الخادم' : 'Open Servant workspace'}
           </button>
         </div>
         {classesLoading
@@ -93,10 +93,10 @@ export function ServantAccountProfile({ lang, setLang, onNavigate, onLogout }: R
           : classesError
             ? <div role="alert" className="rounded-xl border border-[var(--feedback-error)]/30 p-4 text-sm text-[var(--feedback-error)]">
               {classesError}
-              <button type="button" onClick={() => void loadClasses()} className="ms-3 inline-flex items-center gap-1 font-bold underline"><RefreshCw size={13} />{isArabic ? 'إعادة المحاولة' : 'Retry'}</button>
+              <button type="button" onClick={() => void loadClasses()} className="ms-3 inline-flex items-center gap-1 font-bold underline"><RefreshCw size={13} />{isArabic ? 'جرّب تاني' : 'Retry'}</button>
             </div>
             : classes.length === 0
-              ? <p className="rounded-xl bg-[var(--surface-secondary)]/60 p-4 text-sm text-[var(--text-secondary)]">{isArabic ? 'لا توجد فصول مسندة للسنة الكنسية النشطة.' : 'No classes are assigned for the active church year.'}</p>
+              ? <p className="rounded-xl bg-[var(--surface-secondary)]/60 p-4 text-sm text-[var(--text-secondary)]">{isArabic ? 'مفيش فصول متسجلة على حسابك في السنة الكنسية الحالية.' : 'No classes are assigned for the active church year.'}</p>
               : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {classes.map(classroom => (
                   <article key={classroom.id} className="flex items-center gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)]/45 p-3">
