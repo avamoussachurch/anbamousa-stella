@@ -471,7 +471,7 @@ export async function getAuthoritativeLeaderboard(options?: {
   studentId?: string;
 }): Promise<{
   success: boolean;
-  classGroupId: string;
+  classGroupId: string | null;
   timeframe: string;
   leaderboard: any[];
   currentUserEntry: any | null;
@@ -507,7 +507,7 @@ export async function getAuthoritativeLeaderboard(options?: {
   } catch (err: any) {
     return {
       success: false,
-      classGroupId: options?.classGroupId || 'primary_2',
+      classGroupId: options?.classGroupId || null,
       timeframe: options?.timeframe || 'weekly',
       leaderboard: [],
       currentUserEntry: null,
