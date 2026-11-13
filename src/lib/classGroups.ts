@@ -452,21 +452,34 @@ export function findCanonicalGrade(rawGrade?: string | null): GradeItem | null {
  * 
  * Defaults gracefully to 'Primary 2' (the project's standard 4th-grade baseline) if unresolvable.
  */
-export function getClassGroupForGrade(grade?: string | null): ClassGroup {
-  const canonical = findCanonicalGrade(grade);
-  if (canonical) {
-    return CLASS_GROUPS[canonical.classGroupId];
+function findClassGroupIdentifier(rawGrade?: string | null): ClassGroup | null {
+  if (!rawGrade || !rawGrade.trim()) return null;
+
+  // Database records may already contain a class-group ID (or a church-year
+  // class-instance ID ending in one). Resolve these before parsing grade numbers:
+  // "primary_2" must never be interpreted as "grade 2".
+  const raw = rawGrade.trim().toLowerCase();
+  const directId = raw.match(/^(angels|primary_1|primary_2|preparatory|secondary|university)$/);
+  const instanceId = raw.match(/(?:^|_)(angels|primary_1|primary_2|preparatory|secondary|university)$/);
+  const groupId = directId?.[1] || instanceId?.[1];
+
+  if (groupId && Object.prototype.hasOwnProperty.call(CLASS_GROUPS, groupId)) {
+    return CLASS_GROUPS[groupId as ClassGroupId];
   }
-  // Default fallback for Sunday School project
-  return CLASS_GROUPS.primary_2;
+
+  const canonical = findCanonicalGrade(rawGrade);
+  return canonical ? CLASS_GROUPS[canonical.classGroupId] : null;
+}
+
+export function getClassGroupForGrade(grade?: string | null): ClassGroup {
+  return findClassGroupIdentifier(grade) || CLASS_GROUPS.primary_2;
 }
 
 /**
  * Safe version of getClassGroupForGrade that returns null if grade is completely unrecognized.
  */
 export function findClassGroupForGrade(grade?: string | null): ClassGroup | null {
-  const canonical = findCanonicalGrade(grade);
-  return canonical ? CLASS_GROUPS[canonical.classGroupId] : null;
+  return findClassGroupIdentifier(grade);
 }
 
 /**
