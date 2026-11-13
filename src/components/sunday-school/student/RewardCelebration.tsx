@@ -46,7 +46,7 @@ export const RewardCelebration: React.FC<RewardCelebrationProps> = ({
   const isAr = lang === 'ar';
 
   const displayTitle = isAr
-    ? titleAr || title || 'أحسنت صنعاً ومبارك الإتمام!'
+    ? titleAr || title || 'برافو عليك! كملت المهمة بنجاح!'
     : title || titleAr || 'Outstanding Achievement!';
 
   const displaySubtitle = isAr
