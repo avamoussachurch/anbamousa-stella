@@ -3,22 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { BottomNav } from './components/layout/BottomNav';
 import { TopBar } from './components/layout/TopBar';
 import { WorkspaceSidebar } from './components/layout/WorkspaceSidebar';
-import { HomeTab } from './components/student/HomeTab';
-import { LessonsTab } from './components/student/LessonsTab';
-import { PointsTab } from './components/student/PointsTab';
-import { FeedTab } from './components/student/FeedTab';
-import { ProfileTab } from './components/student/ProfileTab';
-import { LessonView } from './components/student/LessonView';
-import { TeacherDashboard } from './components/teacher/TeacherDashboard';
-import { ParentDashboard } from './components/parent/ParentDashboard';
-import { CopticCalendarTab } from './components/coptic/CopticCalendarTab';
-import { HymnsSchoolTab } from './components/hymns/HymnsSchoolTab';
-import { CopticTaxisTab } from './components/taxis/CopticTaxisTab';
-import { AgpeyaPrayerTab } from './components/agpeya/AgpeyaPrayerTab';
 import { LoginScreen } from './components/auth/LoginScreen';
-import { StudentOnboardingModal } from './components/auth/StudentOnboardingModal';
-import { AdminWorkspace } from './components/admin/AdminWorkspace';
-import { RoleAccountProfile } from './components/profile/RoleAccountProfile';
 import { OfflineIndicator } from './components/layout/OfflineIndicator';
 import { AnbaMousaSplashScreen } from './components/layout/AnbaMousaSplashScreen';
 import { AmbientWorld } from './components/layout/AmbientWorld';
@@ -30,6 +15,34 @@ import { WorkspaceProvider } from './context/WorkspaceContext';
 import { Language } from './types';
 import { applyLanguagePreference } from './lib/uiPreferences';
 import { canAccessWorkspace, canAccessWorkspaceTab, hasRole, resolveWorkspace, type Workspace } from './lib/workspaces';
+
+// Keep the entry bundle focused on authentication and shared navigation.
+// Role workspaces and feature tabs are downloaded only when the user opens them.
+const HomeTab = React.lazy(() => import('./components/student/HomeTab').then(module => ({ default: module.HomeTab })));
+const LessonsTab = React.lazy(() => import('./components/student/LessonsTab').then(module => ({ default: module.LessonsTab })));
+const PointsTab = React.lazy(() => import('./components/student/PointsTab').then(module => ({ default: module.PointsTab })));
+const FeedTab = React.lazy(() => import('./components/student/FeedTab').then(module => ({ default: module.FeedTab })));
+const ProfileTab = React.lazy(() => import('./components/student/ProfileTab').then(module => ({ default: module.ProfileTab })));
+const LessonView = React.lazy(() => import('./components/student/LessonView').then(module => ({ default: module.LessonView })));
+const TeacherDashboard = React.lazy(() => import('./components/teacher/TeacherDashboard').then(module => ({ default: module.TeacherDashboard })));
+const ParentDashboard = React.lazy(() => import('./components/parent/ParentDashboard').then(module => ({ default: module.ParentDashboard })));
+const CopticCalendarTab = React.lazy(() => import('./components/coptic/CopticCalendarTab').then(module => ({ default: module.CopticCalendarTab })));
+const HymnsSchoolTab = React.lazy(() => import('./components/hymns/HymnsSchoolTab').then(module => ({ default: module.HymnsSchoolTab })));
+const CopticTaxisTab = React.lazy(() => import('./components/taxis/CopticTaxisTab').then(module => ({ default: module.CopticTaxisTab })));
+const AgpeyaPrayerTab = React.lazy(() => import('./components/agpeya/AgpeyaPrayerTab').then(module => ({ default: module.AgpeyaPrayerTab })));
+const StudentOnboardingModal = React.lazy(() => import('./components/auth/StudentOnboardingModal').then(module => ({ default: module.StudentOnboardingModal })));
+const AdminWorkspace = React.lazy(() => import('./components/admin/AdminWorkspace').then(module => ({ default: module.AdminWorkspace })));
+const RoleAccountProfile = React.lazy(() => import('./components/profile/RoleAccountProfile').then(module => ({ default: module.RoleAccountProfile })));
+
+function WorkspaceLoadingFallback({ lang }: { lang: Language }) {
+  return (
+    <div role="status" aria-live="polite" className="mx-auto flex min-h-[35vh] w-full items-center justify-center gap-3 p-6 text-center text-[var(--text-ink)]">
+      <span aria-hidden="true" className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-church-gold)] border-t-transparent" />
+      <span>{lang === 'ar' ? 'بنجهّز الصفحة...' : 'Preparing this page...'}</span>
+    </div>
+  );
+}
+
 
 function AppContent() {
   const { userData, loading, logout } = useAuth();
@@ -379,13 +392,16 @@ function AppContent() {
           transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
           className="min-w-0"
         >
-          {renderMainContent()}
+          <React.Suspense fallback={<WorkspaceLoadingFallback lang={lang} />}>
+            {renderMainContent()}
+          </React.Suspense>
         </motion.div>
       </div>
       </div>
       </div>
 
       {/* Student First-Login & Onboarding Modal */}
+      <React.Suspense fallback={null}>
       {showStudentOnboardingModal && (
         <StudentOnboardingModal
           isOpen={showStudentOnboardingModal}
@@ -404,6 +420,7 @@ function AppContent() {
           }}
         />
       )}
+      </React.Suspense>
 
       {/* Unified Bottom Nav: Always accessible across all tabs, hidden during active full-screen lesson */}
       {!activeLessonId && (
