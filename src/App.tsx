@@ -28,7 +28,7 @@ import { LessonsProvider } from './context/LessonsContext';
 import { PointsProvider } from './context/PointsContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { Language } from './types';
-import { applyLanguagePreference, getLanguageDirection } from './lib/uiPreferences';
+import { applyLanguagePreference } from './lib/uiPreferences';
 import { canAccessWorkspace, canAccessWorkspaceTab, hasRole, resolveWorkspace, type Workspace } from './lib/workspaces';
 
 function AppContent() {
@@ -276,7 +276,7 @@ function AppContent() {
 
   if (userData.roles.length === 0 || !activeWorkspace) {
     return (
-      <div dir={getLanguageDirection(lang)} className="min-h-screen flex items-center justify-center bg-[var(--color-church-cream)] p-6">
+      <div dir="rtl" className="min-h-screen flex items-center justify-center bg-[var(--color-church-cream)] p-6">
         <div className="max-w-md rounded-3xl border bg-white p-6 text-center shadow-xl">
           <h1 className="text-xl font-black">{lang === 'ar' ? 'لا توجد مساحة عمل متاحة' : 'No workspace available'}</h1>
           <p className="mt-3 text-sm text-slate-600">{lang === 'ar' ? 'تعذر التحقق من أدوار الحساب. أعد المحاولة أو سجّل الخروج.' : 'Assigned roles could not be verified. Retry or sign out.'}</p>
@@ -292,7 +292,7 @@ function AppContent() {
     <LessonsProvider>
     <PointsProvider>
     <div 
-      dir={getLanguageDirection(lang)}
+      dir="rtl"
       className="min-h-screen relative isolate bg-[var(--color-church-cream)] pb-safe overflow-x-hidden selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
     >
       <AmbientWorld variant="app" />

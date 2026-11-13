@@ -10,7 +10,7 @@ import { createStorageReference, parseStorageReference } from "./src/lib/mediaSt
 import { hymnFromDatabase, hymnToDatabase, taxisFromDatabase, taxisToDatabase } from "./src/lib/hymnsTaxisPersistence";
 import { canEditOwnedTaxisItem, canManageHymnsTaxis, canPublishOwnedTaxisItem, canReadHymnsTaxis, canReviewTaxisItem } from "./src/lib/hymnsTaxisAuthorization";
 import { randomUUID } from "crypto";
-import { findCanonicalGrade } from "./src/lib/classGroups";
+import { findCanonicalGrade, findClassGroupForGrade } from "./src/lib/classGroups";
 import { mergeStudentLessonProgress } from "./src/lib/teacherProgressSummary";
 
 const app = express();
@@ -3415,6 +3415,8 @@ function loadPersistentClassState() {
 function getClassGroupIdForGrade(grade?: string | null): string {
   if (!grade) return 'primary_2';
   const g = grade.toLowerCase().trim();
+  const resolvedGroup = findClassGroupForGrade(g);
+  if (resolvedGroup) return resolvedGroup.id;
   if (g.includes('kg') || g.includes('kindergarten') || g.includes('حضانة') || g.includes('كي جي')) return 'angels';
   
   // Primary 1–3
@@ -5655,26 +5657,9 @@ function classGroupForLessonGrade(grade: string): string | null {
     return first.classGroupId;
   }
 
-  // Use the same canonical grade resolver as curriculum authoring and student
-  // enrollment. This accepts persisted lesson labels, Arabic aliases, ordinal
-  // labels, and canonical grade IDs consistently.
-  const canonical = findCanonicalGrade(grade);
-  if (canonical) return canonical.classGroupId;
-
-  // Also accept an already-resolved class group identifier or display label.
-  const normalized = grade.trim().toLowerCase().replace(/[_–—-]+/g, ' ').replace(/\s+/g, ' ');
-  const directGroups: Record<string, string> = {
-    angels: 'angels',
-    'primary 1': 'primary_1',
-    primary_1: 'primary_1',
-    'primary 2': 'primary_2',
-    primary_2: 'primary_2',
-    preparatory: 'preparatory',
-    secondary: 'secondary',
-    university: 'university',
-    youth: 'university'
-  };
-  return directGroups[normalized] || null;
+  // Resolve stable class-group IDs before parsing grade numbers. In
+  // particular, "primary_2" is a group ID, not Grade 2.
+  return findClassGroupForGrade(grade)?.id || null;
 }
 
 interface ProgressLessonVersion {
