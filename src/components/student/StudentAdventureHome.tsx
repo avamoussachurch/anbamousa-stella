@@ -81,7 +81,7 @@ function JourneyPath({
       <div className="relative z-10 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[.2em] text-[#E8C574]">
-            {isArabic ? 'طريقك في البرية' : 'Your learning trail'}
+            {isArabic ? 'رحلتك في البرية' : 'Your learning trail'}
           </p>
           <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">
             {isArabic ? 'رحلة الأنبا موسى' : 'The Journey of Moses'}
@@ -155,7 +155,7 @@ function JourneyPath({
                             ? (isArabic ? 'درسك التالي' : 'Up next')
                             : isLocked
                               ? (isArabic ? 'مقفل — أكمل الدرس السابق' : 'Locked — finish the previous lesson')
-                              : (isArabic ? 'متاح للتعلم' : 'Ready to explore')}
+                              : (isArabic ? 'جاهز تبدأه' : 'Ready to explore')}
                       </span>
                     </span>
                     <ArrowUpRight size={14} className="ms-auto shrink-0 text-slate-500 sm:hidden" />
@@ -168,7 +168,7 @@ function JourneyPath({
       ) : (
         <div className="mt-5 rounded-2xl border border-white/10 bg-white/[.04] p-4 text-sm leading-relaxed text-slate-300">
           {isArabic
-            ? 'ستظهر محطات رحلتك هنا عندما يصبح منهج فصلك متاحاً.'
+            ? 'محطات رحلتك هتظهر هنا أول ما منهج فصلك يبقى متاح.'
             : 'Your journey stops will appear here when your class curriculum is available.'}
         </div>
       )}
@@ -193,7 +193,7 @@ function FeedPreview({
     fetchFeedPostsFromSupabase().then(result => {
       if (!active) return;
       if (result.error || !result.data) {
-        setError(result.error?.message || (isArabic ? 'تعذر تحميل المنشورات.' : 'Posts are unavailable right now.'));
+        setError(result.error?.message || (isArabic ? 'مش قادرين نحمّل المنشورات دلوقتي.' : 'Posts are unavailable right now.'));
         setPosts([]);
       } else {
         setPosts(result.data.slice(0, 2));
@@ -201,7 +201,7 @@ function FeedPreview({
       setLoading(false);
     }).catch(reason => {
       if (!active) return;
-      setError(reason instanceof Error ? reason.message : (isArabic ? 'تعذر تحميل المنشورات.' : 'Posts are unavailable right now.'));
+      setError(reason instanceof Error ? reason.message : (isArabic ? 'مش قادرين نحمّل المنشورات دلوقتي.' : 'Posts are unavailable right now.'));
       setPosts([]);
       setLoading(false);
     });
@@ -228,18 +228,18 @@ function FeedPreview({
       <div className="mt-4 space-y-3">
         {loading ? (
           <div role="status" className="flex items-center gap-2 rounded-xl bg-white/[.04] p-4 text-sm text-slate-300">
-            <LoaderCircle size={16} className="animate-spin" /> {isArabic ? 'جاري تحميل المنشورات...' : 'Loading community posts…'}
+            <LoaderCircle size={16} className="animate-spin" /> {isArabic ? 'بنحمّل المنشورات...' : 'Loading community posts…'}
           </div>
         ) : error ? (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#765640] bg-[#34291F] p-4 text-sm text-[#F0D8B8]">
-            <span>{isArabic ? 'المنشورات غير متاحة حالياً.' : 'Community posts are unavailable right now.'}</span>
+            <span>{isArabic ? 'المنشورات مش متاحة دلوقتي.' : 'Community posts are unavailable right now.'}</span>
             <button type="button" onClick={() => setReload(value => value + 1)} className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2 font-bold hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
               <RefreshCw size={14} /> {isArabic ? 'إعادة المحاولة' : 'Try again'}
             </button>
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-xl border border-white/10 bg-white/[.035] p-4 text-sm text-slate-300">
-            {isArabic ? 'لا توجد منشورات جديدة بعد. كن أول من يشارك!' : 'No community posts yet. Check back soon.'}
+            {isArabic ? 'لسه مفيش منشورات جديدة. خليك أول واحد يشارك!' : 'No community posts yet. Check back soon.'}
           </div>
         ) : posts.map(post => (
           <button
@@ -322,11 +322,11 @@ export function StudentAdventureHome({
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#79CDD0]/25 bg-[#14313D]/80 px-3 py-1.5 text-[11px] font-black text-[#A7DCD7] backdrop-blur">
               <Sparkles size={13} className="text-[#F5D98C]" />
-              {isArabic ? 'مغامرة تعلمك تبدأ من هنا' : 'Your next chapter starts here'}
+              {isArabic ? 'مغامرتك التعليمية بتبدأ من هنا' : 'Your next chapter starts here'}
             </span>
             {isGuest && (
               <span className="ms-2 inline-flex items-center rounded-full border border-[#E5B85F]/35 bg-[#392F1E]/80 px-3 py-1.5 text-[10px] font-extrabold text-[#F5D98C]">
-                {isArabic ? 'معاينة ضيف · بيانات تجريبية' : 'Guest preview · demo data'}
+                {isArabic ? 'نسخة تجريبية للضيف' : 'Guest preview · demo data'}
               </span>
             )}
             <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight sm:text-5xl">
@@ -335,7 +335,7 @@ export function StudentAdventureHome({
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#D1E0E2] sm:text-base">
               {isArabic
-                ? 'خطوة وراء خطوة، اكتشف حكايات الإيمان وامشِ في درب الأنبا موسى.'
+                ? 'خطوة ورا خطوة، اكتشف حكايات الإيمان وكمّل رحلتك مع الأنبا موسى.'
                 : 'Follow the lanterns, discover stories of faith, and walk the path of St. Moses.'}
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
@@ -353,10 +353,10 @@ export function StudentAdventureHome({
               <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#9BB9BE]">{isArabic ? 'محطات الرحلة' : 'Journey progress'}</p>
               <p className="mt-0.5 text-sm font-black text-white">
                 {curriculumLoading
-                  ? (isArabic ? 'جاري تحميل المنهج' : 'Loading curriculum')
+                  ? (isArabic ? 'بنحمّل المنهج' : 'Loading curriculum')
                   : totalLessons > 0
                     ? `${completedLessons.length} / ${totalLessons} · ${progress}%`
-                    : (isArabic ? 'في انتظار المنهج' : 'Curriculum pending')}
+                    : (isArabic ? 'مستنيين المنهج' : 'Curriculum pending')}
               </p>
             </div>
           </div>
@@ -369,12 +369,12 @@ export function StudentAdventureHome({
           <div className="relative flex h-full flex-col">
             <div className="flex items-center gap-2 text-[#F5D98C]">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#29424B]"><BookOpen size={18} /></span>
-              <span className="text-[11px] font-black uppercase tracking-[.18em]">{isArabic ? 'محطتك التالية' : 'Your next lesson'}</span>
+              <span className="text-[11px] font-black uppercase tracking-[.18em]">{isArabic ? 'درسك الجاي' : 'Your next lesson'}</span>
             </div>
             {curriculumLoading ? (
               <div role="status" className="flex min-h-40 flex-1 flex-col items-center justify-center gap-3 text-sm text-slate-300">
                 <LoaderCircle className="animate-spin text-[#F5D98C]" size={25} />
-                {isArabic ? 'نبحث عن محطتك التالية...' : 'Finding your next lesson…'}
+                {isArabic ? 'نبحث عن درسك الجاي...' : 'Finding your next lesson…'}
               </div>
             ) : curriculumError ? (
               <div className="mt-5 flex flex-1 flex-col items-start justify-center gap-3">
@@ -390,14 +390,14 @@ export function StudentAdventureHome({
                     {nextLesson.category === 'hymns' ? (isArabic ? 'ألحان' : 'Hymns') : nextLesson.category === 'history' ? (isArabic ? 'تاريخ الكنيسة' : 'Church history') : (isArabic ? 'مدرسة الأحد' : 'Sunday School')}
                   </span>
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                    <Clock3 size={12} /> {isArabic ? 'درس من منهج فصلك' : 'From your class curriculum'}
+                    <Clock3 size={12} /> {isArabic ? 'من منهج فصلك' : 'From your class curriculum'}
                   </span>
                 </div>
                 <h2 className="mt-4 text-2xl font-black leading-tight sm:text-3xl">{lessonTitle}</h2>
                 <p className="mt-2 line-clamp-3 max-w-2xl text-sm leading-relaxed text-slate-300">{lessonSummary}</p>
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <button type="button" onClick={() => onNavigate('lessons', nextLesson.id)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#E5B85F] px-5 text-sm font-black text-[#13252D] shadow-lg shadow-black/20 transition hover:bg-[#F0CC7D] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5D98C]">
-                    {isArabic ? 'ابدأ الدرس' : 'Begin lesson'} <ChevronRight size={17} className={isArabic ? 'rotate-180' : ''} />
+                    {isArabic ? 'يلا نبدأ الدرس' : 'Begin lesson'} <ChevronRight size={17} className={isArabic ? 'rotate-180' : ''} />
                   </button>
                   <button type="button" onClick={() => onNavigate('lessons')} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-bold text-slate-300 transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
                     {isArabic ? 'كل الدروس' : 'All lessons'} <ArrowUpRight size={14} />
@@ -407,7 +407,7 @@ export function StudentAdventureHome({
             ) : (
               <div className="mt-5 flex flex-1 flex-col items-start justify-center">
                 <span className="text-3xl" aria-hidden="true">🏜️</span>
-                <h2 className="mt-3 text-xl font-black">{isArabic ? 'الطريق جاهز لك' : 'Your path is waiting'}</h2>
+                <h2 className="mt-3 text-xl font-black">{isArabic ? 'رحلتك مستنياك' : 'Your path is waiting'}</h2>
                 <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-300">
                   {totalLessons > 0
                     ? (isArabic ? 'أكملت كل الدروس المتاحة في منهج فصلك. عد لاحقاً لمحطات جديدة.' : 'You have completed every available class lesson. Come back for new stops.')
@@ -415,14 +415,14 @@ export function StudentAdventureHome({
                 </p>
                 {!totalLessons && (
                   <button type="button" onClick={() => onNavigate('lessons')} className="mt-4 min-h-10 rounded-xl border border-white/15 px-4 text-sm font-bold text-white hover:bg-white/5">
-                    {isArabic ? 'استكشف مكتبة الدروس' : 'Explore lessons'}
+                    {isArabic ? 'اكتشف مكتبة الدروس' : 'Explore lessons'}
                   </button>
                 )}
               </div>
             )}
             {nextLesson?.pointsAvailable ? (
               <p className="mt-5 border-t border-white/10 pt-3 text-[11px] font-semibold text-slate-400">
-                {isArabic ? 'نقاط متاحة عند إكمال الدرس بنجاح' : 'Points are awarded after successful lesson completion'}
+                {isArabic ? 'هتكسب نقاط لما تكمّل الدرس' : 'Points are awarded after successful lesson completion'}
               </p>
             ) : null}
           </div>
@@ -432,8 +432,8 @@ export function StudentAdventureHome({
           <div className="flex-1 rounded-[1.75rem] border border-[#31505B] bg-gradient-to-br from-[#163543] to-[#10232E] p-5 text-white shadow-xl sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#9ACDCB]">{isArabic ? 'تقدمك الحقيقي' : 'Your real progress'}</p>
-                <h2 className="mt-1 text-lg font-black">{isArabic ? 'رحلة التعلم' : 'Learning journey'}</h2>
+                <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#9ACDCB]">{isArabic ? 'تقدمك' : 'Your real progress'}</p>
+                <h2 className="mt-1 text-lg font-black">{isArabic ? 'رحلة التعلّم' : 'Learning journey'}</h2>
               </div>
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#24535A] text-[#F5D98C]"><Trophy size={19} /></span>
             </div>
@@ -450,13 +450,13 @@ export function StudentAdventureHome({
                   <p className="text-4xl font-black tabular-nums">{progress}<span className="ms-1 text-xl text-[#A7C6C9]">%</span></p>
                   <p className="pb-1 text-xs font-bold text-[#C3D7D9]">{completedLessons.length} / {totalLessons} {isArabic ? 'دروس' : 'lessons'}</p>
                 </div>
-                <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#091A23]" role="progressbar" aria-label={isArabic ? 'تقدم الدروس' : 'Lesson progress'} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+                <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#091A23]" role="progressbar" aria-label={isArabic ? 'تقدّمك في الدروس' : 'Lesson progress'} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
                   <div className="h-full rounded-full bg-gradient-to-r from-[#4BB79D] to-[#E5B85F] transition-[width] duration-700" style={{ width: `${progress}%` }} />
                 </div>
                 <p className="mt-3 text-xs leading-relaxed text-[#B8CDD0]">
                   {completedLessons.length > 0
                     ? (isArabic ? `أحسنت! أتممت ${completedLessons.length} ${completedLessons.length === 1 ? 'درس' : 'دروس'} في رحلتك.` : `Well done — ${completedLessons.length} ${completedLessons.length === 1 ? 'lesson' : 'lessons'} completed on your trail.`)
-                    : (isArabic ? 'ابدأ أولى خطواتك في رحلة التعلم.' : 'Take your first step on the learning trail.')}
+                    : (isArabic ? 'ابدأ أولى خطواتك في رحلة التعلّم.' : 'Take your first step on the learning trail.')}
                 </p>
               </>
             ) : (
@@ -468,7 +468,7 @@ export function StudentAdventureHome({
           <button type="button" onClick={() => onNavigate('points')} className="flex min-h-[76px] items-center justify-between gap-3 rounded-[1.5rem] border border-[#5C4E37] bg-[#29291F] px-5 py-4 text-start text-white transition hover:border-[#E5B85F]/70 hover:bg-[#323126] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
             <span className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6A542E] text-[#FFE29B]"><Star size={18} className="fill-current" /></span>
-              <span><span className="block text-xs font-black">{isArabic ? 'رصيد نقاطك' : 'Your points'}</span><span className="block text-[10px] text-[#C5B99E]">{isArabic ? 'افتح صفحة إنجازاتك' : 'View your achievements'}</span></span>
+              <span><span className="block text-xs font-black">{isArabic ? 'نقاطك' : 'Your points'}</span><span className="block text-[10px] text-[#C5B99E]">{isArabic ? 'شوف إنجازاتك' : 'View your achievements'}</span></span>
             </span>
             <span className="text-lg font-black tabular-nums text-[#F5D98C]">{user.points}<ArrowUpRight size={14} className="ms-1 inline" /></span>
           </button>
