@@ -7085,13 +7085,18 @@ app.get("/api/church/leaderboard", async (req, res) => {
         return left.studentName.localeCompare(right.studentName);
       });
       entries.forEach((entry: any, index: number) => { entry.rank = index + 1; });
+      const currentUserEntry = entries.find((entry: any) => entry.studentId === authContext.userId) || null;
+      const leaderboard = entries.slice(0, 20);
+      if (currentUserEntry && !leaderboard.some((entry: any) => entry.studentId === currentUserEntry.studentId)) {
+        leaderboard.push(currentUserEntry);
+      }
 
       return res.json({
         success: true,
         classGroupId: effectiveClassGroup,
         timeframe,
-        leaderboard: entries,
-        currentUserEntry: entries.find((entry: any) => entry.studentId === authContext.userId) || null,
+        leaderboard,
+        currentUserEntry,
         totalParticipants: entries.length,
         cairoDate: todayCairo,
         cairoWeekReset
