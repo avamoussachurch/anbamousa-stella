@@ -2416,11 +2416,11 @@ test('authenticated student leaderboard uses only the active Supabase class rost
   );
   persistedProfiles.set(studentId, {
     id: studentId, name: 'Current Student', avatar: null, grade: 'Grade 6',
-    points: 200, current_streak: 3, longest_streak: 5
+    points: 200, current_streak: 7, longest_streak: 8
   });
   persistedProfiles.set(peerId, {
     id: peerId, name: 'Classmate', avatar: null, grade: 'Grade 6',
-    points: 260, current_streak: 4, longest_streak: 6
+    points: 260, current_streak: 2, longest_streak: 3
   });
   persistedLessonProgress.set(`${studentId}:${studentLessonId}`, {
     student_id: studentId, lesson_id: studentLessonId, completed: true,
@@ -2444,6 +2444,8 @@ test('authenticated student leaderboard uses only the active Supabase class rost
   assert.equal(payload.leaderboard[1].studentId, studentId);
   assert.equal(payload.leaderboard[1].pointsThisWeek, 40);
   assert.equal(payload.currentUserEntry.studentId, studentId);
+  assert.equal(payload.streakLeaderboard[0].studentId, studentId);
+  assert.equal(payload.streakLeaderboard[0].streakDays, 7);
   assert.equal(payload.leaderboard.some(entry => entry.studentId === 'mark'), false);
 
   const forbidden = await request('/api/church/leaderboard?classGroupId=preparatory', {
