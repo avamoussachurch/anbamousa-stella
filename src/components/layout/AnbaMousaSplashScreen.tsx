@@ -1,5 +1,5 @@
 import React from 'react';
-import { Church, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import type { Language } from '../../types';
 
@@ -15,7 +15,7 @@ export const AnbaMousaSplashScreen: React.FC<AnbaMousaSplashScreenProps> = ({ la
     <main
       role="status"
       aria-live="polite"
-      aria-label={isAr ? 'بنجهّز أنبا موسى' : 'Loading Anba Mousa'}
+      aria-label={isAr ? 'بنجهّز أنبا موسى' : 'Loading Anba Moussa'}
       className="min-h-[100svh] w-full overflow-hidden flex items-center justify-center px-6 py-10 bg-[radial-gradient(ellipse_at_top,_#1D4650_0%,_#102A34_58%,_#0B2029_100%)] text-[#FFF9ED]"
     >
       <div className="relative w-full max-w-sm text-center">
@@ -40,7 +40,7 @@ export const AnbaMousaSplashScreen: React.FC<AnbaMousaSplashScreenProps> = ({ la
           transition={{ duration: reduceMotion ? 0 : 0.45, ease: 'easeOut' }}
           className="relative mx-auto mb-7 flex h-24 w-24 items-center justify-center rounded-[1.8rem] border-2 border-[#D6B66D] bg-[#F6EBD1] text-[#173B45] shadow-[0_0_0_7px_rgba(214,182,109,0.12),0_18px_48px_rgba(0,0,0,0.28)]"
         >
-          <Church className="h-12 w-12" strokeWidth={1.7} />
+          <img src="/icon.svg" alt="Bishop Moussa holding a cross" className="h-full w-full rounded-[1.55rem] object-cover" />
           <span className="absolute -bottom-2 -end-2 flex h-8 w-8 items-center justify-center rounded-xl border-2 border-[#173B45] bg-[#D6B66D] text-lg font-black text-[#173B45]">✥</span>
         </motion.div>
 
@@ -50,7 +50,7 @@ export const AnbaMousaSplashScreen: React.FC<AnbaMousaSplashScreenProps> = ({ la
           transition={{ duration: reduceMotion ? 0 : 0.4, delay: reduceMotion ? 0 : 0.12 }}
         >
           <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.34em] text-[#D6B66D]">Coptic Orthodox Learning</p>
-          <h1 className="text-4xl font-black tracking-tight text-[#FFF9ED]">Anba Mousa</h1>
+          <h1 className="text-4xl font-black tracking-tight text-[#FFF9ED]">Anba Moussa</h1>
           <p className="mt-3 text-sm font-semibold text-[#DCE9E3]">
             {isAr ? 'نكبر في الإيمان ونتعلّم بالمحبة' : 'Growing in Faith, Learning in Love'}
           </p>
