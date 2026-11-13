@@ -7233,23 +7233,114 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     }
     const targetStudentId = authContext.userId;
 
-    // Version safety check
-    let lessonRecord = serverReviewState.lessons[lessonId];
-    let targetVersion = serverReviewState.versions[versionId];
+    // Resolve the lesson and version from authoritative Supabase records in production.
+    // serverReviewState is a legacy/demo cache and is not populated from the live curriculum,
+    // so it must never decide whether a real UUID lesson exists or which quiz is active.
+    let lessonRecord: any = null;
+    let targetVersion: any = null;
 
-    if (!lessonRecord || !targetVersion) {
-      if (lessonId === 'l-cross-01' || lessonId.startsWith('test-') || lessonId.startsWith('l-step4-')) {
-        const ensured = ensurePublishedLessonAndVersion(lessonId, versionId);
-        lessonRecord = ensured.lessonRecord;
-        targetVersion = ensured.targetVersion;
-      } else if (!lessonRecord) {
-        return res.status(404).json({ success: false, error: "LESSON_NOT_FOUND", message: `Lesson ${lessonId} not found.` });
-      } else {
-        return res.status(404).json({ success: false, error: "VERSION_NOT_FOUND", message: `Version ${versionId} not found.` });
+    if (process.env.NODE_ENV === 'test') {
+      lessonRecord = serverReviewState.lessons[lessonId];
+      targetVersion = serverReviewState.versions[versionId];
+      if (!lessonRecord || !targetVersion) {
+        if (lessonId === 'l-cross-01' || lessonId.startsWith('test-') || lessonId.startsWith('l-step4-')) {
+          const ensured = ensurePublishedLessonAndVersion(lessonId, versionId);
+          lessonRecord = ensured.lessonRecord;
+          targetVersion = ensured.targetVersion;
+        }
       }
+    } else {
+      let trustedClient;
+      try {
+        trustedClient = getTrustedServiceClient(
+          'Quiz submission is unavailable because secure curriculum database access is not configured.'
+        );
+      } catch (error: any) {
+        return res.status(503).json({
+          success: false,
+          error: "QUIZ_PERSISTENCE_NOT_CONFIGURED",
+          message: error?.message || "Secure quiz persistence is not configured."
+        });
+      }
+
+      const { data: lessonRow, error: lessonError } = await trustedClient
+        .from('lessons')
+        .select('id, active_version_id, grade_level, status, lesson_status')
+        .eq('id', lessonId)
+        .maybeSingle();
+
+      if (lessonError) {
+        console.error('Quiz lesson lookup failed:', lessonError.message);
+        return res.status(500).json({
+          success: false,
+          error: "CURRICULUM_LOOKUP_FAILED",
+          message: "Could not verify the published lesson. Please try again."
+        });
+      }
+      if (!lessonRow) {
+        return res.status(404).json({
+          success: false,
+          error: "LESSON_NOT_FOUND",
+          message: "This lesson is no longer available. Return to the lessons list and open it again."
+        });
+      }
+
+      const { data: versionRow, error: versionError } = await trustedClient
+        .from('lesson_versions')
+        .select('id, lesson_id, status, quiz_draft')
+        .eq('id', versionId)
+        .eq('lesson_id', lessonId)
+        .maybeSingle();
+
+      if (versionError) {
+        console.error('Quiz version lookup failed:', versionError.message);
+        return res.status(500).json({
+          success: false,
+          error: "CURRICULUM_LOOKUP_FAILED",
+          message: "Could not verify this lesson version. Please try again."
+        });
+      }
+      if (!versionRow) {
+        return res.status(404).json({
+          success: false,
+          error: "VERSION_NOT_FOUND",
+          message: "This lesson version is no longer available. Reopen the lesson and try again."
+        });
+      }
+
+      const lessonStatus = String(lessonRow.status || lessonRow.lesson_status || '').toLowerCase();
+      lessonRecord = {
+        id: lessonRow.id,
+        active_version_id: lessonRow.active_version_id,
+        status: lessonStatus,
+        grade: lessonRow.grade_level,
+        classGroupId: classGroupForLessonGrade(lessonRow.grade_level) ||
+          getClassGroupIdForGrade(lessonRow.grade_level)
+      };
+      targetVersion = {
+        id: versionRow.id,
+        lessonId: versionRow.lesson_id,
+        status: versionRow.status,
+        quizDraft: versionRow.quiz_draft
+      };
     }
 
-    // Version must belong to lesson
+    if (!lessonRecord) {
+      return res.status(404).json({ success: false, error: "LESSON_NOT_FOUND", message: `Lesson ${lessonId} not found.` });
+    }
+    if (!targetVersion) {
+      return res.status(404).json({ success: false, error: "VERSION_NOT_FOUND", message: `Version ${versionId} not found.` });
+    }
+
+    if (String(lessonRecord.status || '').toLowerCase() !== 'published' ||
+        lessonRecord.active_version_id !== versionId) {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_VERSION",
+        message: `Version ${versionId} is not the active published version of lesson ${lessonId}.`
+      });
+    }
+
     if (targetVersion.lessonId && targetVersion.lessonId !== lessonId) {
       return res.status(400).json({
         success: false,
@@ -7258,16 +7349,6 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       });
     }
 
-    // Version must be the active published version
-    if (lessonRecord.active_version_id !== versionId) {
-      return res.status(400).json({
-        success: false,
-        error: "INVALID_VERSION",
-        message: `Version ${versionId} is not the active published version of lesson ${lessonId}.`
-      });
-    }
-
-    // Status MUST be 'PUBLISHED'
     if (targetVersion.status !== 'PUBLISHED') {
       return res.status(400).json({
         success: false,
@@ -7276,8 +7357,17 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       });
     }
 
+    const access = checkStudentLessonAccess(targetStudentId, lessonRecord);
+    if (!access.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN_CLASS_ACCESS",
+        message: access.reason || "Quiz is restricted to another class."
+      });
+    }
+
     const quizDraft = targetVersion.quizDraft;
-    if (!quizDraft || !quizDraft.questions || quizDraft.questions.length === 0) {
+    if (!quizDraft || !Array.isArray(quizDraft.questions) || quizDraft.questions.length === 0) {
       return res.status(404).json({
         success: false,
         error: "QUIZ_NOT_FOUND",
