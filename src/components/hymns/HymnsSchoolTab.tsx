@@ -28,6 +28,7 @@ import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
 import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
+import { InAppDocumentViewer } from '../sunday-school/viewers/InAppDocumentViewer';
 
 export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isAr = lang === 'ar';
@@ -42,6 +43,10 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
   const [resolvedSheetMusicUrl, setResolvedSheetMusicUrl] = useState('');
   const [audioUrlError, setAudioUrlError] = useState<string | null>(null);
+  const [sheetMusicUrlError, setSheetMusicUrlError] = useState<string | null>(null);
+  const [isResolvingSheetMusic, setIsResolvingSheetMusic] = useState(false);
+  const [showSheetMusicViewer, setShowSheetMusicViewer] = useState(false);
+  const [audioPlaybackError, setAudioPlaybackError] = useState<string | null>(null);
 
   // Audio Playback
   const [isPlaying, setIsPlaying] = useState(false);
@@ -113,11 +118,16 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   useEffect(() => {
     let active = true;
     setResolvedSheetMusicUrl('');
-    const reference = selectedHymn?.sheetMusicUrl || selectedHymn?.pdfUrl;
-    if (!reference) return () => { active = false; };
+    setSheetMusicUrlError(null);
+    const reference = selectedHymn?.pdfUrl || selectedHymn?.sheetMusicUrl;
+    if (!reference) { setIsResolvingSheetMusic(false); return () => { active = false; }; }
+    setIsResolvingSheetMusic(true);
     resolveCurriculumMediaUrl(reference)
       .then(url => { if (active) setResolvedSheetMusicUrl(url); })
-      .catch(() => { if (active) setResolvedSheetMusicUrl(''); });
+      .catch(error => {
+        if (active) setSheetMusicUrlError(error instanceof Error ? error.message : 'PDF could not be opened.');
+      })
+      .finally(() => { if (active) setIsResolvingSheetMusic(false); });
     return () => { active = false; };
   }, [selectedHymn?.id, selectedHymn?.sheetMusicUrl, selectedHymn?.pdfUrl]);
 
@@ -140,14 +150,20 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     }
   }, [playbackSpeed]);
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
+  const togglePlay = async () => {
+    if (!audioRef.current || !resolvedAudioUrl) return;
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
-    } else {
-      audioRef.current.play().catch(e => console.warn(e));
+      return;
+    }
+    setAudioPlaybackError(null);
+    try {
+      await audioRef.current.play();
       setIsPlaying(true);
+    } catch (error) {
+      setIsPlaying(false);
+      setAudioPlaybackError(error instanceof Error ? error.message : (isAr ? 'مش قادرين نشغّل التسجيل ده.' : 'This audio could not be played.'));
     }
   };
 
@@ -463,21 +479,38 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 ref={audioRef}
                 src={resolvedAudioUrl || undefined}
                 onTimeUpdate={handleTimeUpdate}
+                preload="metadata"
+                onLoadedMetadata={() => {
+                  if (audioRef.current && Number.isFinite(audioRef.current.duration)) setDuration(audioRef.current.duration);
+                }}
+                onError={() => {
+                  setIsPlaying(false);
+                  setAudioPlaybackError(isAr ? 'ملف الصوت مش قادر يشتغل. جرّب تفتح اللحن تاني.' : 'The audio file could not be played. Try reopening the hymn.');
+                }}
                 onEnded={() => setIsPlaying(false)}
               />
 
               {audioUrlError && (
                 <p role="status" className="text-xs font-semibold text-rose-600">{audioUrlError}</p>
               )}
-              {resolvedSheetMusicUrl && (
-                <a
-                  href={resolvedSheetMusicUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--mousa-teal)]/30 text-[var(--mousa-teal-deep)] dark:text-amber-300 text-xs font-bold hover:bg-[var(--mousa-teal)]/10 transition-colors"
+              {(selectedHymn?.pdfUrl || selectedHymn?.sheetMusicUrl) && (
+                <button
+                  type="button"
+                  onClick={() => setShowSheetMusicViewer(true)}
+                  disabled={!resolvedSheetMusicUrl}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--mousa-teal)]/30 text-[var(--mousa-teal-deep)] dark:text-amber-300 text-xs font-bold hover:bg-[var(--mousa-teal)]/10 transition-colors disabled:opacity-50 disabled:cursor-wait"
                 >
-                  {isAr ? 'افتح نوتة اللحن PDF' : 'View sheet music PDF'}
-                </a>
+                  <FileText size={14} />
+                  {isResolvingSheetMusic
+                    ? (isAr ? 'بنجهّز ملف PDF...' : 'Preparing PDF...')
+                    : (isAr ? 'افتح ملف اللحن PDF' : 'Open Hymn PDF')}
+                </button>
+              )}
+              {sheetMusicUrlError && (
+                <p role="alert" className="text-xs font-semibold text-rose-600">{sheetMusicUrlError}</p>
+              )}
+              {audioPlaybackError && (
+                <p role="alert" className="text-xs font-semibold text-rose-600">{audioPlaybackError}</p>
               )}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -601,6 +634,15 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           </div>
         </div>}
       </div>
+          {showSheetMusicViewer && resolvedSheetMusicUrl && (
+        <InAppDocumentViewer
+          documentUrl={resolvedSheetMusicUrl}
+          documentTitle={isAr ? (selectedHymn.titleAr || 'نوتة اللحن') : (selectedHymn.titleEn || 'Hymn Sheet Music')}
+          documentType="pdf"
+          onClose={() => setShowSheetMusicViewer(false)}
+          lang={isAr ? 'ar' : 'en'}
+        />
+      )}
     </motion.div>
   );
 }
