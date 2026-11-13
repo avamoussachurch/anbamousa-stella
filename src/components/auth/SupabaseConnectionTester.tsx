@@ -56,7 +56,7 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
 
   const handleSaveAndConnect = () => {
     if (!inputUrl.trim() || !inputKey.trim()) {
-      alert(lang === 'ar' ? 'يرجى إدخال الرابط والمفتاح' : 'Please enter both URL and Anon Key');
+      alert(lang === 'ar' ? 'اكتب رابط المشروع والمفتاح الأول.' : 'Please enter both URL and Anon Key');
       return;
     }
     configureSupabase(inputUrl.trim(), inputKey.trim());
@@ -81,10 +81,10 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                {lang === 'ar' ? 'فحص واختبار اتصال Supabase' : 'Supabase Connection Test'}
+                {lang === 'ar' ? 'فحص اتصال Supabase' : 'Supabase Connection Test'}
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {lang === 'ar' ? 'التحقق من حالة قاعدة البيانات ونظام الدخول' : 'Verify database & authentication readiness'}
+                {lang === 'ar' ? 'اتأكد إن قاعدة البيانات وتسجيل الدخول شغالين.' : 'Verify database & authentication readiness'}
               </p>
             </div>
           </div>
@@ -111,8 +111,8 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
             <div className="space-y-1">
               <p className="text-xs font-bold uppercase tracking-wider">
                 {statusResult.connected 
-                  ? (lang === 'ar' ? 'متصل وجاهز للاستخدام' : 'Connected & Active') 
-                  : (lang === 'ar' ? 'في انتظار إدخال بيانات الربط' : 'Awaiting Supabase Credentials')}
+                  ? (lang === 'ar' ? 'متصل وجاهز' : 'Connected & Active') 
+                  : (lang === 'ar' ? 'مستنيين بيانات الاتصال' : 'Awaiting Supabase Credentials')}
               </p>
               <p className="text-xs leading-relaxed opacity-90">
                 {statusResult.message}
@@ -123,7 +123,7 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
           <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-xs font-semibold">
             <span className="flex items-center gap-1.5">
               <ShieldCheck size={15} />
-              {lang === 'ar' ? 'حالة المصادقة (Auth):' : 'Auth Status:'}
+              {lang === 'ar' ? 'حالة تسجيل الدخول (Auth):' : 'Auth Status:'}
             </span>
             <span className={`px-2 py-0.5 rounded-full text-[11px] ${
               statusResult.authWorking 
@@ -131,8 +131,8 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
                 : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300'
             }`}>
               {statusResult.authWorking 
-                ? (lang === 'ar' ? 'نشط ومستعد' : 'Active & Ready') 
-                : (lang === 'ar' ? 'غير مرتبط' : 'Not Connected')}
+                ? (lang === 'ar' ? 'شغال وجاهز' : 'Active & Ready') 
+                : (lang === 'ar' ? 'مش متصل' : 'Not Connected')}
             </span>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
         {/* Quick Credentials Form */}
         <div className="space-y-3 bg-gray-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-gray-200/80 dark:border-slate-800">
           <p className="text-xs font-bold text-gray-700 dark:text-gray-300">
-            {lang === 'ar' ? 'ربط مفاتيح Supabase الخاصة بك:' : 'Enter your Supabase Project Keys:'}
+            {lang === 'ar' ? 'بيانات الاتصال بمشروع Supabase:' : 'Enter your Supabase Project Keys:'}
           </p>
 
           <div>
@@ -175,9 +175,9 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
               className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
             >
               {saveSuccess ? (
-                <span>{lang === 'ar' ? 'تم الحفظ والتحميل...' : 'Saved! Reloading...'}</span>
+                <span>{lang === 'ar' ? 'اتحفظت البيانات... بنعيد التحميل' : 'Saved! Reloading...'}</span>
               ) : (
-                <span>{lang === 'ar' ? 'حفظ واختبار الربط' : 'Save & Test Live'}</span>
+                <span>{lang === 'ar' ? 'احفظ واختبر الاتصال' : 'Save & Test Live'}</span>
               )}
             </button>
             <button
@@ -186,7 +186,7 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
               className="py-2 px-3 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-gray-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <RefreshCw size={14} className={testing ? 'animate-spin' : ''} />
-              <span>{lang === 'ar' ? 'إعادة الفحص' : 'Re-test'}</span>
+              <span>{lang === 'ar' ? 'افحص تاني' : 'Re-test'}</span>
             </button>
           </div>
         </div>
@@ -195,14 +195,14 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
         <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-100 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-200 space-y-1.5">
           <p className="font-bold flex items-center gap-1.5">
             <span>💡</span>
-            <span>{lang === 'ar' ? 'طريقة تفعيل الدخول بجوجل والبريد في Supabase:' : 'How to enable Email & Google Sign-In in Supabase:'}</span>
+            <span>{lang === 'ar' ? 'إزاي تفعّل تسجيل الدخول بجوجل والإيميل في Supabase:' : 'How to enable Email & Google Sign-In in Supabase:'}</span>
           </p>
           <ul className="list-disc list-inside space-y-1 text-[11px] text-blue-800/90 dark:text-blue-300/90">
             <li>
-              <strong>Email & Password:</strong> {lang === 'ar' ? 'مفعل تلقائياً في Authentication > Providers > Email.' : 'Enabled by default under Authentication > Providers > Email.'}
+              <strong>Email & Password:</strong> {lang === 'ar' ? 'متفعّل تلقائيًا من Authentication > Providers > Email.' : 'Enabled by default under Authentication > Providers > Email.'}
             </li>
             <li>
-              <strong>Google Sign-In:</strong> {lang === 'ar' ? 'في لوحة Supabase، توجه إلى Authentication > Providers > Google ثم فعل المفتاح وأضف Client ID و Secret.' : 'Go to Authentication > Providers > Google, enable it and paste your Google Client ID & Secret.'}
+              <strong>Google Sign-In:</strong> {lang === 'ar' ? 'من لوحة Supabase، افتح Authentication > Providers > Google، فعّل الاختيار، وضيف Client ID و Secret.' : 'Go to Authentication > Providers > Google, enable it and paste your Google Client ID & Secret.'}
             </li>
           </ul>
         </div>
