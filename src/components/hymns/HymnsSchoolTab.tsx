@@ -183,12 +183,29 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     }
   };
 
+  const openSheetMusic = async () => {
+    const reference = selectedHymn?.pdfUrl || selectedHymn?.sheetMusicUrl;
+    if (!reference || isResolvingSheetMusic) return;
+    setIsResolvingSheetMusic(true);
+    setSheetMusicUrlError(null);
+    try {
+      const freshUrl = await resolveCurriculumMediaUrl(reference);
+      setResolvedSheetMusicUrl(freshUrl);
+      setShowSheetMusicViewer(true);
+    } catch (error) {
+      setSheetMusicUrlError(error instanceof Error ? error.message : 'PDF could not be opened.');
+    } finally {
+      setIsResolvingSheetMusic(false);
+    }
+  };
+
   const switchHymn = (hymn: CopticHymnItem) => {
     if (isPlaying && audioRef.current) {
       audioRef.current.pause();
     }
     setIsPlaying(false);
     setSelectedHymn(hymn);
+    setAudioPlaybackError(null);
     setActiveLineId(1);
     setCurrentTime(0);
     setRecordedAudioUrl(null);
@@ -496,8 +513,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
               {(selectedHymn?.pdfUrl || selectedHymn?.sheetMusicUrl) && (
                 <button
                   type="button"
-                  onClick={() => setShowSheetMusicViewer(true)}
-                  disabled={!resolvedSheetMusicUrl}
+                  onClick={() => void openSheetMusic()}
+                  disabled={isResolvingSheetMusic}
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--mousa-teal)]/30 text-[var(--mousa-teal-deep)] dark:text-amber-300 text-xs font-bold hover:bg-[var(--mousa-teal)]/10 transition-colors disabled:opacity-50 disabled:cursor-wait"
                 >
                   <FileText size={14} />
