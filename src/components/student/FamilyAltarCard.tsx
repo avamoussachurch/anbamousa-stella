@@ -122,7 +122,7 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
             <span>
               {isExpanded
                 ? (lang === 'ar' ? 'اخفي أسئلة النقاش والصلاة' : 'Hide Discussion & Prayer')
-                : (lang === 'ar' ? 'اعرض ٣ أسئلة تتناقشوا فيها على السفرة وتصلّوا مع بعض (+)' : 'View 3 Dinner Discussion Questions & Prayer (+)')}
+                : (lang === 'ar' ? 'اعرض ٣ أسئلة تتكلموا فيها على السفرة وتصلّوا مع بعض (+)' : 'View 3 Dinner Discussion Questions & Prayer (+)')}
             </span>
             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
@@ -159,7 +159,7 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-400 mb-2 flex items-center gap-1.5">
                   <Users size={14} />
-                  <span>{lang === 'ar' ? 'أسئلة للنقاش بين الأهل والأولاد:' : 'Discussion Questions for Parents & Kids:'}</span>
+                  <span>{lang === 'ar' ? 'أسئلة تتكلموا فيها كعيلة:' : 'Discussion Questions for Parents & Kids:'}</span>
                 </h4>
                 <div className="space-y-2">
                   {(lang === 'ar' ? currentPrompt.discussionQuestionsAr : currentPrompt.discussionQuestionsEn).map((q, idx) => (
@@ -188,7 +188,7 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
               <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800/80 border border-amber-200 dark:border-slate-700 text-xs text-amber-950 dark:text-amber-200">
                 <Sparkles size={16} className="text-[var(--color-church-gold)] shrink-0" />
                 <span>
-                  <strong>{lang === 'ar' ? 'خطوة عملية نعملها في البيت: ' : 'Practical Home Step: '}</strong>
+                  <strong>{lang === 'ar' ? 'حاجة نقدر نعملها في البيت: ' : 'Practical Home Step: '}</strong>
                   {lang === 'ar' ? currentPrompt.practicalActionAr : currentPrompt.practicalActionEn}
                 </span>
               </div>
