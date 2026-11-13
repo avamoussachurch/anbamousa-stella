@@ -138,3 +138,15 @@ test('parent and servant navigation do not expose another role workspace destina
   assert.equal(adminIds.includes('support'), true);
   assert.equal(studentIds.includes('studio'), false);
 });
+
+
+test('teacher-parent hybrid account can switch between servant and parent workspaces', () => {
+  const roles = ['teacher', 'parent'] as const;
+  assert.equal(getDefaultWorkspace([...roles]), 'teacher');
+  assert.equal(resolveWorkspace([...roles], 'teacher'), 'teacher');
+  assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'classManagement'), true);
+  assert.equal(resolveWorkspace([...roles], 'parent'), 'parent');
+  assert.equal(canAccessWorkspaceTab([...roles], 'parent', 'family'), true);
+  assert.equal(canAccessWorkspaceTab([...roles], 'parent', 'children'), true);
+  assert.equal(canAccessWorkspaceTab([...roles], 'admin', 'accounts'), false);
+});
