@@ -133,12 +133,12 @@ export const MosesLiveJourneyIllustration: React.FC<LiveJourneyProps> = ({
             <h4 className="font-extrabold text-xs sm:text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] flex items-center gap-1.5">
               <span>{isCop ? 'Ⲡⲓⲙⲱⲓⲧ ⲉⲧⲟⲛϧ ⲛ̀ⲧⲉ Ⲙⲱⲩⲥⲏⲥ' : isAr ? 'المسار الحي لرحلة الأنبا موسى' : 'Live Journey of Moses Landscape'}</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--mousa-gold-soft)] text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)] border border-[var(--mousa-gold)]/30 font-bold">
-                {isAr ? 'يتفاعل بالوقت والإنجاز' : 'Real-time & Progress Linked'}
+                {isAr ? 'بيتغير حسب الوقت وتقدمك' : 'Real-time & Progress Linked'}
               </span>
             </h4>
             <p className="text-[11px] text-[var(--mousa-sand-500)] dark:text-[#C5B5A0] font-medium">
               {isAr
-                ? 'تتفتح أزهار البرية وتشرق معالم الدير كلما تقدمت في إتمام الدروس'
+                ? 'كل ما تكمّل دروس أكتر، أزهار البرية تتفتح ومعالم الدير تنور'
                 : 'Desert flora blossoms and landmarks awaken as you complete real lessons'}
             </p>
           </div>
@@ -162,7 +162,7 @@ export const MosesLiveJourneyIllustration: React.FC<LiveJourneyProps> = ({
           role="img"
           aria-label={
             isAr
-              ? `مشهد حي لبرية شيهيت، نسبة الإنجاز ${pct} بالمئة`
+              ? `مشهد حي لبرية شيهيت، إنت خلّصت ${pct}٪ من الرحلة`
               : `Live Scetis landscape illustrating ${pct}% lesson completion`
           }
         >
@@ -452,14 +452,14 @@ export const MosesLiveJourneyIllustration: React.FC<LiveJourneyProps> = ({
           <Sparkles size={14} className="text-[var(--mousa-gold)]" />
           <span>
             {pct === 100
-              ? (isCop ? 'Ⲁⲕⲫⲟϩ ⲉ̀ⲡⲓⲙⲟⲛⲁⲥⲧⲏⲣⲓⲟⲛ' : isAr ? 'بلغت دير القديسين ببرية شيهيت ⛪' : 'Arrived at the Sanctuary of Scetis ⛪')
+              ? (isCop ? 'Ⲁⲕⲫⲟϩ ⲉ̀ⲡⲓⲙⲟⲛⲁⲥⲧⲏⲣⲓⲟⲛ' : isAr ? 'وصلت لدير القديسين في برية شيهيت ⛪' : 'Arrived at the Sanctuary of Scetis ⛪')
               : pct >= 50
-                ? (isCop ? 'Ⲫⲁϣⲓ ⲛ̀ⲧⲉ ⲡⲓⲙⲱⲓⲧ ⲉⲧⲧⲁⲓⲏⲟⲩⲧ' : isAr ? 'واحة النخيل والينابيع مزهرة الآن 🌴' : 'Palm Oasis & Springs in Full Bloom 🌴')
-                : (isCop ? 'Ⲁⲣⲓϩⲏⲧⲥ ϧⲉⲛ ⲡⲓⲙⲱⲓⲧ' : isAr ? 'ورد البرية يتفتح مع كل محطة جديدة 🌸' : 'Desert Flora Awakens with Each Milestone 🌸')}
+                ? (isCop ? 'Ⲫⲁϣⲓ ⲛ̀ⲧⲉ ⲡⲓⲙⲱⲓⲧ ⲉⲧⲧⲁⲓⲏⲟⲩⲧ' : isAr ? 'واحة النخيل والينابيع بقت مزهرة 🌴' : 'Palm Oasis & Springs in Full Bloom 🌴')
+                : (isCop ? 'Ⲁⲣⲓϩⲏⲧⲥ ϧⲉⲛ ⲡⲓⲙⲱⲓⲧ' : isAr ? 'ورد البرية بيتفتح مع كل محطة جديدة 🌸' : 'Desert Flora Awakens with Each Milestone 🌸')}
           </span>
         </div>
         <div className="text-[11px] text-[var(--mousa-sand-500)] dark:text-[#A89885]">
-          {completedLessonsCount} / {totalLessonsCount} {isAr ? 'محطات مكتملة' : 'completed milestones'}
+          {completedLessonsCount} / {totalLessonsCount} {isAr ? 'محطات خلّصتها' : 'completed milestones'}
         </div>
       </div>
     </div>
