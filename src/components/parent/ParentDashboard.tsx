@@ -83,7 +83,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     home: { ar: 'نظرة عامة', en: 'Overview' },
     children: { ar: 'أولادي', en: 'My children' },
     journey: { ar: 'رحلة التعلّم', en: 'Learning journey' },
-    family: { ar: 'إعدادات الأسرة', en: 'Family settings' },
+    family: { ar: 'إعدادات العيلة', en: 'Family settings' },
     events: { ar: 'الأخبار والفعاليات', en: 'News & events' }
   };
   const navigateSection = (nextSection: ParentSection) => {
@@ -194,7 +194,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     setSavingSetting(field);
     setSettingsError(null);
     const result = await updateUserProfile({ [field]: value } as Partial<User>);
-    if (!result.success) setSettingsError(result.error || (isArabic ? 'ماقدرناش نحفظ الإعداد.' : 'Could not save this setting.'));
+    if (!result.success) setSettingsError(result.error || (isArabic ? 'مش قادرين نحفظ الإعداد. جرّب تاني.' : 'Could not save this setting.'));
     setSavingSetting(null);
   };
 
@@ -210,7 +210,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
           <ShieldCheck className="mx-auto mb-3 text-[var(--action-primary)]" size={28} />
           <h1 className="text-xl font-black text-[var(--text-primary)]">{isArabic ? 'مساحة ولي الأمر' : 'Parent workspace'}</h1>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            {isArabic ? 'المساحة دي متاحة للحسابات المعيّن لها دور ولي أمر.' : 'This workspace is available only to accounts assigned the parent role.'}
+            {isArabic ? 'المساحة دي مخصصة للحسابات اللي ليها دور ولي أمر.' : 'This workspace is available only to accounts assigned the parent role.'}
           </p>
         </div>
       </main>
@@ -228,9 +228,9 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     if (children.length === 0) return (
       <div className="mousa-card-sand p-8 text-center">
         <Users className="mx-auto mb-3 text-[var(--action-primary)]" size={30} />
-        <h2 className="font-black text-[var(--text-primary)]">{isArabic ? 'لسه مفيش أطفال مرتبطين بالحساب' : 'No children are linked to this account yet'}</h2>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب الطفل بكود التوصيل الموثّق عشان تتابع بياناته الحقيقية.' : 'Connect a child with a verified connection code to see their real records.'}</p>
-        <button type="button" onClick={() => openAddChild('code')} className="mousa-btn-quest mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2"><Plus size={16} />{isArabic ? 'ربط طفل' : 'Connect a child'}</button>
+        <h2 className="font-black text-[var(--text-primary)]">{isArabic ? 'لسه مفيش أطفال مرتبطين بحسابك' : 'No children are linked to this account yet'}</h2>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك بكود التحقق عشان تتابع بياناته المسجلة.' : 'Connect a child with a verified connection code to see their real records.'}</p>
+        <button type="button" onClick={() => openAddChild('code')} className="mousa-btn-quest mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2"><Plus size={16} />{isArabic ? 'اربط طفل' : 'Connect a child'}</button>
       </div>
     );
     return (
@@ -252,7 +252,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
           </article>
         ))}
         <button type="button" onClick={() => openAddChild('code')} className="mousa-card-sand flex min-h-40 flex-col items-center justify-center gap-2 border-dashed p-5 text-sm font-bold text-[var(--action-primary)]">
-          <Plus size={24} />{isArabic ? 'ربط طفل تاني' : 'Connect another child'}
+          <Plus size={24} />{isArabic ? 'ااربط طفل تاني' : 'Connect another child'}
         </button>
       </div>
     );
@@ -322,7 +322,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
               {children.length > 1 && <label className="mousa-card-sand flex items-center gap-3 p-4 text-sm font-bold text-[var(--text-primary)]">{isArabic ? 'اختار ابنك:' : 'Select child:'}<select value={selectedChild.id} onChange={event => setSelectedChildId(event.target.value)} className="min-w-48 rounded-lg border border-[var(--border-default)] bg-white px-3 py-2">{children.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label>}
               <ParentLearningJourney child={selectedChild} lang={lang} />
             </div>
-              : <div className="mousa-card-sand p-8 text-center"><p className="text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك عشان تقدر تتابع رحلة التعلّم.' : 'Connect a child account to view their learning journey.'}</p><button type="button" onClick={() => openAddChild('code')} className="mousa-btn-quest mt-4 rounded-xl px-4 py-2">{isArabic ? 'ربط طفل' : 'Connect a child'}</button></div>
+              : <div className="mousa-card-sand p-8 text-center"><p className="text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك عشان تقدر تتابع رحلة التعلّم.' : 'Connect a child account to view their learning journey.'}</p><button type="button" onClick={() => openAddChild('code')} className="mousa-btn-quest mt-4 rounded-xl px-4 py-2">{isArabic ? 'اربط طفل' : 'Connect a child'}</button></div>
       )}
 
       {section === 'family' && (

@@ -67,6 +67,7 @@ Audit and localize every user-facing surface, not only the student home:
 - [x] Common feedback phrases use friendly Egyptian Arabic.
 - [ ] Complete screen-by-screen hardcoded-string inventory.
 - [ ] Full student, teacher, parent, and admin localization.
+- [x] Eleventh Egyptian Arabic pass across parent dashboard/family journey, servant service dashboard, and admin/parent/servant profile forms.
 - [x] Twelfth Egyptian Arabic pass across Coptic Taxis and Hymns learning interfaces, family altar prompts, in-app lesson document viewer, Scripture recital guidance, and student adventure home.
 - [x] Supabase connection tester: Egyptian Arabic setup instructions, connection states, and retry/save actions.
 - [x] Tenth Egyptian Arabic pass across login/registration, student lesson reading and completion, curriculum discovery, points/rewards, and community feed actions.

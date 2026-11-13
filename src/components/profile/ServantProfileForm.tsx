@@ -31,7 +31,7 @@ export function ServantProfileForm({
           <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'ملف الخادم' : 'Servant profile'}</p>
           <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'بيانات الخدمة' : 'Service identity'}</h2>
           <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
-            {isArabic ? 'اسمك بيظهر في مساحة الخادم. الفصول والتكليفات بتظهر من السجل المعتمد ومش ممكن تتعدل من هنا.' : 'Your name appears in Servant Studio. Assigned classes come from the authorized roster and cannot be changed here.'}
+            {isArabic ? 'اسمك بيظهر في مساحة الخادم. الفصول والتكليفات بتظهر من السجل المعتمد ومش هتقدر تعدّلها من هنا.' : 'Your name appears in Servant Studio. Assigned classes come from the authorized roster and cannot be changed here.'}
           </p>
         </div>
       </div>
@@ -44,7 +44,7 @@ export function ServantProfileForm({
         <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)]/60 p-3">
           <p className="text-xs font-bold text-[var(--text-secondary)]">{isArabic ? 'إيميل تسجيل الدخول' : 'Sign-in email'}</p>
           <p className="mt-2 break-all text-sm font-semibold text-[var(--text-primary)]">{user.email || (isArabic ? 'مش متاح' : 'Not available')}</p>
-          <p className="mt-1 text-xs text-[var(--text-tertiary)]">{isArabic ? 'الإيميل بيتدار من خدمة تسجيل الدخول ومش بيتغير من الملف الشخصي.' : 'Managed by the sign-in provider; it is not editable from this profile.'}</p>
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">{isArabic ? 'الإيميل تابع لخدمة تسجيل الدخول ومش بيتغير من الملف الشخصي.' : 'Managed by the sign-in provider; it is not editable from this profile.'}</p>
         </div>
         <button type="submit" disabled={saving || name.trim() === (user.fullName || '')} className="inline-flex items-center gap-2 rounded-xl bg-[var(--action-primary)] px-4 py-2.5 text-sm font-black text-[var(--action-primary-text)] disabled:cursor-not-allowed disabled:opacity-50">
           {saving ? <LoaderCircle size={16} className="animate-spin" /> : <Save size={16} />}

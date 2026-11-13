@@ -109,7 +109,7 @@ function ReviewState({ state, lang, onRetry }: { state: ReturnType<typeof getPar
     return <div role="alert" className="mt-4 rounded-xl border border-[var(--feedback-error)]/30 p-3 text-xs text-[var(--feedback-error)]"><AlertCircle size={15} className="me-1 inline" />{lang === 'ar' ? 'مش قادرين نحمّل سجل التعلّم.' : 'Learning records could not be loaded.'}<button type="button" onClick={onRetry} className="ms-2 inline-flex items-center gap-1 font-bold underline"><RefreshCw size={12} />{lang === 'ar' ? 'جرّب تاني' : 'Retry'}</button></div>;
   }
   if (state === 'unavailable') {
-    return <p role="note" className="mt-4 text-xs text-[var(--text-secondary)]">{lang === 'ar' ? 'سجل التعلّم مش متاح دلوقتي.' : 'Learning records are currently unavailable.'}</p>;
+    return <p role="note" className="mt-4 text-xs text-[var(--text-secondary)]">{lang === 'ar' ? 'بيانات التعلّم مش متاحة دلوقتي.' : 'Learning records are currently unavailable.'}</p>;
   }
   if (state === 'empty') {
     return <p className="mt-4 rounded-xl bg-[var(--surface-secondary)]/70 p-3 text-xs leading-relaxed text-[var(--text-secondary)]">{lang === 'ar' ? 'لسه مفيش دروس منشورة للصف ده أو بيانات تقدّم متاحة.' : 'No published lessons or learning records are available for this grade yet.'}</p>;
@@ -167,21 +167,21 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
   const labels = isArabic ? {
     eyebrow: 'مساحة الأسرة',
     welcome: `أهلاً يا ${parentName}`,
-    subtitle: 'كل لحظة تشجيع بتفرق. تابع رحلة أولادك من السجلات الحقيقية في مكان واحد.',
+    subtitle: 'كل كلمة تشجيع بتفرق. تابع رحلة أولادك من بياناتهم المسجلة في مكان واحد.',
     children: 'أولادي',
-    childrenIntro: 'حسابات مرتبطة بعلاقة أسرية موثّقة',
+    childrenIntro: 'حسابات مرتبطة بعيلتك بعد التحقق',
     selectChild: 'اختار ابنك عشان تتابع رحلته',
     journey: 'رحلة التعلّم',
-    completed: 'دروس مكتملة من المنهج المنشور',
+    completed: 'دروس خلّصها من المنهج المنشور',
     weekly: 'نشاط آخر ٧ أيام',
-    weeklyComplete: 'إتمام مسجل هذا الأسبوع',
+    weeklyComplete: 'دروس خلّصها واتسجلت الأسبوع ده',
     className: 'فصل مدارس الأحد',
     hymns: 'مستوى الألحان والطقس',
-    openJourney: 'اعرض رحلة التعلّم',
-    noChildren: 'لسه مفيش أطفال مرتبطين بالحساب',
-    noChildrenText: 'اربط حساب الطفل بكود التوصيل الموثّق عشان تتابع بياناته الحقيقية.',
+    openJourney: 'شوف رحلة التعلّم',
+    noChildren: 'لسه مفيش أطفال مرتبطين بحسابك',
+    noChildrenText: 'اربط حساب ابنك بكود التحقق عشان تتابع بياناته المسجلة.',
     connect: 'ربط طفل',
-    connectAnother: 'ربط طفل آخر',
+    connectAnother: 'اربط طفل تاني',
     retry: 'جرّب تاني',
     refresh: 'تحديث البيانات',
     attention: 'محتاج اهتمامك',
