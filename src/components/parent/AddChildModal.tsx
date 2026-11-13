@@ -97,7 +97,7 @@ export function AddChildModal({
         return;
       }
       if (isChildAlreadyLinked(clean)) {
-        setCodeError(lang === 'ar' ? 'هذا الطفل مرتبط بحسابك بالفعل.' : 'This child is already linked to your account.');
+        setCodeError(lang === 'ar' ? 'الطفل ده مرتبط بحسابك بالفعل.' : 'This child is already linked to your account.');
         setDetectedChild(null);
         return;
       }
@@ -129,7 +129,7 @@ export function AddChildModal({
         return;
       }
       if (isChildAlreadyLinked(extracted)) {
-        setLinkError(lang === 'ar' ? 'هذا الطفل مرتبط بحسابك بالفعل.' : 'This child is already linked to your account.');
+        setLinkError(lang === 'ar' ? 'الطفل ده مرتبط بحسابك بالفعل.' : 'This child is already linked to your account.');
         setDetectedChild(null);
         return;
       }
@@ -151,7 +151,7 @@ export function AddChildModal({
   const submitLink = async (rawInput: string, isFromUrlTab: boolean = false) => {
     const code = extractSecretCodeFromInput(rawInput);
     if (!code) {
-      const msg = lang === 'ar' ? 'من فضلك أدخل الرمز السري أو رابط الربط' : 'Please enter child secret code or connect link';
+      const msg = lang === 'ar' ? 'اكتب الكود السري أو رابط الربط.' : 'Please enter child secret code or connect link';
       if (isFromUrlTab) setLinkError(msg);
       else setCodeError(msg);
       return;
@@ -172,13 +172,13 @@ export function AddChildModal({
           onClose();
         }, 1200);
       } else {
-        const errorMsg = res.error || (lang === 'ar' ? 'تعذر التحقق من هذا الرمز السري' : 'Could not verify secret code');
+        const errorMsg = res.error || (lang === 'ar' ? 'مش قادرين نتأكد من الكود السري ده.' : 'Could not verify secret code');
         if (isFromUrlTab) setLinkError(errorMsg);
         else setCodeError(errorMsg);
       }
     } catch (err: any) {
       setIsLinking(false);
-      const errorMsg = err?.message || (lang === 'ar' ? 'حدث خطأ أثناء الربط' : 'An error occurred while linking');
+      const errorMsg = err?.message || (lang === 'ar' ? 'حصلت مشكلة وإحنا بنربط الحساب.' : 'An error occurred while linking');
       if (isFromUrlTab) setLinkError(errorMsg);
       else setCodeError(errorMsg);
     }
@@ -218,11 +218,11 @@ export function AddChildModal({
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-white">
-                  {lang === 'ar' ? 'ربط حساب ابنك بأمان' : 'Connect Your Child Securely'}
+                  {lang === 'ar' ? 'اربط حساب ابنك بأمان' : 'Connect Your Child Securely'}
                 </h2>
                 <p className="text-xs sm:text-sm text-amber-100/90 font-medium">
                   {lang === 'ar' 
-                    ? 'مسح رمز QR فوري أو إدخال الرمز السري' 
+                    ? 'امسح كود QR أو اكتب الكود السري' 
                     : 'Instant QR Code Scan or Secret Alphanumeric Code'}
                 </p>
               </div>
@@ -300,11 +300,11 @@ export function AddChildModal({
                   <Check size={32} />
                 </div>
                 <h3 className="text-lg font-black text-emerald-950">
-                  {lang === 'ar' ? 'تم ربط الحساب بنجاح! 🎉' : 'Account Linked Successfully! 🎉'}
+                  {lang === 'ar' ? 'الحساب اتربط بنجاح! 🎉' : 'Account Linked Successfully! 🎉'}
                 </h3>
                 <p className="text-xs text-emerald-800 font-semibold">
                   {lang === 'ar'
-                    ? `أصبح حساب ${justLinkedChild.nameAr} متصلاً الآن بالبوابة لمتابعة الدروس والدرجات.`
+                    ? `حساب ${justLinkedChild.nameAr} اتربط دلوقتي بالبوابة عشان تتابع الدروس والدرجات.`
                     : `${justLinkedChild.nameEn}'s profile is now connected to your Parent Dashboard.`}
                 </p>
               </motion.div>
@@ -317,11 +317,11 @@ export function AddChildModal({
                   <ShieldCheck size={20} className="text-emerald-600 shrink-0 mt-0.5" />
                   <div className="space-y-1 leading-relaxed">
                     <strong className="block font-bold text-emerald-900">
-                      {lang === 'ar' ? '🔒 أمان عائلي تام وحماية من الأخطاء:' : '🔒 Family Security & Anti-Mistake Protection:'}
+                      {lang === 'ar' ? '🔒 أمان العيلة وحماية من الربط بالغلط:' : '🔒 Family Security & Anti-Mistake Protection:'}
                     </strong>
                     <span>
                       {lang === 'ar' 
-                        ? 'لحماية أبنائنا ومنع ربط أي طفل آخر بالخطأ، لا توجد قائمة عامة لأسماء الأطفال. الربط يتم فقط بمسح رمز QR الفريد للطفل أو إدخال رمزه السري.' 
+                        ? 'عشان نحمي الأولاد ونمنع ربط طفل بالغلط، مفيش قائمة عامة بأسماء الأطفال. الربط بيتم بس عن طريق كود QR الخاص بالطفل أو الكود السري بتاعه.' 
                         : 'To protect children and prevent linking other students by error, there is no public student directory. Linking requires your child’s QR code or private alphanumeric secret.'}
                     </span>
                   </div>
@@ -352,7 +352,7 @@ export function AddChildModal({
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
-                        {lang === 'ar' ? 'أدخل الرمز السري للطفل:' : 'Enter Child’s Secret Code:'}
+                        {lang === 'ar' ? 'اكتب الكود السري للطفل:' : 'Enter Child’s Secret Code:'}
                       </label>
                       <div className="relative">
                         <input
@@ -396,7 +396,7 @@ export function AddChildModal({
                               </span>
                               <span className="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                                 <Check size={11} />
-                                {lang === 'ar' ? 'تم التحقق من الرمز ✓' : 'Code Verified ✓'}
+                                {lang === 'ar' ? 'الكود اتراجع بنجاح ✓' : 'Code Verified ✓'}
                               </span>
                             </div>
                             <p className="text-xs text-emerald-800 font-medium mt-0.5">
@@ -426,7 +426,7 @@ export function AddChildModal({
                       ) : (
                         <>
                           <ShieldCheck size={18} />
-                          <span>{lang === 'ar' ? 'تأكيد وربط حساب الطفل الآن' : 'Verify & Connect Child Now'}</span>
+                          <span>{lang === 'ar' ? 'أكد واربط حساب الطفل دلوقتي' : 'Verify & Connect Child Now'}</span>
                         </>
                       )}
                     </button>
@@ -438,7 +438,7 @@ export function AddChildModal({
                   <div className="space-y-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
-                        {lang === 'ar' ? 'الصق رابط الدعوة أو رسالة الواتساب:' : 'Paste Invitation Link or WhatsApp Message:'}
+                        {lang === 'ar' ? 'الصق رابط الدعوة أو رسالة واتساب:' : 'Paste Invitation Link or WhatsApp Message:'}
                       </label>
                       <div className="relative">
                         <textarea
@@ -480,7 +480,7 @@ export function AddChildModal({
                               </span>
                               <span className="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                                 <Check size={11} />
-                                {lang === 'ar' ? 'تم استخراج الرابط بنجاح ✓' : 'Link Verified ✓'}
+                                {lang === 'ar' ? 'الرابط اتقرأ بنجاح ✓' : 'Link Verified ✓'}
                               </span>
                             </div>
                             <p className="text-xs text-emerald-800 font-medium mt-0.5">
@@ -510,7 +510,7 @@ export function AddChildModal({
                       ) : (
                         <>
                           <Link2 size={18} />
-                          <span>{lang === 'ar' ? 'تأكيد الربط عبر الرابط' : 'Connect via Link Now'}</span>
+                          <span>{lang === 'ar' ? 'أكد الربط بالرابط' : 'Connect via Link Now'}</span>
                         </>
                       )}
                     </button>
@@ -524,7 +524,7 @@ export function AddChildModal({
           {/* Footer note */}
           <div className="p-3.5 bg-gray-50 border-t border-gray-100 text-center text-[11px] text-gray-500 font-medium">
             ⛪ {lang === 'ar' 
-              ? 'نظام الأمان الأسري المشفر — كنيسة السيدة العذراء والشهيد مارمينا' 
+              ? 'نظام أمان الأسرة المشفّر — كنيسة السيدة العذراء والشهيد مارمينا' 
               : 'Encrypted Family Safety System — St. Mary & St. Mina Coptic Church'}
           </div>
         </motion.div>
