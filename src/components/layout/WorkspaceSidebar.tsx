@@ -30,8 +30,8 @@ export function WorkspaceSidebar({ workspace, activeTab, lang, onNavigate }: Wor
           type="button"
           onClick={() => setCollapsed(value => !value)}
           aria-label={collapsed
-            ? (lang === 'ar' ? 'توسيع القائمة الجانبية' : 'Expand sidebar')
-            : (lang === 'ar' ? 'طي القائمة الجانبية' : 'Collapse sidebar')}
+            ? (lang === 'ar' ? 'افتح القائمة الجانبية' : 'Expand sidebar')
+            : (lang === 'ar' ? 'اقفل القائمة الجانبية' : 'Collapse sidebar')}
           aria-expanded={!collapsed}
           className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--state-hover)] hover:text-[var(--text-primary)]"
         >
