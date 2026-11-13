@@ -75,7 +75,8 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
 
   // Voice recording handler: capture the real microphone stream and persist it.
   const startRecording = async () => {
-    if (!session.activeLessonId) {
+    const lessonId = session.activeLessonId;
+    if (!lessonId) {
       setErrorMsg(isAr ? 'اختار درس الأول قبل ما تسجّل شرح صوتي.' : 'Select a lesson before recording its voice explanation.');
       return;
     }
@@ -111,11 +112,11 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
         setIsUploading(true);
         setErrorMsg('');
         try {
-          const uploaded = await uploadSourceMedia(file, session.activeLessonId);
+          const uploaded = await uploadSourceMedia(file, lessonId);
           if (!uploaded.success || !uploaded.fileUrl) throw new Error(uploaded.error || 'Recording upload failed.');
           onAddSource({
             sessionId: session.id,
-            lessonId: session.activeLessonId,
+            lessonId,
             uploadedBy: servantId,
             type: 'TEACHER_VOICE',
             originalFilename: file.name,
