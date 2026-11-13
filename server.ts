@@ -1310,7 +1310,7 @@ function mediaMimeType(extension: string, suppliedType: string): string {
   const knownTypes: Record<string, string> = {
     '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp',
     '.gif': 'image/gif', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.m4a': 'audio/mp4',
-    '.ogg': 'audio/ogg', '.webm': 'video/webm', '.aac': 'audio/aac', '.mp4': 'video/mp4',
+    '.ogg': 'audio/ogg', '.webm': safeType.startsWith('audio/webm') ? 'audio/webm' : 'video/webm', '.aac': 'audio/aac', '.mp4': 'video/mp4',
     '.mov': 'video/quicktime', '.pdf': 'application/pdf',
     '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
