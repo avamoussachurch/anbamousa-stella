@@ -23,7 +23,7 @@ export function getLocalizedErrorMessage(value: unknown, lang: Language | string
   if (/timeout|timed out|deadline exceeded/.test(normalized)) {
     return 'الطلب أخد وقت أطول من اللازم. جرّب تاني.';
   }
-  if (/unauthorized|not authenticated|authentication required|invalid jwt|token expired|401/.test(normalized)) {
+  if (/unauthorized|not authenticated|authentication required|invalid jwt|jwt expired|token expired|401/.test(normalized)) {
     return 'جلسة تسجيل الدخول انتهت. سجّل دخولك تاني وجرّب.';
   }
   if (/forbidden|permission denied|not allowed|insufficient privilege|403/.test(normalized)) {
