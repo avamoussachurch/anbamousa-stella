@@ -38,10 +38,10 @@ export const MosesDuneHeroBanner: React.FC<DuneHeroBannerProps> = ({
   // Determine playful journey title based on points and streak
   const getTravelerTitle = () => {
     if (isTeacher) {
-      return isCop ? 'Ⲡⲓⲇⲓⲁⲕⲟⲛ ⲙ̀ⲡⲓⲙⲱⲓⲧ' : isAr ? 'مرشد القافلة وخادم البرية' : 'Caravan Guide & Servant';
+      return isCop ? 'Ⲡⲓⲇⲓⲁⲕⲟⲛ ⲙ̀ⲡⲓⲙⲱⲓⲧ' : isAr ? 'دليل الرحلة وخادم البرية' : 'Caravan Guide & Servant';
     }
     if (isParent) {
-      return isCop ? 'Ⲡⲓⲓⲱⲧ ⲛ̀ⲧⲉ ⲡⲓⲏⲓ' : isAr ? 'راعي الأسرة ومسافر المحبة' : 'Family Shepherd & Guardian';
+      return isCop ? 'Ⲡⲓⲓⲱⲧ ⲛ̀ⲧⲉ ⲡⲓⲏⲓ' : isAr ? 'راعي العيلة وصاحب رحلة المحبة' : 'Family Shepherd & Guardian';
     }
     if (totalPoints >= 500) {
       return isCop ? 'Ⲡⲓⲅⲉⲛⲛⲉⲟⲥ ⲛ̀ϣⲓⲏⲧ' : isAr ? 'فارس برية شيهيت 🛡️' : 'Scetis Desert Champion 🛡️';
@@ -169,8 +169,8 @@ export const MosesDuneHeroBanner: React.FC<DuneHeroBannerProps> = ({
 
           <p className="text-xs sm:text-sm text-[var(--mousa-teal-deep)] dark:text-[#E8DAC8] font-bold leading-relaxed max-w-xl">
             {isTeacher
-              ? (isCop ? 'Ⲡⲓⲥⲙⲟⲩ ⲛ̀ⲧⲉ ϯⲇⲓⲁⲕⲟⲛⲓⲁ ⲛⲉⲙⲁⲕ ⲙ̀ⲫⲟⲟⲩ' : isAr ? 'بركة الخدمة والتعليم ترشد خطواتك وأولادك اليوم في طريق المحبة.' : 'Blessings on your ministry & guiding the children today.')
-              : (isCop ? 'Ⲁⲕⲥⲉⲃⲧⲱⲧ ⲉ̀ⲡⲓⲙⲱⲓⲧ ⲛ̀ⲧⲉ ⲡⲓⲛⲁϩϯ ⲙ̀ⲫⲟⲟⲩ;' : isAr ? 'خطوة جديدة في برية الإيمان.. جهز قلبك لمحطة اليوم لتكسب نقاط البركة!' : 'Another step in faith & courage. Ready for today’s milestone?')}
+              ? (isCop ? 'Ⲡⲓⲥⲙⲟⲩ ⲛ̀ⲧⲉ ϯⲇⲓⲁⲕⲟⲛⲓⲁ ⲛⲉⲙⲁⲕ ⲙ̀ⲫⲟⲟⲩ' : isAr ? 'ربنا يبارك خدمتك وتعليمك، ويقودك إنت وأولادك في طريق المحبة.' : 'Blessings on your ministry & guiding the children today.')
+              : (isCop ? 'Ⲁⲕⲥⲉⲃⲧⲱⲧ ⲉ̀ⲡⲓⲙⲱⲓⲧ ⲛ̀ⲧⲉ ⲡⲓⲛⲁϩϯ ⲙ̀ⲫⲟⲟⲩ;' : isAr ? 'خطوة جديدة في رحلة الإيمان... جهّز قلبك لمحطة النهارده واكسب نقاط!' : 'Another step in faith & courage. Ready for today’s milestone?')}
           </p>
         </div>
 
@@ -263,13 +263,13 @@ export const MosesStreakCard: React.FC<StreakCardProps> = ({ streakDays, lang })
               {streakDays}
             </span>
             <span className="text-xs sm:text-sm font-bold text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)]">
-              {isCop ? 'Ⲛ̀ⲉϩⲟⲟⲩ' : isAr ? 'أيام متتالية' : 'Days'}
+              {isCop ? 'Ⲛ̀ⲉϩⲟⲟⲩ' : isAr ? 'أيام ورا بعض' : 'Days'}
             </span>
           </div>
           <p className="text-[11px] text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)] truncate mt-0.5">
             {streakDays >= 3
               ? (isAr ? 'عاش يا بطل! نورك بيزيد كل يوم.' : 'Burning bright in Scetis!')
-              : (isAr ? 'واظب يومياً لتحافظ على الشعلة.' : 'Keep the desert flame alive!')}
+              : (isAr ? 'واظب كل يوم عشان الشعلة تفضل منوّرة.' : 'Keep the desert flame alive!')}
           </p>
         </div>
       </div>
