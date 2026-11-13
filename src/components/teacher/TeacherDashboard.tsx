@@ -211,7 +211,7 @@ export function TeacherDashboard({
         grade: targetLesson.grade || activeSession.grade
       });
       alert(lang === 'ar' 
-        ? `تم تعيين درس "${targetLesson.titleAr || targetLesson.title}" ليكون درس الفصل النشط في استوديو مدارس الأحد!`
+        ? `الدرس اتحدد "${targetLesson.titleAr || targetLesson.title}" كدرس الفصل الحالي في استوديو مدارس الأحد!`
         : `Lesson "${targetLesson.title}" is now active in Sunday School Class Session!`);
       setActiveTab('sundaySchool');
     }
@@ -376,7 +376,7 @@ export function TeacherDashboard({
       });
 
       if (result.error) {
-        alert(lang === 'ar' ? `تعذر حفظ مسودة الدرس: ${result.error.message}` : `Failed to save draft: ${result.error.message}`);
+        alert(lang === 'ar' ? `مش قادرين نحفظ مسودة الدرس: ${result.error.message}` : `Failed to save draft: ${result.error.message}`);
         return;
       }
 
@@ -428,7 +428,7 @@ export function TeacherDashboard({
                 className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-orange-300 px-3 py-2 text-sm font-black text-slate-950 shadow-sm transition hover:brightness-105"
               >
                 <Plus size={16} />
-                {lang === 'ar' ? 'إنشاء درس سريع' : 'Create a lesson'}
+                {lang === 'ar' ? 'إنشاء درس بسرعة' : 'Create a lesson'}
               </button>
             )}
             {onOpenParentPortal && (
@@ -448,7 +448,7 @@ export function TeacherDashboard({
       {!isOnlineAuth && (
         <p role="note" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
           {lang === 'ar'
-            ? 'الوضع الحالي تجريبي أو غير متصل: أي بيانات أو تغييرات محلية مش معناها إنها اتحفظت في قاعدة البيانات.'
+            ? 'الوضع الحالي تجريبي أو مش متصل. أي بيانات أو تغييرات على الجهاز مش معناها إنها اتحفظت في قاعدة البيانات.'
             : 'Demo or offline mode: locally available data and changes are not confirmed as saved in the database.'}
         </p>
       )}
@@ -457,7 +457,7 @@ export function TeacherDashboard({
         <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p>{lang === 'ar'
-              ? `تعذر تحديث المنهج من الخادم. الدروس الظاهرة ممكن تكون من نسخة محفوظة ومش مؤكدة. ${curriculumError}`
+              ? `مش قادرين نحدّث المنهج من الخادم. الدروس اللي ظاهرة ممكن تكون من نسخة قديمة ومش مؤكدة. ${curriculumError}`
               : `The curriculum could not be refreshed. Any lessons currently shown may be cached and are not confirmed as server data. ${curriculumError}`}</p>
             <button type="button" onClick={() => void refreshCurriculum()} className="shrink-0 rounded-xl bg-amber-700 px-4 py-2 font-bold text-white hover:bg-amber-800">
               {lang === 'ar' ? 'حاول تاني' : 'Retry'}
@@ -485,7 +485,7 @@ export function TeacherDashboard({
             <div className="font-semibold">
               <span>
                 {lang === 'ar' 
-                  ? `لديك (${pendingRequestsCount}) طلبات جديدة لتفعيل الحسابات والانضمام للفصل تحتاج لموافقتك.`
+                  ? `عندك (${pendingRequestsCount}) طلب جديد لتفعيل الحسابات والانضمام للفصل، مستني موافقتك.`
                   : `You have (${pendingRequestsCount}) new student account activation requests pending approval.`}
               </span>
             </div>
@@ -494,7 +494,7 @@ export function TeacherDashboard({
             onClick={() => setActiveTab('classManagement')}
             className="px-3.5 py-1.5 bg-white text-amber-900 hover:bg-amber-50 font-bold rounded-xl text-xs transition-colors shrink-0 cursor-pointer shadow-xs"
           >
-            {lang === 'ar' ? 'مراجعة وتسكين الطلاب' : 'Review & Enroll'}
+            {lang === 'ar' ? 'راجع وسجّل التلاميذ' : 'Review & Enroll'}
           </button>
         </div>
       )}
@@ -572,10 +572,10 @@ export function TeacherDashboard({
             <div className="flex items-start gap-3">
               <Award className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
               <div>
-                <h2 className="font-black">{lang === 'ar' ? 'نتائج التقدم والاختبارات غير متاحة' : 'Progress and quiz reports are unavailable'}</h2>
+                <h2 className="font-black">{lang === 'ar' ? 'تقارير تقدم التلاميذ والاختبارات مش متاحة' : 'Progress and quiz reports are unavailable'}</h2>
                 <p className="mt-2 text-sm leading-relaxed">
                   {lang === 'ar'
-                    ? 'مش هنعرض بيانات محفوظة في المتصفح على إنها نتائج مؤكدة. التقرير الحالي مفيهوش قراءة موثوقة ومباشرة من سجلات الطلاب والاختبارات في قاعدة البيانات.'
+                    ? 'مش هنعرض بيانات محفوظة على المتصفح على إنها نتائج مؤكدة. التقرير ده مفيهوش قراءة مباشرة وموثوقة من سجلات التلاميذ والاختبارات في قاعدة البيانات.'
                     : 'Browser-cached values are not shown as confirmed results. This report does not yet read student progress and quiz attempts from an authoritative database-backed Servant endpoint.'}
                 </p>
               </div>
@@ -585,7 +585,7 @@ export function TeacherDashboard({
           <>
             <p role="note" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
               {lang === 'ar'
-                ? 'وضع تجريبي: الأسماء والنتائج المعروضة أمثلة، والتغييرات محلية ومش محفوظة على الخادم.'
+                ? 'وضع تجريبي: الأسماء والنتائج دي أمثلة، والتغييرات على الجهاز ومش بتتحفظ على الخادم.'
                 : 'Demo mode: names and results are sample data; changes are local and are not saved to the server.'}
             </p>
             <TeacherMasteryReview
@@ -620,10 +620,10 @@ export function TeacherDashboard({
       {activeTab === 'attendance' && (
         isOnlineAuth ? (
           <section role="status" className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-            <h2 className="font-black">{lang === 'ar' ? 'الحضور والافتقاد غير متاحين للحسابات المتصلة' : 'Attendance is unavailable for online accounts'}</h2>
+            <h2 className="font-black">{lang === 'ar' ? 'الحضور والافتقاد مش متاحين للحسابات المتصلة' : 'Attendance is unavailable for online accounts'}</h2>
             <p className="mt-2 text-sm leading-relaxed">
               {lang === 'ar'
-                ? 'المتابع الحالي بيستخدم أسماء تجريبية وبيحفظ التغييرات في المتصفح بس، من غير حفظ موثوق على الخادم. عشان كده مش هنعرضه كبيانات فصل حقيقية.'
+                ? 'المتابعة الحالية بتستخدم أسماء تجريبية، والتغييرات بتتحفظ على المتصفح بس من غير حفظ موثوق على الخادم. عشان كده مش هنعرضها كبيانات فصل حقيقية.'
                 : 'The current tracker uses sample names and stores changes only in this browser, with no trusted server persistence. It is not shown as real class attendance.'}
             </p>
           </section>
@@ -640,7 +640,7 @@ export function TeacherDashboard({
               <Sparkles size={28} />
             </div>
             <h2 className="text-xl font-bold text-[var(--color-church-blue)] dark:text-white">
-              {lang === 'ar' ? 'توليد درس (خيار مساعد ثانوي)' : 'Generate Lesson (Secondary Option)'}
+              {lang === 'ar' ? 'إنشاء درس (اختيار إضافي)' : 'Generate Lesson (Secondary Option)'}
             </h2>
             <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
               {lang === 'ar' 
