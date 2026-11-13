@@ -82,11 +82,11 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck size={20} className="text-[var(--brand-gold)]" />
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--brand-gold)]">
-              {lang === 'ar' ? 'مراجعة جودة الترجمة وإدارتها' : 'Translation quality and governance'}
+              {lang === 'ar' ? 'راجع جودة الترجمة وإدارتها' : 'Translation quality and governance'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            {lang === 'ar' ? 'مراجعة الترجمة القبطية البحيرية' : 'Bohairic Coptic Localization QA'}
+            {lang === 'ar' ? 'مراجعة الترجمة للقبطي البحيري' : 'Bohairic Coptic Localization QA'}
           </h1>
           <p className="text-sm text-white/80 max-w-2xl mt-1">
             {lang === 'ar' ? 'الأرقام دي بتوضح اكتمال بيانات سجل المصطلحات والترجمة بس، ومش معناها إن كل شاشات الموقع مترجمة بالكامل.' : 'These figures measure translation registry completeness only; they do not mean every app screen is fully localized.'}
@@ -97,12 +97,12 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
       {/* Coverage Statistics Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CopticCard variant="default" padding="sm">
-          <span className="text-xs text-[var(--color-neutral)] font-semibold block">{lang === 'ar' ? 'اكتمال بيانات الإنجليزي في السجل' : 'English registry completeness'}</span>
+          <span className="text-xs text-[var(--color-neutral)] font-semibold block">{lang === 'ar' ? 'النصوص الإنجليزية الموجودة في السجل' : 'English registry completeness'}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-[var(--brand-burgundy)] dark:text-[var(--brand-gold)]">
               {stats.english}%
             </span>
-            <span className="text-xs text-[var(--color-success)] font-bold">{lang === 'ar' ? 'مكتمل في السجل' : 'Entry populated'}</span>
+            <span className="text-xs text-[var(--color-success)] font-bold">{lang === 'ar' ? 'موجود في السجل' : 'Entry populated'}</span>
           </div>
           <div className="w-full bg-[var(--border-stone)]/40 h-1.5 rounded-full mt-2 overflow-hidden">
             <div className="bg-[var(--color-success)] h-full" style={{ width: `${stats.english}%` }} />
@@ -110,12 +110,12 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
         </CopticCard>
 
         <CopticCard variant="default" padding="sm">
-          <span className="text-xs text-[var(--color-neutral)] font-semibold block">{lang === 'ar' ? 'اكتمال بيانات العربي في السجل' : 'Arabic registry completeness'}</span>
+          <span className="text-xs text-[var(--color-neutral)] font-semibold block">{lang === 'ar' ? 'النصوص العربية الموجودة في السجل' : 'Arabic registry completeness'}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-[var(--brand-burgundy)] dark:text-[var(--brand-gold)]">
               {stats.arabic}%
             </span>
-            <span className="text-xs text-[var(--color-success)] font-bold">{lang === 'ar' ? 'مكتمل في السجل' : 'Entry populated'}</span>
+            <span className="text-xs text-[var(--color-success)] font-bold">{lang === 'ar' ? 'موجود في السجل' : 'Entry populated'}</span>
           </div>
           <div className="w-full bg-[var(--border-stone)]/40 h-1.5 rounded-full mt-2 overflow-hidden">
             <div className="bg-[var(--color-success)] h-full" style={{ width: `${stats.arabic}%` }} />
@@ -128,7 +128,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
             <span className="text-2xl font-black text-[var(--brand-burgundy)] dark:text-[var(--brand-gold)]">
               {stats.coptic}%
             </span>
-            <span className="text-xs text-[var(--color-success)] font-bold">{lang === 'ar' ? 'مكتمل في السجل' : 'Entry populated'}</span>
+            <span className="text-xs text-[var(--color-success)] font-bold">{lang === 'ar' ? 'موجود في السجل' : 'Entry populated'}</span>
           </div>
           <div className="w-full bg-[var(--border-stone)]/40 h-1.5 rounded-full mt-2 overflow-hidden">
             <div className="bg-[var(--color-success)] h-full" style={{ width: `${stats.coptic}%` }} />
