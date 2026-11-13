@@ -6898,6 +6898,214 @@ app.get("/api/church/leaderboard", async (req, res) => {
     const requestedClassGroupId = req.query.classGroupId ? String(req.query.classGroupId) : undefined;
     const timeframe = req.query.timeframe === 'all_time' ? 'all_time' : 'weekly';
 
+    if (authContext.isAuthenticated && authContext.userId && isUuidStudentId(authContext.userId)) {
+      if (!hasAnyServerRole(authContext, ['student', 'teacher', 'admin'])) {
+        return res.status(403).json({
+          success: false,
+          error: 'FORBIDDEN',
+          message: 'Only students, assigned servants, and administrators can view class rankings.'
+        });
+      }
+
+      const client = getTrustedProgressClient();
+      const todayCairo = getCairoDateString();
+      const cairoParts = getCairoDateParts();
+      const currentDayOfWeek = new Date(cairoParts.year, cairoParts.month - 1, cairoParts.day).getDay();
+      const sundayDate = new Date(cairoParts.year, cairoParts.month - 1, cairoParts.day - currentDayOfWeek);
+      const cairoWeekReset = getCairoDateString(sundayDate);
+      const emptyLeaderboard = (classGroupId: string | null) => res.json({
+        success: true,
+        classGroupId,
+        timeframe,
+        leaderboard: [],
+        currentUserEntry: null,
+        totalParticipants: 0,
+        cairoDate: todayCairo,
+        cairoWeekReset
+      });
+
+      const { data: activeYear, error: yearError } = await client
+        .from('church_years')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle();
+      if (yearError) {
+        console.error('Leaderboard active-year lookup failed:', yearError.message);
+        return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+      }
+      if (!activeYear?.id) return emptyLeaderboard(null);
+
+      const { data: allInstances, error: instancesError } = await client
+        .from('class_instances')
+        .select('id, class_group_id')
+        .eq('church_year_id', activeYear.id);
+      if (instancesError) {
+        console.error('Leaderboard class lookup failed:', instancesError.message);
+        return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+      }
+
+      const instanceById = new Map<string, any>((allInstances || []).map((item: any) => [item.id, item]));
+      let permittedGroupIds: string[] = [];
+
+      if (hasServerRole(authContext, 'student')) {
+        const { data: ownMemberships, error: membershipError } = await client
+          .from('class_memberships')
+          .select('class_instance_id')
+          .eq('student_id', authContext.userId)
+          .eq('church_year_id', activeYear.id)
+          .eq('status', 'active')
+          .is('left_at', null);
+        if (membershipError) {
+          console.error('Leaderboard student membership lookup failed:', membershipError.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+        }
+        permittedGroupIds = Array.from(new Set((ownMemberships || [])
+          .map((membership: any) => instanceById.get(membership.class_instance_id)?.class_group_id)
+          .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
+      } else if (hasServerRole(authContext, 'teacher')) {
+        const { data: assignments, error: assignmentError } = await client
+          .from('servant_class_assignments')
+          .select('class_instance_id')
+          .eq('servant_id', authContext.userId)
+          .eq('church_year_id', activeYear.id)
+          .eq('is_active', true);
+        if (assignmentError) {
+          console.error('Leaderboard servant assignment lookup failed:', assignmentError.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+        }
+        permittedGroupIds = Array.from(new Set((assignments || [])
+          .map((assignment: any) => instanceById.get(assignment.class_instance_id)?.class_group_id)
+          .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
+      } else {
+        permittedGroupIds = Array.from(new Set((allInstances || [])
+          .map((instance: any) => instance.class_group_id)
+          .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
+      }
+
+      permittedGroupIds.sort();
+      if (requestedClassGroupId && !permittedGroupIds.includes(requestedClassGroupId)) {
+        return res.status(403).json({
+          success: false,
+          error: 'FORBIDDEN_CLASS_LEADERBOARD',
+          message: 'You can only view rankings for a class you belong to or are assigned to.'
+        });
+      }
+      const effectiveClassGroup = requestedClassGroupId || permittedGroupIds[0] || null;
+      if (!effectiveClassGroup) return emptyLeaderboard(null);
+
+      const classInstanceIds = (allInstances || [])
+        .filter((instance: any) => instance.class_group_id === effectiveClassGroup)
+        .map((instance: any) => instance.id);
+      if (classInstanceIds.length === 0) return emptyLeaderboard(effectiveClassGroup);
+
+      const { data: memberships, error: classMembershipError } = await client
+        .from('class_memberships')
+        .select('student_id, exact_grade')
+        .in('class_instance_id', classInstanceIds)
+        .eq('church_year_id', activeYear.id)
+        .eq('status', 'active')
+        .is('left_at', null);
+      if (classMembershipError) {
+        console.error('Leaderboard class roster lookup failed:', classMembershipError.message);
+        return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+      }
+
+      const membershipGradeByStudent = new Map<string, string>();
+      const candidateStudentIds = Array.from(new Set((memberships || [])
+        .map((membership: any) => membership.student_id)
+        .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
+      if (candidateStudentIds.length === 0) return emptyLeaderboard(effectiveClassGroup);
+
+      const { data: studentRoles, error: roleError } = await client
+        .from('profile_role_assignments')
+        .select('user_id')
+        .in('user_id', candidateStudentIds)
+        .eq('role', 'student')
+        .is('revoked_at', null);
+      if (roleError) {
+        console.error('Leaderboard student-role lookup failed:', roleError.message);
+        return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+      }
+      const studentIds = Array.from(new Set((studentRoles || []).map((row: any) => row.user_id)));
+      for (const membership of memberships || []) {
+        if (studentIds.includes(membership.student_id) && typeof membership.exact_grade === 'string') {
+          membershipGradeByStudent.set(membership.student_id, membership.exact_grade);
+        }
+      }
+      if (studentIds.length === 0) return emptyLeaderboard(effectiveClassGroup);
+
+      const [{ data: profiles, error: profilesError }, { data: progressRows, error: progressError }] = await Promise.all([
+        client.from('profiles')
+          .select('id, name, avatar, grade, points, current_streak, longest_streak')
+          .in('id', studentIds),
+        client.from('lesson_progress')
+          .select('student_id, lesson_id, completed_at, points_earned')
+          .in('student_id', studentIds)
+          .eq('completed', true)
+      ]);
+      if (profilesError || progressError) {
+        console.error('Leaderboard data lookup failed:', profilesError?.message || progressError?.message);
+        return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+      }
+
+      const progressByStudent = new Map<string, any[]>();
+      for (const row of progressRows || []) {
+        const current = progressByStudent.get(row.student_id) || [];
+        current.push(row);
+        progressByStudent.set(row.student_id, current);
+      }
+
+      const entries = (profiles || []).map((profile: any) => {
+        const progress = progressByStudent.get(profile.id) || [];
+        const pointsThisWeek = progress.reduce((total: number, row: any) => {
+          if (!row.completed_at || getCairoDateString(new Date(row.completed_at)) < cairoWeekReset) return total;
+          return total + Math.max(0, Number(row.points_earned) || 0);
+        }, 0);
+        const studentName = String(profile.name || '').trim() || 'Student';
+        return {
+          id: `lb_${profile.id}`,
+          studentId: profile.id,
+          studentName,
+          avatarUrl: profile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(profile.id)}`,
+          grade: profile.grade || membershipGradeByStudent.get(profile.id) || '',
+          totalPoints: Math.max(0, Number(profile.points) || 0),
+          pointsThisWeek,
+          completedLessonsCount: progress.length,
+          streakDays: Math.max(0, Number(profile.current_streak) || 0),
+          longestStreak: Math.max(0, Number(profile.longest_streak) || 0)
+        };
+      });
+
+      entries.sort((left: any, right: any) => {
+        const leftScore = timeframe === 'weekly' ? left.pointsThisWeek : left.totalPoints;
+        const rightScore = timeframe === 'weekly' ? right.pointsThisWeek : right.totalPoints;
+        if (rightScore !== leftScore) return rightScore - leftScore;
+        if (right.completedLessonsCount !== left.completedLessonsCount) return right.completedLessonsCount - left.completedLessonsCount;
+        if (right.streakDays !== left.streakDays) return right.streakDays - left.streakDays;
+        return left.studentName.localeCompare(right.studentName);
+      });
+      entries.forEach((entry: any, index: number) => { entry.rank = index + 1; });
+
+      return res.json({
+        success: true,
+        classGroupId: effectiveClassGroup,
+        timeframe,
+        leaderboard: entries,
+        currentUserEntry: entries.find((entry: any) => entry.studentId === authContext.userId) || null,
+        totalParticipants: entries.length,
+        cairoDate: todayCairo,
+        cairoWeekReset
+      });
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(401).json({
+        success: false,
+        error: 'UNAUTHORIZED',
+        message: 'Sign in with an assigned account to view class rankings.'
+      });
+    }
+
     let effectiveClassGroup = requestedClassGroupId;
 
     if (authContext.isAuthenticated && hasServerRole(authContext, 'student')) {
