@@ -98,7 +98,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
       exit={{ opacity: 0, y: -15 }}
       transition={{ duration: 0.3 }}
       className="pb-24 pt-6 px-4 w-full max-w-7xl mx-auto space-y-6" 
-      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       {/* 3-Track Switcher: Sunday School, Hymns School, Coptic Rituals / Taxis */}
       <div className="flex bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] rounded-2xl p-1.5 shadow-xs border-2 border-[var(--mousa-border-sand)] max-w-2xl mx-auto gap-1">
@@ -376,7 +376,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
                 </div>
                 
                 {/* Summary */}
-                <p className="text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] text-xs md:text-sm mb-5 flex-1 leading-relaxed line-clamp-3" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                <p className="text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] text-xs md:text-sm mb-5 flex-1 leading-relaxed line-clamp-3" dir="rtl">
                   {lang === 'ar' 
                     ? (lesson.summaryAr || lesson.summary) 
                     : lang === 'copt' || lang === 'cop'
