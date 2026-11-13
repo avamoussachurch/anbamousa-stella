@@ -52,6 +52,7 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
   const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingStartedAtRef = useRef<number>(0);
 
   // Manual text note
   const [showTextModal, setShowTextModal] = useState<boolean>(false);
@@ -121,7 +122,7 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
             mimeType: actualMimeType,
             fileUrl: uploaded.fileUrl,
             fileSize: file.size,
-            durationSeconds: recordingSeconds,
+            durationSeconds: Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000)),
             description: 'Teacher voice explanation recorded in the Sunday School classroom.',
             rightsStatus: 'TEACHER_OWNED',
             processingStatus: 'INDEXED',
@@ -134,6 +135,7 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
         }
       };
       recorder.start(1000);
+      recordingStartedAtRef.current = Date.now();
       setRecordingSeconds(0);
       setErrorMsg('');
       setIsRecording(true);
