@@ -234,13 +234,13 @@ export function ServantHomeDashboard({
                   {summary?.churchYear && <span className="border-s border-white/25 ps-2 text-white/75">{summary.churchYear}</span>}
                 </div>
                 <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                  {isArabic ? `أهلاً يا ${servantName}، خدمتك بتصنع فرق` : `Welcome, ${servantName}. Your service makes a difference.`}
+                  {isArabic ? `أهلاً يا ${servantName}، خدمتك بتفرق` : `Welcome, ${servantName}. Your service makes a difference.`}
                 </h1>
                 <p className="mt-3 max-w-xl text-sm leading-7 text-teal-50/80 sm:text-base">
-                  {isArabic ? 'نظرة موثوقة على الفصول، رحلة التعلّم، والمهام التي تحتاج لمتابعتك.' : 'A trusted view of your classes, learning progress, and the work that needs your attention.'}
+                  {isArabic ? 'تابع فصولك ورحلة تعلّم التلاميذ والمهام اللي محتاجة متابعتك.' : 'A trusted view of your classes, learning progress, and the work that needs your attention.'}
                 </p>
                 <button type="button" onClick={onPublishLesson} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-orange-300 px-4 py-3 text-sm font-black text-slate-950 shadow-lg shadow-black/15 transition hover:-translate-y-0.5 hover:brightness-105">
-                  <BookOpen size={17} />{isArabic ? 'تجهيز درس للنشر' : 'Prepare a lesson'}
+                  <BookOpen size={17} />{isArabic ? 'جهّز درس للنشر' : 'Prepare a lesson'}
                   {isArabic ? <ArrowUpLeft size={16} /> : <ArrowUpRight size={16} />}
                 </button>
               </div>
@@ -255,7 +255,7 @@ export function ServantHomeDashboard({
                   <p className="font-black text-amber-100">{isArabic ? 'لسه مفيش فصل نشط متسجل على حسابك' : 'No active class is assigned to this teacher account yet'}</p>
                   <p className="mt-1 max-w-3xl text-xs leading-6 text-teal-50/90">
                     {isArabic
-                      ? 'الأرقام لن تظهر قبل أن يربط المسؤول حساب الخادم بالفصل الصحيح في السنة الكنسية النشطة. لا نعرض بيانات فصول أخرى حفاظاً على خصوصية التلاميذ.'
+                      ? 'الأرقام هتظهر لما المسؤول يربط حسابك بالفصل الصحيح في السنة الكنسية الحالية. مش هنعرض بيانات فصول تانية حفاظًا على خصوصية التلاميذ.'
                       : 'The class, student and curriculum totals will appear after an administrator assigns this account to the correct class for the active church year. We do not mix in other teachers’ class data.'}
                   </p>
                   <p className="mt-2 text-[11px] font-bold text-amber-100/90">{isArabic ? 'السنة الكنسية الحالية:' : 'Active church year:'} {summary.churchYear || (isArabic ? 'مش متحددة' : 'Not set')}</p>
@@ -263,8 +263,8 @@ export function ServantHomeDashboard({
               </div>
             ) : (
               <div className="relative mt-5 grid grid-cols-2 gap-y-4 rounded-2xl border border-white/10 bg-black/10 p-4 sm:grid-cols-4 sm:gap-0 sm:p-5">
-                <SummaryMetric icon={GraduationCap} label={isArabic ? 'الفصول اللي مسؤول عنها' : 'Assigned classes'} value={loading ? '—' : error ? '—' : String(summary?.classes.length ?? 0)} note={isArabic ? 'للسنة الكنسية النشطة' : 'Active church year'} />
-                <SummaryMetric icon={Users} label={isArabic ? 'التلاميذ المسجلين' : 'Enrolled students'} value={loading ? '—' : error ? '—' : String(summary?.totals.students ?? 0)} note={isArabic ? 'في فصولك المسندة' : 'In your assigned classes'} />
+                <SummaryMetric icon={GraduationCap} label={isArabic ? 'الفصول اللي مسؤول عنها' : 'Assigned classes'} value={loading ? '—' : error ? '—' : String(summary?.classes.length ?? 0)} note={isArabic ? 'في السنة الكنسية الحالية' : 'Active church year'} />
+                <SummaryMetric icon={Users} label={isArabic ? 'التلاميذ المسجلين' : 'Enrolled students'} value={loading ? '—' : error ? '—' : String(summary?.totals.students ?? 0)} note={isArabic ? 'في الفصول المسندة ليك' : 'In your assigned classes'} />
                 <SummaryMetric icon={CheckCircle2} label={isArabic ? 'الدروس اللي التلاميذ كمّلوها' : 'Recorded completions'} value={loading ? '—' : error ? '—' : String(summary?.totals.completedLessons ?? 0)} note={isArabic ? 'حسب البيانات المسجلة' : 'Persisted lesson records'} />
                 <SummaryMetric icon={BookOpen} label={isArabic ? 'المنهج المنشور' : 'Published curriculum'} value={loading ? '—' : error ? '—' : String(summary?.totals.curriculumCount ?? 0)} note={isArabic ? 'للصفوف اللي مسؤول عنها' : 'For assigned grade groups'} />
               </div>
@@ -275,9 +275,9 @@ export function ServantHomeDashboard({
             <div className="flex flex-wrap items-end justify-between gap-3 px-1">
               <div>
                 <p className="text-xs font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'أقسام تجهيز المنهج' : 'Curriculum studios'}</p>
-                <h2 id="curriculum-areas-heading" className="mt-1 text-xl font-black text-[var(--text-primary)] sm:text-2xl">{isArabic ? '٣ أقسام للتعليم والخدمة' : 'Three paths for teaching and service'}</h2>
+                <h2 id="curriculum-areas-heading" className="mt-1 text-xl font-black text-[var(--text-primary)] sm:text-2xl">{isArabic ? '٣ مساحات للتعليم والخدمة' : 'Three paths for teaching and service'}</h2>
                 <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
-                  {isArabic ? 'افتح مساحة المنهج المناسبة لمتابعة التأليف والمراجعة والنشر بأدواتها المتخصصة.' : 'Enter a curriculum area to work with its dedicated authoring, review, and publishing tools.'}
+                  {isArabic ? 'افتح مساحة المنهج المناسبة عشان تجهّز الدروس وتراجعها وتنشرها بأدواتها.' : 'Enter a curriculum area to work with its dedicated authoring, review, and publishing tools.'}
                 </p>
               </div>
               <span className="hidden items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--surface-primary)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] sm:inline-flex">
@@ -409,7 +409,7 @@ export function ServantHomeDashboard({
                 error={error}
                 hasData={classesExist}
                 emptyTitle={isArabic ? 'مفيش فصول متسجلة على حسابك دلوقتي' : 'No assigned classes yet'}
-                emptyDescription={isArabic ? 'عند تكليفك بفصل للسنة الكنسية النشطة، ستظهر بياناته الحقيقية هنا.' : 'When a class is assigned to you for the active church year, its verified information will appear here.'}
+                emptyDescription={isArabic ? 'عند تكليفك بفصل في السنة الكنسية الحالية، ستظهر بياناته الحقيقية هنا.' : 'When a class is assigned to you for the active church year, its verified information will appear here.'}
                 errorTitle={isArabic ? 'بيانات الفصول مش متاحة دلوقتي' : 'Class data is unavailable'}
                 lang={lang}
                 onRetry={refresh}
