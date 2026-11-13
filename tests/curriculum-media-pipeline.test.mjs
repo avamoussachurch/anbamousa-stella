@@ -18,14 +18,14 @@ const documentViewer = read('../src/components/sunday-school/viewers/InAppDocume
 const lessonSourceRls = read('../scripts/migrations/phase31_read_lesson_sources_for_accessible_published_lessons.sql');
 
 test('Hymns teacher studio uploads audio and PDF to private curriculum storage', () => {
-  assert.match(hymnStudio, /uploadSourceMedia\(file\)/);
+  assert.match(hymnStudio, /uploadSourceMedia\(file(?:,\s*[^)]*)?\)/);
   assert.match(hymnStudio, /setAudioUrl\(result\.fileUrl\)/);
   assert.match(hymnStudio, /setPdfUrl\(result\.fileUrl\)/);
   assert.match(hymnStudio, /resolveCurriculumMediaUrl\(audioUrl\)/);
 });
 
 test('Taxis teacher studio uploads attachments and persists stable private references', () => {
-  assert.match(taxisStudio, /uploadSourceMedia\(file\)/);
+  assert.match(taxisStudio, /uploadSourceMedia\(file(?:,\s*[^)]*)?\)/);
   assert.match(taxisStudio, /fileUrl: result\.fileUrl/);
   assert.match(taxisStudio, /setDocuments\(previous =>/);
 });
@@ -34,7 +34,8 @@ test('student Hymns and Taxis views resolve private references before browser ac
   assert.match(hymnStudent, /resolveCurriculumMediaUrl\(selectedHymn\.audioUrl\)/);
   assert.match(hymnStudent, /src=\{resolvedAudioUrl \|\| undefined\}/);
   assert.match(taxisStudent, /resolveCurriculumMediaUrl\(document\.fileUrl\)/);
-  assert.match(taxisStudent, /href=\{resolvedDocumentUrls\[doc\.id\] \|\| undefined\}/);
+  assert.match(taxisStudent, /disabled=\{!resolvedDocumentUrls\[doc\.id\]\}/);
+  assert.match(taxisStudent, /setActiveDocument\(\{ title: doc\.title, url: resolvedDocumentUrls\[doc\.id\] \}\)/);
 });
 
 test('media access preserves teacher multi-role access and denies unassigned accounts', () => {
@@ -72,7 +73,7 @@ test('Sunday School teacher recording captures and uploads real microphone audio
     assert.match(studio, /navigator\.mediaDevices\?\.getUserMedia/);
     assert.match(studio, /new MediaRecorder/);
     assert.match(studio, /new Blob\(recordingChunksRef\.current/);
-    assert.match(studio, /uploadSourceMedia\(file\)/);
+    assert.match(studio, /uploadSourceMedia\(file(?:,\s*[^)]*)?\)/);
     assert.doesNotMatch(studio, /cdn\.freesound\.org/);
   }
 });
