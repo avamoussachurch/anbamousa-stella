@@ -795,6 +795,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
         <InAppDocumentViewer
           documentUrl={displayedSlidesUrl}
           documentTitle={isAr && lesson.titleAr ? lesson.titleAr : lesson.title}
+          documentType={slideDeckSource?.type === 'PDF' ? 'pdf' : 'auto'}
           slides={eligibleSlides}
           onClose={() => setShowDocumentModal(false)}
           lang={isAr ? 'ar' : 'en'}
