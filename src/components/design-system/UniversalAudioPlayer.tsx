@@ -8,6 +8,7 @@ export interface UniversalAudioPlayerProps {
   className?: string;
   compact?: boolean;
   accent?: 'amber' | 'teal' | 'blue';
+  onTimeUpdate?: (currentTime: number) => void;
 }
 
 const SPEED_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -25,7 +26,8 @@ export function UniversalAudioPlayer({
   lang = 'ar',
   className = '',
   compact = false,
-  accent = 'amber'
+  accent = 'amber',
+  onTimeUpdate
 }: UniversalAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -94,7 +96,7 @@ export function UniversalAudioPlayer({
         preload="metadata"
         onLoadedMetadata={event => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
         onDurationChange={event => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
-        onTimeUpdate={event => setCurrentTime(event.currentTarget.currentTime)}
+        onTimeUpdate={event => { setCurrentTime(event.currentTarget.currentTime); onTimeUpdate?.(event.currentTarget.currentTime); }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
