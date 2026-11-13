@@ -80,7 +80,7 @@ export function ExpressLessonPublishModal({
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([
     {
       id: 'q-1',
-      question: isAr ? 'ما الفكرة الروحية الرئيسية المستفادة من هذا الدرس؟' : 'What is the main spiritual lesson taught today?',
+      question: isAr ? 'إيه الفكرة الروحية الأساسية اللي بنتعلمها من الدرس؟' : 'What is the main spiritual lesson taught today?',
       options: [
         isAr ? 'محبة الله والأمانة في الصلاة' : 'Loving God and faithful prayer',
         isAr ? 'الابتعاد عن الكنيسة' : 'Neglecting church and sacraments',
@@ -124,12 +124,12 @@ export function ExpressLessonPublishModal({
     if (!file) return;
 
     setIsUploadingMedia(true);
-    setUploadNote(isAr ? `جاري رفع الملف: ${file.name}...` : `Uploading ${file.name}...`);
+    setUploadNote(isAr ? `بنرفع الملف: ${file.name}...` : `Uploading ${file.name}...`);
 
     try {
       const upload = await uploadSourceMedia(file, `express-${Date.now()}`);
       if (!upload.success || !upload.fileUrl) {
-        setErrorMessage(upload.error || (isAr ? 'تعذر حفظ الملف بشكل دائم. حاول مرة أخرى.' : 'The file could not be saved persistently. Please try again.'));
+        setErrorMessage(upload.error || (isAr ? 'مش قادرين نحفظ الملف بشكل دائم. جرّب تاني.' : 'The file could not be saved persistently. Please try again.'));
         return;
       }
       const fileUrl = upload.fileUrl;
@@ -144,7 +144,7 @@ export function ExpressLessonPublishModal({
         setVideoUrl(fileUrl);
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || (isAr ? 'تعذر رفع الملف. حاول مرة أخرى.' : 'The file upload failed. Please try again.'));
+      setErrorMessage(err?.message || (isAr ? 'مش قادرين نرفع الملف. جرّب تاني.' : 'The file upload failed. Please try again.'));
     } finally {
       setIsUploadingMedia(false);
       setUploadNote('');
@@ -161,7 +161,7 @@ export function ExpressLessonPublishModal({
         id: `q-${nextIdx}`,
         question: isAr ? `سؤال جديد #${nextIdx}` : `New Quiz Question #${nextIdx}`,
         options: [
-          isAr ? 'الخيار الأول (صحيح)' : 'Option 1 (Correct)',
+          isAr ? 'الخيار الأول (صح)' : 'Option 1 (Correct)',
           isAr ? 'الخيار الثاني' : 'Option 2',
           isAr ? 'الخيار الثالث' : 'Option 3',
           isAr ? 'الخيار الرابع' : 'Option 4'
@@ -241,9 +241,9 @@ export function ExpressLessonPublishModal({
       ];
 
       setQuizQuestions(prev => [...prev, ...newSuggested]);
-      setAiHelperMessage(isAr ? '✨ قام المساعد باقتراح سؤالين إضافيين (متوسط وصعب) يمكنك تعديلهما بحرية.' : '✨ AI Assistant added 2 tiered suggestions (Medium & Hard). You can customize them freely.');
+      setAiHelperMessage(isAr ? '✨ المساعد اقترح سؤالين زيادة (متوسط وصعب). تقدر تعدّلهم زي ما تحب.' : '✨ AI Assistant added 2 tiered suggestions (Medium & Hard). You can customize them freely.');
     } catch {
-      setAiHelperMessage(isAr ? 'تعذر استدعاء المساعد حالياً.' : 'AI Assistant could not be reached.');
+      setAiHelperMessage(isAr ? 'مش قادرين نوصل للمساعد دلوقتي.' : 'AI Assistant could not be reached.');
     } finally {
       setIsAiGeneratingQuiz(false);
     }
@@ -257,13 +257,13 @@ export function ExpressLessonPublishModal({
   const handleFinalPublish = async (directlyPublish: boolean) => {
     if (directlyPublish && !canDirectPublish) {
       setErrorMessage(isAr
-        ? 'النشر المباشر متاح للمسؤول فقط. احفظ الدرس كمسودة لإرساله للمراجعة.'
+        ? 'النشر المباشر متاح للمسؤول بس. احفظ الدرس كمسودة عشان يتبعت للمراجعة.'
         : 'Direct publishing is restricted to administrators. Save this lesson as a draft for review.');
       return;
     }
     if (!title.trim()) {
       setCurrentStep(1);
-      setErrorMessage(isAr ? 'يرجى كتابة عنوان الدرس أولاً' : 'Please provide a lesson title');
+      setErrorMessage(isAr ? 'اكتب عنوان الدرس الأول.' : 'Please provide a lesson title');
       return;
     }
 
@@ -329,7 +329,7 @@ export function ExpressLessonPublishModal({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black text-stone-100">
-                  {isAr ? 'نشر درس لمدارس الأحد' : 'Publish Sunday School Lesson'}
+                  {isAr ? 'انشر درس لمدارس الأحد' : 'Publish Sunday School Lesson'}
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">
                   {isAr ? 'نشر مباشر' : 'Manual Publishing'}
@@ -875,7 +875,7 @@ export function ExpressLessonPublishModal({
                 type="button"
                 onClick={() => {
                   if (currentStep === 1 && !title.trim()) {
-                    setErrorMessage(isAr ? 'يرجى كتابة عنوان الدرس أولاً' : 'Please provide a lesson title');
+                    setErrorMessage(isAr ? 'اكتب عنوان الدرس الأول.' : 'Please provide a lesson title');
                     return;
                   }
                   setErrorMessage(null);
