@@ -4,6 +4,9 @@ import { readFileSync } from 'node:fs';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 const html = read('../index.html');
+const icon = read('../public/icon.svg');
+const login = read('../src/components/auth/LoginScreen.tsx');
+const splash = read('../src/components/layout/AnbaMousaSplashScreen.tsx');
 const vite = read('../vite.config.ts');
 const metadata = JSON.parse(read('../metadata.json'));
 const packageJson = JSON.parse(read('../package.json'));
@@ -17,6 +20,11 @@ test('browser metadata uses the approved Anba Moussa brand and tagline', () => {
   assert.match(html, /<meta name="apple-mobile-web-app-title" content="Anba Moussa"/);
   assert.match(html, /<meta property="og:title" content="Anba Moussa"/);
   assert.match(html, /Growing in Faith, Learning in Love/);
+  assert.match(html, /href=\"\\/icon\\.svg\"/);
+  assert.match(icon, /Bishop Moussa/);
+  assert.match(icon, /golden cross/i);
+  assert.match(login, /src=\"\\/icon\\.svg\"/);
+  assert.match(splash, /src=\"\\/icon\\.svg\"/);
   assert.doesNotMatch(html, /St\. Musa Coptic Sunday School Platform|StMusaApp/);
 });
 
