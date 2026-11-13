@@ -86,7 +86,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            {lang === 'ar' ? 'مراجعة الترجمة القبطية البحيرية' : '{lang === 'ar' ? 'القبطي البحيري' : 'Bohairic Coptic'} Localization QA'}
+            {lang === 'ar' ? 'مراجعة الترجمة القبطية البحيرية' : 'Bohairic Coptic Localization QA'}
           </h1>
           <p className="text-sm text-white/80 max-w-2xl mt-1">
             {lang === 'ar' ? 'الأرقام دي بتوضح اكتمال بيانات سجل المصطلحات والترجمة بس، ومش معناها إن كل شاشات الموقع مترجمة بالكامل.' : 'These figures measure translation registry completeness only; they do not mean every app screen is fully localized.'}
