@@ -97,7 +97,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       setIsLoadingServerPosts(false);
 
       if (res.error || !res.data) {
-        setFeedLoadError(res.error?.message || (lang === 'ar' ? 'تعذر تحميل منشورات المجتمع.' : 'The community feed could not be loaded.'));
+        setFeedLoadError(res.error?.message || (lang === 'ar' ? 'مش قادرين نحمّل منشورات المجتمع دلوقتي.' : 'The community feed could not be loaded.'));
         setFeedResultScope(userData?.id || 'guest');
         return;
       }
@@ -111,7 +111,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     loadFeed().catch(error => {
       if (!isMounted) return;
       setIsLoadingServerPosts(false);
-      setFeedLoadError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر تحميل منشورات المجتمع.' : 'The community feed could not be loaded.'));
+      setFeedLoadError(error instanceof Error ? error.message : (lang === 'ar' ? 'مش قادرين نحمّل منشورات المجتمع دلوقتي.' : 'The community feed could not be loaded.'));
       setFeedResultScope(userData?.id || 'guest');
     });
 
@@ -486,7 +486,7 @@ export function FeedTab({ lang }: { lang: Language }) {
         setComposerAttachments(previous => previous.map(current => {
           if (current.id !== item.id) return current;
           if (result.error || !result.data) {
-            return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'تعذر رفع الملف.' : 'Upload failed.') };
+            return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'مش قادرين نرفع الملف.' : 'Upload failed.') };
           }
           URL.revokeObjectURL(current.localPreviewUrl || '');
           return { ...result.data, localPreviewUrl: undefined };
@@ -511,7 +511,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       setComposerAttachments(previous => previous.map(current => {
         if (current.id !== id) return current;
         if (result.error || !result.data) {
-          return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'تعذر رفع الملف.' : 'Upload failed.') };
+          return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'مش قادرين نرفع الملف.' : 'Upload failed.') };
         }
         URL.revokeObjectURL(current.localPreviewUrl || '');
         return { ...result.data, localPreviewUrl: undefined };
@@ -573,7 +573,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       setLinkInputValue('');
       setShowLinkInput(false);
     } else {
-      setMediaError(lang === 'ar' ? 'يرجى إدخال رابط يوتيوب أو جوجل درايف أو فيديو أو صوت صالح' : 'Please enter a valid YouTube, Google Drive, video or audio link');
+      setMediaError(lang === 'ar' ? 'اكتب رابط صحيح ليوتيوب أو جوجل درايف أو ملف فيديو أو صوت' : 'Please enter a valid YouTube, Google Drive, video or audio link');
     }
   };
 
@@ -595,7 +595,7 @@ export function FeedTab({ lang }: { lang: Language }) {
   const handleCreatePost = async () => {
     if ((!newPostText.trim() && composerAttachments.length === 0) || !userData || isCreatingPost) return;
     if (composerAttachments.some(attachment => attachment.status !== 'ready')) {
-      setMediaError(lang === 'ar' ? 'أكمل رفع الملفات أو أعد محاولة الملفات التي فشل رفعها أولاً.' : 'Finish or retry every attachment upload before publishing.');
+      setMediaError(lang === 'ar' ? 'استنى لحد ما الملفات تترفع، أو جرّب ترفع الملفات اللي حصل فيها مشكلة تاني.' : 'Finish or retry every attachment upload before publishing.');
       return;
     }
     setActionError(null);
@@ -653,7 +653,7 @@ export function FeedTab({ lang }: { lang: Language }) {
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!confirm(lang === 'ar' ? 'هل أنت متأكد من حذف هذا المنشور؟' : 'Are you sure you want to delete this post?')) {
+    if (!confirm(lang === 'ar' ? 'متأكد إنك عايز تحذف المنشور ده؟' : 'Are you sure you want to delete this post?')) {
       return;
     }
     setActionError(null);
@@ -698,10 +698,10 @@ export function FeedTab({ lang }: { lang: Language }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] md:text-3xl">
-            {lang === 'ar' ? 'واحة مجتمع كنيسة القديس الأنبا موسى' : 'St. Moses Community Oasis'}
+            {lang === 'ar' ? 'مجتمع كنيسة الأنبا موسى' : 'St. Moses Community Oasis'}
           </h1>
           <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)]">
-            {lang === 'ar' ? 'مشاركات روحية، تأملات البرية، وتواصل عائلة مدارس الأحد' : 'Spiritual reflections, desert verses & Sunday School fellowship'}
+            {lang === 'ar' ? 'شارك تأملاتك وآياتك وتواصل مع عيلة مدارس الأحد' : 'Spiritual reflections, desert verses & Sunday School fellowship'}
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
@@ -772,8 +772,8 @@ export function FeedTab({ lang }: { lang: Language }) {
         <div className="flex-1">
           <p className="font-black text-sm md:text-base text-white">
             {isTeacher 
-              ? (isCop ? 'Ϩⲓⲟⲩⲓ̀ ⲛ̀ⲟⲩⲧⲁⲙⲟ ⲛ̀ⲧⲉ ϯⲇⲓⲁⲕⲟⲛⲓⲁ ⲓⲉ ⲟⲩⲙⲉⲩⲓ' : lang === 'ar' ? 'نشر إعلان خدمة أو تأمل روحي' : 'Post Servant Announcement or Reflection') 
-              : (isCop ? 'Ϣⲱⲡ ⲛ̀ⲟⲩⲣⲏϯ ⲓⲉ ⲟⲩⲙⲉⲩⲓ ⲛⲉⲙ ⲧⲉⲕⲉⲕⲕⲗⲏⲥⲓⲁ!' : lang === 'ar' ? 'شارك آية أو تأمل مع كنيستك!' : 'Share a verse or reflection with church!')}
+              ? (isCop ? 'Ϩⲓⲟⲩⲓ̀ ⲛ̀ⲟⲩⲧⲁⲙⲟ ⲛ̀ⲧⲉ ϯⲇⲓⲁⲕⲟⲛⲓⲁ ⲓⲉ ⲟⲩⲙⲉⲩⲓ' : lang === 'ar' ? 'انشر إعلان للخدمة أو شارك تأمل روحي' : 'Post Servant Announcement or Reflection') 
+              : (isCop ? 'Ϣⲱⲡ ⲛ̀ⲟⲩⲣⲏϯ ⲓⲉ ⲟⲩⲙⲉⲩⲓ ⲛⲉⲙ ⲧⲉⲕⲉⲕⲕⲗⲏⲥⲓⲁ!' : lang === 'ar' ? 'شارك آية أو تأمل مع عيلتك في الكنيسة!' : 'Share a verse or reflection with church!')}
           </p>
           <p className="text-xs text-stone-200 mt-0.5">
             {isTeacher 
