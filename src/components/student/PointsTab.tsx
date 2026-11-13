@@ -30,10 +30,10 @@ export function PointsTab({ lang }: { lang: Language }) {
   const { points, currentStreak, longestStreak, leaderboard: displayLeaderboard, streakLeaderboard: displayStreaks, addPoints } = usePoints();
   
   // Section order:
-  // 1. Streak Stars (نجوم الستريك) — DEFAULT
+  // 1. Streak Stars (نجوم المواظبة) — DEFAULT
   // 2. My Trail (رحلتي)
-  // 3. Points Leaderboard (لوحة نقاط البركة)
-  // 4. Points Bazaar (بازار النقط)
+  // 3. Points Leaderboard (لوحة ترتيب النقاط)
+  // 4. Points Bazaar (متجر المكافآت)
   const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar'>('streak');
   const [showStore, setShowStore] = useState(false);
   const [purchases, setPurchases] = useState<any[]>(() => userData ? getSavedPurchases(userData.id) : []);
@@ -86,7 +86,7 @@ export function PointsTab({ lang }: { lang: Language }) {
     const { id: rewardId, cost, name } = confirmPurchaseItem;
     
     if (userData.points < cost) {
-       showNotification('error', lang === 'ar' ? 'رصيد نقاطك غير كافٍ لإتمام هذا الطلب!' : 'Not enough points for this reward!');
+       showNotification('error', lang === 'ar' ? 'نقاطك مش كفاية عشان تطلب المكافأة دي!' : 'Not enough points for this reward!');
        setConfirmPurchaseItem(null);
        return;
     }
@@ -124,10 +124,10 @@ export function PointsTab({ lang }: { lang: Language }) {
 
        setConfirmPurchaseItem(null);
        setShowStore(false);
-       showNotification('success', lang === 'ar' ? 'تم تقديم طلب الهدية بنجاح! يمكنك استلامها من خادم الفصل يوم الأحد.' : 'Request submitted successfully! Claim your reward from your servant on Sunday.');
+       showNotification('success', lang === 'ar' ? 'طلب المكافأة اتبعت بنجاح! تقدر تستلمها من خادم فصلك يوم الأحد.' : 'Request submitted successfully! Claim your reward from your servant on Sunday.');
     } catch(err: any) {
        console.error(err);
-       showNotification('error', lang === 'ar' ? 'حدث خطأ أثناء إتمام الطلب' : 'Error during purchase.');
+       showNotification('error', lang === 'ar' ? 'حصلت مشكلة وإحنا بننفّذ الطلب.' : 'Error during purchase.');
        setConfirmPurchaseItem(null);
     }
   };
@@ -138,7 +138,7 @@ export function PointsTab({ lang }: { lang: Language }) {
     <div className="pb-24 pt-6 px-4 w-full max-w-7xl mx-auto space-y-8 overflow-hidden" dir="rtl">
       {/* 4-Section View Toggle in Exact Required Order */}
       <div className="flex flex-wrap bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] rounded-2xl p-1.5 shadow-sm border-2 border-[var(--mousa-border-sand)] relative z-10 text-xs sm:text-sm max-w-2xl mx-auto gap-1">
-        {/* 1. Streak Stars — Arabic: نجوم الستريك (DEFAULT) */}
+        {/* 1. Streak Stars — Arabic: نجوم المواظبة (DEFAULT) */}
         <button 
           onClick={() => setView('streak')}
           className={`flex-1 min-w-[120px] py-2.5 sm:py-3 px-2 rounded-xl font-black transition-all z-10 cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -148,7 +148,7 @@ export function PointsTab({ lang }: { lang: Language }) {
           }`}
         >
           <Flame size={16} className={view === 'streak' ? 'fill-current text-amber-700' : 'text-amber-500'} />
-          <span>{lang === 'ar' ? 'نجوم الستريك' : 'Streak Stars'}</span>
+          <span>{lang === 'ar' ? 'نجوم المواظبة' : 'Streak Stars'}</span>
         </button>
 
         {/* 2. My Trail — Arabic: رحلتي */}
@@ -164,7 +164,7 @@ export function PointsTab({ lang }: { lang: Language }) {
           <span>{lang === 'ar' ? 'رحلتي' : 'My Trail'}</span>
         </button>
 
-        {/* 3. Points Leaderboard — Arabic: لوحة نقاط البركة */}
+        {/* 3. Points Leaderboard — Arabic: لوحة ترتيب النقاط */}
         <button 
           onClick={() => setView('leaderboard')}
           className={`flex-1 min-w-[125px] py-2.5 sm:py-3 px-2 rounded-xl font-black transition-all z-10 cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -174,10 +174,10 @@ export function PointsTab({ lang }: { lang: Language }) {
           }`}
         >
           <Users size={15} />
-          <span>{lang === 'ar' ? 'لوحة نقاط البركة' : 'Points Leaderboard'}</span>
+          <span>{lang === 'ar' ? 'لوحة ترتيب النقاط' : 'Points Leaderboard'}</span>
         </button>
 
-        {/* 4. Points Bazaar — Arabic: بازار النقط */}
+        {/* 4. Points Bazaar — Arabic: متجر المكافآت */}
         <button 
           onClick={() => setView('bazaar')}
           className={`flex-1 min-w-[110px] py-2.5 sm:py-3 px-2 rounded-xl font-black transition-all z-10 cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -187,13 +187,13 @@ export function PointsTab({ lang }: { lang: Language }) {
           }`}
         >
           <Gift size={15} />
-          <span>{lang === 'ar' ? 'بازار النقط' : 'Points Bazaar'}</span>
+          <span>{lang === 'ar' ? 'متجر المكافآت' : 'Points Bazaar'}</span>
         </button>
       </div>
 
       <AnimatePresence mode="wait">
         {/* =========================================================================
-            SECTION 1: STREAK STARS (نجوم الستريك) — DEFAULT VISIBLE
+            SECTION 1: STREAK STARS (نجوم المواظبة) — DEFAULT VISIBLE
            ========================================================================= */}
         {view === 'streak' && (
           <motion.div 
@@ -217,10 +217,10 @@ export function PointsTab({ lang }: { lang: Language }) {
                 {userData.currentStreak ?? 0} {lang === 'ar' ? 'أيام' : 'Days'}
               </div>
               <p className="text-stone-800 dark:text-stone-200 font-extrabold uppercase tracking-wider text-xs sm:text-sm">
-                {lang === 'ar' ? 'سلسلة المواظبة الحالية في مسيرة الأنبا موسى' : 'Current Daily Learning Streak'}
+                {lang === 'ar' ? 'عدد الأيام اللي واظبت فيها في رحلة الأنبا موسى' : 'Current Daily Learning Streak'}
               </p>
               <div className="flex items-center justify-center gap-3 pt-2 text-xs font-bold text-stone-600 dark:text-stone-400">
-                <span>{lang === 'ar' ? `🏆 أطول مواظبة: ${userData.longestStreak ?? userData.currentStreak ?? 0} يوم` : `🏆 Longest: ${userData.longestStreak ?? userData.currentStreak ?? 0} days`}</span>
+                <span>{lang === 'ar' ? `🏆 أطول فترة مواظبة: ${userData.longestStreak ?? userData.currentStreak ?? 0} يوم` : `🏆 Longest: ${userData.longestStreak ?? userData.currentStreak ?? 0} days`}</span>
               </div>
             </motion.div>
 
@@ -228,10 +228,10 @@ export function PointsTab({ lang }: { lang: Language }) {
               <div>
                 <h2 className="text-xl md:text-2xl font-black text-stone-900 dark:text-stone-50 flex items-center gap-2">
                   <Flame size={26} className="text-amber-500 fill-amber-500" />
-                  <span>{lang === 'ar' ? 'نجوم الستريك والمواظبة' : 'Streak Stars Leaderboard'}</span>
+                  <span>{lang === 'ar' ? 'نجوم المواظبة والمواظبة' : 'Streak Stars Leaderboard'}</span>
                 </h2>
                 <p className="text-xs sm:text-sm font-bold text-stone-700 dark:text-stone-300">
-                  {lang === 'ar' ? 'أبطال الحضور المستمر والصلوات اليومية ومحطات الدروس' : 'Champions of daily prayer, attendance & weekly milestones'}
+                  {lang === 'ar' ? 'أبطال المواظبة والحضور والصلوات اليومية وإكمال الدروس' : 'Champions of daily prayer, attendance & weekly milestones'}
                 </p>
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 text-xs font-black">
@@ -266,7 +266,7 @@ export function PointsTab({ lang }: { lang: Language }) {
             {/* Ranks 4+ List */}
             <div className="space-y-3 pt-2">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-500 dark:text-stone-400 px-1">
-                {lang === 'ar' ? 'باقي رفقاء المسيرة' : 'Caravan Runners (Ranks 4+)'}
+                {lang === 'ar' ? 'باقي أصحاب الرحلة' : 'Caravan Runners (Ranks 4+)'}
               </h3>
               {displayStreaks.slice(3).map((entry) => {
                 const isCurrentUser = entry.studentId === userData.id || (userData.id.startsWith('guest_') && entry.studentId === 'u1');
@@ -310,7 +310,7 @@ export function PointsTab({ lang }: { lang: Language }) {
                         <span className="font-black text-xl sm:text-2xl text-amber-700 dark:text-amber-400">{entry.streakDays}</span>
                       </div>
                       <p className="text-[10px] sm:text-xs font-black text-stone-600 dark:text-stone-400 uppercase">
-                        {lang === 'ar' ? 'أيام متتالية' : 'Days Streak'}
+                        {lang === 'ar' ? 'يوم ورا يوم' : 'Days Streak'}
                       </p>
                     </div>
                   </motion.div>
@@ -335,10 +335,10 @@ export function PointsTab({ lang }: { lang: Language }) {
               <div>
                 <h2 className="text-xl md:text-2xl font-black text-stone-900 dark:text-stone-50 flex items-center gap-2">
                   <Trophy size={26} className="text-[var(--mousa-gold)]" />
-                  <span>{lang === 'ar' ? 'أوسمة رحلتي في طريق الأنبا موسى' : 'My Trail & Journey Badges'}</span>
+                  <span>{lang === 'ar' ? 'أوسمة رحلتي مع الأنبا موسى' : 'My Trail & Journey Badges'}</span>
                 </h2>
                 <p className="text-xs sm:text-sm font-bold text-stone-700 dark:text-stone-300">
-                  {lang === 'ar' ? 'الأوسمة التي تكتسبها مع كل محطة وتقدم في النقاط والصلوات' : 'Badges earned as you advance through milestones, prayer, and lessons'}
+                  {lang === 'ar' ? 'الأوسمة اللي بتكسبها مع كل محطة ومع تقدمك في النقاط والصلوات' : 'Badges earned as you advance through milestones, prayer, and lessons'}
                 </p>
               </div>
             </div>
@@ -376,12 +376,12 @@ export function PointsTab({ lang }: { lang: Language }) {
                         {badge.title}
                       </h3>
                       <p className={`text-xs md:text-sm font-bold mt-1 ${isUnlocked ? 'text-stone-800 dark:text-stone-200' : 'text-stone-600 dark:text-stone-400'}`}>
-                        +{badge.pointsThreshold} {lang === 'ar' ? 'نقطة بركة لازمة للفتح' : 'points required'}
+                        +{badge.pointsThreshold} {lang === 'ar' ? 'نقطة محتاجها عشان تفتح المكافأة' : 'points required'}
                       </p>
                       {isUnlocked ? (
                         <div className="mt-2 text-xs font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
                           <CheckCircle2 size={14} />
-                          <span>{lang === 'ar' ? 'وسام مفتوح ومكتسب ✅' : 'Unlocked & Earned ✅'}</span>
+                          <span>{lang === 'ar' ? 'وسام اتفتح وكسبته ✅' : 'Unlocked & Earned ✅'}</span>
                         </div>
                       ) : (
                         <div className="mt-2 text-xs font-bold text-stone-600 dark:text-stone-400 flex items-center gap-1">
@@ -405,7 +405,7 @@ export function PointsTab({ lang }: { lang: Language }) {
         )}
 
         {/* =========================================================================
-            SECTION 3: POINTS LEADERBOARD (لوحة نقاط البركة)
+            SECTION 3: POINTS LEADERBOARD (لوحة ترتيب النقاط)
            ========================================================================= */}
         {view === 'leaderboard' && (
           <motion.div 
@@ -437,7 +437,7 @@ export function PointsTab({ lang }: { lang: Language }) {
                <div>
                  <h2 className="text-xl md:text-2xl font-black text-stone-900 dark:text-stone-50 flex items-center gap-2">
                    <Users size={26} className="text-[var(--mousa-gold)]" />
-                   <span>{lang === 'ar' ? 'لوحة نقاط البركة الأسبوعية' : 'Weekly Points Leaderboard'}</span>
+                   <span>{lang === 'ar' ? 'لوحة ترتيب النقاط الأسبوعية' : 'Weekly Points Leaderboard'}</span>
                  </h2>
                  <p className="text-xs sm:text-sm font-bold text-stone-700 dark:text-stone-300">
                    {lang === 'ar' ? 'ترتيب رفقاء المسيرة بنقاط البركة الحقيقية' : 'Official rankings based on earned milestone blessing points'}
@@ -473,7 +473,7 @@ export function PointsTab({ lang }: { lang: Language }) {
              {/* Ranks 4+ List */}
              <div className="space-y-3 pt-2">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-500 dark:text-stone-400 px-1">
-                  {lang === 'ar' ? 'باقي رفقاء المسيرة' : 'Caravan Runners (Ranks 4+)'}
+                  {lang === 'ar' ? 'باقي أصحاب الرحلة' : 'Caravan Runners (Ranks 4+)'}
                 </h3>
                 {displayLeaderboard.slice(3).map((entry) => {
                   const isCurrentUser = entry.studentId === userData.id || (userData.id.startsWith('guest_') && entry.studentId === 'u1');
@@ -527,7 +527,7 @@ export function PointsTab({ lang }: { lang: Language }) {
         )}
 
         {/* =========================================================================
-            SECTION 4: POINTS BAZAAR (بازار النقط) — BLURRED WITH COMING SOON OVERLAY
+            SECTION 4: POINTS BAZAAR (متجر المكافآت) — BLURRED WITH COMING SOON OVERLAY
            ========================================================================= */}
         {view === 'bazaar' && (
           <motion.div 
