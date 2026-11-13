@@ -223,11 +223,11 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
               animate={reduceMotion ? undefined : { y: [0, -8, 0], rotate: [0, -3, 3, 0], boxShadow: ['0 0 22px rgba(198,139,35,.22)', '0 0 54px rgba(198,139,35,.58)', '0 0 22px rgba(198,139,35,.22)'] }}
               transition={reduceMotion ? undefined : { duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <span className="text-3xl font-black tracking-tighter text-[var(--mousa-gold)]">ⲭⲣ</span>
+              <img src="/icon.svg" alt="Bishop Moussa holding a cross" className="h-full w-full rounded-[1.45rem] object-cover" />
             </motion.div>
           </div>
           <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] tracking-tight">
-            {lang === 'copt' ? 'Ⲁⲛⲃⲁ Ⲙⲱⲩⲥⲏ' : lang === 'ar' ? 'الأنبا موسى' : 'Anba Mousa'}
+            {lang === 'copt' ? 'Ⲁⲛⲃⲁ Ⲙⲱⲩⲥⲏ' : lang === 'ar' ? 'الأنبا موسى' : 'Anba Moussa'}
           </h1>
           <p className="mx-auto max-w-xs text-[10px] font-black uppercase tracking-[.16em] text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold)]">
             {lang === 'ar' ? 'نكبر في الإيمان ونتعلّم بالمحبة' : lang === 'copt' ? 'Ⲧⲉⲛϣⲟⲩϣⲟⲩ ϧⲉⲛ ⲡⲓⲛⲁϩϯ ⲛⲉⲙ ⲡⲓⲙⲁⲑⲏⲧⲏⲥ' : 'Growing in Faith, Learning in Love'}
