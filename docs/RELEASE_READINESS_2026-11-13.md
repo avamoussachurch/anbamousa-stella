@@ -129,6 +129,37 @@ Example environment variable names are documented in the script header. Never co
 - GitHub Actions run #303 passed TypeScript, 281 tests (0 failures, 0 skipped), both script syntax checks, and the production build.
 - The smoke test itself has not been run because no real QA-account tokens or Cloud Run service access are available in this session.
 
+## Curriculum media repair — November 13, 2026
+
+### Confirmed production facts
+
+- Located the newly uploaded Hymn record in production. It is published at Hymns/Taxis level 3 and has both `audio_url` and `pdf_url` / `sheet_music_url` set to stable references in the private curriculum bucket.
+- Confirmed both matching `media_objects` rows exist: one MP3 (~1.27 MB) and one PDF (~2.07 MB). Supabase Storage logs show successful upload and signed-URL operations; the audio object was also successfully fetched by a browser.
+- The current student roster has one level-3 student with an active class membership. No real file was deleted, moved, or overwritten.
+
+### Root causes fixed in PR #75 (merged to main)
+
+- The Sunday School Manual Lesson Studio and Express Lesson Publisher "record" controls were not recording anything. They only started a timer and then assigned a public demo Freesound URL. Replaced both with actual browser microphone capture via `MediaRecorder`, upload to private Supabase Storage, and save the resulting stable reference on the lesson. The source-ingestion recorder was corrected too.
+- Media uploads from Manual/Express studios used synthetic `manual-<timestamp>` / `express-<timestamp>` lesson IDs. Removed those invalid IDs from upload metadata.
+- Browser-recorded WebM audio was being labelled `video/webm` by the server's extension map. The MIME resolver now preserves `audio/webm` when the supplied file type is audio.
+- The `lesson_sources` SELECT policy called `can_read_curriculum_source`, which required every source to be linked to a section in the active lesson version. Lesson-level teacher voice recordings and handouts are valid attachments but are not necessarily section-linked, so students could not read them. Phase 31 now permits source access only when `can_read_curriculum_lesson(lesson_id)` returns true; that existing function enforces published active version, class membership, and verified parent/child access.
+- The private `/api/media-url` route now applies user-scoped lesson RLS checks to lesson sources and lesson-level audio/PDF fields. Hymn references are queried by exact columns rather than a combined PostgREST OR filter; Taxis attachments are queried only if the reference is not a Hymn file. This prevents an unrelated table lookup from blocking all media requests.
+- Hymns now show an explicit PDF action and open the document in-app. Taxis attachments also open in-app. The shared PDF viewer uses the browser's native PDF renderer for signed private URLs rather than relying on a third-party Google Docs fetch, and includes an open-in-new-tab fallback.
+- Audio players now wait for a playable URL, report loading/playback errors, and do not falsely show playback as started.
+
+### Database migration applied
+
+- Applied `20261113145156_phase31_read_lesson_sources_for_accessible_published_lessons` to production.
+- Verified the migration is in Supabase migration history and the function definition now delegates to `can_read_curriculum_lesson`.
+- The migration does not make the curriculum bucket public and does not grant anonymous access.
+
+### Remaining validation
+
+- PR #75 is merged. Regression tests were added for real MediaRecorder upload, lesson-source RLS, PDF rendering, and audio failure handling.
+- GitHub's workflow-run/status API did not return a CI run for the merge commit in this session; do not mark the test suite as passed based solely on the code changes.
+- Real student playback still requires deploying the merged revision and testing with a real student account that has the required class/level assignment. The current level-3 student account is assigned to an active class, but a live authenticated browser playback test was not available from this session.
+- Confirm a new teacher recording and a Hymn MP3/PDF are playable/openable from the student account after deployment. Existing uploaded Hymn files remain in place.
+
 ## What this audit did not do
 
 - Did not deploy or change the Cloud Run service.
