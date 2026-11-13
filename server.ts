@@ -5497,23 +5497,53 @@ async function authorizeStudentDataAccess(
   if (hasServerRole(authContext, 'admin')) {
     return requestedStudentId;
   }
-  if (hasServerRole(authContext, 'parent')) {
-    const related = serverReviewState.parentChildRelationships.some(
-      relation => relation.parentId === authContext.userId &&
-        relation.childId === requestedStudentId &&
-        (relation.relationshipType === 'parent_child' || relation.relationshipType === 'guardian_student')
-    );
-    if (related) {
-      return requestedStudentId;
+  const isDelegatedReader = hasServerRole(authContext, 'parent') || hasServerRole(authContext, 'teacher');
+  if (isDelegatedReader && isUuidStudentId(requestedStudentId)) {
+    // Production authorization must use the same verified family links and active
+    // class assignments as Supabase RLS. Server-local JSON state is not authoritative.
+    try {
+      const roleClient = getRoleRequestClient(req);
+      const { data: allowed, error } = await roleClient.rpc('can_access_student_data', {
+        p_student_id: requestedStudentId
+      });
+      if (error) {
+        console.error('Delegated student-data authorization failed:', error.message);
+        res.status(502).json({
+          success: false,
+          error: 'ACCESS_CHECK_FAILED',
+          message: 'Could not verify access to this student’s learning data. Please try again.'
+        });
+        return null;
+      }
+      if (allowed === true) return requestedStudentId;
+    } catch (error: any) {
+      console.error('Delegated student-data authorization failed:', error?.message || error);
+      res.status(502).json({
+        success: false,
+        error: 'ACCESS_CHECK_FAILED',
+        message: 'Could not verify access to this student’s learning data. Please try again.'
+      });
+      return null;
     }
-  } else if (hasServerRole(authContext, 'teacher')) {
-    const studentGroups = getStudentClassGroups(requestedStudentId);
-    const savedAssignments = Object.prototype.hasOwnProperty.call(serverReviewState.teacherAssignments, authContext.userId)
-      ? serverReviewState.teacherAssignments[authContext.userId]
-      : [];
-    const assignedGroups = Array.isArray(savedAssignments) ? savedAssignments : [];
-    if (Array.from(studentGroups).some(group => assignedGroups.includes(group))) {
-      return requestedStudentId;
+  }
+
+  // Non-UUID identities are supported only by isolated unit-test fixtures.
+  // They are never accepted as delegated production identities.
+  if (process.env.NODE_ENV === 'test' && !isUuidStudentId(requestedStudentId)) {
+    if (hasServerRole(authContext, 'parent')) {
+      const related = serverReviewState.parentChildRelationships.some(
+        relation => relation.parentId === authContext.userId &&
+          relation.childId === requestedStudentId &&
+          (relation.relationshipType === 'parent_child' || relation.relationshipType === 'guardian_student')
+      );
+      if (related) return requestedStudentId;
+    } else if (hasServerRole(authContext, 'teacher')) {
+      const studentGroups = getStudentClassGroups(requestedStudentId);
+      const savedAssignments = Object.prototype.hasOwnProperty.call(serverReviewState.teacherAssignments, authContext.userId)
+        ? serverReviewState.teacherAssignments[authContext.userId]
+        : [];
+      const assignedGroups = Array.isArray(savedAssignments) ? savedAssignments : [];
+      if (Array.from(studentGroups).some(group => assignedGroups.includes(group))) return requestedStudentId;
     }
   }
 

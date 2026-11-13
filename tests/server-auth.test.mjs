@@ -22,6 +22,9 @@ let publicationActiveYear = true;
 let publicationRpcFailure = false;
 let publicationReadbackMatches = true;
 let publicationClassGroupQueries = [];
+let delegatedAccessResult = true;
+let delegatedAccessFailure = false;
+const delegatedAccessCalls = [];
 let publicationTeacherAssignmentYear = '00000000-0000-4000-8000-000000000001';
 let assignedClassGroupId = 'primary_2';
 let liveTeacherAssignments = [];
@@ -428,6 +431,19 @@ before(async () => {
     }
     if (url.pathname === '/rest/v1/user_relationships') {
       return respondJson(res, 200, []);
+    }
+    if (url.pathname === '/rest/v1/rpc/can_access_student_data') {
+      let rawBody = '';
+      req.on('data', chunk => { rawBody += chunk; });
+      req.on('end', () => {
+        const body = JSON.parse(rawBody || '{}');
+        delegatedAccessCalls.push({ bearer, body });
+        if (delegatedAccessFailure) {
+          return respondJson(res, 500, { code: 'XX000', message: 'Simulated access check failure' });
+        }
+        return respondJson(res, 200, delegatedAccessResult);
+      });
+      return;
     }
     if (url.pathname === '/rest/v1/rpc/request_role_promotion') {
       let rawBody = '';
@@ -2323,6 +2339,45 @@ test('admin support access is read-only, revalidated, and audited with the verif
   const audit = await request('/api/church/admin/action-audit', { role: 'admin', userId: adminId });
   assert.equal(audit.status, 200);
   assert.equal((await audit.json()).audit.some(entry => entry.operation === 'support_access_opened'), true);
+});
+
+
+test('parent and teacher delegated student-data access is checked against Supabase', async () => {
+  const studentId = 'a1111111-1111-4111-8111-111111111111';
+  const parentId = 'parent-db-access-check';
+  const teacherId = 'teacher-db-access-check';
+  roleAssignments.set(parentId, ['parent']);
+  roleAssignments.set(teacherId, ['teacher']);
+  delegatedAccessResult = true;
+  delegatedAccessFailure = false;
+
+  const before = delegatedAccessCalls.length;
+  const parentResponse = await request(`/api/church/completion-history?studentId=${studentId}`, {
+    role: 'parent',
+    userId: parentId
+  });
+  assert.equal(parentResponse.status, 200, await parentResponse.clone().text());
+  assert.equal(delegatedAccessCalls.length, before + 1);
+  assert.equal(delegatedAccessCalls.at(-1).body.p_student_id, studentId);
+  assert.match(delegatedAccessCalls.at(-1).bearer, /test_jwt_parent/);
+
+  delegatedAccessResult = false;
+  const deniedTeacherResponse = await request(`/api/church/completion-history?studentId=${studentId}`, {
+    role: 'teacher',
+    userId: teacherId
+  });
+  assert.equal(deniedTeacherResponse.status, 403);
+
+  delegatedAccessFailure = true;
+  const unavailableResponse = await request(`/api/church/completion-history?studentId=${studentId}`, {
+    role: 'parent',
+    userId: parentId
+  });
+  assert.equal(unavailableResponse.status, 502);
+  assert.equal((await unavailableResponse.json()).error, 'ACCESS_CHECK_FAILED');
+
+  delegatedAccessFailure = false;
+  delegatedAccessResult = true;
 });
 
 test('admin class assignment preserves role authority and records the verified actor', async () => {
