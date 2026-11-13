@@ -55,7 +55,7 @@ export function ParentSettings({
   };
 
   return (
-    <div className="space-y-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       {/* 1. Real-Time Push Notifications Master Box */}
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
