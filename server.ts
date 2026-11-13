@@ -7281,6 +7281,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     // so it must never decide whether a real UUID lesson exists or which quiz is active.
     let lessonRecord: any = null;
     let targetVersion: any = null;
+    let trustedClient: any = null;
 
     if (process.env.NODE_ENV === 'test') {
       lessonRecord = serverReviewState.lessons[lessonId];
@@ -7293,7 +7294,6 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
         }
       }
     } else {
-      let trustedClient;
       try {
         trustedClient = getTrustedServiceClient(
           'Quiz submission is unavailable because secure curriculum database access is not configured.'
