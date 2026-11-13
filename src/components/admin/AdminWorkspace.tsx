@@ -274,7 +274,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       : (isArabic ? 'الرفض' : 'reject');
     const roleLabel = request?.requested_role ? getAdminRoleLabel(request.requested_role, isArabic) : (isArabic ? 'الدور المطلوب' : 'requested role');
     if (!window.confirm(isArabic
-      ? `تأكيد ${decisionLabel} طلب ${roleLabel} للحساب ${request?.requester_id || requestId}؟ سيتم تسجيل القرار واسم اللي نفّذ الإجراء في سجل التدقيق.`
+      ? `تأكيد ${decisionLabel} طلب ${roleLabel} للحساب ${request?.requester_id || requestId}؟ القرار واسم اللي نفّذ الإجراء هيتسجلوا في سجل المراجعة.`
       : `Confirm ${decisionLabel} of the ${roleLabel} request for account ${request?.requester_id || requestId}? The decision and verified actor will be recorded in the audit log.`)) return;
     return runAction(async () => {
       await adminRequest(`/api/church/admin/role-requests/${encodeURIComponent(requestId)}/review`, 'POST', {
@@ -285,35 +285,35 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
         if (!refreshed.success) throw new Error(refreshed.error || 'Role approval succeeded, but role refresh failed. Reload to revalidate access.');
       }
       await Promise.all([loadRequests(), loadOverview(), loadAudit()]);
-    }, isArabic ? 'تم تسجيل مراجعة الطلب.' : 'Request review recorded.');
+    }, isArabic ? 'مراجعة الطلب اتسجلت.' : 'Request review recorded.');
   };
 
   const changeRole = (event: React.FormEvent) => {
     event.preventDefault();
     const target = roleTargetAccount?.id === targetUserId.trim() ? roleTargetAccount : null;
     if (!target) {
-      setError(isArabic ? 'ادوّر على الحساب أولاً لمراجعة الأدوار الحالية وتأثير التغيير.' : 'Look up the account first to review its current roles and the impact of this change.');
+      setError(isArabic ? 'دوّر على الحساب الأول عشان تراجع أدواره الحالية وتأثير التغيير.' : 'Look up the account first to review its current roles and the impact of this change.');
       return;
     }
     const hasRole = target.roles.some(assignment => assignment.role === selectedRole);
     if ((roleAction === 'grant' && hasRole) || (roleAction === 'revoke' && !hasRole)) {
-      setError(isArabic ? 'لا يوجد تغيير مطلوب؛ حالة هذا الدور مطابقة بالفعل.' : 'No change is needed; this role already has the requested state.');
+      setError(isArabic ? 'مفيش تغيير مطلوب؛ الدور ده بالحالة المطلوبة بالفعل.' : 'No change is needed; this role already has the requested state.');
       return;
     }
-    const roleLabel = selectedRole === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : selectedRole;
+    const roleLabel = getAdminRoleLabel(selectedRole, isArabic);
     const existingRoles = target.roles.map(assignment => getAdminRoleLabel(assignment.role, isArabic));
     const updatedRoles = roleAction === 'grant'
       ? [...existingRoles, roleLabel]
       : existingRoles.filter(role => role !== roleLabel);
     const impact = roleAction === 'grant'
       ? (isArabic
-        ? `سيضاف دور ${roleLabel} مع الاحتفاظ بكل الأدوار الحالية.`
+        ? `هنضيف دور ${roleLabel} مع الاحتفاظ بكل الأدوار الحالية.`
         : `The ${roleLabel} role will be added; all current roles will remain.`)
       : (isArabic
-        ? `سيُسحب دور ${roleLabel} فقط. ستُزال صلاحية مساحة العمل المرتبطة به، مع بقاء الحساب والبيانات والسجلات الأخرى.`
+        ? `هنسحب دور ${roleLabel} بس. صلاحية مساحة العمل المرتبطة بيه هتتوقف، لكن الحساب وباقي البيانات والسجلات هتفضل موجودة.`
         : `Only the ${roleLabel} role will be revoked. Access to that workspace will end; the account and its other data and records will remain.`)
     if (!window.confirm(isArabic
-      ? `الحساب: ${target.name || target.email}\nالأدوار الحالية: ${existingRoles.join('، ') || 'لا يوجد'}\nالأدوار بعد التغيير: ${updatedRoles.join('، ') || 'لا يوجد'}\n\n${impact}\nسيُسجل التغيير في سجل التدقيق. هل تريد المتابعة؟`
+      ? `الحساب: ${target.name || target.email}\nالأدوار الحالية: ${existingRoles.join('، ') || 'مفيش'}\nالأدوار بعد التغيير: ${updatedRoles.join('، ') || 'مفيش'}\n\n${impact}\nالتغيير هيتسجل في سجل المراجعة. تحب تكمّل؟`
       : `Account: ${target.name || target.email}\nCurrent roles: ${existingRoles.join(', ') || 'None'}\nRoles after change: ${updatedRoles.join(', ') || 'None'}\n\n${impact}\nThis change will be recorded in the audit log. Continue?`)) return;
     return runAction(async () => {
       await adminRequest('/api/church/admin/role-assignments', 'POST', {
@@ -322,38 +322,38 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       setReason('');
       const [updatedAccounts] = await Promise.all([loadAccounts(target.id), loadAudit()]);
       setRoleTargetAccount(updatedAccounts.find(account => account.id === target.id) || null);
-    }, isArabic ? 'تم تسجيل تغيير الدور.' : 'Role change recorded.');
+    }, isArabic ? 'تغيير الدور اتسجل.' : 'Role change recorded.');
   };
 
   const inviteAccount = (event: React.FormEvent) => {
     event.preventDefault();
     if (!window.confirm(isArabic
-      ? `سيتم إرسال دعوة تسجيل إلى ${email.trim()}. هل تريد المتابعة؟`
+      ? `هنبعت دعوة تسجيل لـ${email.trim()}. تحب تكمّل؟`
       : `A registration invitation will be sent to ${email.trim()}. Continue?`)) return;
     return runAction(async () => {
       await adminRequest('/api/church/admin/accounts/invite', 'POST', { email: email.trim(), reason: reason.trim() || undefined });
       setEmail('');
       await Promise.all([loadAccounts(accountQuery), loadAudit()]);
-    }, isArabic ? 'تم إرسال الدعوة وتسجيلها.' : 'Invitation sent and audited.');
+    }, isArabic ? 'الدعوة اتبعت واتسجلت.' : 'Invitation sent and audited.');
   };
 
   const updateAccountStatus = (account: AdminAccount, action: 'suspend' | 'reactivate') => {
     const isSuspending = action === 'suspend';
     if (!window.confirm(isArabic
-      ? `${isSuspending ? 'إيقاف' : 'إعادة تفعيل'} حساب ${account.name || account.email}؟ ${isSuspending ? 'سيُمنع الحساب من تسجيل الدخول، ولن تُحذف بياناته أو سجلاته.' : 'سيتمكن الحساب من تسجيل الدخول مجدداً.'} سيتم تسجيل الإجراء.`
+      ? `${isSuspending ? 'إيقاف' : 'إعادة تفعيل'} حساب ${account.name || account.email}؟ ${isSuspending ? 'الحساب مش هيقدر يسجّل دخول، لكن بياناته وسجلاته مش هتتمسح.' : 'الحساب هيقدر يسجّل دخول تاني.'} الإجراء هيتسجل.`
       : `${isSuspending ? 'Suspend' : 'Reactivate'} ${account.name || account.email}? ${isSuspending ? 'The account will be blocked from signing in; its data and records will not be deleted.' : 'The account will be able to sign in again.'} This action will be audited.`)) return;
     return runAction(async () => {
     await adminRequest(`/api/church/admin/accounts/${encodeURIComponent(account.id)}/status`, 'POST', {
       action, reason: reason.trim() || undefined,
     });
     await Promise.all([loadAccounts(accountQuery), loadAudit()]);
-    }, isArabic ? 'تم تحديث حالة الحساب وتسجيلها.' : 'Account status updated and audited.');
+    }, isArabic ? 'حالة الحساب اتحدّثت واتسجلت.' : 'Account status updated and audited.');
   };
 
   const openSupport = (event: React.FormEvent) => {
     event.preventDefault();
     if (!window.confirm(isArabic
-      ? 'سيُفتح شاشة دعم للعرض فقط لهذا الحساب، وسيُسجل وصولك وسبب الدعم. لن يتم انتحال هوية المستخدم. متابعة؟'
+      ? 'هنفتح شاشة دعم للعرض بس للحساب ده، وهنسجل دخولك وسبب الدعم. مش هنتصرف بهوية المستخدم. نكمّل؟'
       : 'Open an audited, read-only support view for this account? The target will not be impersonated and no actions can be taken as them.')) return;
     return runAction(async () => {
       const result = await adminRequest<{ account: AdminAccount }>('/api/church/admin/support-sessions', 'POST', {
@@ -364,34 +364,34 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
         targetUserId: targetUserId.trim(), reason: supportReason.trim(),
       }));
       setSupportReason('');
-    }, isArabic ? 'بدأت جلسة دعم للقراءة فقط وتم تسجيلها.' : 'Read-only support view opened and audited.');
+    }, isArabic ? 'جلسة الدعم للعرض بس بدأت واتسجلت.' : 'Read-only support view opened and audited.');
   };
 
   const closeSupport = () => {
     if (!supportAccount) return;
     if (!window.confirm(isArabic
-      ? 'إنهاء جلسة الدعم للقراءة فقط وتسجيل وقت الإنهاء؟'
+      ? 'تنهي جلسة الدعم للعرض بس ونسجل وقت الانتهاء؟'
       : 'End this read-only support session and record its closure?')) return;
     return runAction(async () => {
       await adminRequest(`/api/church/admin/support-sessions/${encodeURIComponent(supportAccount.id)}/close`, 'POST', {});
       setSupportAccount(null);
       sessionStorage.removeItem('stella-admin-support-session');
       await loadAudit();
-    }, isArabic ? 'تم إنهاء جلسة الدعم وتسجيلها.' : 'Support session ended and audited.');
+    }, isArabic ? 'جلسة الدعم انتهت واتسجلت.' : 'Support session ended and audited.');
   };
 
   const assignServant = (event: React.FormEvent) => {
     event.preventDefault();
     const actionLabel = classAction === 'ASSIGN' ? (isArabic ? 'تكليف' : 'assign') : (isArabic ? 'إزالة تكليف' : 'remove assignment');
     if (!window.confirm(isArabic
-      ? `تأكيد ${actionLabel} الحساب ${classServantId} في الفصل المحدد؟ سيتم تسجيل الإجراء.`
+      ? `تأكيد ${actionLabel} الحساب ${classServantId} في الفصل المحدد؟ الإجراء هيتسجل.`
       : `Confirm ${actionLabel} for servant account ${classServantId} in the selected class? This action will be audited.`)) return;
     return runAction(async () => {
       await adminRequest('/api/church/admin/servant-assignments', 'POST', {
         servantId: classServantId.trim(), classGroupId, action: classAction, reason: reason.trim() || undefined,
       });
       await Promise.all([loadClasses(), loadAudit()]);
-    }, isArabic ? 'تم تحديث تكليف الخادم.' : 'Servant assignment updated and audited.');
+    }, isArabic ? 'تكليف الخادم اتحدّث.' : 'Servant assignment updated and audited.');
   };
 
   const manageStudent = (action: 'add' | 'remove', classId: string, studentId: string, removalReason?: string) => {
@@ -405,27 +405,27 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       : { studentId, reason: removalReason || 'Administrative class roster change' });
     await Promise.all([loadClasses(), loadAudit()]);
     }, action === 'add'
-    ? (isArabic ? 'تم تسجيل التلميذ في الفصل.' : 'Student enrollment recorded.')
-    : (isArabic ? 'تم تحديث الفصل مع الاحتفاظ بالسجل التاريخي.' : 'Student removed while preserving historical records.'));
+    ? (isArabic ? 'التلميذ اتسجل في الفصل.' : 'Student enrollment recorded.')
+    : (isArabic ? 'الفصل اتحدّث مع الاحتفاظ بالسجل القديم.' : 'Student removed while preserving historical records.'));
   };
 
   const enrollStudent = (event: React.FormEvent) => {
     event.preventDefault();
     if (!window.confirm(isArabic
-      ? `تأكيد إضافة التلميذ ${rosterStudentId.trim()} إلى الفصل المحدد؟`
+      ? `تأكيد إضافة التلميذ ${rosterStudentId.trim()} للفصل المحدد؟`
       : `Confirm enrollment of student ${rosterStudentId.trim()} in the selected class?`)) return;
     return runAction(async () => {
-      if (!rosterClassGroupId || !rosterStudentId.trim()) throw new Error(isArabic ? 'اختر الفصل وأدخل معرّف التلميذ.' : 'Select a class and enter the student account ID.');
+      if (!rosterClassGroupId || !rosterStudentId.trim()) throw new Error(isArabic ? 'اختار الفصل واكتب رقم حساب التلميذ.' : 'Select a class and enter the student account ID.');
       const path = `/api/church/classes/${encodeURIComponent(rosterClassGroupId)}/add-student`;
       await adminRequest(path, 'POST', { studentId: rosterStudentId.trim() });
       setRosterStudentId('');
       await Promise.all([loadClasses(), loadAudit()]);
-    }, isArabic ? 'تم تسجيل التلميذ في الفصل.' : 'Student enrollment recorded.');
+    }, isArabic ? 'التلميذ اتسجل في الفصل.' : 'Student enrollment recorded.');
   };
 
   const lookupRoleTarget = () => runAction(async () => {
     const userId = targetUserId.trim();
-    if (!userId) throw new Error(isArabic ? 'أدخل رقم الحساب أولاً.' : 'Enter an account ID first.');
+    if (!userId) throw new Error(isArabic ? 'اكتب رقم الحساب الأول.' : 'Enter an account ID first.');
     const matchingAccounts = await loadAccounts(userId);
     const matchingAccount = matchingAccounts.find(account => account.id === userId);
     if (!matchingAccount) {
@@ -433,7 +433,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       throw new Error(isArabic ? 'ملقيناش حساب مطابق.' : 'No matching account was found.');
     }
     setRoleTargetAccount(matchingAccount);
-  }, isArabic ? 'تم تحميل بيانات الحساب والأدوار الحالية.' : 'Account details and current roles loaded.');
+  }, isArabic ? 'بيانات الحساب والأدوار الحالية اتحمّلت.' : 'Account details and current roles loaded.');
 
   const refreshAdminCurriculum = async () => {
     if (!refreshCurriculum) throw new Error('The trusted curriculum refresh is unavailable.');
@@ -456,7 +456,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
               {isArabic ? 'مركز إدارة مستقل. البيانات جاية من مصادر موثوقة، وكل إجراءات الإدارة والدعم الحساسة بتتسجل.' : 'An isolated control center using trusted data; sensitive admin actions and support access are audited.'}
             </p>
           </div>
-          <button type="button" onClick={() => void loadCurrentSection()} disabled={loading} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10 disabled:opacity-50" aria-label={isArabic ? 'تحديث البيانات' : 'Refresh data'}>
+          <button type="button" onClick={() => void loadCurrentSection()} disabled={loading} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10 disabled:opacity-50" aria-label={isArabic ? 'حدّث البيانات' : 'Refresh data'}>
             {loading ? <LoaderCircle className="animate-spin" size={18} /> : <RefreshCw size={18} />}
           </button>
         </div>
@@ -465,7 +465,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       {supportAccount && (
         <aside role="status" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 text-amber-950">
           <div>
-            <p className="font-black">{isArabic ? 'وضع دعم للقراءة فقط' : 'Read-only support session'}</p>
+            <p className="font-black">{isArabic ? 'جلسة دعم للعرض بس' : 'Read-only support session'}</p>
             <p className="text-sm">{supportAccount.name} · {supportAccount.email} · {supportAccount.id}</p>
           </div>
           <button type="button" onClick={() => void closeSupport()} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-amber-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">
