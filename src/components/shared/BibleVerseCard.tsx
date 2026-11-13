@@ -63,7 +63,7 @@ export function BibleVerseCard({ lang }: { lang: Language }) {
           <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-amber-950">
               <BookOpen size={16} />
-              <span>{lang === 'ar' ? 'آية اليوم للحفظ والتأمل' : 'Verse of the Day'}</span>
+              <span>{lang === 'ar' ? 'آية النهارده للحفظ والتأمل' : 'Verse of the Day'}</span>
             </div>
           </div>
 
