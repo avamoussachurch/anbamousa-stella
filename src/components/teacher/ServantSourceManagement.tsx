@@ -101,7 +101,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
       setSources(result.data || []);
     } catch (err: any) {
       console.warn('Failed to load sources:', err);
-      setErrorMsg(err?.message || (lang === 'ar' ? 'تعذر تحميل المصادر من الخادم' : 'Failed to load curriculum sources'));
+      setErrorMsg(err?.message || (lang === 'ar' ? 'مش قادرين نحمّل المصادر من الخادم.' : 'Failed to load curriculum sources'));
     } finally {
       setLoading(false);
     }
@@ -180,7 +180,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
       setDeletingSourceId(null);
       if (onRefresh) onRefresh();
     } catch (err: any) {
-      setErrorMsg(err?.message || (lang === 'ar' ? 'فشل حذف المصدر' : 'Failed to detach source'));
+      setErrorMsg(err?.message || (lang === 'ar' ? 'مش قادرين نحذف المصدر.' : 'Failed to detach source'));
     } finally {
       setIsDeleting(false);
     }
@@ -216,12 +216,12 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
               <FolderOpen className="w-5 h-5" />
             </div>
             <h2 className="text-xl font-black text-[var(--color-church-blue)] dark:text-white">
-              {lang === 'ar' ? 'مكتبة مصادر ووسائط المناهج' : 'Curriculum Media & Source Library'}
+              {lang === 'ar' ? 'مكتبة مصادر وملفات المناهج' : 'Curriculum Media & Source Library'}
             </h2>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {lang === 'ar' 
-              ? 'إدارة واستعراض مصادر الدروس المعتمدة (مطبوعات PDF، تسجيلات صوتية، شرائح عرض، وصور أيقونات)'
+              ? 'راجع ونظّم مصادر الدروس المعتمدة، زي ملفات PDF والتسجيلات الصوتية والعروض والصور.'
               : 'Authorized servant management of verified lesson handouts, classroom voice audio, slides, and icons'}
           </p>
         </div>
@@ -232,7 +232,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
           className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>{lang === 'ar' ? 'تحديث المصادر' : 'Refresh Sources'}</span>
+          <span>{lang === 'ar' ? 'حدّث المصادر' : 'Refresh Sources'}</span>
         </button>
       </div>
 
@@ -240,7 +240,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-2xl p-4 shadow-2xs">
           <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
-            {lang === 'ar' ? 'إجمالي المصادر' : 'Total Sources'}
+            {lang === 'ar' ? 'كل المصادر' : 'Total Sources'}
           </span>
           <div className="text-2xl font-black text-stone-900 dark:text-white mt-1">
             {totalCount}
@@ -285,7 +285,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={lang === 'ar' ? 'بحث بالاسم أو الوصف أو الدرس...' : 'Search by source name, description, or lesson...'}
+              placeholder={lang === 'ar' ? 'دوّر بالاسم أو الوصف أو الدرس...' : 'Search by source name, description, or lesson...'}
               className="w-full bg-stone-50 dark:bg-slate-800/80 border border-stone-200 dark:border-slate-700 rounded-xl ps-9 pe-3 py-2 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
@@ -298,7 +298,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
               className="w-full bg-stone-50 dark:bg-slate-800/80 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
             >
               <option value="ALL">
-                {lang === 'ar' ? '— جميع الدروس المصرحة —' : '— All Authorized Lessons —'}
+                {lang === 'ar' ? '— كل الدروس المسموح بيها —' : '— All Authorized Lessons —'}
               </option>
               {lessons.map(l => (
                 <option key={l.id} value={l.id}>
@@ -315,7 +315,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
               onChange={(e) => setSelectedType(e.target.value)}
               className="w-full bg-stone-50 dark:bg-slate-800/80 border border-stone-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
             >
-              <option value="ALL">{lang === 'ar' ? '— جميع أنواع المصادر —' : '— All Media Types —'}</option>
+              <option value="ALL">{lang === 'ar' ? '— كل أنواع الملفات —' : '— All Media Types —'}</option>
               <option value="PDF">{lang === 'ar' ? 'مستندات PDF / DOCX' : 'PDF / DOCX Documents'}</option>
               <option value="TEACHER_VOICE">{lang === 'ar' ? 'تسجيلات صوتية' : 'Servant Voice Audio'}</option>
               <option value="PPTX">{lang === 'ar' ? 'شرائح عرض (PPTX)' : 'Presentation Slides'}</option>
@@ -342,18 +342,18 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
           <div className="py-16 text-center text-stone-500 dark:text-stone-400">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-amber-500" />
             <p className="text-xs font-semibold">
-              {lang === 'ar' ? 'جارٍ تحميل مصادر ووسائط المناهج...' : 'Loading verified curriculum sources...'}
+              {lang === 'ar' ? 'بنحمّل مصادر وملفات المنهج...' : 'Loading verified curriculum sources...'}
             </p>
           </div>
         ) : filteredSources.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 border-2 border-dashed border-stone-200 dark:border-slate-800 rounded-3xl p-12 text-center">
             <FolderOpen className="w-12 h-12 text-stone-300 dark:text-stone-700 mx-auto mb-3" />
             <h4 className="text-sm font-bold text-stone-800 dark:text-stone-200">
-              {lang === 'ar' ? 'لم يتم العثور على مصادر مطابقة' : 'No matching curriculum sources found'}
+              {lang === 'ar' ? 'ملقيناش مصادر مطابقة.' : 'No matching curriculum sources found'}
             </h4>
             <p className="text-xs text-stone-500 dark:text-stone-400 max-w-md mx-auto mt-1">
               {lang === 'ar'
-                ? 'يمكنك إضافة وتسجيل مصادر جديدة من خلال استوديو مدارس الأحد'
+                ? 'تقدر تضيف مصادر جديدة من استوديو مدارس الأحد.'
                 : 'Upload or record teaching materials in the Sunday School Studio to populate this library.'}
             </p>
           </div>

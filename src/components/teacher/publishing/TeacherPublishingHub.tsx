@@ -39,28 +39,28 @@ export function TeacherPublishingHub({
       id: 'sunday_school' as const,
       icon: School,
       title: isAr ? 'مدارس الأحد' : 'Sunday School',
-      description: isAr ? 'تخطيط الدروس وتأليفها وربطها بالفصول.' : 'Plan and author lessons, then connect them to class sessions.',
+      description: isAr ? 'خطّط الدروس وجهّزها واربطها بفصولك.' : 'Plan and author lessons, then connect them to class sessions.',
       detail: isAr ? 'المناهج والدروس' : 'CURRICULUM'
     },
     {
       id: 'hymns' as const,
       icon: Music,
       title: isAr ? 'مدرسة الألحان' : 'Hymns School',
-      description: isAr ? 'إدارة الألحان ومستوياتها ومحتواها الصوتي.' : 'Manage hymns, learning levels, and audio content.',
+      description: isAr ? 'نظّم الألحان ومستوياتها والتسجيلات الصوتية.' : 'Manage hymns, learning levels, and audio content.',
       detail: isAr ? '٣ مستويات' : '3 LEVELS'
     },
     {
       id: 'taxis' as const,
       icon: BookOpen,
       title: isAr ? 'طقوس الكنيسة — التاكسيس' : 'Coptic Rituals — Taxis',
-      description: isAr ? 'تنظيم الطقوس والأقسام والمرفقات التعليمية.' : 'Organize rites, sections, and supporting materials.',
+      description: isAr ? 'جهّز الطقوس وأقسامها والملفات التعليمية المرتبطة بيها.' : 'Organize rites, sections, and supporting materials.',
       detail: isAr ? 'الطقوس والمردات' : 'RITES & RESPONSES'
     },
     {
       id: 'import' as const,
       icon: Sparkles,
       title: isAr ? 'استيراد المناهج' : 'Curriculum import',
-      description: isAr ? 'مراجعة الملفات وتجهيزها قبل استيرادها.' : 'Review and prepare curriculum files before importing.',
+      description: isAr ? 'راجع الملفات وجهّزها قبل الاستيراد.' : 'Review and prepare curriculum files before importing.',
       detail: isAr ? 'تجهيز دفعة ملفات' : 'BATCH WORKFLOW'
     }
   ];
@@ -79,11 +79,11 @@ export function TeacherPublishingHub({
                 {isAr ? 'المناهج والنشر' : 'CURRICULUM & PUBLISHING'}
               </p>
               <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-                {isAr ? 'منهج حيّ، منظم، وجاهز للخدمة' : 'A living curriculum, ready for service'}
+                {isAr ? 'منهج متجدد ومنظم وجاهز للخدمة' : 'A living curriculum, ready for service'}
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-teal-50/80">
                 {isAr
-                  ? 'اختر المجال الذي تعمل عليه؛ ستبقى أدوات التأليف والمراجعة والنشر المتخصصة في مساحتها.'
+                  ? 'اختار المجال اللي هتشتغل عليه. أدوات التأليف والمراجعة والنشر هتفضل في مكانها المخصص.'
                   : 'Choose a curriculum area. Its dedicated authoring, review, and publishing tools stay in their own workspace.'}
               </p>
             </div>

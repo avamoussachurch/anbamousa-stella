@@ -88,7 +88,7 @@ export function ParentSettings({
               </div>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
                 {lang === 'ar' 
-                  ? 'استلم تنبيهات فورية مباشرة على جهازك عند إتمام الأطفال للدروس وتذكيرات فعاليات الكنيسة' 
+                  ? 'استقبل تنبيه على جهازك لما أولادك يكمّلوا درس، وكمان تذكير بمواعيد فعاليات الكنيسة.' 
                   : 'Receive instant real-time alerts on your device for children lesson reports and church event reminders'}
               </p>
             </div>
@@ -98,8 +98,8 @@ export function ParentSettings({
           <div className="flex items-center gap-3 self-end sm:self-center">
             <span className="text-xs font-bold text-gray-600 hidden sm:inline">
               {pushNotificationsEnabled 
-                ? (lang === 'ar' ? 'التنبيهات نشطة' : 'Push Alerts On') 
-                : (lang === 'ar' ? 'التنبيهات معطلة' : 'Push Alerts Off')}
+                ? (lang === 'ar' ? 'التنبيهات شغالة' : 'Push Alerts On') 
+                : (lang === 'ar' ? 'التنبيهات متوقفة' : 'Push Alerts Off')}
             </span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input 
@@ -117,7 +117,7 @@ export function ParentSettings({
         {/* Sub-Toggles: Detailed Notification Categories */}
         <div className="pt-6 space-y-4">
           <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-            {lang === 'ar' ? 'تخصيص قنوات التنبيه الفورية:' : 'Customize Notification Channels:'}
+            {lang === 'ar' ? 'اختار التنبيهات اللي تحب توصلك:' : 'Customize Notification Channels:'}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,11 +134,11 @@ export function ParentSettings({
                   </div>
                   <div>
                     <h4 className="font-bold text-sm text-[var(--color-church-blue)]">
-                      {lang === 'ar' ? 'تقارير إتمام الدروس الجديدة' : 'New Lesson Completion Reports'}
+                      {lang === 'ar' ? 'تنبيهات إكمال الدروس' : 'New Lesson Completion Reports'}
                     </h4>
                     <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">
                       {lang === 'ar' 
-                        ? 'إشعار فوري لحظة إنهاء الطفل لدرس مدارس الأحد، تسليم مسابقة الكتاب المقدس، أو حفظ آية الأسبوع' 
+                        ? 'تنبيه أول ما ابنك يخلّص درس مدارس الأحد أو مسابقة الكتاب المقدس أو يحفظ آية الأسبوع.' 
                         : 'Instant alert when a child completes a lesson, finishes a quiz, or recites Scripture memory verses.'}
                     </p>
                   </div>
@@ -175,7 +175,7 @@ export function ParentSettings({
                     </h4>
                     <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">
                       {lang === 'ar' 
-                        ? 'تنبيهات مسبقة بمواعيد القداسات الإلهية، الأعياد الكنسية، رحلات مدارس الأحد، واجتماعات أولياء الأمور' 
+                        ? 'هنفكّرك بمواعيد القداسات والأعياد ورحلات مدارس الأحد واجتماعات أولياء الأمور.' 
                         : 'Timely reminders before upcoming Divine Liturgies, feasts, retreats, and parent fellowship meetings.'}
                     </p>
                   </div>
@@ -203,11 +203,11 @@ export function ParentSettings({
             <div>
               <h4 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
                 <Sparkles size={16} className="text-[var(--color-church-gold)]" />
-                <span>{lang === 'ar' ? 'تجربة فحص الإشعارات الفورية:' : 'Test Real-Time Notifications Live:'}</span>
+                <span>{lang === 'ar' ? 'جرّب التنبيهات:' : 'Test Real-Time Notifications Live:'}</span>
               </h4>
               <p className="text-xs text-gray-500 mt-0.5">
                 {lang === 'ar' 
-                  ? 'اضغط لإرسال إشعار تجريبي مباشر لاختبار ظهور التنبيهات على شاشتك' 
+                  ? 'اضغط عشان تبعت إشعار تجريبي وتتأكد إنه بيظهر عندك.' 
                   : 'Click below to dispatch a simulated real-time push alert to preview the experience'}
               </p>
             </div>
@@ -227,12 +227,12 @@ export function ParentSettings({
                 {testSent === 'lesson' ? (
                   <>
                     <Check size={14} className="text-emerald-600" />
-                    <span>{lang === 'ar' ? 'تم الإرسال بنجاح!' : 'Alert Dispatched!'}</span>
+                    <span>{lang === 'ar' ? 'الإشعار اتبعت بنجاح!' : 'Alert Dispatched!'}</span>
                   </>
                 ) : (
                   <>
                     <BookOpen size={14} />
-                    <span>{lang === 'ar' ? 'تجربة إشعار درس' : 'Test Lesson Alert'}</span>
+                    <span>{lang === 'ar' ? 'جرّب تنبيه درس' : 'Test Lesson Alert'}</span>
                   </>
                 )}
               </button>
@@ -251,12 +251,12 @@ export function ParentSettings({
                 {testSent === 'event' ? (
                   <>
                     <Check size={14} className="text-emerald-600" />
-                    <span>{lang === 'ar' ? 'تم الإرسال بنجاح!' : 'Alert Dispatched!'}</span>
+                    <span>{lang === 'ar' ? 'الإشعار اتبعت بنجاح!' : 'Alert Dispatched!'}</span>
                   </>
                 ) : (
                   <>
                     <Calendar size={14} />
-                    <span>{lang === 'ar' ? 'تجربة إشعار فعالية' : 'Test Event Alert'}</span>
+                    <span>{lang === 'ar' ? 'جرّب تنبيه فعالية' : 'Test Event Alert'}</span>
                   </>
                 )}
               </button>
@@ -279,11 +279,11 @@ export function ParentSettings({
             </div>
             <div>
               <h2 className="text-lg md:text-xl font-bold text-[var(--color-church-blue)]">
-                {lang === 'ar' ? 'نظام التحكم والموافقة الأبوية' : 'Parental Approval & Reward Safety'}
+                {lang === 'ar' ? 'موافقة ولي الأمر والتحكم في المكافآت' : 'Parental Approval & Reward Safety'}
               </h2>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
                 {lang === 'ar' 
-                  ? 'عند التفعيل، لن يتمكن الطفل من استبدال نقاطه بهدايا إلا بعد موافقتك الصريحة' 
+                  ? 'لما تفعّل الاختيار ده، ابنك مش هيقدر يستبدل نقاطه بمكافأة غير بعد موافقتك.' 
                   : 'When enabled, points can only be redeemed for gifts with your explicit confirmation'}
               </p>
             </div>
@@ -292,8 +292,8 @@ export function ParentSettings({
           <div className="flex items-center gap-3 self-end sm:self-center">
             <span className="text-xs font-bold text-gray-600">
               {requireApproval 
-                ? (lang === 'ar' ? 'الموافقة مطلوبة دائماً' : 'Approval Required') 
-                : (lang === 'ar' ? 'استبدال مباشر بدون موافقة' : 'Instant Redeem')}
+                ? (lang === 'ar' ? 'موافقتك مطلوبة كل مرة' : 'Approval Required') 
+                : (lang === 'ar' ? 'استبدال مباشر من غير موافقة' : 'Instant Redeem')}
             </span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input 

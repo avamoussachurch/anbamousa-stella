@@ -165,8 +165,8 @@ export function ProfileTab({
     try {
       const res = await joinClassWithCode(inputJoinCode.trim());
       if (res.success) {
-        setJoinCodeSuccess(lang === 'ar' ? `تم الانضمام بنجاح إلى ${res.classInstance?.nameAr || res.classInstance?.nameEn}!` : `Successfully joined ${res.classInstance?.nameEn}!`);
-        showToast('success', lang === 'ar' ? 'تم الانضمام للفصل بنجاح! ✝️' : 'Successfully joined class! ✝️');
+        setJoinCodeSuccess(lang === 'ar' ? `انضمّيت بنجاح لـ ${res.classInstance?.nameAr || res.classInstance?.nameEn}!` : `Successfully joined ${res.classInstance?.nameEn}!`);
+        showToast('success', lang === 'ar' ? 'انضمّيت للفصل بنجاح! ✝️' : 'Successfully joined class! ✝️');
         await loadMembership();
         setTimeout(() => {
           setShowJoinCodeModal(false);
@@ -174,17 +174,17 @@ export function ProfileTab({
           setJoinCodeSuccess(null);
         }, 1500);
       } else {
-        let msg = res.error || (lang === 'ar' ? 'فشل الانضمام بالكود' : 'Failed to join class');
+        let msg = res.error || (lang === 'ar' ? 'مش قادرين نضمّك بالكود ده' : 'Failed to join class');
         if (msg.includes('INCOMPATIBLE_GRADE')) {
-          msg = lang === 'ar' ? 'مرحلتك الدراسية غير متوافقة مع هذا الفصل. تأكد من إدخال كود فصلك الصحيح.' : 'Your exact grade is not compatible with this class group.';
+          msg = lang === 'ar' ? 'صفّك الدراسي مش مناسب للفصل ده. اتأكد إنك بتستخدم كود فصلك الصحيح.' : 'Your exact grade is not compatible with this class group.';
         } else if (msg.includes('ARCHIVED_YEAR_CODE')) {
-          msg = lang === 'ar' ? 'هذا الكود ينتمي لعام كنسي سابق ومؤرشف. لا يمكن استخدامه.' : 'This code belongs to an archived church year and cannot be used.';
+          msg = lang === 'ar' ? 'الكود ده تابع لسنة كنسية قديمة ومؤرشفة، ومينفعش تستخدمه.' : 'This code belongs to an archived church year and cannot be used.';
         } else if (msg.includes('CODE_NOT_FOUND')) {
-          msg = lang === 'ar' ? 'رمز الفصل غير صحيح أو منتهي الصلاحية. يرجى التأكد من الخادم المسؤول.' : 'Class join code was not found or is invalid for the active year. Please verify with your servant.';
+          msg = lang === 'ar' ? 'كود الفصل مش صحيح أو انتهت صلاحيته. راجع خادم فصلك.' : 'Class join code was not found or is invalid for the active year. Please verify with your servant.';
         } else if (msg.includes('ALREADY_ENROLLED')) {
-          msg = lang === 'ar' ? 'أنت مسجل بالفعل في فصل نشط لهذا العام الكنسي.' : 'You already have an active class membership in this church year.';
+          msg = lang === 'ar' ? 'إنت مسجل بالفعل في فصل شغال السنة الكنسية دي.' : 'You already have an active class membership in this church year.';
         } else if (msg.includes('FORBIDDEN')) {
-          msg = lang === 'ar' ? 'غير مصرح: حسابات الطلاب فقط يمكنها الانضمام للفصول بالكود.' : 'Forbidden: Only student accounts can join a class via code.';
+          msg = lang === 'ar' ? 'مش مسموح: التلاميذ بس يقدروا ينضموا للفصول بالكود.' : 'Forbidden: Only student accounts can join a class via code.';
         }
         setJoinCodeError(msg);
       }
@@ -206,7 +206,7 @@ export function ProfileTab({
     try {
       navigator.clipboard.writeText(studentLinkCode);
       setCopiedLinkCode(true);
-      showToast('success', lang === 'ar' ? 'تم نسخ الرمز السري بنجاح! شاركه مع والدك فقط.' : 'Secret code copied! Share only with your parent.');
+      showToast('success', lang === 'ar' ? 'الكود السري اتنسخ! شاركه مع ولي أمرك بس.' : 'Secret code copied! Share only with your parent.');
       setTimeout(() => setCopiedLinkCode(false), 2500);
     } catch (e) {
       showToast('success', studentLinkCode);
@@ -218,7 +218,7 @@ export function ProfileTab({
       const shareUrl = getShareableChildLink(studentLinkCode);
       navigator.clipboard.writeText(shareUrl);
       setCopiedDirectLink(true);
-      showToast('success', lang === 'ar' ? 'تم نسخ رابط الربط المباشر بنجاح! أرسله لوالديك.' : 'Direct invite link copied! Send it to your parent.');
+      showToast('success', lang === 'ar' ? 'رابط الربط اتنسخ! ابعته لولي أمرك.' : 'Direct invite link copied! Send it to your parent.');
       setTimeout(() => setCopiedDirectLink(false), 2500);
     } catch (e) {
       showToast('error', 'Could not copy link');
@@ -269,7 +269,7 @@ export function ProfileTab({
     const errors: { userName?: string } = {};
 
     if (!userName.trim() || userName.trim().length < 2 || userName.trim().length > 100) {
-      errors.userName = lang === 'ar' ? 'الاسم يجب أن يحتوي على حرفين إلى ١٠٠ حرف' : 'Name must contain 2 to 100 characters';
+      errors.userName = lang === 'ar' ? 'الاسم لازم يكون من حرفين لـ١٠٠ حرف.' : 'Name must contain 2 to 100 characters';
     }
 
     setValidationErrors(errors);
@@ -278,7 +278,7 @@ export function ProfileTab({
 
   const handleUpdateProfile = async () => {
     if (!validateForm()) {
-      showToast('error', lang === 'ar' ? 'يرجى مراجعة وتصحيح البيانات غير المكتملة' : 'Please fix the errors in your details before saving');
+      showToast('error', lang === 'ar' ? 'راجع البيانات الناقصة وصحّحها قبل الحفظ.' : 'Please fix the errors in your details before saving');
       return;
     }
 
@@ -290,16 +290,16 @@ export function ProfileTab({
       });
 
       if (result.success) {
-        showToast('success', lang === 'ar' ? 'تم حفظ التعديلات بنجاح في قاعدة البيانات! ✝️' : 'Profile successfully saved to the database! ✝️');
+        showToast('success', lang === 'ar' ? 'التعديلات اتحفظت بنجاح! ✝️' : 'Profile successfully saved to the database! ✝️');
         setTimeout(() => {
           setScreen('main');
         }, 1000);
       } else {
-        showToast('error', result.error || (lang === 'ar' ? 'فشل حفظ التعديلات' : 'Failed to save changes'));
+        showToast('error', result.error || (lang === 'ar' ? 'مش قادرين نحفظ التعديلات.' : 'Failed to save changes'));
       }
     } catch (err: any) {
       console.error(err);
-      showToast('error', err?.message || (lang === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'An error occurred while saving'));
+      showToast('error', err?.message || (lang === 'ar' ? 'حصلت مشكلة وإحنا بنحفظ.' : 'An error occurred while saving'));
     } finally {
       setIsSaving(false);
     }
@@ -308,7 +308,7 @@ export function ProfileTab({
   const handleUpdateHymnsTaxisLevel = async () => {
     const level = parseHymnsTaxisLevel(hymnsTaxisLevel);
     if (level === null) {
-      setHymnsTaxisLevelError(lang === 'ar' ? 'اختر مستوى صحيحًا من ١ إلى ٣.' : 'Select a supported level from 1 to 3.');
+      setHymnsTaxisLevelError(lang === 'ar' ? 'اختار مستوى صحيح من ١ لـ٣.' : 'Select a supported level from 1 to 3.');
       setHymnsTaxisLevelMessage(null);
       return;
     }
@@ -318,7 +318,7 @@ export function ProfileTab({
     setHymnsTaxisLevelMessage(null);
     if (isGuest && userData) {
       setUserDirectly({ ...userData, hymnsTaxisLevel: level });
-      setHymnsTaxisLevelMessage(lang === 'ar' ? 'تم حفظ المستوى في الحساب التجريبي.' : 'Level saved for this demo account.');
+      setHymnsTaxisLevelMessage(lang === 'ar' ? 'المستوى اتحفظ في الحساب التجريبي.' : 'Level saved for this demo account.');
       setIsSavingHymnsTaxisLevel(false);
       return;
     }
@@ -326,9 +326,9 @@ export function ProfileTab({
     const result = await updateMyHymnsTaxisLevel(level);
     if (result.success && result.level !== undefined && userData) {
       setUserDirectly({ ...userData, hymnsTaxisLevel: result.level });
-      setHymnsTaxisLevelMessage(lang === 'ar' ? 'تم حفظ المستوى.' : 'Level saved.');
+      setHymnsTaxisLevelMessage(lang === 'ar' ? 'المستوى اتحفظ.' : 'Level saved.');
     } else {
-      setHymnsTaxisLevelError(result.error || (lang === 'ar' ? 'تعذر حفظ المستوى.' : 'Could not save the level.'));
+      setHymnsTaxisLevelError(result.error || (lang === 'ar' ? 'مش قادرين نحفظ المستوى.' : 'Could not save the level.'));
     }
     setIsSavingHymnsTaxisLevel(false);
   };
@@ -339,7 +339,7 @@ export function ProfileTab({
 
     // Check size limit (max 8MB)
     if (file.size > 8 * 1024 * 1024) {
-      showToast('error', lang === 'ar' ? 'حجم الصورة كبير جداً، الحد الأقصى ٨ ميجابايت' : 'Image is too large (max 8MB)');
+      showToast('error', lang === 'ar' ? 'الصورة كبيرة قوي. أقصى حجم ٨ ميجابايت.' : 'Image is too large (max 8MB)');
       return;
     }
 
@@ -348,14 +348,14 @@ export function ProfileTab({
       const res = await uploadAvatarToSupabase(userData.id, file);
       if (res.success && res.url) {
         setAvatar(res.url);
-        showToast('success', lang === 'ar' ? 'تم تجهيز ورفع صورة البروفايل بنجاح! 📸' : 'Avatar uploaded successfully! 📸');
+        showToast('success', lang === 'ar' ? 'صورة حسابك اتجهزت واترفعت بنجاح! 📸' : 'Avatar uploaded successfully! 📸');
       } else {
         // Fallback to local canvas compression
         const reader = new FileReader();
         reader.onloadend = () => {
           if (reader.result) {
             setAvatar(reader.result as string);
-            showToast('success', lang === 'ar' ? 'تم اختيار صورة البروفايل بنجاح! 📸' : 'Avatar selected successfully! 📸');
+            showToast('success', lang === 'ar' ? 'اخترت صورة حسابك بنجاح! 📸' : 'Avatar selected successfully! 📸');
           }
         };
         reader.readAsDataURL(file);
@@ -421,12 +421,12 @@ export function ProfileTab({
       <AnimatePresence mode="wait">
         {screen === 'main' && (
           <motion.div key="main" initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }} className="space-y-6">
-            <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] mb-6 md:text-3xl">{lang === 'ar' ? 'ملف المسافر في رحلة موسى' : 'Traveler Profile'}</h1>
+            <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] mb-6 md:text-3xl">{lang === 'ar' ? 'ملفك في رحلة موسى' : 'Traveler Profile'}</h1>
             
             <div className="md:grid md:grid-cols-[1.5fr_1fr] md:gap-8 space-y-6 md:space-y-0">
               <div className="space-y-6">
                 <div className="bg-[var(--mousa-cream-surface)] dark:bg-[var(--surface-primary)] rounded-3xl p-6 shadow-xs border-2 border-[var(--mousa-border-sand)] text-center relative">
-                  <button onClick={handleOpenEdit} className={`absolute top-4 ${lang === 'ar' ? 'left-4' : 'right-4'} text-[var(--mousa-sand-500)] hover:text-[var(--mousa-coral)] p-2 rounded-xl hover:bg-[var(--mousa-sand-100)] transition-colors cursor-pointer`} title={lang === 'ar' ? 'تعديل الملف الشخصي' : 'Edit Profile'}>
+                  <button onClick={handleOpenEdit} className={`absolute top-4 ${lang === 'ar' ? 'left-4' : 'right-4'} text-[var(--mousa-sand-500)] hover:text-[var(--mousa-coral)] p-2 rounded-xl hover:bg-[var(--mousa-sand-100)] transition-colors cursor-pointer`} title={lang === 'ar' ? 'تعديل ملفك الشخصي' : 'Edit Profile'}>
                     <Edit3 size={20} />
                   </button>
                   <img src={userData.avatarUrl} alt="Avatar" className="w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full border-4 border-[var(--mousa-gold)] bg-[var(--mousa-sand-100)] mb-4 shadow-sm object-cover" />
