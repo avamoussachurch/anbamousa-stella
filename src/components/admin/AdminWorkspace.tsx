@@ -659,7 +659,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
                 <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-950">
                   <p className="font-black">{roleTargetAccount.name || roleTargetAccount.email}</p>
                   <p className="break-all text-xs">{roleTargetAccount.email} · {roleTargetAccount.id}</p>
-                  <p className="mt-2 font-bold">{isArabic ? 'الأدوار الحالية:' : 'Current roles:'} {roleTargetAccount.roles.map(item => item.role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : item.role).join('، ') || (isArabic ? 'مفيش أدوار نشطة' : 'No active roles')}</p>
+                  <p className="mt-2 font-bold">{isArabic ? 'الأدوار الحالية:' : 'Current roles:'} {roleTargetAccount.roles.map(item => getAdminRoleLabel(item.role, isArabic)).join('، ') || (isArabic ? 'مفيش أدوار نشطة' : 'No active roles')}</p>
                 </div>
               )}
               <select aria-label={isArabic ? 'الدور' : 'Role'} value={selectedRole} onChange={event => setSelectedRole(event.target.value as Role)} className="w-full rounded-xl border px-3 py-2">
