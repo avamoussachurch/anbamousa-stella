@@ -32,7 +32,7 @@ export function PointsTab({ lang }: { lang: Language }) {
   // Section order:
   // 1. Streak Stars (نجوم المواظبة) — DEFAULT
   // 2. My Trail (رحلتي)
-  // 3. Points Leaderboard (لوحة ترتيب النقاط)
+  // 3. Points Leaderboard (ترتيب النقاط)
   // 4. Points Bazaar (متجر المكافآت)
   const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar'>('streak');
   const [showStore, setShowStore] = useState(false);
@@ -127,7 +127,7 @@ export function PointsTab({ lang }: { lang: Language }) {
        showNotification('success', lang === 'ar' ? 'طلب المكافأة اتبعت بنجاح! تقدر تستلمها من خادم فصلك يوم الأحد.' : 'Request submitted successfully! Claim your reward from your servant on Sunday.');
     } catch(err: any) {
        console.error(err);
-       showNotification('error', lang === 'ar' ? 'حصلت مشكلة وإحنا بننفّذ الطلب.' : 'Error during purchase.');
+       showNotification('error', lang === 'ar' ? 'حصلت مشكلة وإحنا بننفّذ الطلب. جرّب تاني.' : 'Error during purchase.');
        setConfirmPurchaseItem(null);
     }
   };
@@ -164,7 +164,7 @@ export function PointsTab({ lang }: { lang: Language }) {
           <span>{lang === 'ar' ? 'رحلتي' : 'My Trail'}</span>
         </button>
 
-        {/* 3. Points Leaderboard — Arabic: لوحة ترتيب النقاط */}
+        {/* 3. Points Leaderboard — Arabic: ترتيب النقاط */}
         <button 
           onClick={() => setView('leaderboard')}
           className={`flex-1 min-w-[125px] py-2.5 sm:py-3 px-2 rounded-xl font-black transition-all z-10 cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -174,7 +174,7 @@ export function PointsTab({ lang }: { lang: Language }) {
           }`}
         >
           <Users size={15} />
-          <span>{lang === 'ar' ? 'لوحة ترتيب النقاط' : 'Points Leaderboard'}</span>
+          <span>{lang === 'ar' ? 'ترتيب النقاط' : 'Points Leaderboard'}</span>
         </button>
 
         {/* 4. Points Bazaar — Arabic: متجر المكافآت */}
@@ -405,7 +405,7 @@ export function PointsTab({ lang }: { lang: Language }) {
         )}
 
         {/* =========================================================================
-            SECTION 3: POINTS LEADERBOARD (لوحة ترتيب النقاط)
+            SECTION 3: POINTS LEADERBOARD (ترتيب النقاط)
            ========================================================================= */}
         {view === 'leaderboard' && (
           <motion.div 
@@ -437,7 +437,7 @@ export function PointsTab({ lang }: { lang: Language }) {
                <div>
                  <h2 className="text-xl md:text-2xl font-black text-stone-900 dark:text-stone-50 flex items-center gap-2">
                    <Users size={26} className="text-[var(--mousa-gold)]" />
-                   <span>{lang === 'ar' ? 'لوحة ترتيب النقاط الأسبوعية' : 'Weekly Points Leaderboard'}</span>
+                   <span>{lang === 'ar' ? 'ترتيب النقاط الأسبوعية' : 'Weekly Points Leaderboard'}</span>
                  </h2>
                  <p className="text-xs sm:text-sm font-bold text-stone-700 dark:text-stone-300">
                    {lang === 'ar' ? 'ترتيب رفقاء المسيرة بنقاط البركة الحقيقية' : 'Official rankings based on earned milestone blessing points'}
