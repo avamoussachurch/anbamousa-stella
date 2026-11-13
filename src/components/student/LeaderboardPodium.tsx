@@ -104,7 +104,7 @@ export function LeaderboardPodium({ items, type, lang, currentUserId }: Leaderbo
           </p>
           {isCurrent && (
             <span className="inline-block mt-0.5 text-[10px] font-black bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] px-2 py-0.5 rounded-full shadow-2xs">
-              {isAr ? 'أنت 🌟' : 'You 🌟'}
+              {isAr ? 'إنت 🌟' : 'You 🌟'}
             </span>
           )}
         </div>
@@ -138,7 +138,7 @@ export function LeaderboardPodium({ items, type, lang, currentUserId }: Leaderbo
             {place}
           </span>
           <span className="text-[10px] font-extrabold uppercase tracking-widest text-white/80 mt-0.5">
-            {place === 1 ? (isAr ? 'الأول' : '1ST') : place === 2 ? (isAr ? 'الثاني' : '2ND') : (isAr ? 'الثالث' : '3RD')}
+            {place === 1 ? (isAr ? 'المركز الأول' : '1ST') : place === 2 ? (isAr ? 'المركز التاني' : '2ND') : (isAr ? 'المركز التالت' : '3RD')}
           </span>
         </div>
       </motion.div>

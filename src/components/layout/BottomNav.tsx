@@ -69,14 +69,14 @@ export function BottomNav({ activeTab, setActiveTab, lang, workspace }: BottomNa
   };
 
   return (
-    <nav aria-label={lang === 'ar' ? 'التنقل الرئيسي' : 'Main navigation'} className="app-bottom-nav fixed bottom-0 z-50 w-full border-t pb-safe shadow-[0_-4px_25px_-8px_rgba(10,30,35,0.18)] transition-colors lg:hidden">
+    <nav aria-label={lang === 'ar' ? 'القائمة الرئيسية' : 'Main navigation'} className="app-bottom-nav fixed bottom-0 z-50 w-full border-t pb-safe shadow-[0_-4px_25px_-8px_rgba(10,30,35,0.18)] transition-colors lg:hidden">
       {moreOpen && (
         <>
-          <button type="button" aria-label={lang === 'ar' ? 'إغلاق القائمة الإضافية' : 'Close additional navigation'} onClick={() => setMoreOpen(false)} className="fixed inset-0 z-[49] bg-black/20" />
+          <button type="button" aria-label={lang === 'ar' ? 'اقفل القائمة الإضافية' : 'Close additional navigation'} onClick={() => setMoreOpen(false)} className="fixed inset-0 z-[49] bg-black/20" />
           <div className="absolute inset-x-3 bottom-full z-[51] mb-2 max-h-[65dvh] overflow-y-auto rounded-2xl border border-[var(--border-default)] bg-[var(--surface-overlay)] p-2 text-[var(--text-primary)] shadow-2xl">
             <div className="flex items-center justify-between border-b border-[var(--border-default)] px-2 pb-2">
-              <p className="text-sm font-black">{lang === 'ar' ? 'المزيد من الأقسام' : 'More destinations'}</p>
-              <button type="button" onClick={() => setMoreOpen(false)} aria-label={lang === 'ar' ? 'إغلاق' : 'Close'} className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--state-hover)]"><X size={17} /></button>
+              <p className="text-sm font-black">{lang === 'ar' ? 'أقسام أكتر' : 'More destinations'}</p>
+              <button type="button" onClick={() => setMoreOpen(false)} aria-label={lang === 'ar' ? 'اقفل' : 'Close'} className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--state-hover)]"><X size={17} /></button>
             </div>
             <div className="grid gap-1 pt-2 sm:grid-cols-2">
               {moreItems.map(item => {
@@ -107,7 +107,7 @@ export function BottomNav({ activeTab, setActiveTab, lang, workspace }: BottomNa
             onClick={() => setMoreOpen(open => !open)}
             aria-expanded={moreOpen}
             aria-haspopup="true"
-            aria-label={lang === 'ar' ? 'المزيد من الأقسام' : 'More destinations'}
+            aria-label={lang === 'ar' ? 'أقسام أكتر' : 'More destinations'}
             className={`app-bottom-nav-item relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center px-0.5 text-[var(--text-secondary)] transition-colors ${isMoreActive || moreOpen ? 'is-active text-[var(--action-primary)]' : ''}`}
           >
             {(isMoreActive || moreOpen) && <span aria-hidden="true" className="app-bottom-nav-indicator absolute top-0 inset-x-2 h-[3px] rounded-b-full" />}
