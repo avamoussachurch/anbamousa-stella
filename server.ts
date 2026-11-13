@@ -15099,6 +15099,8 @@ app.use(async (req, res, next) => {
       const desiredStatus = body.status === 'published' ? 'published' : 'draft';
       const insert = hymnToDatabase({
         ...body,
+        // Never trust a client-supplied creator ID; satisfy the owner-scoped RLS insert policy.
+        createdBy: authContext.userId,
         titleEn: body.titleEn || body.titleAr,
         titleCoptic: body.titleCoptic || '',
         seasonAr: body.seasonAr || 'طقس سنوي',
@@ -15674,6 +15676,8 @@ app.use(async (req, res, next) => {
       if (id.length > 200) return res.status(400).json({ success: false, error: 'INVALID_ID', message: 'Taxis ID is too long.' });
       const insert = taxisToDatabase({
         ...body,
+        // Never trust a client-supplied creator ID; satisfy the owner-scoped RLS insert policy.
+        createdBy: authContext.userId,
         titleEn: body.titleEn || body.titleAr,
         titleCopt: body.titleCopt || '',
         category: body.category || 'liturgy',
