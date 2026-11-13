@@ -67,6 +67,10 @@ Audit and localize every user-facing surface, not only the student home:
 - [x] Common feedback phrases use friendly Egyptian Arabic.
 - [ ] Complete screen-by-screen hardcoded-string inventory.
 - [ ] Full student, teacher, parent, and admin localization.
+- [x] First Egyptian Arabic copy pass across login/registration, student adventure home, lessons and lesson reading, points/rewards, community feed, teacher home, parent home, parent dashboard, admin workspace, Hymns, and Taxis screens.
+- [x] Localize administrative role names in Arabic instead of leaking raw English role identifiers.
+- [x] Correct the localization QA dashboard so registry completeness is not presented as whole-app translation coverage.
+- [ ] Continue screen-by-screen copy review for remaining student, teacher, parent, and admin sub-screens.
 - [ ] Dynamic AI/server messages localization audit.
 - [ ] Full RTL-shell visual QA in Arabic and English on mobile and desktop.
 - [ ] Native Egyptian Arabic review.
