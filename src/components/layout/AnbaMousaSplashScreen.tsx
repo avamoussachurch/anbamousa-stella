@@ -15,7 +15,7 @@ export const AnbaMousaSplashScreen: React.FC<AnbaMousaSplashScreenProps> = ({ la
     <main
       role="status"
       aria-live="polite"
-      aria-label={isAr ? 'جاري تجهيز أنبا موسى' : 'Loading Anba Mousa'}
+      aria-label={isAr ? 'بنجهّز أنبا موسى' : 'Loading Anba Mousa'}
       className="min-h-[100svh] w-full overflow-hidden flex items-center justify-center px-6 py-10 bg-[radial-gradient(ellipse_at_top,_#1D4650_0%,_#102A34_58%,_#0B2029_100%)] text-[#FFF9ED]"
     >
       <div className="relative w-full max-w-sm text-center">
@@ -52,13 +52,13 @@ export const AnbaMousaSplashScreen: React.FC<AnbaMousaSplashScreenProps> = ({ la
           <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.34em] text-[#D6B66D]">Coptic Orthodox Learning</p>
           <h1 className="text-4xl font-black tracking-tight text-[#FFF9ED]">Anba Mousa</h1>
           <p className="mt-3 text-sm font-semibold text-[#DCE9E3]">
-            {isAr ? 'ننمو في الإيمان، ونتعلم بالمحبة' : 'Growing in Faith, Learning in Love'}
+            {isAr ? 'نكبر في الإيمان ونتعلّم بالمحبة' : 'Growing in Faith, Learning in Love'}
           </p>
         </motion.div>
 
         <div className="mx-auto mt-10 flex items-center justify-center gap-2 text-xs font-semibold text-[#B9D4C8]">
           <Sparkles className="h-4 w-4 text-[#D6B66D]" />
-          <span>{isAr ? 'نجهّز عالم التعلّم...' : 'Preparing your learning world...'}</span>
+          <span>{isAr ? 'بنجهّز عالم التعلّم...' : 'Preparing your learning world...'}</span>
         </div>
         <div className="mx-auto mt-4 h-1.5 w-40 overflow-hidden rounded-full bg-white/15">
           <motion.div
