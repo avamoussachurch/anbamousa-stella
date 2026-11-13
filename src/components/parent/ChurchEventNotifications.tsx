@@ -43,7 +43,7 @@ export function ChurchEventNotifications({ events, lang }: ChurchEventNotificati
     { id: 'all', label: lang === 'ar' ? 'كل الفعاليات' : 'All events' },
     { id: 'liturgy', label: lang === 'ar' ? 'القداسات والأعياد' : 'Liturgies & feasts' },
     { id: 'sunday_school', label: lang === 'ar' ? 'مدارس الأحد' : 'Sunday School' },
-    { id: 'family', label: lang === 'ar' ? 'الأسرة والخدمة' : 'Family & service' },
+    { id: 'family', label: lang === 'ar' ? 'العيلة والخدمة' : 'Family & service' },
     { id: 'hymn', label: lang === 'ar' ? 'الألحان' : 'Hymns' }
   ];
 
@@ -56,7 +56,7 @@ export function ChurchEventNotifications({ events, lang }: ChurchEventNotificati
           </div>
           <div>
             <h2 className="text-lg font-bold text-[var(--text-primary)]">{lang === 'ar' ? 'فعاليات الكنيسة' : 'Church events'}</h2>
-            <p className="text-sm text-[var(--text-secondary)]">{lang === 'ar' ? 'الفعاليات القادمة المسجلة في الكنيسة' : 'Upcoming events saved by the church'}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{lang === 'ar' ? 'الفعاليات الجاية المسجلة في الكنيسة' : 'Upcoming events saved by the church'}</p>
           </div>
         </div>
       </header>
@@ -81,8 +81,8 @@ export function ChurchEventNotifications({ events, lang }: ChurchEventNotificati
       {filteredEvents.length === 0 ? (
         <div className="mousa-card-sand p-10 text-center text-[var(--text-secondary)]">
           {events.length === 0
-            ? (lang === 'ar' ? 'لا توجد فعاليات قادمة مسجلة حالياً.' : 'There are no upcoming events on record.')
-            : (lang === 'ar' ? 'لا توجد فعاليات في هذا التصنيف.' : 'No events in this category.')}
+            ? (lang === 'ar' ? 'مفيش فعاليات جاية متسجلة دلوقتي.' : 'There are no upcoming events on record.')
+            : (lang === 'ar' ? 'مفيش فعاليات في التصنيف ده.' : 'No events in this category.')}
         </div>
       ) : (
         <div className="space-y-3">
@@ -107,11 +107,11 @@ export function ChurchEventNotifications({ events, lang }: ChurchEventNotificati
               <div className="flex gap-2 shrink-0">
                 <button onClick={() => void handleShare(event)} className="rounded-xl border border-[var(--border-default)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--state-hover)] flex items-center gap-1.5">
                   {copiedId === event.id ? <Check size={15} /> : <Copy size={15} />}
-                  {copiedId === event.id ? (lang === 'ar' ? 'تم النسخ' : 'Copied') : (lang === 'ar' ? 'نسخ' : 'Copy')}
+                  {copiedId === event.id ? (lang === 'ar' ? 'اتنسخ' : 'Copied') : (lang === 'ar' ? 'نسخ' : 'Copy')}
                 </button>
                 <button onClick={() => handleAddToCalendar(event)} className="rounded-xl bg-[var(--action-primary)] px-3 py-2 text-sm font-semibold text-[var(--action-primary-text)] hover:opacity-90 flex items-center gap-1.5">
                   <CalendarPlus size={15} />
-                  {calendarAddedId === event.id ? (lang === 'ar' ? 'تم فتح التقويم' : 'Calendar opened') : (lang === 'ar' ? 'التقويم' : 'Calendar')}
+                  {calendarAddedId === event.id ? (lang === 'ar' ? 'التقويم اتفتح' : 'Calendar opened') : (lang === 'ar' ? 'التقويم' : 'Calendar')}
                 </button>
               </div>
             </article>
