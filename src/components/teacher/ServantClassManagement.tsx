@@ -29,6 +29,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { hasRole } from '../../lib/workspaces';
 import { 
   getMyClass, 
@@ -143,11 +144,11 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
         setPendingRequests(pending);
       } else {
         setPendingRequests([]);
-        setRequestsError(res.error || (isAr ? 'مش قادرين نحمّل طلبات الانضمام دلوقتي.' : 'Could not load enrollment requests.'));
+        setRequestsError(getLocalizedErrorMessage(res.error, lang));
       }
     } catch (error) {
       setPendingRequests([]);
-      setRequestsError(error instanceof Error ? error.message : (isAr ? 'مش قادرين نحمّل طلبات الانضمام دلوقتي.' : 'Could not load enrollment requests.'));
+      setRequestsError(getLocalizedErrorMessage(error, lang));
     } finally {
       setLoadingRequests(false);
     }
@@ -180,7 +181,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
       ]);
 
       if (error || !data) {
-        setLoadError(error?.message || (isAr ? 'مش قادرين نحمّل بيانات الفصل.' : 'Failed to load class data'));
+        setLoadError(getLocalizedErrorMessage(error, lang));
         return;
       }
 
@@ -216,7 +217,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
 
       await loadRequests(info?.classGroupId);
     } catch (err: any) {
-      setLoadError(err?.message || (isAr ? 'حصلت مشكلة غير متوقعة.' : 'Unexpected error loading class'));
+      setLoadError(getLocalizedErrorMessage(err, lang));
     } finally {
       setLoading(false);
     }
@@ -246,7 +247,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
           : `Successfully entered and operating class "${res.classInfo?.className || res.classGroupId}"!`
       );
     } catch (err: any) {
-      setSwitchClassError(err?.message || 'Error looking up class code');
+      setSwitchClassError(getLocalizedErrorMessage(err, lang));
     } finally {
       setIsSwitchingClass(false);
     }
@@ -266,7 +267,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
     try {
       const res = await addTeacherToClass(classInfo.classInstanceId, cleanTeacher, classInfo.classGroupId);
       if (!res.success) {
-        setAddTeacherError(res.error || (isAr ? 'مش قادرين نضيف الخادم.' : 'Failed to add teacher'));
+        setAddTeacherError(getLocalizedErrorMessage(res.error, lang));
         return;
       }
       setAddTeacherSuccess(
@@ -278,7 +279,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
       }
       await loadClassData(classInfo.classGroupId);
     } catch (err: any) {
-      setAddTeacherError(err?.message || 'Error adding teacher');
+      setAddTeacherError(getLocalizedErrorMessage(err, lang));
     } finally {
       setAddingTeacher(false);
     }
@@ -298,10 +299,10 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
         setJoinCode(res.newCode);
         setCodeSuccessMessage(isAr ? 'الكود الجديد اتعمل بنجاح! الكود القديم اتلغى، والطلاب المسجلين مفيش حاجة اتغيرت عندهم.' : 'New join code generated! Old code is invalidated; enrolled students remain safe.');
       } else {
-        setLoadError(res.error || 'Failed to regenerate join code');
+        setLoadError(getLocalizedErrorMessage(res.error, lang));
       }
     } catch (err: any) {
-      setLoadError(err?.message || 'Error regenerating code');
+      setLoadError(getLocalizedErrorMessage(err, lang));
     } finally {
       setRegeneratingCode(false);
     }
@@ -323,10 +324,10 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
         setRemovalReason('');
         await loadClassData();
       } else {
-        setLoadError(res.error || 'Failed to remove student');
+        setLoadError(getLocalizedErrorMessage(res.error, lang));
       }
     } catch (err: any) {
-      setLoadError(err?.message || 'Error removing student');
+      setLoadError(getLocalizedErrorMessage(err, lang));
     } finally {
       setIsRemovingStudent(false);
     }
@@ -345,7 +346,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
         setPreviewList(res.previewList || []);
       }
     } catch (err: any) {
-      setYearActionError(err?.message || 'Could not load promotion preview');
+      setYearActionError(getLocalizedErrorMessage(err, lang));
     } finally {
       setLoadingPreview(false);
     }
@@ -367,10 +368,10 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
         setConfirmTypedYear('');
         await loadClassData();
       } else {
-        setYearActionError(res.error || 'Failed to start new church year');
+        setYearActionError(getLocalizedErrorMessage(res.error, lang));
       }
     } catch (err: any) {
-      setYearActionError(err?.message || 'Error starting new church year');
+      setYearActionError(getLocalizedErrorMessage(err, lang));
     } finally {
       setStartingNewYear(false);
     }
@@ -393,7 +394,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
       });
 
       if (!res.success) {
-        setAssignmentError(res.error || (isAr ? 'مش قادرين ننفّذ الطلب.' : 'Failed to process request'));
+        setAssignmentError(getLocalizedErrorMessage(res.error, lang));
         // Rollback request list on failure
         await loadRequests(classInfo?.classGroupId);
         return;
@@ -408,7 +409,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
       // Refresh both pending requests and authoritative roster
       await loadClassData();
     } catch (err: any) {
-      setAssignmentError(err?.message || 'Error processing request');
+      setAssignmentError(getLocalizedErrorMessage(err, lang));
       await loadRequests(classInfo?.classGroupId);
     } finally {
       setProcessingRequestId(null);
@@ -466,11 +467,11 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
             : 'No active church year configured in the database.';
         } else if (rawErr.includes('STUDENT_NOT_FOUND')) {
           friendlyMsg = isAr 
-            ? `لم يتم العثور على طالب بالمعرّف "${trimmedId}". تأكد من صحة المعرّف أو السجل.` 
+            ? `ملقيناش تلميذ بالرقم "${trimmedId}". تأكد من صحة المعرّف أو السجل.` 
             : `Student with ID "${trimmedId}" was not found in church records.`;
         } else if (rawErr.includes('FORBIDDEN') || rawErr.includes('Unauthorized')) {
           friendlyMsg = isAr 
-            ? 'ليس لديك الصلاحية لإدارة هذا الفصل أو تسكين طلاب به.' 
+            ? 'معندكش صلاحية تدير الفصل ده أو تسجّل تلاميذ فيه.' 
             : 'You are not authorized to enroll students in this class.';
         } else if (rawErr.includes('PERSISTENCE_FAILED')) {
           friendlyMsg = isAr 
@@ -495,7 +496,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
       // Refresh authoritative roster
       await loadClassData();
     } catch (err: any) {
-      setAssignmentError(err?.message || (isAr ? 'حدث خطأ أثناء الاتصال بالخادم' : 'Server connection error'));
+      setAssignmentError(getLocalizedErrorMessage(err, lang));
     } finally {
       setIsSubmitting(false);
     }
