@@ -82,6 +82,7 @@ No student, teacher, parent, or admin roles were added or changed during this au
 - Student progress and quiz completion use trusted database operations; completion does not silently award points when the persistence operation fails.
 - The progress summary reads persisted profile, lesson, version, membership, and section-progress data.
 - PR #63 fixes the stable class-group identifier bug that could interpret `primary_2` as Grade 2.
+- Two lesson records are marked `draft` while their referenced active version rows are marked `PUBLISHED`. Student access remains blocked by the parent lesson status, but those two records should be reconciled in the teacher/admin curriculum review.
 
 ### Hymns and Coptic Taxis
 
