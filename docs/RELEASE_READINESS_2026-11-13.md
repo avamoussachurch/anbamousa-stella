@@ -42,6 +42,14 @@ This report deliberately separates verified code checks from live-data and deplo
 - CI run #295 passed TypeScript, 281 tests, trusted bootstrap syntax, and production build.
 - Reduced the entry JavaScript from 2,276.54 kB raw / 619.17 kB gzip to 960.23 kB raw / 273.80 kB gzip. The shared entry chunk still exceeds Vite's 500 kB raw warning threshold.
 
+### Phase 30 — feed SECURITY DEFINER hardening (applied to production)
+
+- Applied migration `20261113140543_phase30_harden_feed_security_definer_functions`.
+- Pinned `edit_feed_post`, `moderate_feed_post_announcement`, `moderate_feed_post_pin`, and `toggle_feed_reaction` to an empty `search_path`.
+- Tightened `can_attach_owned_feed_media` and its reference helper to require the supplied owner ID to match `auth.uid()`; the existing feed attachment RLS policy already enforces that same owner constraint.
+- Verified all six functions now have an empty search path, no `anon` EXECUTE grant, and retain `authenticated` execution where the app/RLS policies need it.
+- Security Advisor still reports 26 authenticated-executable SECURITY DEFINER functions. This is a generic lint warning; do not revoke the grants wholesale because several are deliberate RLS helpers and application RPCs. Keep the remaining functions under periodic source-level review.
+
 ## Supabase checks
 
 - Applied the existing Phase 21 policy migration so the live migration history records `phase21_admin_approved_lesson_version_insert`. The intended policy is recreated; no curriculum rows were changed.
