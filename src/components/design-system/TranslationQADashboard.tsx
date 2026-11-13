@@ -82,14 +82,14 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck size={20} className="text-[var(--brand-gold)]" />
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--brand-gold)]">
-              Quality Assurance & Translation Governance
+              {lang === 'ar' ? 'مراجعة جودة الترجمة وإدارتها' : 'Translation quality and governance'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            Bohairic Coptic Localization QA
+            {lang === 'ar' ? 'مراجعة الترجمة القبطية البحيرية' : '{lang === 'ar' ? 'القبطي البحيري' : 'Bohairic Coptic'} Localization QA'}
           </h1>
           <p className="text-sm text-white/80 max-w-2xl mt-1">
-            100% trilingual coverage verification. Authenticated against Coptic Euchologion, Synaxarium, and Psalmodia texts.
+            {lang === 'ar' ? 'الأرقام دي بتوضح اكتمال بيانات سجل المصطلحات والترجمة بس، ومش معناها إن كل شاشات الموقع مترجمة بالكامل.' : 'These figures measure translation registry completeness only; they do not mean every app screen is fully localized.'}
           </p>
         </div>
       </div>
@@ -97,12 +97,12 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
       {/* Coverage Statistics Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CopticCard variant="default" padding="sm">
-          <span className="text-xs text-[var(--color-neutral)] font-semibold block">English Coverage</span>
+          <span className="text-xs text-[var(--color-neutral)] font-semibold block">{lang === 'ar' ? 'اكتمال بيانات الإنجليزي في السجل' : 'English registry completeness'}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-[var(--brand-burgundy)] dark:text-[var(--brand-gold)]">
               {stats.english}%
             </span>
-            <span className="text-xs text-[var(--color-success)] font-bold">Verified</span>
+            <span className="text-xs text-[var(--color-success)] font-bold">{lang === 'ar' ? 'مكتمل في السجل' : 'Entry populated'}</span>
           </div>
           <div className="w-full bg-[var(--border-stone)]/40 h-1.5 rounded-full mt-2 overflow-hidden">
             <div className="bg-[var(--color-success)] h-full" style={{ width: `${stats.english}%` }} />
@@ -110,12 +110,12 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
         </CopticCard>
 
         <CopticCard variant="default" padding="sm">
-          <span className="text-xs text-[var(--color-neutral)] font-semibold block">Arabic Coverage</span>
+          <span className="text-xs text-[var(--color-neutral)] font-semibold block">{lang === 'ar' ? 'اكتمال بيانات العربي في السجل' : 'Arabic registry completeness'}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-[var(--brand-burgundy)] dark:text-[var(--brand-gold)]">
               {stats.arabic}%
             </span>
-            <span className="text-xs text-[var(--color-success)] font-bold">Verified</span>
+            <span className="text-xs text-[var(--color-success)] font-bold">{lang === 'ar' ? 'مكتمل في السجل' : 'Entry populated'}</span>
           </div>
           <div className="w-full bg-[var(--border-stone)]/40 h-1.5 rounded-full mt-2 overflow-hidden">
             <div className="bg-[var(--color-success)] h-full" style={{ width: `${stats.arabic}%` }} />
@@ -123,12 +123,12 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
         </CopticCard>
 
         <CopticCard variant="default" padding="sm">
-          <span className="text-xs text-[var(--color-neutral)] font-semibold block">Bohairic Coptic</span>
+          <span className="text-xs text-[var(--color-neutral)] font-semibold block">{lang === 'ar' ? 'القبطي البحيري' : 'Bohairic Coptic'}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-[var(--brand-burgundy)] dark:text-[var(--brand-gold)]">
               {stats.coptic}%
             </span>
-            <span className="text-xs text-[var(--color-success)] font-bold">Complete</span>
+            <span className="text-xs text-[var(--color-success)] font-bold">{lang === 'ar' ? 'مكتمل في السجل' : 'Entry populated'}</span>
           </div>
           <div className="w-full bg-[var(--border-stone)]/40 h-1.5 rounded-full mt-2 overflow-hidden">
             <div className="bg-[var(--color-success)] h-full" style={{ width: `${stats.coptic}%` }} />
@@ -136,7 +136,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
         </CopticCard>
 
         <CopticCard variant="sacred" padding="sm">
-          <span className="text-xs text-[var(--color-neutral)] font-semibold block">Approved by Commission</span>
+          <span className="text-xs text-[var(--color-neutral)] font-semibold block">{lang === 'ar' ? 'المعتمد كنسياً' : 'Church-approved entries'}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-[var(--brand-gold-dark)] dark:text-[var(--brand-gold)]">
               {stats.approvedCopticPercentage}%
@@ -162,7 +162,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
           }`}
         >
           <BookOpen size={16} />
-          <span>Translation Registry ({stats.totalKeys} Keys)</span>
+          <span>{lang === 'ar' ? `سجل الترجمة (${stats.totalKeys} مدخل)` : `Translation registry (${stats.totalKeys} entries)`}</span>
         </button>
 
         <button
@@ -174,7 +174,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
           }`}
         >
           <Sparkles size={16} />
-          <span>Terminology Glossary ({COPTIC_GLOSSARY.length} Terms)</span>
+          <span>{lang === 'ar' ? `قاموس المصطلحات (${COPTIC_GLOSSARY.length} مصطلح)` : `Terminology glossary (${COPTIC_GLOSSARY.length} terms)`}</span>
         </button>
       </div>
 
@@ -186,7 +186,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search keys, English, Arabic, or Bohairic Coptic..."
+            placeholder="Search keys, English, Arabic, or {lang === 'ar' ? 'القبطي البحيري' : 'Bohairic Coptic'}..."
             className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-[var(--surface-card)] border border-[var(--border-stone)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-burgundy)]"
           />
         </div>
@@ -195,7 +195,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs font-semibold text-[var(--color-neutral)] flex items-center gap-1">
               <Filter size={14} />
-              Status:
+              {lang === 'ar' ? 'الحالة:' : 'Status:'}
             </span>
             {(['ALL', 'APPROVED', 'VERIFIED', 'REVIEW_REQUIRED', 'DRAFT'] as const).map((status) => (
               <button
@@ -220,12 +220,12 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[var(--surface-elevated)] border-b border-[var(--border-stone)] text-[var(--color-neutral)] uppercase tracking-wider text-[10px] font-bold">
-                <th className="p-3">Key</th>
-                <th className="p-3">English</th>
-                <th className="p-3">Arabic</th>
-                <th className="p-3">Bohairic Coptic</th>
-                <th className="p-3">Source & Citation</th>
-                <th className="p-3">Status</th>
+                <th className="p-3">{lang === 'ar' ? 'المفتاح' : 'Key'}</th>
+                <th className="p-3">{lang === 'ar' ? 'الإنجليزي' : 'English'}</th>
+                <th className="p-3">{lang === 'ar' ? 'العربي' : 'Arabic'}</th>
+                <th className="p-3">{lang === 'ar' ? 'القبطي البحيري' : 'Bohairic Coptic'}</th>
+                <th className="p-3">{lang === 'ar' ? 'المصدر والمرجع' : 'Source & citation'}</th>
+                <th className="p-3">{lang === 'ar' ? 'الحالة' : 'Status'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-stone)]">
@@ -244,7 +244,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
                     {entry.cop}
                   </td>
                   <td className="p-3 text-[var(--color-neutral)] text-[11px]">
-                    <div>{entry.source || 'Ecclesiastical Standard'}</div>
+                    <div>{entry.source || (lang === 'ar' ? 'المعيار الكنسي' : 'Ecclesiastical standard')}</div>
                     {entry.notes && <div className="text-[10px] text-[var(--color-neutral)] italic">{entry.notes}</div>}
                   </td>
                   <td className="p-3 whitespace-nowrap">
@@ -270,7 +270,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
               </div>
 
               <div>
-                <p className="text-[10px] uppercase font-bold text-[var(--color-neutral)]">Concept</p>
+                <p className="text-[10px] uppercase font-bold text-[var(--color-neutral)]">{lang === 'ar' ? 'المفهوم' : 'Concept'}</p>
                 <p className="text-xs font-bold text-[var(--text-ink)]">{item.concept}</p>
               </div>
 
@@ -292,7 +292,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
               </div>
 
               <div className="text-[11px] text-[var(--color-neutral)]">
-                <span className="font-semibold text-[var(--text-ink)]">Ecclesiastical Source: </span>
+                <span className="font-semibold text-[var(--text-ink)]">{lang === 'ar' ? 'المصدر الكنسي: ' : 'Ecclesiastical source: '}</span>
                 {item.copticSource}
               </div>
 
