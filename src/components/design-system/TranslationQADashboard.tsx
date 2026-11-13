@@ -186,7 +186,7 @@ export const TranslationQADashboard: React.FC<TranslationQADashboardProps> = ({ 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search keys, English, Arabic, or {lang === 'ar' ? 'القبطي البحيري' : 'Bohairic Coptic'}..."
+            placeholder={lang === 'ar' ? 'دوّر في المفاتيح والنصوص بالعربي أو الإنجليزي أو القبطي...' : 'Search keys and text in English, Arabic, or Bohairic Coptic...'}
             className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-[var(--surface-card)] border border-[var(--border-stone)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-burgundy)]"
           />
         </div>
