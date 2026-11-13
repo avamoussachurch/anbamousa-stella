@@ -185,7 +185,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
   const hasQuiz = Boolean(lesson.quiz && lesson.quiz.length > 0) || Boolean(version.quizDraft && version.quizDraft.questions?.length > 0);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-16" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="max-w-5xl mx-auto space-y-6 pb-16" dir="rtl">
       {/* Top Breadcrumb and lesson information */}
       <div className="flex items-center justify-between gap-4 flex-wrap bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] p-3.5 sm:p-4 rounded-3xl border-2 border-[var(--mousa-border-sand)] shadow-2xs">
         <button
