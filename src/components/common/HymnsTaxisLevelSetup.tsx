@@ -31,7 +31,7 @@ export function HymnsTaxisLevelSetup({ lang, onSaved }: HymnsTaxisLevelSetupProp
   };
 
   return (
-    <form onSubmit={saveLevel} dir={isAr ? 'rtl' : 'ltr'} className="space-y-4 rounded-3xl border-2 border-amber-300 bg-amber-50 p-5 shadow-sm dark:border-amber-800 dark:bg-amber-950/30">
+    <form onSubmit={saveLevel} dir="rtl" className="space-y-4 rounded-3xl border-2 border-amber-300 bg-amber-50 p-5 shadow-sm dark:border-amber-800 dark:bg-amber-950/30">
       <div className="flex items-start gap-3">
         <Award className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
         <div>
