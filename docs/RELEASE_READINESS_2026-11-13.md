@@ -58,7 +58,7 @@ This report deliberately separates verified code checks from live-data and deplo
 - The previously observed `lesson_section_progress` 404s were no longer present in the subsequent 60-minute observation window: 9 requests returned 200 and 0 returned 404.
 - RLS is enabled on the server-only audit, publication-job, media-reference, and section-progress tables; those tables have no end-user policies and are accessible to the trusted server role.
 - The reviewed security-definer functions had no direct `anon` EXECUTE grants. Authenticated EXECUTE grants remain on application RPCs/helpers and should continue to be reviewed with their role checks.
-- Supabase Security Advisor still reports leaked-password protection disabled. The connected Supabase controls available in this session do not expose the Auth password-protection setting; it must be enabled in the Supabase Auth settings before launch.
+- Supabase Security Advisor still reports leaked-password protection disabled. Supabase's current documentation says this feature is available on Pro and above; this project is on the Free Plan, so upgrading is required before it can be enabled. See https://supabase.com/docs/guides/auth/password-security.
 - The legacy public buckets `hymns-audio` and `lesson-worksheets` currently contain no objects. The curriculum media bucket is private. The feed-media bucket is public and contains two objects.
 
 ## Current live data inventory
@@ -116,9 +116,18 @@ Example environment variable names are documented in the script header. Never co
 2. **Student roster:** only one active class membership exists for four student-role assignments. Confirm and assign the remaining students to the correct church-year/class groups.
 3. **Parent experience:** there are no verified parent-child relationships. Create/verify real parent accounts and link them through the approved relationship flow before claiming parent E2E coverage.
 4. **Published lesson quality:** review the three test-like published lessons and replace them with approved content or unpublish them before real student access.
-5. **Auth security:** enable leaked-password protection in Supabase Auth settings.
+5. **Auth security and plan:** leaked-password protection is disabled, and Supabase documents it as Pro-plan-and-above functionality. Upgrade the project to Pro (or explicitly accept this residual risk) before launch.
 6. **Hosting verification:** the repository has `npm run build` and `npm start`, and CI validates the build. There is no Cloud Run deploy workflow or Dockerfile in this repository. The actual Cloud Run service revision, runtime environment variables, secrets, health checks, and live browser behavior were not inspectable through the connected GitHub/Supabase tools.
 7. **Post-deploy performance:** observe Supabase request volume, log ingestion, log-query usage, and egress after deploying the merged performance fix.
+
+### PR #74 — authenticated publishing QA and Phase 30 (merged)
+
+- Removed the legacy fake-token publishing verification script.
+- Added `scripts/smoke-test-hymns-taxis-production.mjs`, which requires real teacher/admin/student JWTs and deletes its unique QA rows after the run.
+- Added a CI syntax check for the smoke-test script.
+- Applied and verified Phase 30 in production.
+- GitHub Actions run #303 passed TypeScript, 281 tests (0 failures, 0 skipped), both script syntax checks, and the production build.
+- The smoke test itself has not been run because no real QA-account tokens or Cloud Run service access are available in this session.
 
 ## What this audit did not do
 
