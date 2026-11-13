@@ -272,9 +272,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
     const decisionLabel = decision === 'approve'
       ? (isArabic ? 'الموافقة' : 'approve')
       : (isArabic ? 'الرفض' : 'reject');
-    const roleLabel = request?.requested_role === 'teacher'
-      ? (isArabic ? 'خادم' : 'Servant')
-      : request?.requested_role || (isArabic ? 'الدور المطلوب' : 'requested role');
+    const roleLabel = request?.requested_role ? getAdminRoleLabel(request.requested_role, isArabic) : (isArabic ? 'الدور المطلوب' : 'requested role');
     if (!window.confirm(isArabic
       ? `تأكيد ${decisionLabel} طلب ${roleLabel} للحساب ${request?.requester_id || requestId}؟ سيتم تسجيل القرار واسم اللي نفّذ الإجراء في سجل التدقيق.`
       : `Confirm ${decisionLabel} of the ${roleLabel} request for account ${request?.requester_id || requestId}? The decision and verified actor will be recorded in the audit log.`)) return;
@@ -303,9 +301,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       return;
     }
     const roleLabel = selectedRole === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : selectedRole;
-    const existingRoles = target.roles.map(assignment => assignment.role === 'teacher'
-      ? (isArabic ? 'خادم' : 'Servant')
-      : assignment.role);
+    const existingRoles = target.roles.map(assignment => getAdminRoleLabel(assignment.role, isArabic));
     const updatedRoles = roleAction === 'grant'
       ? [...existingRoles, roleLabel]
       : existingRoles.filter(role => role !== roleLabel);
@@ -585,7 +581,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
               {isArabic ? 'فلترة حسب الدور' : 'Filter by role'}
               <select value={accountRoleFilter} onChange={event => setAccountRoleFilter(event.target.value as AdminAccountRoleFilter)} className="ms-2 rounded-xl border px-3 py-2 font-normal text-slate-900">
                 <option value="all">{isArabic ? 'كل الأدوار' : 'All roles'}</option>
-                {(['student', 'parent', 'teacher', 'admin'] as const).map(role => <option key={role} value={role}>{role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : role}</option>)}
+                {(['student', 'parent', 'teacher', 'admin'] as const).map(role => <option key={role} value={role}>{getAdminRoleLabel(role, isArabic)}</option>)}
               </select>
             </label>
             <label className="text-sm font-bold text-slate-700">
@@ -612,7 +608,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
                     <p className="mt-1 break-all text-xs text-slate-400">{account.id}</p>
                     <p className="mt-2 text-xs font-bold">{isArabic ? 'الحالة' : 'Status'}: {account.status === 'suspended' ? (isArabic ? 'موقوف' : 'Suspended') : account.status === 'invited' ? (isArabic ? 'مدعو' : 'Invited') : account.status === 'unknown' ? (isArabic ? 'غير متاحة' : 'Unavailable') : (isArabic ? 'نشط' : 'Active')}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {account.roles.map(assignment => <span key={assignment.role} title={`${assignment.granted_by || 'system'} · ${new Date(assignment.granted_at).toLocaleString()}`} className="rounded-full bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-900">{assignment.role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : assignment.role} · {new Date(assignment.granted_at).toLocaleDateString(isArabic ? 'ar' : 'en')}</span>)}
+                      {account.roles.map(assignment => <span key={assignment.role} title={`${assignment.granted_by || 'system'} · ${new Date(assignment.granted_at).toLocaleString()}`} className="rounded-full bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-900">{getAdminRoleLabel(assignment.role, isArabic)} · {new Date(assignment.granted_at).toLocaleDateString(isArabic ? 'ar' : 'en')}</span>)}
                       {!account.roles.length && <span className="text-xs text-slate-500">{isArabic ? 'مفيش أدوار نشطة' : 'No active assigned roles'}</span>}
                     </div>
                   </div>
@@ -640,7 +636,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
             <h2 className="text-lg font-black">{isArabic ? 'طلبات الأدوار اللي مستنية المراجعة' : 'Pending role requests'}</h2>
             {requests.map(request => (
               <article key={request.id} className="rounded-2xl border bg-white p-4 shadow-sm">
-                <p className="font-black">{request.requested_role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : request.requested_role}</p>
+                <p className="font-black">{getAdminRoleLabel(request.requested_role, isArabic)}</p>
                 <p className="mt-1 break-all text-xs text-slate-500">{request.requester_id}</p>
                 <p className="mt-1 text-xs text-slate-500">{new Date(request.requested_at).toLocaleString(isArabic ? 'ar' : 'en')}</p>
                 {request.reason && <p className="mt-2 text-sm">{request.reason}</p>}
@@ -667,7 +663,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
                 </div>
               )}
               <select aria-label={isArabic ? 'الدور' : 'Role'} value={selectedRole} onChange={event => setSelectedRole(event.target.value as Role)} className="w-full rounded-xl border px-3 py-2">
-                {(['student', 'parent', 'teacher', 'admin'] as Role[]).map(role => <option key={role} value={role}>{role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : role}</option>)}
+                {(['student', 'parent', 'teacher', 'admin'] as Role[]).map(role => <option key={role} value={role}>{getAdminRoleLabel(role, isArabic)}</option>)}
               </select>
               <select aria-label={isArabic ? 'الإجراء' : 'Action'} value={roleAction} onChange={event => setRoleAction(event.target.value as 'grant' | 'revoke')} className="w-full rounded-xl border px-3 py-2">
                 <option value="grant">{isArabic ? 'منح' : 'Grant'}</option><option value="revoke">{isArabic ? 'سحب' : 'Revoke'}</option>
