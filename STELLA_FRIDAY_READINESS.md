@@ -3,7 +3,7 @@
 **Audit date:** November 13, 2026  
 **Repository:** `avamoussachurch/anbamousa-stella`  
 **Audited branch:** `main`  
-**Main commit at audit:** `0a1c6726003279db3924cc6c3b530e796de8fbe5`  
+**Main commit at audit:** `782df71c52289cfc1a51c36e94b419ae38434caa`  
 **Decision:** **Code build is green; full public release is not yet verified.**
 
 > This report replaces the November 10 readiness report. Several of its critical findings are now stale: the live database has an administrator, teacher assignments, published Sunday School lessons, and the Hymns/Taxis API code now contains Supabase persistence and private-media resolution. The current remaining gaps are primarily live curriculum content, roster/role provisioning, security configuration, and real-device/production verification.
@@ -22,10 +22,14 @@ The following changes are merged into `main`:
   - Teacher and parent access to another student's learning data now calls Supabase `can_access_student_data`.
   - Production access no longer trusts server-local JSON relationships or class assignments.
   - Database-check failures fail closed.
+- **PR #66 — live points and streak leaderboards**
+  - Authenticated student leaderboards now use the active Supabase class roster, student role assignments, profile points/streaks, and persisted lesson completions.
+  - Students are restricted to their own class group; servants to assigned groups; admins to active groups.
+  - Points and streak rankings are sorted independently. Unassigned students receive an empty state instead of demo classmates.
 
 **GitHub Actions on the merged main commit passed:**
 - TypeScript type-check (`npm run lint`)
-- Full automated test suite
+- Full automated test suite (**273 tests passed** on the PR validation run)
 - Trusted bootstrap script syntax check
 - Production Vite/client and server build
 
@@ -111,6 +115,15 @@ The Supabase security advisor currently reports:
 4. **Unused indexes — INFO.** Do not drop them solely on this observation; the current dataset and traffic are too small to justify destructive index cleanup.
 
 No RLS policies, grants, functions, storage buckets, or production rows were modified during this audit.
+
+A read-only privilege check confirmed that **none of the SECURITY DEFINER functions can be executed by the `anon` role**. Twenty-six are executable by `authenticated`; these include policy helpers and intentional client RPCs, but their internal role checks still deserve focused review before a broad public launch.
+
+### Storage inventory
+
+- `stella-curriculum-media-v1`: private bucket, 100 MB limit, currently 0 objects. This matches the current server default for curriculum uploads and signed media URLs.
+- `stella-feed-media-v1`: public bucket, 100 MB limit, 2 objects.
+- Legacy `hymns-audio` and `lesson-worksheets` buckets: public and currently empty.
+- No browser policies are present on `storage.objects`; current curriculum uploads and signed reads use the server service-role path. Keep the curriculum bucket private. Review the two empty legacy public buckets before deleting or changing their visibility.
 
 ---
 
