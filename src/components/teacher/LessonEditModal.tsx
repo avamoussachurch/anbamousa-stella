@@ -4,6 +4,7 @@ import { Lesson, QuizQuestion, Language, QuizDraft } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { getEditableLessonVersion, updateLessonDraft, createLessonDraft } from '../../lib/lessonAuthoringService';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 
 interface LessonEditModalProps {
   lesson: Lesson;
@@ -56,7 +57,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
           if (!isMounted) return;
           setLoadingDraft(false);
           if (res.error) {
-            setErrorMsg(res.error.message);
+            setErrorMsg(getLocalizedErrorMessage(res.error.message, lang));
           } else if (res.data) {
             setEditableVersionId(res.data.id);
             if (res.data.summaryEn) {
@@ -185,7 +186,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
       setSaving(false);
 
       if (result.error) {
-        setErrorMsg(result.error.message);
+        setErrorMsg(getLocalizedErrorMessage(result.error.message, lang));
         return;
       }
 
