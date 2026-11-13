@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { BottomNav } from './components/layout/BottomNav';
 import { TopBar } from './components/layout/TopBar';
 import { WorkspaceSidebar } from './components/layout/WorkspaceSidebar';
@@ -32,6 +33,8 @@ import { canAccessWorkspace, canAccessWorkspaceTab, hasRole, resolveWorkspace, t
 
 function AppContent() {
   const { userData, loading, logout } = useAuth();
+  const reduceMotion = useReducedMotion();
+  const [tabTransitionTick, setTabTransitionTick] = useState(0);
   const [lang, setLangState] = useState<Language>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('church_app_lang');
@@ -155,6 +158,7 @@ function AppContent() {
       return;
     }
     setNavigationError(null);
+    setTabTransitionTick(current => current + 1);
     setActiveTab(tab);
     if (activeWorkspace === 'student') {
       setVisitedStudentTabs(previous => previous.has(tab) ? previous : new Set(previous).add(tab));
@@ -167,6 +171,7 @@ function AppContent() {
   };
 
   const handleBackToHome = () => {
+    setTabTransitionTick(current => current + 1);
     setActiveTab('home');
     setActiveLessonId(null);
   };
@@ -177,6 +182,7 @@ function AppContent() {
       return;
     }
     setNavigationError(null);
+    setTabTransitionTick(current => current + 1);
     setActiveWorkspace(nextWorkspace);
     setActiveTab('home');
     setActiveLessonId(null);
@@ -365,7 +371,16 @@ function AppContent() {
       {/* Container for responsive layout */}
       <div className="mx-auto w-full min-w-0 px-2 md:px-4 md:pt-4 pb-20 lg:pb-8">
         {navigationError && <p role="alert" className="mx-auto my-2 max-w-3xl rounded-xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-900">{navigationError}</p>}
-        {renderMainContent()}
+        <motion.div
+          initial={false}
+          animate={reduceMotion
+            ? { opacity: 1, y: 0 }
+            : { opacity: [0.94, 1], y: [tabTransitionTick % 2 === 0 ? 7 : -7, 0] }}
+          transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="min-w-0"
+        >
+          {renderMainContent()}
+        </motion.div>
       </div>
       </div>
       </div>
