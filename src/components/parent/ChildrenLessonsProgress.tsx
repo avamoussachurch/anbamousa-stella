@@ -83,7 +83,7 @@ export function ChildrenLessonsProgress({
       .then(({ data, error }) => {
         if (error) {
           setReviewError(lang === 'ar'
-            ? 'تعذر تحميل سجل التقدم المحفوظ لهذا الطفل. حاول مرة أخرى.'
+            ? 'مش قادرين نحمّل سجل تقدم الطفل ده. جرّب تاني.'
             : 'Unable to load this child’s saved learning progress. Please try again.');
         } else if (data) {
           setReviewData(data);
@@ -91,7 +91,7 @@ export function ChildrenLessonsProgress({
       })
       .catch(() => {
         setReviewError(lang === 'ar'
-          ? 'حدث خطأ أثناء تحميل سجل التقدم. حاول مرة أخرى.'
+          ? 'حصلت مشكلة وإحنا بنحمّل سجل التقدم. جرّب تاني.'
           : 'An error occurred while loading learning progress. Please try again.');
       })
       .finally(() => {
@@ -194,7 +194,7 @@ export function ChildrenLessonsProgress({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-[var(--color-church-cream-dark)] shadow-sm">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 flex-1">
           <span className="text-xs font-bold uppercase tracking-wider text-gray-400 shrink-0 px-1">
-            {lang === 'ar' ? 'الأبناء:' : 'Children:'}
+            {lang === 'ar' ? 'الأولاد:' : 'Children:'}
           </span>
           {childrenProfiles.map(child => {
             const isSelected = child.id === selectedChild.id;
@@ -246,7 +246,7 @@ export function ChildrenLessonsProgress({
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-blue-50 hover:bg-blue-100 text-[var(--color-church-blue)] border border-blue-200 transition-all shrink-0 cursor-pointer shadow-2xs"
             >
               <QrCode size={14} className="text-[var(--color-church-blue)]" />
-              <span>{lang === 'ar' ? 'مسح كود QR' : 'Scan QR'}</span>
+              <span>{lang === 'ar' ? 'امسح كود QR' : 'Scan QR'}</span>
             </button>
           )}
         </div>
@@ -262,20 +262,20 @@ export function ChildrenLessonsProgress({
       {/* Main Visual Progress Overview Card */}
       {reviewLoading && (
         <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]" role="status">
-          {lang === 'ar' ? 'جارٍ تحميل سجل التعلّم...' : 'Loading learning records...'}
+          {lang === 'ar' ? 'بنحمّل سجل التعلّم...' : 'Loading learning records...'}
         </div>
       )}
       {reviewError && (
         <div className="mousa-card-sand p-6 text-center" role="alert">
           <p className="text-[var(--feedback-error)] mb-3">{reviewError}</p>
           <button onClick={() => fetchReview(selectedChild.id)} className="mousa-btn-quest px-4 py-2 rounded-xl">
-            {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+            {lang === 'ar' ? 'جرّب تاني' : 'Retry'}
           </button>
         </div>
       )}
       {reviewData && lessonsList.length === 0 && (
         <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]">
-          {lang === 'ar' ? 'لا توجد سجلات دروس أو اختبارات لهذا الطفل حتى الآن.' : 'No lesson or quiz activity has been recorded for this child yet.'}
+          {lang === 'ar' ? 'لسه مفيش دروس أو اختبارات متسجلة للطفل ده.' : 'No lesson or quiz activity has been recorded for this child yet.'}
         </div>
       )}
       <div hidden={!reviewData || reviewLoading || Boolean(reviewError) || lessonsList.length === 0} className="bg-white rounded-3xl p-6 md:p-8 border border-[var(--color-church-cream-dark)] shadow-sm">
@@ -305,7 +305,7 @@ export function ChildrenLessonsProgress({
                 {selectedChild.isRealAccount ? (
                   <span className="text-[11px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                     <Sparkles size={11} className="text-emerald-600" />
-                    <span>{lang === 'ar' ? 'متزامن حياً ✓' : 'Live Synced ✓'}</span>
+                    <span>{lang === 'ar' ? 'متزامن دلوقتي ✓' : 'Live Synced ✓'}</span>
                   </span>
                 ) : null}
               </div>
@@ -319,7 +319,7 @@ export function ChildrenLessonsProgress({
           <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <div className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-100">
               <span className="text-xs text-gray-400 font-bold block uppercase">
-                {lang === 'ar' ? 'الدروس المنجزة' : 'Lessons Done'}
+                {lang === 'ar' ? 'الدروس اللي خلصها' : 'Lessons Done'}
               </span>
               <span className="text-xl md:text-2xl font-bold text-[var(--color-church-blue)]">
                 {completedCount}<span className="text-xs text-gray-400 font-normal">/{lessonsList.length}</span>
@@ -327,7 +327,7 @@ export function ChildrenLessonsProgress({
             </div>
             <div className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-100">
               <span className="text-xs text-gray-400 font-bold block uppercase">
-                {lang === 'ar' ? 'محاولات الاختبار' : 'Quiz attempts'}
+                {lang === 'ar' ? 'محاولات الاختبارات' : 'Quiz attempts'}
               </span>
               <span className="text-xl md:text-2xl font-bold text-emerald-600">
                 {reviewData?.lessons.reduce((sum, lesson) => sum + lesson.quizAttemptsCount, 0) ?? '—'}
@@ -335,7 +335,7 @@ export function ChildrenLessonsProgress({
             </div>
             <div className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-100">
               <span className="text-xs text-gray-400 font-bold block uppercase">
-                {lang === 'ar' ? 'الأقسام المقروءة' : 'Sections read'}
+                {lang === 'ar' ? 'الأقسام اللي قراها' : 'Sections read'}
               </span>
               <span className="text-xl md:text-2xl font-bold text-[var(--color-church-burgundy)]">
                 {reviewData?.lessons.reduce((sum, lesson) => sum + lesson.sectionsCompleted.length, 0) ?? '—'}
@@ -350,7 +350,7 @@ export function ChildrenLessonsProgress({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-bold text-gray-600 flex items-center gap-1.5">
               <Clock size={14} className="text-[var(--color-church-blue)]" />
-              <span>{lang === 'ar' ? 'حد المذاكرة اليومي:' : 'Daily Study Limit:'}</span>
+              <span>{lang === 'ar' ? 'وقت المذاكرة اليومي:' : 'Daily Study Limit:'}</span>
             </span>
             <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-200">
               {[30, 45, 60, 90, 0].map(mins => {
@@ -387,19 +387,19 @@ export function ChildrenLessonsProgress({
               className="px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-[var(--color-church-burgundy)] font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
               <HeartHandshake size={14} className="text-[var(--color-church-burgundy)]" />
-              <span>{lang === 'ar' ? 'إرسال بركة وتشجيع' : 'Send Blessing Note'}</span>
+              <span>{lang === 'ar' ? 'ابعت رسالة تشجيع وبركة' : 'Send Blessing Note'}</span>
             </button>
 
             {onUnlinkChild && childrenProfiles.length > 1 && (
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm(lang === 'ar' ? `هل أنت متأكد من إلغاء ربط حساب ${selectedChild.nameAr}؟` : `Unlink ${selectedChild.nameEn}?`)) {
+                  if (confirm(lang === 'ar' ? `متأكد إنك عايز تفصل حساب ${selectedChild.nameAr}؟` : `Unlink ${selectedChild.nameEn}?`)) {
                     onUnlinkChild(selectedChild.id);
                   }
                 }}
                 className="px-2.5 py-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                title={lang === 'ar' ? 'إلغاء ربط الحساب' : 'Unlink Child'}
+                title={lang === 'ar' ? 'فصل الحساب' : 'Unlink Child'}
               >
                 <Trash2 size={14} />
               </button>
@@ -413,7 +413,7 @@ export function ChildrenLessonsProgress({
             <span className="text-lg shrink-0">🕊️</span>
             <div className="flex-1">
               <span className="font-bold text-[var(--color-church-burgundy)] block">
-                {lang === 'ar' ? 'بركة وتشجيع الأب/الأم النشطة للطفل:' : 'Active Parental Blessing to Child:'}
+                {lang === 'ar' ? 'رسالة التشجيع والبركة الحالية للطفل:' : 'Active Parental Blessing to Child:'}
               </span>
               <p className="text-gray-700 italic mt-0.5 font-medium">"{selectedChild.parentBlessingMessage}"</p>
             </div>
@@ -617,7 +617,7 @@ export function ChildrenLessonsProgress({
             {[
               { label: lang === 'ar' ? 'دروس مسجلة' : 'Recorded lessons', value: reviewData.summary.totalLessons },
               { label: lang === 'ar' ? 'دروس مكتملة' : 'Completed lessons', value: reviewData.summary.completedLessonsCount },
-              { label: lang === 'ar' ? 'محاولات الاختبار' : 'Quiz attempts', value: reviewData.lessons.reduce((sum, lesson) => sum + lesson.quizAttemptsCount, 0) },
+              { label: lang === 'ar' ? 'محاولات الاختبارات' : 'Quiz attempts', value: reviewData.lessons.reduce((sum, lesson) => sum + lesson.quizAttemptsCount, 0) },
               { label: lang === 'ar' ? 'متوسط الاختبارات' : 'Average quiz score', value: reviewData.lessons.some(lesson => lesson.quizAttemptsCount > 0) ? `${reviewData.summary.averageQuizScore}%` : '—' }
             ].map(metric => (
               <div key={metric.label} className="bg-[var(--surface-secondary)] border border-[var(--border-default)] rounded-2xl p-4">
