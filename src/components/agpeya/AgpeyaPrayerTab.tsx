@@ -155,7 +155,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
               <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
               <span>
                 {isSyncing 
-                  ? (lang === 'ar' ? 'جاري الحفظ في Supabase...' : 'Syncing to Supabase...')
+                  ? (lang === 'ar' ? 'بنحفظ على Supabase...' : 'Syncing to Supabase...')
                   : (lang === 'ar' ? `متزامن مع السحابة ${lastSyncedTime ? `(${lastSyncedTime})` : ''}` : `Synced with Supabase ${lastSyncedTime ? `(${lastSyncedTime})` : ''}`)
                 }
               </span>
@@ -163,7 +163,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-extrabold text-amber-300 mb-2">
-            {lang === 'ar' ? 'صلوات الأجبية ومتابعة الصلاة اليومية' : 'Daily Agpeya & Prayer Tracker'}
+            {lang === 'ar' ? 'صلوات الأجبية ومتابعة صلاتك كل يوم' : 'Daily Agpeya & Prayer Tracker'}
           </h1>
           <p className="text-xs sm:text-base text-gray-200 leading-relaxed max-w-2xl font-medium">
             {lang === 'ar'
@@ -179,10 +179,10 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
           <div>
             <h3 className="text-base sm:text-lg font-bold text-[var(--color-church-blue)] dark:text-amber-200 flex items-center gap-2">
               <TrendingUp size={20} className="text-amber-600" />
-              <span>{lang === 'ar' ? 'لوحة متابعة الصلاة الشخصية' : 'Personal Prayer Progress Dashboard'}</span>
+              <span>{lang === 'ar' ? 'متابعة صلاتك' : 'Personal Prayer Progress Dashboard'}</span>
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {lang === 'ar' ? 'سجل السواعي التي صليتها اليوم واحصل على نقاط تشجيعية محفوظة في حسابك' : 'Check off hours you prayed today to earn points saved to your account'}
+              {lang === 'ar' ? 'سجّل السواعي اللي صليتها النهارده واكسب نقاط تشجيعية تتحفظ في حسابك.' : 'Check off hours you prayed today to earn points saved to your account'}
             </p>
           </div>
 
@@ -192,10 +192,10 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
               <Flame size={20} className="text-amber-500 fill-amber-500 animate-pulse" />
               <div>
                 <span className="text-xs font-bold text-amber-900 dark:text-amber-200 block">
-                  {streakDays} {lang === 'ar' ? 'أيام متتالية' : 'Day Streak'}
+                  {streakDays} {lang === 'ar' ? 'يوم ورا يوم' : 'Day Streak'}
                 </span>
                 <span className="text-[10px] text-amber-700 dark:text-amber-400">
-                  {lang === 'ar' ? 'مداومة الصلاة' : 'Faithful habit'}
+                  {lang === 'ar' ? 'مواظبتك على الصلاة' : 'Faithful habit'}
                 </span>
               </div>
             </div>
@@ -205,7 +205,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
               <Award size={20} className="text-emerald-600" />
               <div>
                 <span className="text-xs font-bold text-emerald-800 dark:text-emerald-200 block">
-                  +{totalCompleted * 25} {lang === 'ar' ? 'نقطة اليوم' : 'Pts Today'}
+                  +{totalCompleted * 25} {lang === 'ar' ? 'نقطة النهارده' : 'Pts Today'}
                 </span>
                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400">
                   {lang === 'ar' ? 'بركة الصلاة' : 'Prayer blessings'}
@@ -219,7 +219,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
         <div>
           <div className="flex justify-between items-center text-xs font-bold mb-2">
             <span className="text-gray-700 dark:text-gray-300">
-              {lang === 'ar' ? `إنجاز صلوات اليوم (${totalCompleted} من ٧)` : `Today's Completed Hours (${totalCompleted} of 7)`}
+              {lang === 'ar' ? `الصلوات اللي خلصتها النهارده (${totalCompleted} من ٧)` : `Today's Completed Hours (${totalCompleted} of 7)`}
             </span>
             <span className="text-amber-600 dark:text-amber-400 font-extrabold">{progressPercent}%</span>
           </div>
@@ -236,8 +236,8 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
         {/* Weekly Consistency Row */}
         <div className="p-3.5 bg-gray-50/70 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800">
           <div className="flex items-center justify-between text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">
-            <span>{lang === 'ar' ? 'المداومة على مدار الأسبوع:' : 'Weekly Consistency:'}</span>
-            <span className="text-[11px] text-amber-700 dark:text-amber-300">{lang === 'ar' ? 'اليوم الحالي مظلل' : 'Current day highlighted'}</span>
+            <span>{lang === 'ar' ? 'مواظبتك طول الأسبوع:' : 'Weekly Consistency:'}</span>
+            <span className="text-[11px] text-amber-700 dark:text-amber-300">{lang === 'ar' ? 'النهارده متحدد' : 'Current day highlighted'}</span>
           </div>
           <div className="grid grid-cols-7 gap-2">
             {daysOfWeek.map((day, idx) => {
@@ -269,7 +269,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
         {/* 7 Canonical Hours Check-off Grid */}
         <div>
           <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-            {lang === 'ar' ? 'سواعي اليوم السبع • اضغط لتسجيل الصلاة أو القراءة:' : 'The 7 Hours • Tap to check-off or read:'}
+            {lang === 'ar' ? 'السواعي السبعة • اضغط عشان تسجّل الصلاة أو القراءة:' : 'The 7 Hours • Tap to check-off or read:'}
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {AGPEYA_HOURS.slice(0, 7).map((hour) => {
@@ -306,7 +306,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
                       e.stopPropagation();
                       toggleHourCompleted(hour.id);
                     }}
-                    title={isDone ? (lang === 'ar' ? 'إلغاء التحديد' : 'Unmark') : (lang === 'ar' ? 'تسجيل إتمام الصلاة' : 'Check off')}
+                    title={isDone ? (lang === 'ar' ? 'إلغاء الاختيار' : 'Unmark') : (lang === 'ar' ? 'سجّل إنك صليت' : 'Check off')}
                     className={`p-1.5 rounded-xl transition-all cursor-pointer shrink-0 ${
                       isDone
                         ? 'bg-emerald-500 text-white shadow-xs'
@@ -349,7 +349,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
                     : 'text-gray-500'
                 }`}
               >
-                {lang === 'ar' ? 'صلاة سهلة للأولاد' : 'Youth Guided'}
+                {lang === 'ar' ? 'صلاة مبسطة للأولاد' : 'Youth Guided'}
               </button>
               <button
                 onClick={() => setViewMode('full')}
@@ -375,8 +375,8 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
               <CheckCircle2 size={16} />
               <span>
                 {completedHoursToday[selectedHour.id]
-                  ? (lang === 'ar' ? 'صليت هذه الساعة اليوم ✓' : 'Prayed Today ✓')
-                  : (lang === 'ar' ? 'تسجيل أداء الصلاة (+٢٥ نقطة)' : 'Check off (+25 Pts)')}
+                  ? (lang === 'ar' ? 'صليت الساعة دي النهارده ✓' : 'Prayed Today ✓')
+                  : (lang === 'ar' ? 'سجّل الصلاة واكسب ٢٥ نقطة' : 'Check off (+25 Pts)')}
               </span>
             </button>
           </div>
@@ -387,7 +387,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
           <div className="space-y-4 text-start">
             <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-slate-800/80 border border-amber-200/50 dark:border-slate-700">
               <h4 className="text-xs font-bold text-amber-800 dark:text-amber-400 mb-1">
-                {lang === 'ar' ? 'ماذا نتعلم ونتذكر في هذه الساعة؟' : 'What do we commemorate at this hour?'}
+                {lang === 'ar' ? 'إيه اللي بنتعلمه وبنفتكره في الساعة دي؟' : 'What do we commemorate at this hour?'}
               </h4>
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
                 {lang === 'ar' ? selectedHour.summaryAr : selectedHour.summaryEn}
@@ -398,7 +398,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
             <div className="bg-linear-to-br from-amber-500/10 via-orange-500/5 to-rose-500/10 dark:bg-slate-800/60 p-5 rounded-2xl border border-amber-300/60 dark:border-slate-700">
               <div className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-300 mb-2">
                 <Heart size={16} className="text-rose-500 fill-rose-500" />
-                <span>{lang === 'ar' ? 'صلاة سهلة موجهة من القلب لربنا يسوع:' : 'A simple heartfelt prayer for Jesus:'}</span>
+                <span>{lang === 'ar' ? 'صلاة بسيطة من القلب لربنا يسوع:' : 'A simple heartfelt prayer for Jesus:'}</span>
               </div>
               <p className="text-base sm:text-lg font-bold text-amber-950 dark:text-amber-100 leading-relaxed">
                 "{lang === 'ar' ? selectedHour.childGuidedAr : selectedHour.childGuidedEn}"
@@ -409,7 +409,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
             <div className="p-4 rounded-2xl bg-sky-50/70 dark:bg-slate-800/60 border border-sky-200/60 dark:border-slate-700">
               <div className="flex items-center gap-1.5 text-xs font-bold text-sky-800 dark:text-sky-400 mb-1.5">
                 <BookOpen size={14} />
-                <span>{lang === 'ar' ? 'فصل من الإنجيل المقدس لهذه الساعة:' : 'Gospel Excerpt:'}</span>
+                <span>{lang === 'ar' ? 'جزء من الإنجيل المقدس للساعة دي:' : 'Gospel Excerpt:'}</span>
               </div>
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 italic leading-relaxed">
                 {lang === 'ar' ? selectedHour.gospelAr : selectedHour.gospelEn}
@@ -447,7 +447,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
             {/* Absolution */}
             <div className="p-4 rounded-2xl bg-red-50/60 dark:bg-slate-800/50 border border-red-100 dark:border-slate-700">
               <h4 className="text-xs font-bold text-[var(--color-church-burgundy)] dark:text-red-300 mb-2">
-                {lang === 'ar' ? 'تحليل الصلاة والبركة الختامية:' : 'Concluding Absolution:'}
+                {lang === 'ar' ? 'شرح الصلاة والبركة في الختام:' : 'Concluding Absolution:'}
               </h4>
               <p className="text-sm font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
                 {lang === 'ar' ? selectedHour.absolutionAr : selectedHour.absolutionEn}
@@ -461,11 +461,11 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
           <div className="flex items-center justify-between gap-2 mb-2">
             <h4 className="text-xs sm:text-sm font-bold text-[var(--color-church-blue)] dark:text-amber-200 flex items-center gap-1.5">
               <Edit3 size={15} className="text-amber-600" />
-              <span>{lang === 'ar' ? 'طلباتي الخاصة لربنا في هذه الصلاة (محفوظة في السحابة):' : 'My Personal Intentions & Prayer Requests (Cloud Saved):'}</span>
+              <span>{lang === 'ar' ? 'طلبات صلاتي الخاصة لربنا (بتتحفظ على السحابة):' : 'My Personal Intentions & Prayer Requests (Cloud Saved):'}</span>
             </h4>
             {isSavedPersonal && (
               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                ✓ {lang === 'ar' ? 'تم الحفظ في Supabase والجهاز' : 'Saved to Supabase & Device'}
+                ✓ {lang === 'ar' ? 'اتحفظت على Supabase والجهاز' : 'Saved to Supabase & Device'}
               </span>
             )}
           </div>
@@ -473,7 +473,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
             <textarea
               value={personalPrayer}
               onChange={(e) => setPersonalPrayer(e.target.value)}
-              placeholder={lang === 'ar' ? 'اكتب طلباتك لربنا (صلاة لأجل أهلي، أصحابي، المدرسة، التوبة، المرضى...)' : 'Write your personal prayers for family, school, health, repentance...'}
+              placeholder={lang === 'ar' ? 'اكتب طلباتك لربنا (صلّي لأهلك، أصحابك، المدرسة، المرضى...)' : 'Write your personal prayers for family, school, health, repentance...'}
               className="w-full text-xs sm:text-sm p-3 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-800 dark:text-gray-100 focus:outline-hidden focus:border-amber-500 min-h-[70px]"
             />
             <button
