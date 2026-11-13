@@ -67,10 +67,10 @@ export function WeeklyProgressView({
       <div className="mousa-card-sand p-8 text-center space-y-4" dir="rtl">
         <UsersIcon />
         <h3 className="text-lg font-bold text-[var(--text-primary)]">
-          {lang === 'ar' ? 'لا يوجد أبناء مرتبطون بعد' : 'No children linked yet'}
+          {lang === 'ar' ? 'لسه مفيش أولاد مرتبطين بالحساب' : 'No children linked yet'}
         </h3>
         <p className="text-sm text-[var(--text-secondary)]">
-          {lang === 'ar' ? 'اربط حساب الطفل لعرض سجلاته الأسبوعية الحقيقية.' : 'Link a student account to see its real weekly records.'}
+          {lang === 'ar' ? 'اربط حساب ابنك عشان تشوف سجلاته الأسبوعية.' : 'Link a student account to see its real weekly records.'}
         </p>
         <div className="flex justify-center gap-3">
           {onOpenQrScanner && <button onClick={onOpenQrScanner} className="mousa-btn-quest px-4 py-2 rounded-xl">{lang === 'ar' ? 'مسح QR' : 'Scan QR'}</button>}
@@ -86,41 +86,41 @@ export function WeeklyProgressView({
         <div>
           <div className="flex items-center gap-2 text-[var(--action-primary)] mb-1">
             <Calendar size={18} />
-            <span className="text-xs font-bold">{lang === 'ar' ? 'ملخص أسبوعي من السجلات المحفوظة' : 'Weekly summary from persisted records'}</span>
+            <span className="text-xs font-bold">{lang === 'ar' ? 'ملخص الأسبوع من البيانات المسجلة' : 'Weekly summary from persisted records'}</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)]">{week.label}</h2>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            {lang === 'ar' ? 'لا يتم احتساب الحضور أو وقت الدراسة لعدم توفر سجلات موثوقة لهما.' : 'Attendance and study time are omitted because no reliable records are available.'}
+            {lang === 'ar' ? 'مش بنعرض الحضور أو وقت المذاكرة عشان مفيش بيانات موثوقة ليهم.' : 'Attendance and study time are omitted because no reliable records are available.'}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setWeekOffset(offset => offset - 1)} aria-label={lang === 'ar' ? 'الأسبوع السابق' : 'Previous week'} className="p-2 rounded-xl border border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--state-hover)]">
+          <button onClick={() => setWeekOffset(offset => offset - 1)} aria-label={lang === 'ar' ? 'الأسبوع اللي فات' : 'Previous week'} className="p-2 rounded-xl border border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--state-hover)]">
             {lang === 'ar' ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
-          <button onClick={() => setWeekOffset(offset => Math.min(0, offset + 1))} disabled={weekOffset === 0} aria-label={lang === 'ar' ? 'الأسبوع التالي' : 'Next week'} className="p-2 rounded-xl border border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--state-hover)] disabled:opacity-50">
+          <button onClick={() => setWeekOffset(offset => Math.min(0, offset + 1))} disabled={weekOffset === 0} aria-label={lang === 'ar' ? 'الأسبوع الجاي' : 'Next week'} className="p-2 rounded-xl border border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--state-hover)] disabled:opacity-50">
             {lang === 'ar' ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
           </button>
-          <button onClick={() => void loadReviews()} disabled={loading} className="p-2 rounded-xl border border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--state-hover)] disabled:opacity-50" aria-label={lang === 'ar' ? 'تحديث السجل' : 'Refresh records'}>
+          <button onClick={() => void loadReviews()} disabled={loading} className="p-2 rounded-xl border border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--state-hover)] disabled:opacity-50" aria-label={lang === 'ar' ? 'تحديث البيانات' : 'Refresh records'}>
             <RefreshCw size={17} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
       </section>
 
       {loading ? (
-        <div className="mousa-card-sand p-8 text-center text-[var(--text-secondary)]" role="status">{lang === 'ar' ? 'جارٍ تحميل السجلات...' : 'Loading records...'}</div>
+        <div className="mousa-card-sand p-8 text-center text-[var(--text-secondary)]" role="status">{lang === 'ar' ? 'بنحمّل البيانات...' : 'Loading records...'}</div>
       ) : (
         <>
           {weeklyRows.some(row => row.error) && (
             <div className="mousa-card-sand p-4 text-[var(--feedback-error)] flex items-center gap-2" role="alert">
               <AlertCircle size={18} />
-              <span>{lang === 'ar' ? 'تعذر تحميل سجل واحد أو أكثر. حاول التحديث.' : 'One or more records could not be loaded. Please retry.'}</span>
+              <span>{lang === 'ar' ? 'مش قادرين نحمّل بعض البيانات. جرّب تحدّث الصفحة.' : 'One or more records could not be loaded. Please retry.'}</span>
             </div>
           )}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { label: lang === 'ar' ? 'دروس مكتملة' : 'Completed lessons', value: allLessons.length, icon: BookOpen },
-              { label: lang === 'ar' ? 'نقاط مسجلة' : 'Recorded points', value: totalPoints, icon: Star },
-              { label: lang === 'ar' ? 'اختبارات مسجلة' : 'Quiz records', value: quizLessons.length, icon: Calendar },
+              { label: lang === 'ar' ? 'دروس خلصها' : 'Completed lessons', value: allLessons.length, icon: BookOpen },
+              { label: lang === 'ar' ? 'النقاط المسجلة' : 'Recorded points', value: totalPoints, icon: Star },
+              { label: lang === 'ar' ? 'الاختبارات المسجلة' : 'Quiz records', value: quizLessons.length, icon: Calendar },
               { label: lang === 'ar' ? 'متوسط آخر نتيجة' : 'Average latest score', value: averageQuiz === null ? '—' : `${averageQuiz}%`, icon: RefreshCw }
             ].map(metric => {
               const Icon = metric.icon;
@@ -138,7 +138,7 @@ export function WeeklyProgressView({
               {error ? (
                 <p className="text-sm text-[var(--feedback-error)] mt-2">{error}</p>
               ) : lessons.length === 0 ? (
-                <p className="text-sm text-[var(--text-secondary)] mt-2">{lang === 'ar' ? 'لا توجد دروس مكتملة مسجلة خلال هذا الأسبوع.' : 'No completed lessons were recorded this week.'}</p>
+                <p className="text-sm text-[var(--text-secondary)] mt-2">{lang === 'ar' ? 'لا توجد دروس خلصها مسجلة خلال هذا الأسبوع.' : 'No completed lessons were recorded this week.'}</p>
               ) : (
                 <ul className="mt-3 divide-y divide-[var(--border-default)]">
                   {lessons.map(lesson => (
