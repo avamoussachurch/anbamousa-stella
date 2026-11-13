@@ -231,7 +231,7 @@ export function TeacherDashboard({
         setPendingRequestsCount(res.requests.filter(r => r.status === 'PENDING_APPROVAL').length);
       } else {
         setPendingRequestsCount(null);
-        setPendingRequestsError(res.error || (lang === 'ar' ? 'مش قادرين نحمّل طلبات التفعيل دلوقتي.' : 'Could not load activation requests.'));
+        setPendingRequestsError(getLocalizedErrorMessage(res.error, lang));
       }
     }).catch((error: unknown) => {
       if (!isMounted) return;
