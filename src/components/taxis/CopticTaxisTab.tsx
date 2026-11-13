@@ -175,7 +175,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
       exit={{ opacity: 0, y: -15 }}
       transition={{ duration: 0.3 }}
       className="pb-28 pt-6 px-4 w-full max-w-7xl mx-auto space-y-6"
-      dir={isAr ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       {/* Hero Header */}
       <div className="bg-gradient-to-r from-[#1F1610] via-[#2D1E12] to-[#42220E] text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden border border-amber-600/30">
