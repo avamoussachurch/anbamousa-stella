@@ -102,7 +102,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
         populateForm(res.items[0]);
       }
     } else {
-      setLibraryError(res.error || (isAr ? 'تعذر تحميل مكتبة الألحان.' : 'The Hymns library could not be loaded.'));
+      setLibraryError(res.error || (isAr ? 'مش قادرين نحمّل مكتبة الألحان دلوقتي.' : 'The Hymns library could not be loaded.'));
     }
     setLoading(false);
   };
@@ -148,7 +148,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
   };
 
   const startNewHymn = () => {
-    if (hasUnsavedChanges && !window.confirm(isAr ? 'لديك تعديلات غير محفوظة، هل تريد المتابعة؟' : 'You have unsaved changes. Discard?')) {
+    if (hasUnsavedChanges && !window.confirm(isAr ? 'عندك تعديلات لسه متحفظتش. تحب تكمّل وتسيبها؟' : 'You have unsaved changes. Discard?')) {
       return;
     }
     const newId = `hymn_${Date.now()}`;
@@ -209,7 +209,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
       }
       setHasUnsavedChanges(true);
       setStatusMessage({
-        text: isAr ? 'تم رفع الملف بأمان إلى التخزين الخاص. احفظ اللحن لتثبيت الرابط.' : 'File uploaded securely. Save the hymn to persist its reference.',
+        text: isAr ? 'الملف اترفع بأمان. احفظ اللحن عشان نثبت الرابط.' : 'File uploaded securely. Save the hymn to persist its reference.',
         type: 'success'
       });
     } catch (error) {
@@ -270,7 +270,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
   // Save / Publish
   const handleSave = async (publishImmediate = false) => {
     if (!titleAr.trim()) {
-      alert(isAr ? 'برجاء كتابة عنوان اللحن بالعربية' : 'Please provide Arabic title');
+      alert(isAr ? 'اكتب عنوان اللحن بالعربي.' : 'Please provide Arabic title');
       return;
     }
 
@@ -318,12 +318,12 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
       void loadLibrary();
     } else {
       setStatusMessage({
-        text: res.error || (isAr ? 'حدث خطأ أثناء الحفظ' : 'Failed to save hymn'),
+        text: res.error || (isAr ? 'حصلت مشكلة وإحنا بنحفظ.' : 'Failed to save hymn'),
         type: 'error'
       });
     }
     } catch (error) {
-      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'حدث خطأ أثناء الحفظ' : 'Failed to save hymn'), type: 'error' });
+      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'حصلت مشكلة وإحنا بنحفظ.' : 'Failed to save hymn'), type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -331,7 +331,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
 
   const handleUnpublish = async () => {
     if (!selectedHymnId) return;
-    if (!window.confirm(isAr ? 'هل تريد إلغاء نشر هذا اللحن وإعادته لمسودة؟' : 'Unpublish this hymn to draft?')) return;
+    if (!window.confirm(isAr ? 'عايز تلغي نشر اللحن وترجّعه لمسودة؟' : 'Unpublish this hymn to draft?')) return;
 
     setIsSaving(true);
     try {
@@ -340,18 +340,18 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
       setStatus('draft');
       populateForm(res.hymn);
       setStatusMessage({
-        text: isAr ? 'تم إلغاء نشر اللحن وإعادته كمسودة.' : 'Hymn unpublished to draft.',
+        text: isAr ? 'اللحن اتلغى نشره ورجع لمسودة.' : 'Hymn unpublished to draft.',
         type: 'success'
       });
       void loadLibrary();
     } else {
       setStatusMessage({
-        text: res.error || (isAr ? 'تعذر إلغاء نشر اللحن' : 'Could not unpublish hymn.'),
+        text: res.error || (isAr ? 'مش قادرين نلغي نشر اللحن.' : 'Could not unpublish hymn.'),
         type: 'error'
       });
     }
     } catch (error) {
-      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'تعذر إلغاء نشر اللحن' : 'Could not unpublish hymn.'), type: 'error' });
+      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'مش قادرين نلغي نشر اللحن.' : 'Could not unpublish hymn.'), type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -359,7 +359,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
 
   const handleRestore = async (vNumber: number) => {
     if (!selectedHymnId) return;
-    if (!window.confirm(isAr ? `استعادة النسخة ${vNumber}؟` : `Restore version ${vNumber}?`)) return;
+    if (!window.confirm(isAr ? `ترجع للنسخة ${vNumber}؟` : `Restore version ${vNumber}?`)) return;
 
     setIsSaving(true);
     try {
@@ -367,15 +367,15 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
     if (res.success && res.hymn) {
       populateForm(res.hymn);
       setStatusMessage({
-        text: isAr ? `تمت استعادة اللحن من النسخة ${vNumber}.` : `Restored hymn from v${vNumber}.`,
+        text: isAr ? `رجّعنا اللحن للنسخة ${vNumber}.` : `Restored hymn from v${vNumber}.`,
         type: 'success'
       });
       void loadLibrary();
     } else {
-      setStatusMessage({ text: res.error || (isAr ? 'تعذر استعادة النسخة' : 'Could not restore hymn version.'), type: 'error' });
+      setStatusMessage({ text: res.error || (isAr ? 'تعذر ترجع للنسخة' : 'Could not restore hymn version.'), type: 'error' });
     }
     } catch (error) {
-      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'تعذر استعادة النسخة' : 'Could not restore hymn version.'), type: 'error' });
+      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'تعذر ترجع للنسخة' : 'Could not restore hymn version.'), type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -404,12 +404,12 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black">
-                {isAr ? 'استوديو تأليف ونشر مدرسة الألحان' : 'Hymns School Publishing Studio'}
+                {isAr ? 'استوديو تجهيز ونشر الألحان' : 'Hymns School Publishing Studio'}
               </h2>
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                 status === 'published' ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-amber-950'
               }`}>
-                {status === 'published' ? (isAr ? 'منشور للشمامسة' : 'Published') : (isAr ? 'مسودة خاصة' : 'Draft')}
+                {status === 'published' ? (isAr ? 'منشور للشمامسة' : 'Published') : (isAr ? 'مسودة' : 'Draft')}
               </span>
               <span className="text-[10px] bg-white/20 text-white font-bold px-2 py-0.5 rounded-full">
                 v{version}
@@ -417,7 +417,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
             </div>
             <p className="text-xs text-stone-200 mt-0.5 font-bold">
               {isAr
-                ? 'تحكم كامل في نصوص الألحان الثلاثية (قبطي، معرب، عربي)، رفع الصوت، دليل الهزات، والمستوى الشماسي المستهدف.'
+                ? 'جهّز كلمات اللحن بالقبطي والمعرّب والعربي، وارفع التسجيل، وأضف شرح الهزات وحدد مستوى الشمامسة المناسب.'
                 : 'Full authoring for 3-language hymn lyrics, audio playback, hazat guides, and target deacon level.'}
             </p>
           </div>
@@ -440,7 +440,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
             className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 border border-amber-400/30 cursor-pointer"
           >
             <Eye size={15} />
-            <span>{isAr ? 'معاينة كطالب' : 'Student Preview'}</span>
+            <span>{isAr ? 'عاين اللحن كتلميذ' : 'Student Preview'}</span>
           </button>
 
           <button
@@ -450,7 +450,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
             className="px-3.5 py-2 bg-stone-700 hover:bg-stone-600 text-white rounded-xl text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             <Save size={15} />
-            <span>{isAr ? 'حفظ مسودة' : 'Save Draft'}</span>
+            <span>{isAr ? 'احفظ كمسودة' : 'Save Draft'}</span>
           </button>
 
           {status === 'published' ? (
@@ -481,13 +481,13 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
         <div className="bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 p-3 rounded-2xl flex items-center justify-between text-xs font-bold">
           <div className="flex items-center gap-2">
             <AlertCircle size={16} className="text-amber-600 shrink-0" />
-            <span>{isAr ? 'لديك تعديلات غير محفوظة. لا تنس حفظ المسودة أو نشر اللحن.' : 'You have unsaved changes.'}</span>
+            <span>{isAr ? 'فيه تعديلات لسه متحفظتش. متنساش تحفظ المسودة أو تنشر اللحن.' : 'You have unsaved changes.'}</span>
           </div>
           <button
             onClick={() => handleSave(false)}
             className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-[11px] font-black cursor-pointer"
           >
-            {isAr ? 'حفظ الآن' : 'Save Now'}
+            {isAr ? 'احفظ دلوقتي' : 'Save Now'}
           </button>
         </div>
       )}

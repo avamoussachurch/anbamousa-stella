@@ -42,12 +42,12 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
     try {
       const { data: reviewData, error: err } = await getStudentLearningReview(studentId);
       if (err || !reviewData) {
-        setError(err?.message || (isAr ? 'تعذر تحميل بيانات تقرير الطالب' : 'Failed to load student learning review'));
+        setError(err?.message || (isAr ? 'مش قادرين نحمّل تقرير التلميذ.' : 'Failed to load student learning review'));
         return;
       }
       setData(reviewData);
     } catch (e: any) {
-      setError(e?.message || (isAr ? 'حدث خطأ أثناء تحميل التقرير' : 'Unexpected error loading review'));
+      setError(e?.message || (isAr ? 'حصلت مشكلة وإحنا بنحمّل التقرير.' : 'Unexpected error loading review'));
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
           <button
             onClick={onBack}
             className="p-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 transition-colors border border-stone-700 cursor-pointer flex items-center justify-center"
-            title={isAr ? 'العودة لقائمة الفصل' : 'Back to Class Roster'}
+            title={isAr ? 'ارجع لقائمة الفصل' : 'Back to Class Roster'}
           >
             <ArrowLeft size={18} className={isAr ? 'rotate-180' : ''} />
           </button>
@@ -100,7 +100,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
 
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-stone-400 bg-stone-950 px-3 py-1.5 rounded-xl border border-stone-800">
-            {isAr ? 'للقراءة والافتقاد فقط 🔒' : 'Read-Only Pastoral Review 🔒'}
+            {isAr ? 'للمراجعة والمتابعة بس 🔒' : 'Read-Only Pastoral Review 🔒'}
           </span>
           <button
             onClick={loadReview}
@@ -123,7 +123,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
       {loading && !data && (
         <div className="py-20 text-center text-stone-500 text-xs flex flex-col items-center gap-3">
           <RefreshCw size={24} className="animate-spin text-amber-500" />
-          <span>{isAr ? 'جاري تحميل سجل التعلّم والإتقان...' : 'Loading learning review & mastery metrics...'}</span>
+          <span>{isAr ? 'بنحمّل سجل التعلّم ومستوى الإتقان...' : 'Loading learning review & mastery metrics...'}</span>
         </div>
       )}
 
@@ -137,7 +137,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
                 <Award size={18} />
               </div>
               <div className="text-2xl font-bold text-stone-100">{data.summary.masteredCount}</div>
-              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'دروس بمستوى إتقان كامل' : 'Fully mastered lessons'}</p>
+              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'دروس التلميذ أتقنها بالكامل' : 'Fully mastered lessons'}</p>
             </div>
 
             <div className="bg-stone-900 border border-stone-800 rounded-2xl p-4 shadow-md">
@@ -146,7 +146,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
                 <Clock size={18} />
               </div>
               <div className="text-2xl font-bold text-stone-100">{data.summary.developingCount}</div>
-              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'قراءة جزئية أو تقييم قيد الإنجاز' : 'In progress / partial'}</p>
+              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'قراءة أو اختبار لسه مخلصش' : 'In progress / partial'}</p>
             </div>
 
             <div className="bg-stone-900 border border-stone-800 rounded-2xl p-4 shadow-md">
@@ -155,7 +155,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
                 <AlertTriangle size={18} />
               </div>
               <div className="text-2xl font-bold text-stone-100">{data.summary.needsReviewCount}</div>
-              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'يحتاج دعم وافتقاد الخادم' : 'Needs pastoral follow-up'}</p>
+              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'محتاج متابعة وتشجيع من الخادم' : 'Needs pastoral follow-up'}</p>
             </div>
 
             <div className="bg-stone-900 border border-stone-800 rounded-2xl p-4 shadow-md">
@@ -166,7 +166,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
               <div className="text-2xl font-bold text-stone-100">
                 {data.summary.completedLessonsCount} / {data.summary.totalLessons}
               </div>
-              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'من المناهج المنشورة' : 'Published lessons'}</p>
+              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'من الدروس المنشورة' : 'Published lessons'}</p>
             </div>
 
             <div className="bg-stone-900 border border-stone-800 rounded-2xl p-4 shadow-md col-span-2 sm:col-span-1">
@@ -175,7 +175,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
                 <HelpCircle size={18} />
               </div>
               <div className="text-2xl font-bold font-mono text-stone-100">{data.summary.averageQuizScore}%</div>
-              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'متوسط درجات الأسئلة' : 'Average quiz score'}</p>
+              <p className="text-[11px] text-stone-500 mt-1">{isAr ? 'متوسط درجات الاختبارات' : 'Average quiz score'}</p>
             </div>
           </div>
 
@@ -184,7 +184,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
             <div className="bg-rose-950/30 border border-rose-800/60 rounded-2xl p-5 shadow-lg space-y-3">
               <div className="flex items-center gap-2 text-rose-300 font-bold text-sm">
                 <AlertTriangle size={18} className="text-rose-400" />
-                <span>{isAr ? 'نقاط تحتاج تركيز وافتقاد من الخادم' : 'Areas Requiring Servant Attention & Review'}</span>
+                <span>{isAr ? 'نقاط محتاجة متابعة وتشجيع من الخادم' : 'Areas Requiring Servant Attention & Review'}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {data.needsReviewItems.map((item) => (
@@ -197,8 +197,8 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
                     </div>
                     <p className="text-[11px] text-rose-300/80">
                       {item.masteryStatus === 'NEEDS_REVIEW' 
-                        ? (isAr ? 'درجة التقييم أقل من 60%، يُنصح بإعادة مراجعة المفاهيم الروحية معه.' : 'Assessment score below 60%. Recommended to review core lesson concepts together.')
-                        : (isAr ? 'الدرس يحتاج إتمام القراءة والتقييم.' : 'Incomplete reading and quiz.')}
+                        ? (isAr ? 'النتيجة أقل من ٦٠٪. الأفضل تراجع معاه الأفكار الأساسية في الدرس.' : 'Assessment score below 60%. Recommended to review core lesson concepts together.')
+                        : (isAr ? 'التلميذ محتاج يكمّل قراءة الدرس والاختبار.' : 'Incomplete reading and quiz.')}
                     </p>
                   </div>
                 ))}
@@ -222,7 +222,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
 
             {data.lessons.length === 0 ? (
               <div className="py-10 text-center text-stone-500 text-xs">
-                {isAr ? 'لا توجد دروس منشورة مسجلة حالياً.' : 'No published lessons found.'}
+                {isAr ? 'مفيش دروس منشورة متسجلة دلوقتي.' : 'No published lessons found.'}
               </div>
             ) : (
               <div className="divide-y divide-stone-800/80">
@@ -277,7 +277,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
                             />
                           </div>
                           <p className="text-[10px] text-stone-500 mt-1">
-                            {lesson.sectionsCompleted.length} / {lesson.totalSections} {isAr ? 'أجزاء مكتملة' : 'sections read'}
+                            {lesson.sectionsCompleted.length} / {lesson.totalSections} {isAr ? 'أجزاء خلص قراءتها' : 'sections read'}
                           </p>
                         </div>
 
@@ -296,7 +296,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
                                 : 'bg-rose-950 text-rose-300 border border-rose-800'
                             }`}>
                               {lesson.quizAttemptsCount === 0 
-                                ? (isAr ? 'لم يُمتحن' : 'Not Attempted')
+                                ? (isAr ? 'لسه ممتحنش' : 'Not Attempted')
                                 : lesson.quizPassed 
                                 ? (isAr ? 'ناجح ✅' : 'Passed') 
                                 : (isAr ? 'يحتاج إعادة ⚠️' : 'Review Needed')}

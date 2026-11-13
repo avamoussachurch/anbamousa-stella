@@ -151,7 +151,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
     if (unansweredIndices.length > 0) {
       setValidationWarning(
         isAr
-          ? `يرجى الإجابة عن جميع الأسئلة أولاً (متبقي ${unansweredIndices.length} من ${questions.length} أسئلة).`
+          ? `جاوب على كل الأسئلة الأول (متبقي ${unansweredIndices.length} من ${questions.length} أسئلة).`
           : `Please answer all questions before submitting (${unansweredIndices.length} of ${questions.length} remaining).`
       );
       // Auto jump to first unanswered question
@@ -196,7 +196,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
 
       const resolved = resolveQuizSubmission(
         result,
-        isAr ? 'فشل حفظ نتيجة الاختبار' : 'Failed to submit quiz attempt'
+        isAr ? 'مش قادرين نحفظ نتيجة الاختبار.' : 'Failed to submit quiz attempt'
       );
       if ('error' in resolved) {
         throw new Error(resolved.error);
@@ -220,7 +220,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
       setIsSubmitting(false);
     } catch (err: any) {
       console.error('Quiz submission error:', err);
-      setSubmitError(err?.message || (isAr ? 'حدث خطأ أثناء حفظ الإجابات. يرجى المحاولة ثانية.' : 'Submission failed. Please retry.'));
+      setSubmitError(err?.message || (isAr ? 'حصلت مشكلة وإحنا بنحفظ إجاباتك. جرّب تاني.' : 'Submission failed. Please retry.'));
       setIsSubmitting(false);
     }
   };
@@ -248,13 +248,13 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
       <div className="max-w-2xl mx-auto p-6 bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-border-sand)] rounded-3xl text-center space-y-4">
         <HelpCircle className="w-12 h-12 text-[var(--mousa-gold)] mx-auto" />
         <h2 className="text-lg font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-          {isAr ? 'لا يوجد اختبار مراجعة متاح لهذا الدرس حالياً' : 'No review quiz currently available for this lesson'}
+          {isAr ? 'مفيش اختبار مراجعة متاح للدرس ده دلوقتي.' : 'No review quiz currently available for this lesson'}
         </h2>
         <button
           onClick={onBackToLesson}
           className="px-5 py-2.5 bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] text-white font-bold rounded-xl text-xs cursor-pointer"
         >
-          {isAr ? 'العودة للدرس' : 'Return to Lesson'}
+          {isAr ? 'ارجع للدرس' : 'Return to Lesson'}
         </button>
       </div>
     );
@@ -270,7 +270,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
           className="px-4 py-2 bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] hover:bg-[var(--mousa-sand-100)] text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] rounded-2xl text-xs font-black flex items-center gap-2 border-2 border-[var(--mousa-border-sand)] transition-all cursor-pointer shadow-2xs min-h-[44px]"
         >
           {isAr ? <ChevronRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-          <span>{isAr ? 'العودة للدرس' : 'Back to Lesson'}</span>
+          <span>{isAr ? 'ارجع للدرس' : 'Back to Lesson'}</span>
         </button>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -292,7 +292,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
       <div className="p-4 bg-[var(--mousa-sand-50)] dark:bg-stone-900/80 rounded-2xl border border-[var(--mousa-border-sand)] text-xs text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] space-y-1">
         <div className="flex items-center gap-1.5 font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
           <BookOpen className="w-4 h-4 text-[var(--mousa-gold)]" />
-          <span>{isAr ? 'تثبيت المفاهيم الإيمانية والكنسية' : 'Comprehension & Milestone Practice'}</span>
+          <span>{isAr ? 'راجع اللي اتعلمته عن الإيمان والكنيسة' : 'Comprehension & Milestone Practice'}</span>
         </div>
         <p className="leading-relaxed">
         {previewMode
@@ -300,7 +300,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
             ? 'دي تجربة مؤقتة للاختبار. إجاباتك والدرجة والنقاط مش هتتحفظ على أي حساب.'
             : 'This is a temporary quiz simulation. Answers, scores, and points will not be saved to any account.')
           : isAr
-            ? 'يقيس هذا الاختبار استيعابك للنقاط الجوهرية في الدرس. الإجابات والدرجة تُحفظ تلقائياً على الخادم.'
+            ? 'الاختبار ده بيقيس فهمك لأهم أفكار الدرس. إجاباتك ودرجتك هيتحفظوا تلقائيًا.'
             : 'This review quiz checks your understanding of the lesson taught. Answers and scores are saved to the backend.'}
         </p>
       </div>
@@ -326,7 +326,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
             className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shrink-0 cursor-pointer shadow-xs min-h-[40px] flex items-center gap-1.5"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSubmitting ? 'animate-spin' : ''}`} />
-            <span>{isAr ? 'إعادة المحاولة' : 'Retry'}</span>
+            <span>{isAr ? 'جرّب تاني' : 'Retry'}</span>
           </button>
         </div>
       )}
@@ -349,7 +349,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
             <div
               className="h-3 rounded-full bg-[var(--mousa-sand-200)] dark:bg-stone-800 overflow-hidden"
               role="progressbar"
-              aria-label={isAr ? 'تقدم أسئلة الاختبار' : 'Quiz question progress'}
+              aria-label={isAr ? 'تقدمك في الأسئلة' : 'Quiz question progress'}
               aria-valuemin={0}
               aria-valuemax={questions.length}
               aria-valuenow={currentQuestionIndex + 1}
@@ -389,7 +389,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
                     key={q.id || i}
                     onClick={() => handleJumpToQuestion(i)}
                     disabled={isSubmitting}
-                    aria-label={isAr ? `انتقل للسؤال ${i + 1}` : `Jump to question ${i + 1}`}
+                    aria-label={isAr ? `روح للسؤال ${i + 1}` : `Jump to question ${i + 1}`}
                     aria-current={isCurrent ? 'step' : undefined}
                     className={`w-9 h-9 rounded-xl text-xs font-black flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--mousa-gold)] motion-reduce:transition-none cursor-pointer ${
                       isCurrent
@@ -506,12 +506,12 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
                 {selectedAnswers[currentQuestion.id] === currentQuestion.correctIndex ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>{isAr ? 'إجابة صحيحة وممتازة! ✨' : 'Correct Answer! ✨'}</span>
+                    <span>{isAr ? 'إجابة صح! برافو عليك! ✨' : 'Correct Answer! ✨'}</span>
                   </>
                 ) : (
                   <>
                     <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                    <span>{isAr ? 'إجابة تحتاج لمراجعة 📖' : 'Not quite right 📖'}</span>
+                    <span>{isAr ? 'الإجابة دي محتاجة مراجعة 📖' : 'Not quite right 📖'}</span>
                   </>
                 )}
               </div>
@@ -547,7 +547,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
                   disabled={selectedAnswers[currentQuestion.id] === undefined || isSubmitting}
                   className="px-5 py-2.5 bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer min-h-[44px]"
                 >
-                  <span>{isAr ? 'السؤال التالي' : 'Next Question'}</span>
+                  <span>{isAr ? 'السؤال اللي بعده' : 'Next Question'}</span>
                   {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </button>
               ) : (
@@ -557,7 +557,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
                   className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer min-h-[44px]"
                 >
                   {previewMode ? (
-                    <span>{isAr ? 'الإرسال غير متاح في المعاينة' : 'Submission disabled in preview'}</span>
+                    <span>{isAr ? 'مش ممكن تبعت الإجابات من المعاينة' : 'Submission disabled in preview'}</span>
                   ) : isSubmitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -845,7 +845,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
               onClick={onBackToLesson}
               className="px-5 py-2.5 bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 text-white rounded-xl text-xs font-black shadow-xs transition-all active:scale-95 cursor-pointer min-h-[44px]"
             >
-              {isAr ? 'العودة للدرس' : 'Return to Lesson'}
+              {isAr ? 'ارجع للدرس' : 'Return to Lesson'}
             </button>
           </div>
         </div>

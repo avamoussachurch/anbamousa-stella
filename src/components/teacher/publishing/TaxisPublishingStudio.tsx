@@ -92,7 +92,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
         populateForm(res.items[0]);
       }
     } else {
-      setLibraryError(res.error || (isAr ? 'تعذر تحميل مكتبة الطقوس.' : 'The Taxis library could not be loaded.'));
+      setLibraryError(res.error || (isAr ? 'مش قادرين نحمّل مكتبة الطقوس دلوقتي.' : 'The Taxis library could not be loaded.'));
     }
     setLoading(false);
   };
@@ -116,9 +116,9 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   });
   const selectedPublishItems = items.filter(item => selectedPublishIds.has(item.id));
   const getPublishBlockReason = (item: TaxisItem) => {
-    if (item.status !== 'approved') return isAr ? 'يجب اعتماد العنصر أولاً.' : 'The item must be approved first.';
-    if (!computeTaxisPermissions(userData, item).canPublish) return isAr ? 'لا تملك صلاحية نشر هذا العنصر.' : 'You are not authorized to publish this item.';
-    if (parseHymnsTaxisLevel(item.level) === null) return isAr ? 'يجب تعيين مستوى منهج صالح.' : 'A valid curriculum level is required.';
+    if (item.status !== 'approved') return isAr ? 'لازم العنصر يتراجع ويتعتمد الأول.' : 'The item must be approved first.';
+    if (!computeTaxisPermissions(userData, item).canPublish) return isAr ? 'معندكش صلاحية تنشر العنصر ده.' : 'You are not authorized to publish this item.';
+    if (parseHymnsTaxisLevel(item.level) === null) return isAr ? 'لازم تحدد مستوى صحيح للمنهج.' : 'A valid curriculum level is required.';
     return null;
   };
 
@@ -128,7 +128,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       `${item.titleEn || item.titleAr} — ${item.status} · Level ${item.level}`
     );
     const confirmation = isAr
-      ? `سيتم نشر العناصر المعتمدة التالية:\n${confirmationItems.join('\n')}\n\nسيعيد الخادم التحقق من الاعتماد والصلاحية لكل عنصر. هل تريد المتابعة؟`
+      ? `العناصر المعتمدة دي هتتنشر:\n${confirmationItems.join('\n')}\n\nسيعيد الخادم التحقق من الاعتماد والصلاحية لكل عنصر. هل تريد المتابعة؟`
       : `The following approved items will be published:\n${confirmationItems.join('\n')}\n\nThe server will re-check approval and permissions for each item. Continue?`;
     if (!window.confirm(confirmation)) return;
 
@@ -143,14 +143,14 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       const failures = results.filter(result => !result.success).length;
       setStatusMessage({
         text: failures
-          ? (isAr ? `تمت معالجة العناصر مع ${failures} خطأ. راجع النتائج أدناه.` : `Publishing finished with ${failures} error(s). Review the results below.`)
-          : (isAr ? `تم نشر ${results.length} عنصر بنجاح.` : `${results.length} items published successfully.`),
+          ? (isAr ? `خلصنا معالجة العناصر، لكن فيه ${failures} خطأ. راجع النتائج أدناه.` : `Publishing finished with ${failures} error(s). Review the results below.`)
+          : (isAr ? `اتنشر ${results.length} عنصر بنجاح.` : `${results.length} items published successfully.`),
         type: failures ? 'error' : 'success'
       });
       await loadItems();
     } catch (error) {
       setStatusMessage({
-        text: error instanceof Error ? error.message : (isAr ? 'تعذر إكمال النشر الجماعي.' : 'Bulk publishing could not be completed.'),
+        text: error instanceof Error ? error.message : (isAr ? 'مش قادرين نكمّل النشر الجماعي.' : 'Bulk publishing could not be completed.'),
         type: 'error'
       });
     } finally {
@@ -178,7 +178,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   };
 
   const startNewRitual = () => {
-    if (hasUnsavedChanges && !window.confirm(isAr ? 'تجاهل التعديلات غير المحفوظة؟' : 'Discard unsaved changes?')) return;
+    if (hasUnsavedChanges && !window.confirm(isAr ? 'تسيب التعديلات اللي لسه متحفظتش؟' : 'Discard unsaved changes?')) return;
     const newId = `new_taxis_${Date.now()}`;
     setSelectedItemId(newId);
     setTitleAr('');
@@ -304,7 +304,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       ]);
       setHasUnsavedChanges(true);
       setStatusMessage({
-        text: isAr ? 'تم رفع الملف بأمان. احفظ الطقس لتثبيت المرفق.' : 'Document uploaded securely. Save the ritual to persist the attachment.',
+        text: isAr ? 'الملف اترفع بأمان. احفظ الطقس عشان نثبت المرفق.' : 'Document uploaded securely. Save the ritual to persist the attachment.',
         type: 'success'
       });
     } catch (error) {
@@ -327,17 +327,17 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   const handleSaveDraft = async () => {
     if (!canEditCurrentItem) {
       setStatusMessage({
-        text: isAr ? 'يجب إعادة العنصر إلى مسودة قبل تعديله حتى تظل المراجعة والاعتماد صالحين.' : 'Return this item to draft before editing so its review and approval remain valid.',
+        text: isAr ? 'لازم ترجّع العنصر لمسودة قبل تعديله، عشان المراجعة والاعتماد يفضلوا صحيحين.' : 'Return this item to draft before editing so its review and approval remain valid.',
         type: 'error'
       });
       return;
     }
     if (!titleAr.trim()) {
-      alert(isAr ? 'برجاء كتابة عنوان الطقس بالعربية' : 'Please provide Arabic title');
+      alert(isAr ? 'اكتب عنوان الطقس بالعربي.' : 'Please provide Arabic title');
       return;
     }
     if (!level) {
-      setStatusMessage({ text: isAr ? 'اختار مستوى للطقس قبل حفظه.' : 'Select a curriculum level before saving this item.', type: 'error' });
+      setStatusMessage({ text: isAr ? 'اختار مستوى للطقس قبل ما تحفظه.' : 'Select a curriculum level before saving this item.', type: 'error' });
       return;
     }
 
@@ -372,12 +372,12 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
       void loadItems();
     } else {
       setStatusMessage({
-        text: res.error || (isAr ? 'تعذر حفظ الطقس' : 'Failed to save ritual'),
+        text: res.error || (isAr ? 'مش قادرين نحفظ الطقس.' : 'Failed to save ritual'),
         type: 'error'
       });
     }
     } catch (error) {
-      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'تعذر حفظ الطقس' : 'Failed to save ritual'), type: 'error' });
+      setStatusMessage({ text: error instanceof Error ? error.message : (isAr ? 'مش قادرين نحفظ الطقس.' : 'Failed to save ritual'), type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -386,7 +386,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   // Workflow Action (Submit for review, Approve, Publish, Unpublish, Restore)
   const handleAction = async (action: 'SUBMIT_REVIEW' | 'APPROVE' | 'REQUEST_CHANGES' | 'PUBLISH' | 'UNPUBLISH' | 'RESTORE', vNum?: number) => {
     if (!selectedItemId) return;
-    if (action === 'REQUEST_CHANGES' && !window.confirm(isAr ? 'إعادة هذا العنصر إلى المسودة للسماح بتعديله؟' : 'Return this item to draft so it can be edited?')) return;
+    if (action === 'REQUEST_CHANGES' && !window.confirm(isAr ? 'ترجّع العنصر ده لمسودة عشان تقدر تعدّله؟' : 'Return this item to draft so it can be edited?')) return;
     setIsSaving(true);
     setStatusMessage(null);
 
@@ -395,12 +395,12 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
     if (res.success && res.item) {
       populateForm(res.item);
       const actionLabels: Record<string, string> = {
-        SUBMIT_REVIEW: isAr ? 'تم إرسال الطقس للمراجعة والاعتماد الكنسي.' : 'Ritual submitted for review.',
-        APPROVE: isAr ? 'تم اعتماد مراجعة الطقس بنجاح (جاهز للنشر).' : 'Ritual approved for publishing.',
-        REQUEST_CHANGES: isAr ? 'أُعيد العنصر إلى المسودة للمراجعة والتعديل.' : 'Item returned to draft for revision.',
-        PUBLISH: isAr ? 'تم نشر الطقس رسمياً للرعية والشمامسة!' : 'Ritual published successfully!',
-        UNPUBLISH: isAr ? 'تم إلغاء نشر الطقس وإعادته لمسودة خاصة.' : 'Ritual unpublished to draft.',
-        RESTORE: isAr ? `تم استرجاع النسخة ${vNum} بنجاح.` : `Restored version ${vNum}.`
+        SUBMIT_REVIEW: isAr ? 'الطقس اتبعت للمراجعة والاعتماد الكنسي.' : 'Ritual submitted for review.',
+        APPROVE: isAr ? 'الطقس اتراجع واتعتمد، وبقى جاهز للنشر.' : 'Ritual approved for publishing.',
+        REQUEST_CHANGES: isAr ? 'العنصر رجع لمسودة عشان يتراجع ويتعدل.' : 'Item returned to draft for revision.',
+        PUBLISH: isAr ? 'اتنشر الطقس رسمياً للرعية والشمامسة!' : 'Ritual published successfully!',
+        UNPUBLISH: isAr ? 'الطقس اتلغى نشره ورجع لمسودة خاصة.' : 'Ritual unpublished to draft.',
+        RESTORE: isAr ? `رجّعنا النسخة ${vNum} بنجاح.` : `Restored version ${vNum}.`
       };
       setStatusMessage({
         text: actionLabels[action] || 'Action completed',

@@ -164,7 +164,7 @@ export function StudentRoadmapView({
         </h3>
         <p className="text-xs sm:text-sm text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] max-w-md mx-auto leading-relaxed">
           {isAr 
-            ? 'يقوم خدام فصلك الكنسي حالياً بإعداد وتدقيق محطات منهج مدارس الأحد لمرحلتك. ستظهر أولى محطات رحلتك هنا فور نشرها!' 
+            ? 'خدام فصلك بيجهّزوا ويراجعوا دروس مرحلتك دلوقتي. أول محطات رحلتك هتظهر هنا أول ما تتنشر!' 
             : 'Your Sunday School servants are currently preparing milestones for your class. Your roadmap will appear here as soon as the first lesson is published!'}
         </p>
       </div>
@@ -191,7 +191,7 @@ export function StudentRoadmapView({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-black text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-                  {studentName || (isAr ? 'رفيق المسيرة' : 'Wayfarer')}
+                  {studentName || (isAr ? 'صاحب الرحلة' : 'Wayfarer')}
                 </span>
                 {studentGrade && (
                   <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[var(--mousa-sand-100)] text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] border border-[var(--mousa-border-sand)]">
@@ -217,7 +217,7 @@ export function StudentRoadmapView({
               className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 text-white font-black text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
             >
               <Play size={13} fill="currentColor" />
-              <span>{isAr ? 'تابع مسيرتك' : 'Continue'}</span>
+              <span>{isAr ? 'كمّل رحلتك' : 'Continue'}</span>
             </button>
           )}
         </div>
@@ -225,7 +225,7 @@ export function StudentRoadmapView({
         {/* Progress Bar with Sunrise Gradient */}
         <div className="space-y-1">
           <div className="flex justify-between items-center text-[11px] font-black text-stone-600 dark:text-stone-300">
-            <span>{isAr ? 'إنجاز طريق البرية' : 'Trail Progress'}</span>
+            <span>{isAr ? 'تقدم رحلتك' : 'Trail Progress'}</span>
             <span className="text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-light)]">{progressPercent}% ({completedCount}/{totalLessons})</span>
           </div>
           <div className="w-full h-3 rounded-full bg-stone-200 dark:bg-stone-800 overflow-hidden p-0.5 border border-[var(--mousa-border-sand)]">
@@ -371,22 +371,22 @@ export function StudentRoadmapView({
                     {node.state === 'completed' ? (
                       <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
                         <CheckCircle2 size={12} />
-                        <span>{isAr ? 'مكتمل ✅ اضغط للمراجعة' : 'Completed ✅ Tap to review'}</span>
+                        <span>{isAr ? 'خلصت ✅ اضغط عشان تراجع' : 'Completed ✅ Tap to review'}</span>
                       </span>
                     ) : node.state === 'current' ? (
                       <span className="text-amber-800 dark:text-amber-200 flex items-center gap-1">
                         <Play size={10} fill="currentColor" />
-                        <span>{isAr ? 'انطلق في المحطة الآن 🚀' : 'Start Milestone Now 🚀'}</span>
+                        <span>{isAr ? 'يلا ابدأ المحطة 🚀' : 'Start Milestone Now 🚀'}</span>
                       </span>
                     ) : node.state === 'available' ? (
                       <span className="text-teal-700 dark:text-teal-300 flex items-center gap-1">
                         <Play size={10} fill="currentColor" />
-                        <span>{isAr ? 'متاح للدراسة' : 'Available to explore'}</span>
+                        <span>{isAr ? 'جاهز للمذاكرة' : 'Available to explore'}</span>
                       </span>
                     ) : (
                       <span className="text-stone-500 dark:text-stone-400 flex items-center gap-1">
                         <Lock size={10} />
-                        <span>{isAr ? 'مقفل (انقر لمعرفة المتطلب)' : 'Locked (tap for details)'}</span>
+                        <span>{isAr ? 'مقفول (اضغط عشان تعرف المطلوب)' : 'Locked (tap for details)'}</span>
                       </span>
                     )}
                   </div>
@@ -448,7 +448,7 @@ export function StudentRoadmapView({
                 🔒
               </div>
               <h4 className="text-lg font-black text-stone-900 dark:text-stone-100">
-                {isAr ? 'محطة مقفلة في البرية' : 'Milestone Locked'}
+                {isAr ? 'محطة لسه مقفولة' : 'Milestone Locked'}
               </h4>
               <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
                 {isAr ? (
@@ -480,14 +480,14 @@ export function StudentRoadmapView({
                     }}
                     className="flex-1 py-2.5 rounded-xl bg-[var(--mousa-teal)] text-white font-black text-xs shadow-xs hover:bg-[var(--mousa-teal-deep)] transition-all cursor-pointer"
                   >
-                    {isAr ? 'افتح المحطة السابقة' : 'Open Previous'}
+                    {isAr ? 'افتح المحطة اللي قبلها' : 'Open Previous'}
                   </button>
                 )}
                 <button
                   onClick={() => setSelectedLockedNode(null)}
                   className="px-4 py-2.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold text-xs hover:bg-stone-200 transition-all cursor-pointer"
                 >
-                  {isAr ? 'حسناً' : 'Close'}
+                  {isAr ? 'تمام' : 'Close'}
                 </button>
               </div>
             </motion.div>
