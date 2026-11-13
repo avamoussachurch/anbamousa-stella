@@ -20,11 +20,11 @@ test('browser metadata uses the approved Anba Moussa brand and tagline', () => {
   assert.match(html, /<meta name="apple-mobile-web-app-title" content="Anba Moussa"/);
   assert.match(html, /<meta property="og:title" content="Anba Moussa"/);
   assert.match(html, /Growing in Faith, Learning in Love/);
-  assert.match(html, /href=\"\\/icon\\.svg\"/);
+  assert.ok(html.includes('href="/icon.svg"'));
   assert.match(icon, /Bishop Moussa/);
   assert.match(icon, /golden cross/i);
-  assert.match(login, /src=\"\\/icon\\.svg\"/);
-  assert.match(splash, /src=\"\\/icon\\.svg\"/);
+  assert.ok(login.includes('src="/icon.svg"'));
+  assert.ok(splash.includes('src="/icon.svg"'));
   assert.doesNotMatch(html, /St\. Musa Coptic Sunday School Platform|StMusaApp/);
 });
 
