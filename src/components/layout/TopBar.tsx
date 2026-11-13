@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Award, Bell, Cross, Flame, X, Sun, Moon, CheckCheck } from 'lucide-react';
+import { Award, Bell, Flame, X, Sun, Moon, CheckCheck } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { PWAInstallButton } from './PWAInstallButton';
 import { useTheme } from '../../context/ThemeContext';
@@ -91,7 +91,7 @@ export function TopBar({
     };
   }, []);
 
-  const churchNameDisplay = lang === 'ar' ? 'كنيسة الأنبا موسى' : 'Anba Mousa';
+  const churchNameDisplay = lang === 'ar' ? 'كنيسة الأنبا موسى' : 'Anba Moussa';
   const workspaceLabels: Record<Role, string> = lang === 'ar'
     ? { student: 'مساحة التلميذ', parent: 'مساحة ولي الأمر', teacher: 'مساحة الخادم', admin: 'مساحة الإدارة' }
     : { student: 'Student workspace', parent: 'Parent workspace', teacher: 'Servant workspace', admin: 'Admin workspace' };
@@ -132,7 +132,7 @@ export function TopBar({
           aria-label={lang === 'ar' ? 'ارجع للرئيسية' : 'Go to home'}
           className="flex items-center gap-2 rounded-lg text-start font-bold text-base sm:text-lg cursor-pointer shrink-0 hover:opacity-90 transition-opacity"
         >
-          <Cross size={22} fill="currentColor" className="text-[var(--color-church-gold)] shrink-0" />
+          <img src="/icon.svg" alt="" aria-hidden="true" className="h-9 w-9 rounded-xl border border-[var(--color-church-gold)]/60 object-cover shadow-sm shrink-0" />
           <span>{churchNameDisplay}</span>
         </button>
 
