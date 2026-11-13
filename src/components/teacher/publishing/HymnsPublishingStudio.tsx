@@ -394,7 +394,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
   };
 
   return (
-    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       {/* Top Banner & Mode Indicator */}
       <div className="bg-gradient-to-r from-[#1B365D] via-[#0F223D] to-[#8B1E2E] text-white p-5 md:p-6 rounded-3xl shadow-sm border border-amber-500/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
