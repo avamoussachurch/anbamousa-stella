@@ -98,7 +98,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       setIsLoadingServerPosts(false);
 
       if (res.error || !res.data) {
-        setFeedLoadError(res.error?.message || (lang === 'ar' ? 'مش قادرين نحمّل منشورات المجتمع دلوقتي.' : 'The community feed could not be loaded.'));
+        setFeedLoadError(res.error?.message ? getLocalizedErrorMessage(res.error.message, lang) : (lang === 'ar' ? 'مش قادرين نحمّل منشورات المجتمع دلوقتي.' : 'The community feed could not be loaded.'));
         setFeedResultScope(userData?.id || 'guest');
         return;
       }
