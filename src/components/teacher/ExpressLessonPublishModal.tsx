@@ -71,6 +71,9 @@ export function ExpressLessonPublishModal({
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recordDuration, setRecordDuration] = useState<number>(0);
   const recordTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
 
   // Uploading status
   const [isUploadingMedia, setIsUploadingMedia] = useState<boolean>(false);
@@ -101,22 +104,69 @@ export function ExpressLessonPublishModal({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Helpers for live audio recording
-  const startRecording = () => {
-    setIsRecording(true);
-    setRecordDuration(0);
-    recordTimerRef.current = setInterval(() => {
-      setRecordDuration(prev => prev + 1);
-    }, 1000);
+  // Capture actual microphone audio and persist it to private Supabase Storage.
+  const startRecording = async () => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setErrorMessage(isAr ? 'التسجيل الصوتي مش مدعوم في المتصفح ده.' : 'Microphone recording is not supported in this browser.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordingStreamRef.current = stream;
+      recordingChunksRef.current = [];
+      const supportedMime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find(type => MediaRecorder.isTypeSupported(type));
+      const recorder = supportedMime ? new MediaRecorder(stream, { mimeType: supportedMime }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = event => {
+        if (event.data.size > 0) recordingChunksRef.current.push(event.data);
+      };
+      recorder.onerror = () => setErrorMessage(isAr ? 'حصلت مشكلة أثناء التسجيل. جرّب تاني.' : 'The recording was interrupted. Please try again.');
+      recorder.onstop = async () => {
+        if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+        recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+        recordingStreamRef.current = null;
+        setIsRecording(false);
+        const mimeType = recorder.mimeType || recordingChunksRef.current[0]?.type || 'audio/webm';
+        const blob = new Blob(recordingChunksRef.current, { type: mimeType });
+        recordingChunksRef.current = [];
+        if (!blob.size) {
+          setErrorMessage(isAr ? 'التسجيل طلع فاضي. سجّل تاني.' : 'The recording was empty. Please record again.');
+          return;
+        }
+        const extension = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const file = new File([blob], `teacher-voice-${Date.now()}.${extension}`, { type: mimeType });
+        setIsUploadingMedia(true);
+        setUploadNote(isAr ? 'بنحفظ التسجيل الصوتي بأمان...' : 'Saving voice recording securely...');
+        try {
+          const upload = await uploadSourceMedia(file);
+          if (!upload.success || !upload.fileUrl) throw new Error(upload.error || 'The recording could not be saved.');
+          setAudioUrl(upload.fileUrl);
+          setAudioFileName(file.name);
+          setErrorMessage(null);
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : 'The recording upload failed.');
+        } finally {
+          setIsUploadingMedia(false);
+          setUploadNote('');
+        }
+      };
+      recorder.start(1000);
+      setRecordDuration(0);
+      setIsRecording(true);
+      setErrorMessage(null);
+      recordTimerRef.current = setInterval(() => setRecordDuration(prev => prev + 1), 1000);
+    } catch (error) {
+      recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+      recordingStreamRef.current = null;
+      setErrorMessage(error instanceof Error && error.name === 'NotAllowedError'
+        ? (isAr ? 'اسمح للمتصفح باستخدام الميكروفون عشان تسجّل.' : 'Allow microphone access to record audio.')
+        : (error instanceof Error ? error.message : 'Could not start microphone recording.'));
+    }
   };
 
   const stopRecording = () => {
-    if (recordTimerRef.current) clearInterval(recordTimerRef.current);
-    setIsRecording(false);
-    // Simulates an immediate audio capture without requiring server upload
-    const simulatedAudioUrl = 'https://cdn.freesound.org/previews/560/560446_12398463-lq.mp3';
-    setAudioUrl(simulatedAudioUrl);
-    setAudioFileName(`Voice_Sermon_${recordDuration}s.m4a`);
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'SLIDES' | 'AUDIO' | 'VIDEO') => {
@@ -127,7 +177,7 @@ export function ExpressLessonPublishModal({
     setUploadNote(isAr ? `بنرفع الملف: ${file.name}...` : `Uploading ${file.name}...`);
 
     try {
-      const upload = await uploadSourceMedia(file, `express-${Date.now()}`);
+      const upload = await uploadSourceMedia(file);
       if (!upload.success || !upload.fileUrl) {
         setErrorMessage(upload.error || (isAr ? 'مش قادرين نحفظ الملف بشكل دائم. جرّب تاني.' : 'The file could not be saved persistently. Please try again.'));
         return;
