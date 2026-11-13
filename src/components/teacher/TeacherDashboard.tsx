@@ -223,6 +223,8 @@ export function TeacherDashboard({
   const [pendingRequestsError, setPendingRequestsError] = useState<string | null>(null);
 
   React.useEffect(() => {
+    // The count is displayed on the servant overview; don't refetch it on every tab switch.
+    if (activeTab !== 'overview') return;
     let isMounted = true;
     setPendingRequestsError(null);
     getPendingActivationRequests().then((res) => {

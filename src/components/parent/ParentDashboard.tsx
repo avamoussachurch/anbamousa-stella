@@ -158,20 +158,30 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
   }, [isParent]);
 
   useEffect(() => {
-    void refreshChildren();
-    if (isParent) {
-      void refreshEvents();
-      void refreshAnnouncements();
-      void refreshRewards();
-    }
-    const onChildrenUpdated = () => void refreshChildren();
+    // Load only the data needed by the visible section. The overview intentionally
+    // receives its full summary; deeper sections fetch their own records on demand.
+    const needsChildren = section === 'home' || section === 'children' || section === 'journey';
+    const needsEvents = section === 'home' || section === 'events';
+    const needsAnnouncements = section === 'home' || section === 'events';
+    const needsRewards = section === 'home' || section === 'family';
+
+    if (needsChildren) void refreshChildren();
+    if (isParent && needsEvents) void refreshEvents();
+    if (isParent && needsAnnouncements) void refreshAnnouncements();
+    if (isParent && needsRewards) void refreshRewards();
+
+    const onChildrenUpdated = () => {
+      if (section === 'home' || section === 'children' || section === 'journey') {
+        void refreshChildren();
+      }
+    };
     window.addEventListener('church:children_updated', onChildrenUpdated);
     window.addEventListener('church:parent_linked', onChildrenUpdated);
     return () => {
       window.removeEventListener('church:children_updated', onChildrenUpdated);
       window.removeEventListener('church:parent_linked', onChildrenUpdated);
     };
-  }, [isParent, refreshChildren, refreshEvents, refreshAnnouncements, refreshRewards]);
+  }, [isParent, section, refreshChildren, refreshEvents, refreshAnnouncements, refreshRewards]);
 
   const pendingRewards = useMemo(() => rewardRequests.filter(request => request.status === 'pending'), [rewardRequests]);
 
