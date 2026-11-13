@@ -67,6 +67,7 @@ Audit and localize every user-facing surface, not only the student home:
 - [x] Common feedback phrases use friendly Egyptian Arabic.
 - [ ] Complete screen-by-screen hardcoded-string inventory.
 - [ ] Full student, teacher, parent, and admin localization.
+- [x] Supabase connection tester: Egyptian Arabic setup instructions, connection states, and retry/save actions.
 - [x] Twelfth Egyptian Arabic pass across Coptic Taxis and Hymns learning interfaces, family altar prompts, in-app lesson document viewer, Scripture recital guidance, and student adventure home.
 - [x] Ninth Egyptian Arabic pass across admin role/account/support operations and remaining teacher dashboard demo/offline/permission feedback.
 - [x] Tenth localization pass: shared translation registry action copy uses Egyptian Arabic; missing Arabic/English translations now show readable localized notices instead of raw translation keys.
