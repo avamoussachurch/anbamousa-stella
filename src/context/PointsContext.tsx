@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { hasRole } from '../lib/workspaces';
 import { LeaderboardEntry, StreakLeaderboardEntry } from '../types';
@@ -75,11 +75,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         studentName: entry.studentName,
         avatarUrl: entry.avatarUrl,
         pointsThisWeek: entry.pointsThisWeek,
-        rank: entry.rank,
-        totalPoints: entry.totalPoints,
-        completedLessonsCount: entry.completedLessonsCount,
-        streakDays: entry.streakDays,
-        longestStreak: entry.longestStreak
+        rank: entry.rank
       }));
       setLeaderboardList(entries);
       setStreakList(result.leaderboard.map((entry: any) => ({
