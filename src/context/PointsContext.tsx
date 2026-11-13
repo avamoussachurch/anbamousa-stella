@@ -53,6 +53,15 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const refreshUserAvatar = userData?.avatarUrl;
   const isGuestUser = Boolean(refreshUserId?.startsWith('guest_'));
   const isStudentUser = userData ? hasRole(userData, 'student') : false;
+  const leaderboardUser = useMemo(() => userData, [
+    refreshUserId,
+    refreshUserRoles,
+    refreshUserPoints,
+    refreshUserCurrentStreak,
+    refreshUserLongestStreak,
+    refreshUserName,
+    refreshUserAvatar
+  ]);
 
   const refreshScores = useCallback(() => {
     const requestId = ++refreshRequestRef.current;
@@ -63,8 +72,8 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     if (isGuestUser) {
-      setLeaderboardList(getLeaderboard(userData));
-      setStreakList(getStreakLeaderboard(userData));
+      setLeaderboardList(getLeaderboard(leaderboardUser));
+      setStreakList(getStreakLeaderboard(leaderboardUser));
       return;
     }
 
@@ -106,18 +115,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLeaderboardList([]);
       setStreakList([]);
     });
-  }, [
-    refreshUserId,
-    refreshUserRoles,
-    refreshUserPoints,
-    refreshUserCurrentStreak,
-    refreshUserLongestStreak,
-    refreshUserName,
-    refreshUserAvatar,
-    isGuestUser,
-    isStudentUser,
-    userData
-  ]);
+  }, [leaderboardUser, refreshUserId, isGuestUser, isStudentUser]);
 
   useEffect(() => {
     refreshScores();
