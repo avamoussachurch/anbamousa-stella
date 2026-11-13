@@ -11,6 +11,7 @@ const taxisStudent = read('../src/components/taxis/CopticTaxisTab.tsx');
 const classRls = read('../scripts/migrations/phase27_student_parent_class_read_access.sql');
 const roleAlignment = read('../scripts/migrations/phase28_role_assignment_function_alignment.sql');
 const manualStudio = read('../src/components/sunday-school/teacher/ManualLessonStudio.tsx');
+const sourceStudio = read('../src/components/sunday-school/teacher/SourceIngestionStudio.tsx');
 const expressStudio = read('../src/components/teacher/ExpressLessonPublishModal.tsx');
 const sundaySchoolAudio = read('../src/components/sunday-school/viewers/SundaySchoolAudioPlayer.tsx');
 const documentViewer = read('../src/components/sunday-school/viewers/InAppDocumentViewer.tsx');
@@ -66,7 +67,7 @@ test('server stores private media metadata and authorizes Hymns/Taxis attachment
 });
 
 test('Sunday School teacher recording captures and uploads real microphone audio', () => {
-  for (const studio of [manualStudio, expressStudio]) {
+  for (const studio of [manualStudio, expressStudio, sourceStudio]) {
     assert.match(studio, /navigator\.mediaDevices\?\.getUserMedia/);
     assert.match(studio, /new MediaRecorder/);
     assert.match(studio, /new Blob\(recordingChunksRef\.current/);
