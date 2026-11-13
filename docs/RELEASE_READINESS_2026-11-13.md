@@ -26,6 +26,15 @@ This report deliberately separates verified code checks from live-data and deplo
 
 **Diagnostic qualification:** the live database already has a `set_text_content_owner()` trigger that fills `created_by` from `auth.uid()`. The missing explicit field was therefore not proven to be the cause of the empty curriculum tables. The additional server assignment is defense-in-depth. Supabase logs for the last 30 days showed reads of Hymns/Taxis but no POST/PATCH write attempts, so a real authenticated teacher save is still required to establish why no content has been created.
 
+## UI, accessibility, and mobile experience
+
+- Arabic is the first-run default (`ar`); the root document starts RTL. Switching to English changes copy/language metadata while keeping the spatial layout anchored RTL, rather than flipping the whole application.
+- The global sound preference persists locally; sound effects are optional and synthesized locally. The quiz victory splash includes performance, earned/total points, streak, confetti, and result-specific sound.
+- Ambient world effects and quiz confetti honor reduced-motion preferences. CSS includes higher-contrast defaults and visible keyboard focus styles.
+- Student Home is a responsive adventure/journey experience with ambient decoration. The full isometric Coptic village remains a **proposed specification**, not an implemented runtime map; do not represent the full village-world design as complete.
+- PR #73 added route-level lazy loading. Entry JavaScript fell from 2,276.54 kB raw / 619.17 kB gzip to 960.23 kB raw / 273.80 kB gzip. Teacher, parent, admin, lesson viewer, and student feature screens are separate on-demand chunks. Vite still reports the shared entry chunk above its 500 kB raw warning threshold.
+- The combined code-splitting CI run #295 passed TypeScript, 281 tests (0 failures, 0 skipped), trusted bootstrap syntax, and production build.
+
 ## Supabase checks
 
 - Applied the existing Phase 21 policy migration so the live migration history records `phase21_admin_approved_lesson_version_insert`. The intended policy is recreated; no curriculum rows were changed.
