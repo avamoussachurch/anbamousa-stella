@@ -216,7 +216,7 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
   return (
     <div 
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full p-6 space-y-6 max-h-[90vh] overflow-y-auto text-start my-auto">
         
