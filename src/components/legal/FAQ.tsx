@@ -8,32 +8,32 @@ export function FAQ({ lang, onClose }: { lang: Language, onClose: () => void }) 
 
   const faqs = [
     {
-      qAr: 'كيف يمكنني كسب النقاط؟',
-      aAr: 'يمكنك كسب النقاط من خلال إكمال الدروس بنجاح، اجتياز الاختبارات القصيرة، والتفاعل بشكل إيجابي في المجتمع (Feed). يتم إضافة النقاط إلى حسابك تلقائياً.',
+      qAr: 'إزاي أكسب نقاط؟',
+      aAr: 'هتكسب نقاط لما تكمّل الدروس وتنجح في الاختبارات القصيرة وتتفاعل بشكل إيجابي مع مجتمع الكنيسة. النقاط بتتضاف لحسابك تلقائي.',
       qEn: 'How can I earn points?',
       aEn: 'You can earn points by successfully completing lessons, passing quizzes, and interacting positively in the community feed. Points are added to your account automatically.',
       qCop: 'Ⲡⲱⲥ ⲟⲩⲟⲛ ϣϫⲟⲙ ⲉ̀ϫⲫⲟ ⲛ̀ϩⲁⲛⲧⲁⲓⲟ;',
       aCop: 'Ⲟⲩⲟⲛ ϣϫⲟⲙ ⲉ̀ϫⲫⲟ ⲛ̀ⲛⲓⲧⲁⲓⲟ ⲉ̀ⲃⲟⲗ ϩⲓⲧⲉⲛ ⲡϫⲱⲕ ⲉ̀ⲃⲟⲗ ⲛ̀ⲛⲓⲥⲃⲱ ⲛⲉⲙ ⲛⲓⲇⲟⲕⲓⲙⲏ ⲛⲉⲙ ϯⲙⲉⲧϣⲫⲏⲣ ϧⲉⲛ ϯⲕⲟⲓⲛⲱⲛⲓⲁ. Ⲥⲉⲟⲩⲁϩ ⲛⲓⲧⲁⲓⲟ ⲉ̀ⲡⲉⲕⲕⲗⲟⲙ ⲉ̀ⲃⲟⲗ ϩⲓⲧⲟⲟⲧϥ.'
     },
     {
-      qAr: 'هل يمكنني تغيير كلمة المرور الخاصة بي؟',
-      aAr: 'نعم، يمكنك طلب تغيير كلمة المرور من خلال صفحة تسجيل الدخول، أو من إعدادات الحساب إذا كنت مسجلاً للدخول بالفعل.',
+      qAr: 'أقدر أغيّر كلمة السر؟',
+      aAr: 'أيوه. تقدر تطلب تغيير كلمة السر من صفحة تسجيل الدخول، أو من إعدادات حسابك لو إنت مسجّل دخول.',
       qEn: 'Can I change my password?',
       aEn: 'Yes, you can request a password change from the login screen, or from your account settings if you are already logged in.',
       qCop: 'Ⲟⲩⲟⲛ ϣϫⲟⲙ ⲉ̀ϣⲉⲃⲓⲱ ⲙ̀ⲡⲁⲗⲟⲅⲟⲥ ⲛ̀ⲕⲉⲗⲉⲯ;',
       aCop: 'Ⲁϩⲁ, ⲟⲩⲟⲛ ϣϫⲟⲙ ⲉ̀ⲧⲱⲃϩ ⲉ̀ϣⲉⲃⲓⲱ ⲙ̀ⲡⲓⲗⲟⲅⲟⲥ ⲛ̀ⲕⲉⲗⲉⲯ ⲉ̀ⲃⲟⲗ ϩⲓⲧⲉⲛ ⲡⲓⲡⲩⲗⲏ ⲛ̀ϣⲉ ⲉ̀ϧⲟⲩⲛ ⲓⲉ ⲛⲓⲥⲉⲃⲧⲱⲧ ⲛ̀ⲧⲉ ⲡⲉⲕⲣⲁⲛ.'
     },
     {
-      qAr: 'كيف يعمل نظام موافقة ولي الأمر؟',
-      aAr: 'إذا قام ولي أمرك بتفعيل هذه الميزة، فإن أي جائزة تطلبها بنقاطك ستذهب أولاً كطلب إلى حساب ولي أمرك. بمجرد موافقته، سيتم خصم النقاط ويمكنك استلام الجائزة من الكنيسة.',
+      qAr: 'موافقة ولي الأمر بتشتغل إزاي؟',
+      aAr: 'لو ولي أمرك فعّل الخاصية دي، أي مكافأة تطلبها بنقاطك هتروحله الأول للموافقة. بعد ما يوافق، النقاط هتتخصم وتقدر تستلم المكافأة من الكنيسة.',
       qEn: 'How does the Parental Approval system work?',
       aEn: 'If your parent has enabled this feature, any reward you request with your points will first go as a request to your parent\'s account. Once they approve, the points will be deducted and you can receive the reward from the church.',
       qCop: 'Ⲡⲱⲥ ⲣⲁϧⲧ ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ϯϯⲙⲁϯ ⲛ̀ⲧⲉ ⲛⲓⲓⲟϯ;',
       aCop: 'Ⲉϣⲱⲡ ⲁⲣⲉ ⲡⲉⲕⲓⲱⲧ ⲉⲣϩⲱⲃ ⲙ̀ⲡⲁⲓⲧⲁⲝⲓⲥ, ⲧⲁⲓⲟ ⲛⲓⲃⲉⲛ ⲉⲧⲉⲕⲉⲣⲉⲧⲓⲛ ⲙ̀ⲙⲟϥ ϥⲛⲁϣⲉ ⲛ̀ϣⲟⲣⲡ ⲉ̀ⲡⲓⲕⲗⲟⲙ ⲛ̀ⲧⲉ ⲡⲉⲕⲓⲱⲧ. Ⲉϣⲱⲡ ⲁϥϯⲙⲁϯ, ⲥⲉⲛⲁϭⲓ ⲛⲓⲧⲁⲓⲟ ⲟⲩⲟϩ ⲕⲛⲁϭⲓ ⲡⲓⲧⲁⲓⲟ ⲉ̀ⲃⲟⲗ ϧⲉⲛ ϯⲉⲕⲕⲗⲏⲥⲓⲁ.'
     },
     {
-      qAr: 'هل الموسيقى الموجودة في التطبيق رسمية؟',
-      aAr: 'نعم، جميع الألحان الموجودة في مشغل الموسيقى هي ألحان قبطية أرثوذكسية معتمدة وموثوقة، تم جمعها من مصادر كنسية رسمية مثل موقع الأنبا تكلا وتسبحة.',
+      qAr: 'الألحان اللي في التطبيق معتمدة؟',
+      aAr: 'الألحان المعروضة هنا من مصادر كنسية معتمدة وموثوقة. بنحافظ على أسمائها ونصوصها ومرجعها الكنسي زي ما هي.',
       qEn: 'Is the music in the app official?',
       aEn: 'Yes, all the hymns in the music player are approved and authentic Coptic Orthodox hymns, gathered from official church sources like St-Takla and Tasbeha.',
       qCop: 'Ⲁⲛ ⲛⲓϩⲱⲥ ⲉⲧϧⲉⲛ ⲡⲁⲓⲥⲕⲉⲩⲟⲥ ϩⲁⲛⲕⲁⲛⲟⲛⲓⲕⲟⲛ ⲛⲉ;',
