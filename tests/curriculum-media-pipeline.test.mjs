@@ -34,7 +34,8 @@ test('student Hymns and Taxis views resolve private references before browser ac
   assert.match(hymnStudent, /resolveCurriculumMediaUrl\(selectedHymn\.audioUrl\)/);
   assert.match(hymnStudent, /src=\{resolvedAudioUrl \|\| undefined\}/);
   assert.match(taxisStudent, /resolveCurriculumMediaUrl\(document\.fileUrl\)/);
-  assert.match(taxisStudent, /href=\{resolvedDocumentUrls\[doc\.id\] \|\| undefined\}/);
+  assert.match(taxisStudent, /disabled=\{!resolvedDocumentUrls\[doc\.id\]\}/);
+  assert.match(taxisStudent, /setActiveDocument\(\{ title: doc\.title, url: resolvedDocumentUrls\[doc\.id\] \}\)/);
 });
 
 test('media access preserves teacher multi-role access and denies unassigned accounts', () => {
