@@ -10,6 +10,7 @@ interface SundaySchoolAudioPlayerProps {
   subTitle?: string;
   transcript?: string;
   durationSeconds?: number;
+  lang?: 'ar' | 'en';
   recordedBy?: string;
   isApproved?: boolean;
   onTimeUpdate?: (currentTime: number) => void;
@@ -28,7 +29,7 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
 }) => {
   const [showTranscript, setShowTranscript] = useState(false);
   const isTeacher = type === 'TEACHER_VOICE';
-  const isAr = Boolean(titleAr) && titleAr === title;
+  const isAr = lang === 'ar';
 
   return (
     <div className={`rounded-2xl border p-4 sm:p-5 shadow-lg space-y-4 ${isTeacher
@@ -59,12 +60,10 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
       </div>
 
       {audioUrl ? (
-        <UniversalAudioPlayer src={audioUrl} lang={isAr ? 'ar' : 'en'} accent={isTeacher ? 'amber' : 'blue'} compact />
+        <UniversalAudioPlayer src={audioUrl} lang={lang} accent={isTeacher ? 'amber' : 'blue'} compact onTimeUpdate={onTimeUpdate} />
       ) : (
         <p role="status" className="text-xs text-stone-400">{isAr ? 'التسجيل الصوتي مش متاح دلوقتي.' : 'Audio recording is not available.'}</p>
       )}
-
-      {onTimeUpdate && <p className="sr-only">Playback position updates are available in the player.</p>}
 
       {showTranscript && transcript && (
         <div className="pt-3 border-t border-stone-800 text-xs text-stone-300 leading-relaxed bg-stone-950/70 p-4 rounded-xl">
