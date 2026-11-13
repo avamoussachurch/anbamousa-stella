@@ -31,7 +31,7 @@ test('parent, servant, and admin profile forms use Egyptian Arabic', async () =>
   ]);
 
   assert.match(parent, /اسمك بيظهر في مساحة العيلة/);
-  assert.match(parent, /الإيميل بيتدار من خدمة تسجيل الدخول/);
+  assert.match(parent, /الإيميل تابع لخدمة تسجيل الدخول/);
   assert.match(servant, /الفصول والتكليفات بتظهر من السجل المعتمد/);
   assert.match(admin, /الخادم بيتأكد من صلاحية كل إجراء إداري/);
   assert.match(admin, /راجع الأدوار تاني/);
