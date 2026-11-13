@@ -138,14 +138,14 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
           </div>
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span>{isAr ? 'مؤشرات تفاعل واستيعاب الطلاب للدروس المنشورة' : 'Student Engagement & Lesson Mastery Summary'}</span>
+              <span>{isAr ? 'ملخص تفاعل التلاميذ وفهمهم للدروس المنشورة' : 'Student Engagement & Lesson Mastery Summary'}</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono font-medium">
                 {publishedLessons.length} {isAr ? 'دروس نشطة' : 'Active'}
               </span>
             </h2>
             <p className="text-xs text-stone-400">
               {isAr 
-                ? 'متابعة بصرية فورية لنسب إتمام الدروس، درجات الاختبارات، وتفاعل فصول مدارس الأحد.'
+                ? 'تابع إكمال الدروس ونتائج الاختبارات وتفاعل فصول مدارس الأحد من مكان واحد.'
                 : 'Real-time visual progress bars tracking student completion, quiz performance, and active participants.'}
             </p>
           </div>
@@ -159,7 +159,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
             onChange={(e) => setSelectedGrade(e.target.value)}
             className="bg-stone-950 border border-stone-800 text-stone-200 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-amber-500"
           >
-            <option value="ALL">{isAr ? 'جميع الفصول والمراحل' : 'All Grades'}</option>
+            <option value="ALL">{isAr ? 'كل الفصول والمراحل' : 'All Grades'}</option>
             {uniqueGrades.map(g => (
               <option key={g} value={g}>{g}</option>
             ))}
@@ -174,7 +174,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-stone-400 flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-blue-400" />
-              {isAr ? 'نسبة إتمام محتوى الدروس' : 'Lesson Content Completion'}
+              {isAr ? 'نسبة إكمال الدروس' : 'Lesson Content Completion'}
             </span>
             <span className="text-base font-bold font-mono text-blue-400">
               {stats.overallCompletionPercent}%
@@ -190,8 +190,8 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
           </div>
 
           <div className="flex items-center justify-between text-[11px] text-stone-400">
-            <span>{isAr ? `أتموا القراءة: ${stats.completedCount} طالب` : `Completed: ${stats.completedCount} students`}</span>
-            <span>{isAr ? `قيد المتابعة: ${stats.inProgressCount}` : `In Progress: ${stats.inProgressCount}`}</span>
+            <span>{isAr ? `خلصوا القراءة: ${stats.completedCount} طالب` : `Completed: ${stats.completedCount} students`}</span>
+            <span>{isAr ? `لسه بيكملوا: ${stats.inProgressCount}` : `In Progress: ${stats.inProgressCount}`}</span>
           </div>
         </div>
 
@@ -217,7 +217,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
 
           <div className="flex items-center justify-between text-[11px] text-stone-400">
             <span>{isAr ? `المحاولات: ${stats.totalQuizAttempts}` : `Attempts: ${stats.totalQuizAttempts}`}</span>
-            <span className="text-emerald-400 font-medium">{isAr ? 'معدل نجاح مرتفع' : 'High Passing'}</span>
+            <span className="text-emerald-400 font-medium">{isAr ? 'نسبة نجاح عالية' : 'High Passing'}</span>
           </div>
         </div>
 
@@ -226,7 +226,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-stone-400 flex items-center gap-1.5">
               <Users className="w-4 h-4 text-amber-400" />
-              {isAr ? 'إتقان الطلاب للمنهج' : 'Mastery Evaluation'}
+              {isAr ? 'مدى إتقان التلاميذ للمنهج' : 'Mastery Evaluation'}
             </span>
             <span className="text-base font-bold font-mono text-amber-400">
               {stats.masteredCount} {isAr ? 'متقن' : 'Mastered'}
@@ -248,8 +248,8 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
           </div>
 
           <div className="flex items-center justify-between text-[11px] text-stone-400">
-            <span className="text-emerald-400">{isAr ? `متقنون: ${stats.masteredCount}` : `Mastered: ${stats.masteredCount}`}</span>
-            <span className="text-amber-400">{isAr ? `قيد التطوير: ${stats.developingCount}` : `Developing: ${stats.developingCount}`}</span>
+            <span className="text-emerald-400">{isAr ? `أتقنوا: ${stats.masteredCount}` : `Mastered: ${stats.masteredCount}`}</span>
+            <span className="text-amber-400">{isAr ? `لسه بيتطوروا: ${stats.developingCount}` : `Developing: ${stats.developingCount}`}</span>
           </div>
         </div>
       </div>
@@ -259,7 +259,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-amber-500" />
-            <span>{isAr ? 'تفاصيل تفاعل الطلاب لكل درس منشور' : 'Per-Lesson Student Engagement Breakdown'}</span>
+            <span>{isAr ? 'تفاصيل تفاعل التلاميذ مع كل درس منشور' : 'Per-Lesson Student Engagement Breakdown'}</span>
           </h3>
 
           {/* Search */}
@@ -269,7 +269,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={isAr ? 'بحث عن درس...' : 'Search lesson...'}
+              placeholder={isAr ? 'دوّر على درس...' : 'Search lesson...'}
               className={`bg-stone-950 border border-stone-800 rounded-xl py-1.5 text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-amber-500 ${
                 isAr ? 'pr-8 pl-3' : 'pl-8 pr-3'
               }`}
@@ -279,7 +279,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
 
         {lessonRows.length === 0 ? (
           <div className="p-8 text-center text-xs text-stone-500 bg-stone-950/40 rounded-2xl border border-stone-800/60">
-            {isAr ? 'لا توجد دروس منشورة تطابق البحث الحالي.' : 'No published lessons match the current filter.'}
+            {isAr ? 'ملقيناش دروس منشورة مطابقة للبحث.' : 'No published lessons match the current filter.'}
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -311,7 +311,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
                 {/* Engagement Indicator 1: Content Completion Bar */}
                 <div className="md:w-1/4 space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-stone-400">{isAr ? 'إتمام المحتوى' : 'Completion'}</span>
+                    <span className="text-stone-400">{isAr ? 'إكمال المحتوى' : 'Completion'}</span>
                     <span className="font-mono font-bold text-blue-400">{row.completionRate}%</span>
                   </div>
                   <div className="w-full h-2 bg-stone-800 rounded-full overflow-hidden">
@@ -344,7 +344,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
                       <span>{row.studentsCount}</span>
                     </div>
                     <span className="text-[10px] text-stone-500">
-                      {isAr ? 'طالب نشط' : 'Students'}
+                      {isAr ? 'تلميذ نشط' : 'Students'}
                     </span>
                   </div>
 
