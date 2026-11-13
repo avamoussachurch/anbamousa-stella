@@ -7281,7 +7281,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     // so it must never decide whether a real UUID lesson exists or which quiz is active.
     let lessonRecord: any = null;
     let targetVersion: any = null;
-    let trustedClient: any = null;
+    let curriculumClient: any = null;
 
     if (process.env.NODE_ENV === 'test') {
       lessonRecord = serverReviewState.lessons[lessonId];
@@ -7295,7 +7295,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       }
     } else {
       try {
-        trustedClient = getTrustedServiceClient(
+        curriculumClient = getTrustedServiceClient(
           'Quiz submission is unavailable because secure curriculum database access is not configured.'
         );
       } catch (error: any) {
@@ -7306,7 +7306,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
         });
       }
 
-      const { data: lessonRow, error: lessonError } = await trustedClient
+      const { data: lessonRow, error: lessonError } = await curriculumClient
         .from('lessons')
         .select('id, active_version_id, grade_level, status, lesson_status')
         .eq('id', lessonId)
@@ -7328,7 +7328,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
         });
       }
 
-      const { data: versionRow, error: versionError } = await trustedClient
+      const { data: versionRow, error: versionError } = await curriculumClient
         .from('lesson_versions')
         .select('id, lesson_id, status, quiz_draft')
         .eq('id', versionId)
@@ -7404,7 +7404,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     try {
       access = process.env.NODE_ENV === 'test'
         ? checkStudentLessonAccess(targetStudentId, lessonRecord)
-        : await checkStudentLessonAccessWithDatabase(targetStudentId, lessonRecord, trustedClient);
+        : await checkStudentLessonAccessWithDatabase(targetStudentId, lessonRecord, curriculumClient);
     } catch (error: any) {
       return res.status(503).json({
         success: false,
