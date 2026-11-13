@@ -44,7 +44,7 @@ export function StudentFeatureLinks({ lang, onNavigate }: { lang: Language; onNa
   }).format(nextFeast.date);
 
   return (
-    <section aria-label={isArabic ? 'اكتشف المزيد من المحتوى' : 'Discover more'} className="grid gap-4 sm:grid-cols-2">
+    <section aria-label={isArabic ? 'اكتشف محتوى أكتر' : 'Discover more'} className="grid gap-4 sm:grid-cols-2">
       <button
         type="button"
         onClick={() => onNavigate('agpeya')}
@@ -64,7 +64,7 @@ export function StudentFeatureLinks({ lang, onNavigate }: { lang: Language; onNa
             {isArabic ? 'صلوات الأجبية' : 'Agpeya prayer book'}
           </p>
           <h2 className="mt-1 text-lg font-black text-slate-900 dark:text-white">
-            {isArabic ? 'الصلاة القادمة' : 'Next canonical hour'}
+            {isArabic ? 'الصلاة الجاية' : 'Next canonical hour'}
           </h2>
           <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300">
             <Clock size={14} />
@@ -92,7 +92,7 @@ export function StudentFeatureLinks({ lang, onNavigate }: { lang: Language; onNa
             {isArabic ? 'التقويم القبطي' : 'Coptic calendar'}
           </p>
           <h2 className="mt-1 text-lg font-black text-slate-900 dark:text-white">
-            {isArabic ? 'الاحتفال القادم' : 'Next feast'}
+            {isArabic ? 'العيد الجاي' : 'Next feast'}
           </h2>
           <p className="mt-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
             {isArabic ? nextFeast.feast.nameAr : nextFeast.feast.nameEn} · {feastDate}
