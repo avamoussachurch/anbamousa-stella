@@ -65,14 +65,14 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
 
     if (res.success) {
       setStatusMessage({
-        text: isAr ? 'تم تحديث حالة القبول بنجاح وسريان الصلاحيات فوراً.' : 'Enrollment status updated successfully.',
+        text: isAr ? 'حالة القبول اتحدّثت بنجاح والصلاحيات اتطبقت فورًا.' : 'Enrollment status updated successfully.',
         type: 'success'
       });
       await loadRequests();
       if (onRefresh) onRefresh();
     } else {
       setStatusMessage({
-        text: res.error || (isAr ? 'حدث خطأ أثناء المراجعة' : 'Failed to update enrollment'),
+        text: res.error || (isAr ? 'حصلت مشكلة وإحنا بنراجع الطلب.' : 'Failed to update enrollment'),
         type: 'error'
       });
     }
@@ -86,7 +86,7 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
     const res = await reviewHymnsEnrollment(transferringMember.id, 'TRANSFER', {
       targetLevel,
       targetRosterGroup,
-      notes: transferNotes || (isAr ? 'ترقية شماس إلى المستوى الأعلى' : 'Promoted to higher level')
+      notes: transferNotes || (isAr ? 'ترقية الشماس للمستوى الأعلى' : 'Promoted to higher level')
     });
     setProcessingId(null);
     setTransferringMember(null);
@@ -123,11 +123,11 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
           </div>
           <div>
             <h3 className="text-lg font-black text-[var(--mousa-teal-deep)] dark:text-amber-300">
-              {isAr ? 'إدارة طلبات الانضمام لمدرسة الألحان والكشافة' : 'Hymns School Roster & Admissions'}
+              {isAr ? 'إدارة طلبات التسجيل في مدرسة الألحان والشمامسة' : 'Hymns School Roster & Admissions'}
             </h3>
             <p className="text-xs text-stone-500 font-bold mt-0.5">
               {isAr
-                ? 'مراجعة طلبات التقديم، تسكين الشمامسة بالمستويات الثلاثة، الترقية والنقل، وإلغاء التسجيل.'
+                ? 'راجع طلبات التسجيل، وسجّل الشمامسة في المستويات التلاتة، أو رقّيهم وانقلهم أو ألغِ تسجيلهم.'
                 : 'Review applications, assign deacon levels, promote students, and manage rosters.'}
             </p>
           </div>
@@ -144,7 +144,7 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
             }`}
           >
             <Clock size={13} />
-            <span>{isAr ? 'قيد المراجعة' : 'Pending'}</span>
+            <span>{isAr ? 'مستني المراجعة' : 'Pending'}</span>
             {pendingCount > 0 && (
               <span className="w-4 h-4 rounded-full bg-white text-amber-700 text-[10px] font-black flex items-center justify-center">
                 {pendingCount}
@@ -160,7 +160,7 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
             }`}
           >
             <CheckCircle2 size={13} />
-            <span>{isAr ? 'المعتمدون' : 'Approved'}</span>
+            <span>{isAr ? 'اللي اتقبلوا' : 'Approved'}</span>
           </button>
           <button
             onClick={() => setActiveFilter('all')}
@@ -191,16 +191,16 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-[var(--mousa-border-sand)] p-4 sm:p-5 space-y-3 shadow-xs">
         {loading ? (
           <div className="py-12 text-center text-stone-400 text-xs font-bold">
-            {isAr ? 'جاري تحميل قائمة الطلاب والطلبات...' : 'Loading requests...'}
+            {isAr ? 'بنحمّل قائمة التلاميذ والطلبات...' : 'Loading requests...'}
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-12 text-center space-y-2">
             <div className="text-3xl">🕊️</div>
             <p className="text-sm font-bold text-stone-600 dark:text-stone-300">
-              {isAr ? 'لا توجد طلبات في هذا القسم حالياً.' : 'No requests found.'}
+              {isAr ? 'مفيش طلبات في القسم ده دلوقتي.' : 'No requests found.'}
             </p>
             <p className="text-xs text-stone-400">
-              {isAr ? 'تظهر هنا طلبات الطلاب للانضمام لمدرسة الشمامسة فور تقديمها.' : 'Student requests will appear here.'}
+              {isAr ? 'طلبات التلاميذ للانضمام لمدرسة الألحان هتظهر هنا أول ما تتبعت.' : 'Student requests will appear here.'}
             </p>
           </div>
         ) : (
@@ -228,8 +228,8 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
                           : req.status === 'pending' ? 'bg-amber-400/30 text-amber-900 dark:text-amber-300'
                           : 'bg-red-500/20 text-red-800 dark:text-red-300'
                         }`}>
-                          {req.status === 'approved' ? (isAr ? 'معتمد' : 'Approved')
-                          : req.status === 'pending' ? (isAr ? 'قيد المراجعة' : 'Pending')
+                          {req.status === 'approved' ? (isAr ? 'اتقبل' : 'Approved')
+                          : req.status === 'pending' ? (isAr ? 'مستني المراجعة' : 'Pending')
                           : (isAr ? 'مرفوض' : 'Rejected')}
                         </span>
                         <span className="text-[10px] bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300 font-bold px-2 py-0.5 rounded-full">
@@ -261,7 +261,7 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
                           className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
                         >
                           <CheckCircle2 size={13} />
-                          <span>{isAr ? 'قبول واعتماد' : 'Approve'}</span>
+                          <span>{isAr ? 'اقبل الطلب' : 'Approve'}</span>
                         </button>
                         <button
                           type="button"
@@ -288,7 +288,7 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
                           className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
                         >
                           <ArrowRightLeft size={13} />
-                          <span>{isAr ? 'ترقية / نقل مستوى' : 'Promote/Transfer'}</span>
+                          <span>{isAr ? 'ترقية أو نقل مستوى' : 'Promote/Transfer'}</span>
                         </button>
                         <button
                           type="button"
