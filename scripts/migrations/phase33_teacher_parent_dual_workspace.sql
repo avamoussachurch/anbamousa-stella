@@ -1,5 +1,6 @@
 -- Phase 33: teacher accounts also receive parent workspace eligibility.
--- Child records remain protected by verified family relationships.
+-- A teacher can switch between servant and parent workspaces under one login.
+-- Parent APIs and child records remain protected by verified family relationships.
 BEGIN;
 
 DO $preflight$
@@ -31,7 +32,11 @@ AS $$
 BEGIN
   IF NEW.role = 'teacher' THEN
     PERFORM public.grant_profile_role_internal(
-      NEW.id, 'parent', NULL, 'registration', 'registration',
+      NEW.id,
+      'parent',
+      NULL,
+      'registration',
+      'registration',
       'Teacher accounts also receive parent workspace access; child data remains protected by verified family links.'
     );
   END IF;
@@ -48,6 +53,7 @@ CREATE TRIGGER grant_parent_workspace_to_teacher
   EXECUTE FUNCTION public.grant_parent_workspace_to_teacher();
 
 -- Backfill the additional parent role for every currently active teacher account.
+-- Existing teacher roles and class assignments are left untouched.
 DO $backfill$
 DECLARE
   teacher_record RECORD;
@@ -55,10 +61,15 @@ BEGIN
   FOR teacher_record IN
     SELECT DISTINCT ra.user_id
     FROM public.profile_role_assignments AS ra
-    WHERE ra.role = 'teacher' AND ra.revoked_at IS NULL
+    WHERE ra.role = 'teacher'
+      AND ra.revoked_at IS NULL
   LOOP
     PERFORM public.grant_profile_role_internal(
-      teacher_record.user_id, 'parent', NULL, 'migration', 'trusted_server',
+      teacher_record.user_id,
+      'parent',
+      NULL,
+      'migration',
+      'trusted_server',
       'Phase 33: enable parent workspace for existing teacher accounts.'
     );
   END LOOP;
