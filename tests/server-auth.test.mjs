@@ -955,9 +955,9 @@ test('parent and teacher access requires a matching child relationship or class 
 
 test('parent workspace APIs allow hybrid parent accounts but reject accounts without the parent role', async () => {
   const hybridParentId = 'user_parent_mary_301';
-  roleAssignments.set(hybridParentId, ['student', 'parent']);
+  roleAssignments.set(hybridParentId, ['teacher', 'parent']);
   const childList = await request('/api/church/parent/children', {
-    role: 'student',
+    role: 'teacher',
     userId: hybridParentId
   });
   assert.equal(childList.status, 200, await childList.clone().text());
