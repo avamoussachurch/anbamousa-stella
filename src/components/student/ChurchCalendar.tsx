@@ -42,7 +42,7 @@ export function ChurchCalendar({ lang }: { lang: 'en' | 'ar' }) {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl md:text-2xl font-bold text-[var(--color-church-blue)] dark:text-[#FAF5EB] flex items-center gap-2">
           <Calendar className="text-[var(--color-church-gold)]" size={24} />
-          {lang === 'ar' ? 'النتيجة القبطية' : 'Church Calendar'}
+          {lang === 'ar' ? 'التقويم القبطي' : 'Church Calendar'}
         </h2>
         <button className="text-sm md:text-base font-bold text-gray-500 dark:text-[#C5B5A0] hover:text-[var(--color-church-burgundy)] dark:hover:text-[var(--mousa-gold)] flex items-center transition-colors cursor-pointer">
           {lang === 'ar' ? 'الكل' : 'View All'} <ChevronRight size={16} />
@@ -69,7 +69,7 @@ export function ChurchCalendar({ lang }: { lang: 'en' | 'ar' }) {
               <p className="text-sm text-gray-500 dark:text-[#C5B5A0] font-medium">
                 {event.daysLeft === 0 
                   ? (lang === 'ar' ? 'اليوم!' : 'Today!') 
-                  : (lang === 'ar' ? `بعد ${event.daysLeft} أيام` : `In ${event.daysLeft} days`)}
+                  : (lang === 'ar' ? `فاضل ${event.daysLeft} أيام` : `In ${event.daysLeft} days`)}
               </p>
             </div>
           </div>
