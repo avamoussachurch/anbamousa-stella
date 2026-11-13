@@ -42,18 +42,33 @@ export const ConfettiCanvas: React.FC<{ layer?: 'top' | 'behind' }> = ({ layer =
 
     let animId: number;
     let isSpawning = true;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    let isVisible = !document.hidden;
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    const resizeCanvas = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    };
+    resizeCanvas();
 
     const handleResize = () => {
       if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      resizeCanvas();
     };
     window.addEventListener('resize', handleResize);
+    const handleVisibility = () => {
+      isVisible = !document.hidden;
+      if (isVisible) animId = requestAnimationFrame(render);
+      else cancelAnimationFrame(animId);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
-    // Responsive particle count: 120 on small screens, 200 on desktop
-    const maxParticles = width < 640 ? 120 : 200;
+    // Keep celebrations lively without overwhelming mobile GPUs or battery.
+    const maxParticles = width < 640 ? 42 : 110;
     const particles: Particle[] = [];
 
     const createParticle = (originX?: number, originY?: number, isBurst = false): Particle => {
@@ -94,7 +109,7 @@ export const ConfettiCanvas: React.FC<{ layer?: 'top' | 'behind' }> = ({ layer =
     };
 
     // Initial festive dual cannons from lower corners
-    for (let i = 0; i < maxParticles * 0.4; i++) {
+    for (let i = 0; i < maxParticles * 0.22; i++) {
       particles.push(createParticle(width * 0.15, height * 0.85, true));
       particles.push(createParticle(width * 0.85, height * 0.85, true));
     }
@@ -102,9 +117,10 @@ export const ConfettiCanvas: React.FC<{ layer?: 'top' | 'behind' }> = ({ layer =
     // Stop spawning new particles after 3.8 seconds so screen settles cleanly
     const stopSpawnTimer = setTimeout(() => {
       isSpawning = false;
-    }, 3800);
+    }, 2800);
 
     const render = () => {
+      if (!isVisible) return;
       ctx.clearRect(0, 0, width, height);
 
       // Top up falling particles while spawning
@@ -186,6 +202,7 @@ export const ConfettiCanvas: React.FC<{ layer?: 'top' | 'behind' }> = ({ layer =
       cancelAnimationFrame(animId);
       clearTimeout(stopSpawnTimer);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibility);
       ctx.clearRect(0, 0, width, height);
     };
   }, []);
