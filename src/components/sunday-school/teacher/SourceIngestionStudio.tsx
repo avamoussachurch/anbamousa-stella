@@ -28,6 +28,7 @@ interface SourceIngestionStudioProps {
   onDeleteSource: (id: string) => void;
   onViewSource: (source: LessonSource) => void;
   onPipelineComplete: (evidenceMap: EvidenceMap, outline: LessonOutline) => void;
+  lang?: 'en' | 'ar';
 }
 
 export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
@@ -36,8 +37,10 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
   onAddSource,
   onDeleteSource,
   onViewSource,
-  onPipelineComplete
+  onPipelineComplete,
+  lang = 'ar'
 }) => {
+  const isAr = lang === 'ar';
   const { userData, isGuest } = useAuth();
   const isOnlineAuth = !isGuest && Boolean(userData) && isSupabaseConfigured;
   const servantId = (isOnlineAuth && userData?.id) ? userData.id : session.teacherId;
