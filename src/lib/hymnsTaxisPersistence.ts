@@ -101,7 +101,8 @@ export function hymnToDatabase(input: Partial<CopticHymnItem>): Record<string, u
     ['hazatExplanationAr', 'hazat_explanation_ar'],
     ['hazatExplanationEn', 'hazat_explanation_en'],
     ['lines', 'lines'],
-    ['status', 'status']
+    ['status', 'status'],
+    ['createdBy', 'created_by']
   ];
   for (const [source, target] of fields) {
     if (input[source] !== undefined) result[target] = input[source];
@@ -170,6 +171,7 @@ export function taxisFromDatabase(row: TaxisDatabaseRow): TaxisItem {
 
 export function taxisToDatabase(input: Partial<TaxisItem>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
+  if (input.createdBy !== undefined) result.created_by = input.createdBy;
   if (input.titleAr !== undefined) result.title_ar = input.titleAr;
   if (input.titleEn !== undefined) result.title_en = input.titleEn;
   if (input.titleCopt !== undefined) result.title_coptic = input.titleCopt;
