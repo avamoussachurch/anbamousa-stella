@@ -111,7 +111,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     const result = await getAuthoritativeParentChildren();
     if (result.error || !result.data) {
       setChildren([]);
-      setChildrenError(result.error?.message || (isArabic ? 'تعذر تحميل الأبناء المرتبطين.' : 'Unable to load linked children.'));
+      setChildrenError(result.error?.message || (isArabic ? 'مش قادرين نحمّل بيانات الأولاد المرتبطين بالحساب.' : 'Unable to load linked children.'));
       setChildrenLoading(false);
       return;
     }
@@ -135,7 +135,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     const result = await fetchFeedPostsFromSupabase();
     if (result.error || !result.data) {
       setAnnouncements([]);
-      setAnnouncementsError(result.error?.message || (isArabic ? 'تعذر تحميل الإعلانات.' : 'Unable to load announcements.'));
+      setAnnouncementsError(result.error?.message || (isArabic ? 'مش قادرين نحمّل الإعلانات دلوقتي.' : 'Unable to load announcements.'));
     } else {
       setAnnouncements(result.data.filter(post => post.isAnnouncement).slice(0, 8));
     }
@@ -218,7 +218,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
   }
 
   const renderChildrenCards = () => {
-    if (childrenLoading) return <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]" role="status">{isArabic ? 'بنحمّل بيانات الأسرة...' : 'Loading family records…'}</div>;
+    if (childrenLoading) return <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]" role="status">{isArabic ? 'بنحمّل بيانات العيلة...' : 'Loading family records…'}</div>;
     if (childrenError) return (
       <div className="mousa-card-sand p-6 text-center" role="alert">
         <p className="mb-3 text-[var(--feedback-error)]">{childrenError}</p>
@@ -241,14 +241,14 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
               <img src={child.avatarUrl || undefined} alt="" className="h-14 w-14 rounded-2xl bg-white object-cover" />
               <span className="min-w-0">
                 <span className="block truncate font-black text-[var(--text-primary)]">{child.name}</span>
-                <span className="mt-1 block text-sm text-[var(--text-secondary)]">{child.grade || (isArabic ? 'الصف غير مسجل' : 'Grade not recorded')}</span>
+                <span className="mt-1 block text-sm text-[var(--text-secondary)]">{child.grade || (isArabic ? 'الصف مش متسجل' : 'Grade not recorded')}</span>
               </span>
             </button>
             <dl className="mt-4 space-y-2 border-t border-[var(--border-default)] pt-3 text-sm">
-              <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'فصل مدارس الأحد' : 'Sunday School class'}</dt><dd className="font-semibold text-[var(--text-primary)]">{isArabic ? child.classNameAr || 'غير مسجل' : child.className || 'Not recorded'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'مستوى الألحان والطقس' : 'Hymns & Taxis level'}</dt><dd className="font-semibold text-[var(--text-primary)]">{child.hymnsTaxisLevel ? (isArabic ? `المستوى ${child.hymnsTaxisLevel}` : `Level ${child.hymnsTaxisLevel}`) : (isArabic ? 'غير متاح' : 'Not available')}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'فصل مدارس الأحد' : 'Sunday School class'}</dt><dd className="font-semibold text-[var(--text-primary)]">{isArabic ? child.classNameAr || 'مش متسجل' : child.className || 'Not recorded'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'مستوى الألحان والطقس' : 'Hymns & Taxis level'}</dt><dd className="font-semibold text-[var(--text-primary)]">{child.hymnsTaxisLevel ? (isArabic ? `المستوى ${child.hymnsTaxisLevel}` : `Level ${child.hymnsTaxisLevel}`) : (isArabic ? 'مش متاح' : 'Not available')}</dd></div>
             </dl>
-            {child.points !== null && <p className="mt-3 text-xs font-bold text-[var(--text-secondary)]">{isArabic ? `النقاط الحالية المسجلة: ${child.points}` : `Recorded current points: ${child.points}`}</p>}
+            {child.points !== null && <p className="mt-3 text-xs font-bold text-[var(--text-secondary)]">{isArabic ? `النقاط المسجلة دلوقتي: ${child.points}` : `Recorded current points: ${child.points}`}</p>}
           </article>
         ))}
         <button type="button" onClick={() => openAddChild('code')} className="mousa-card-sand flex min-h-40 flex-col items-center justify-center gap-2 border-dashed p-5 text-sm font-bold text-[var(--action-primary)]">
@@ -308,7 +308,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
       {section === 'children' && (
         <section className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <p className="text-sm text-[var(--text-secondary)]">{isArabic ? 'بيانات الأبناء المرتبطين بعلاقة موثّقة.' : 'Children connected through a verified family relationship.'}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{isArabic ? 'بيانات الأولاد المرتبطين بالحساب بشكل موثّق.' : 'Children connected through a verified family relationship.'}</p>
             <div className="flex gap-2"><button type="button" onClick={() => openAddChild('code')} className="mousa-btn-quest inline-flex items-center gap-2 rounded-xl px-4 py-2"><Plus size={16} />{isArabic ? 'إدخال كود' : 'Enter code'}</button><button type="button" onClick={() => openAddChild('qr')} className="rounded-xl border border-[var(--border-default)] px-4 py-2 text-sm font-bold text-[var(--text-primary)]">{isArabic ? 'مسح QR' : 'Scan QR'}</button></div>
           </div>
           {renderChildrenCards()}
@@ -316,7 +316,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
       )}
 
       {section === 'journey' && (
-        childrenLoading ? <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]" role="status">{isArabic ? 'بنحمّل بيانات الأسرة...' : 'Loading family records…'}</div>
+        childrenLoading ? <div className="mousa-card-sand p-6 text-center text-[var(--text-secondary)]" role="status">{isArabic ? 'بنحمّل بيانات العيلة...' : 'Loading family records…'}</div>
           : childrenError ? <div className="mousa-card-sand p-6 text-center text-[var(--feedback-error)]" role="alert">{childrenError}</div>
             : selectedChild ? <div className="space-y-4">
               {children.length > 1 && <label className="mousa-card-sand flex items-center gap-3 p-4 text-sm font-bold text-[var(--text-primary)]">{isArabic ? 'اختار ابنك:' : 'Select child:'}<select value={selectedChild.id} onChange={event => setSelectedChildId(event.target.value)} className="min-w-48 rounded-lg border border-[var(--border-default)] bg-white px-3 py-2">{children.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label>}
@@ -359,7 +359,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
                     return <article key={request.id} className="rounded-xl border border-[var(--border-default)] bg-white/70 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-bold text-[var(--text-primary)]">{isArabic ? request.reward_name_ar : request.reward_name_en}</p><p className="mt-1 text-xs text-[var(--text-secondary)]">{child?.name || (isArabic ? 'ابن مرتبط' : 'Linked child')} · {request.cost_points} {isArabic ? 'نقطة' : 'points'} · {new Date(request.created_at).toLocaleDateString(isArabic ? 'ar-EG' : 'en-EG')}</p></div><span className="rounded-full bg-[var(--surface-secondary)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]">{request.status === 'pending' ? (isArabic ? 'بانتظار القرار' : 'Pending') : request.status === 'approved' ? (isArabic ? 'موافق عليه' : 'Approved') : (isArabic ? 'مرفوض' : 'Rejected')}</span></div>{request.status === 'pending' && <div className="mt-3 flex gap-2"><button type="button" disabled={reviewingRequestId === request.id} onClick={() => void handleRewardDecision(request, 'approved')} className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"><Check size={14} />{isArabic ? 'موافقة' : 'Approve'}</button><button type="button" disabled={reviewingRequestId === request.id} onClick={() => void handleRewardDecision(request, 'rejected')} className="inline-flex items-center gap-1 rounded-lg border border-[var(--border-default)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] disabled:opacity-50"><X size={14} />{isArabic ? 'رفض' : 'Reject'}</button></div>}</article>;
                   })}</div>}
             {reviewError && <p className="mt-3 text-sm text-[var(--feedback-error)]" role="alert">{reviewError}</p>}
-            <p className="mt-4 border-t border-[var(--border-default)] pt-4 text-xs text-[var(--text-secondary)]">{isArabic ? 'إعدادات وقت الشاشة غير متاحة حالياً؛ مش هنظهر أو نغيّر حدود غير محفوظة على الخادم.' : 'Screen-time controls are not available; no unsaved local limits are shown or changed.'}</p>
+            <p className="mt-4 border-t border-[var(--border-default)] pt-4 text-xs text-[var(--text-secondary)]">{isArabic ? 'إعدادات وقت الشاشة مش متاحة حالياً؛ مش هنظهر أو نغيّر حدود غير محفوظة على الخادم.' : 'Screen-time controls are not available; no unsaved local limits are shown or changed.'}</p>
           </section>
         </div>
       )}
