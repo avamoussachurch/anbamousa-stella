@@ -265,11 +265,12 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
 
             <button
               onClick={togglePlay}
+              disabled={!audioUrl}
               className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform active:scale-95 ${
                 isTeacher 
                   ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-900/30' 
                   : 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/30'
-              }`}
+              } disabled:opacity-40 disabled:cursor-wait`}
             >
               {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
             </button>
