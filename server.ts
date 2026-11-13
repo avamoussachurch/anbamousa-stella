@@ -14118,50 +14118,60 @@ app.get("/api/media-url", async (req, res) => {
       }
 
       const lessonIds = (sources || []).map((source: any) => source.lesson_id).filter(Boolean);
+      const userClient = getRoleRequestClient(req);
       if (lessonIds.length > 0) {
-        const { data: lessons, error: lessonError } = await client
+        // Apply the same lesson/class/family RLS rules as the student lesson list.
+        // A published flag alone must never grant access to another class's files.
+        const { data: readableLessons, error: lessonAccessError } = await userClient
           .from('lessons')
-          .select('id, status, lesson_status')
+          .select('id')
           .in('id', lessonIds);
-        if (lessonError) {
-          console.error('Private media lesson publication lookup failed:', lessonError.message);
+        if (lessonAccessError) {
+          console.error('Private media lesson authorization failed:', lessonAccessError.message);
           return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
         }
-        authorized = (lessons || []).some((lesson: any) =>
-          lesson.status === 'published' || lesson.lesson_status === 'published'
-        );
+        authorized = Boolean(readableLessons?.length);
       }
 
       if (!authorized) {
-        const { data: linkedLessons, error: linkedLessonError } = await client
-          .from('lessons')
-          .select('id, status, lesson_status')
-          .or(`audio_url.eq.${req.query.reference},pdf_worksheet_url.eq.${req.query.reference}`);
-        if (linkedLessonError) {
-          console.error('Private media lesson-field lookup failed:', linkedLessonError.message);
+        const [{ data: audioLessons, error: audioLessonError }, { data: pdfLessons, error: pdfLessonError }] = await Promise.all([
+          client.from('lessons').select('id').eq('audio_url', req.query.reference),
+          client.from('lessons').select('id').eq('pdf_worksheet_url', req.query.reference)
+        ]);
+        if (audioLessonError || pdfLessonError) {
+          console.error('Private media lesson-field lookup failed:', audioLessonError?.message || pdfLessonError?.message);
           return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
         }
-        authorized = (linkedLessons || []).some((lesson: any) =>
-          lesson.status === 'published' || lesson.lesson_status === 'published'
-        );
+        const linkedLessonIds = [...(audioLessons || []), ...(pdfLessons || [])].map((lesson: any) => lesson.id);
+        if (linkedLessonIds.length > 0) {
+          const { data: readableLessons, error: lessonAccessError } = await userClient
+            .from('lessons')
+            .select('id')
+            .in('id', linkedLessonIds);
+          if (lessonAccessError) {
+            console.error('Private media lesson-field authorization failed:', lessonAccessError.message);
+            return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
+          }
+          authorized = Boolean(readableLessons?.length);
+        }
       }
 
       // Hymns and Taxis store stable private Storage references in their own
-      // Supabase rows. Resolve access through the published curriculum record,
-      // not by making the curriculum bucket public.
+      // Supabase rows. Query the exact reference columns independently so an
+      // unrelated table/column error cannot break every curriculum file.
       if (!authorized) {
-        const [{ data: linkedHymns, error: hymnError }, { data: linkedTaxis, error: taxisError }] = await Promise.all([
+        const hymnColumns = ['audio_url', 'pdf_url', 'sheet_music_url'];
+        const hymnResults = await Promise.all(hymnColumns.map(column =>
           client.from('hymns')
             .select('id, status, level, created_by')
-            .or(`audio_url.eq.${req.query.reference},pdf_url.eq.${req.query.reference},sheet_music_url.eq.${req.query.reference}`),
-          client.from('coptic_taxis_items')
-            .select('id, status, level, target_audience, audience_detail, created_by, attachments')
-            .contains('attachments', [{ fileUrl: req.query.reference }])
-        ]);
-        if (hymnError || taxisError) {
-          console.error('Private Hymns/Taxis media lookup failed:', hymnError?.message || taxisError?.message);
+            .eq(column, req.query.reference)
+        ));
+        const hymnError = hymnResults.find(result => result.error)?.error;
+        if (hymnError) {
+          console.error('Private Hymns media lookup failed:', hymnError.message);
           return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
         }
+        const linkedHymns = hymnResults.flatMap(result => result.data || []);
 
         const isStudent = hasServerRole(authContext, 'student');
         const isTeacher = hasServerRole(authContext, 'teacher');
@@ -14182,27 +14192,39 @@ app.get("/api/media-url", async (req, res) => {
           studentGrade = String(profile?.grade || '').toLowerCase();
         }
 
-        const hymnAllowed = (linkedHymns || []).some((item: any) => {
+        const hymnAllowed = linkedHymns.some((item: any) => {
           if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
           if (isTeacher) return true;
           if (isStudent) return item.status === 'published' && studentLevel !== null && item.level === studentLevel;
           return isParent && item.status === 'published';
         });
-        const taxisAllowed = (linkedTaxis || []).some((item: any) => {
-          if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
-          if (isTeacher) return true;
-          if (isStudent) {
-            if (item.status !== 'published' || studentLevel === null || item.level !== studentLevel) return false;
-            const audience = String(item.target_audience || '').toUpperCase();
-            const audienceDetail = String(item.audience_detail || '').toLowerCase();
-            return (
-              (['ALL', 'CONGREGATION'].includes(audience) &&
-                (audienceDetail !== 'preparatory' || studentGrade.includes('prep')))
-              || (audience === 'DEACONS' && studentLevel >= 2)
-            );
+
+        let taxisAllowed = false;
+        if (!hymnAllowed) {
+          const { data: linkedTaxis, error: taxisError } = await client
+            .from('coptic_taxis_items')
+            .select('id, status, level, target_audience, audience_detail, created_by, attachments')
+            .contains('attachments', [{ fileUrl: req.query.reference }]);
+          if (taxisError) {
+            console.error('Private Taxis media lookup failed:', taxisError.message);
+            return res.status(503).json({ success: false, error: 'MEDIA_LOOKUP_FAILED', message: 'File access is temporarily unavailable.' });
           }
-          return isParent && item.status === 'published';
-        });
+          taxisAllowed = (linkedTaxis || []).some((item: any) => {
+            if (item.status !== 'published' && !(isTeacher && item.created_by === authContext.userId)) return false;
+            if (isTeacher) return true;
+            if (isStudent) {
+              if (item.status !== 'published' || studentLevel === null || item.level !== studentLevel) return false;
+              const audience = String(item.target_audience || '').toUpperCase();
+              const audienceDetail = String(item.audience_detail || '').toLowerCase();
+              return (
+                (['ALL', 'CONGREGATION'].includes(audience) &&
+                  (audienceDetail !== 'preparatory' || studentGrade.includes('prep')))
+                || (audience === 'DEACONS' && studentLevel >= 2)
+              );
+            }
+            return isParent && item.status === 'published';
+          });
+        }
         authorized = hymnAllowed || taxisAllowed;
       }
     }
