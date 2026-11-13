@@ -274,7 +274,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'actions.continue': {
     key: 'actions.continue',
     en: 'Continue',
-    ar: 'متابعة',
+    ar: 'كمّل',
     cop: 'Ⲟⲩⲱϣ',
     source: 'Liturgical Dialogue',
     sourceType: 'UI_CONVENTION',
@@ -283,7 +283,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'actions.back': {
     key: 'actions.back',
     en: 'Back',
-    ar: 'رجوع',
+    ar: 'ارجع',
     cop: 'Ⲕⲟⲧⲕ',
     source: 'Bohairic Coptic Gospel',
     sourceType: 'LITURGICAL_TEXT',
@@ -293,7 +293,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'actions.next': {
     key: 'actions.next',
     en: 'Next',
-    ar: 'التالي',
+    ar: 'اللي بعده',
     cop: 'Ⲡⲉⲑⲛⲏⲟⲩ',
     source: 'Liturgical Rite formula',
     sourceType: 'LITURGICAL_TEXT',
@@ -303,7 +303,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'actions.previous': {
     key: 'actions.previous',
     en: 'Previous',
-    ar: 'السابق',
+    ar: 'اللي قبله',
     cop: 'Ⲡⲉⲧⲉⲣϣⲟⲣⲡ',
     source: 'Coptic Chronology',
     sourceType: 'UI_CONVENTION',
@@ -312,7 +312,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'actions.close': {
     key: 'actions.close',
     en: 'Close',
-    ar: 'إغلاق',
+    ar: 'اقفل',
     cop: 'Ⲙⲁϣⲑⲁⲙ',
     source: 'Bohairic Gospel (Matt 6:6 Coptic)',
     sourceType: 'LITURGICAL_TEXT',
@@ -332,7 +332,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'actions.search': {
     key: 'actions.search',
     en: 'Search...',
-    ar: 'بحث...',
+    ar: 'دوّر...',
     cop: 'Ⲕⲱϯ...',
     source: 'Matt 7:7 Coptic (Seek and find)',
     sourceType: 'LITURGICAL_TEXT',
@@ -341,7 +341,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'actions.submit': {
     key: 'actions.submit',
     en: 'Submit',
-    ar: 'إرسال',
+    ar: 'ابعت',
     cop: 'Ⲟⲩⲱⲣⲡ',
     source: 'Bohairic Epistles',
     sourceType: 'UI_CONVENTION',
@@ -359,7 +359,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'actions.download': {
     key: 'actions.download',
     en: 'Download',
-    ar: 'تحميل',
+    ar: 'نزّل',
     cop: 'Ϭⲓ ⲉ̀ⲡⲉⲥⲏⲧ',
     source: 'Ecclesiastical UI Standard',
     sourceType: 'UI_CONVENTION',
@@ -439,7 +439,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'audio.play': {
     key: 'audio.play',
     en: 'Play',
-    ar: 'تشغيل',
+    ar: 'شغّل',
     cop: 'Ⲙⲁⲣⲉϥϩⲱⲥ',
     source: 'Psalm 149:1 Coptic',
     sourceType: 'LITURGICAL_TEXT',
@@ -449,7 +449,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'audio.pause': {
     key: 'audio.pause',
     en: 'Pause',
-    ar: 'إيقاف مؤقت',
+    ar: 'وقّف مؤقت',
     cop: 'Ϩⲁⲣⲉϩ ⲉ̀ⲣⲟⲕ',
     source: 'Liturgical Pause rubric',
     sourceType: 'LITURGICAL_TEXT',
@@ -458,7 +458,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'audio.seek': {
     key: 'audio.seek',
     en: 'Seek',
-    ar: 'تمرير',
+    ar: 'تقديم أو تأخير',
     cop: 'Ⲭⲱ ⲉ̀ϧⲟⲩⲛ',
     source: 'Ecclesiastical UI Standard',
     sourceType: 'UI_CONVENTION',
@@ -486,7 +486,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'audio.speed': {
     key: 'audio.speed',
     en: 'Playback Speed',
-    ar: 'سرعة التلاوة',
+    ar: 'سرعة التشغيل',
     cop: 'Ⲡⲓⲓⲏⲥ ⲛ̀ⲧⲉ ⲡⲓϩⲱⲥ',
     source: 'Chant School Instruction',
     sourceType: 'UI_CONVENTION',
@@ -495,7 +495,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'audio.loop': {
     key: 'audio.loop',
     en: 'Loop / Repeat',
-    ar: 'تكرار الترتيل',
+    ar: 'تكرار اللحن',
     cop: 'Ⲟⲩⲁϩⲙⲉϥ',
     source: 'Coptic Liturgical Refrain formula',
     sourceType: 'LITURGICAL_TEXT',
@@ -518,7 +518,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'reader.trilingualMode': {
     key: 'reader.trilingualMode',
     en: 'Trilingual Reading Mode',
-    ar: 'وضع القراءة ثلاثي اللغات',
+    ar: 'وضع القراءة بثلاث لغات',
     cop: 'Ⲡⲓⲥⲙⲟⲧ ⲛ̀ⲅ̅ ⲛ̀ⲁⲥⲡⲓ',
     source: 'Church Educational Standard',
     sourceType: 'CHURCH_APPROVED',
