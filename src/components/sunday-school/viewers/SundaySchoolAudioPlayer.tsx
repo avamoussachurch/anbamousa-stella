@@ -45,6 +45,7 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [showTranscript, setShowTranscript] = useState<boolean>(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -53,6 +54,11 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
     const updateTime = () => {
       setCurrentTime(audio.currentTime);
       if (onTimeUpdate) onTimeUpdate(audio.currentTime);
+    };
+
+    const handleAudioError = () => {
+      setIsPlaying(false);
+      setPlaybackError('This recording could not be loaded. Please try again.');
     };
 
     const handleLoadedMetadata = () => {
@@ -69,13 +75,15 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleAudioError);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleAudioError);
     };
-  }, [onTimeUpdate]);
+  }, [onTimeUpdate, audioUrl]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -85,10 +93,12 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
       audio.pause();
       setIsPlaying(false);
     } else {
+      setPlaybackError(null);
       audio.play().then(() => {
         setIsPlaying(true);
-      }).catch((e) => {
-        console.warn('Audio playback error', e);
+      }).catch((error) => {
+        setIsPlaying(false);
+        setPlaybackError(error instanceof Error ? error.message : 'Playback failed. Please try again.');
       });
     }
   };
@@ -131,10 +141,14 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
     }`}>
       {/* Hidden Audio Tag */}
       {audioUrl && (
-        <audio 
-          ref={audioRef} 
-          src={audioUrl} 
+        <audio
+          ref={audioRef}
+          src={audioUrl}
           preload="metadata"
+          onError={() => {
+            setIsPlaying(false);
+            setPlaybackError('This recording could not be loaded. Please try again.');
+          }}
         />
       )}
 
@@ -193,6 +207,8 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
           </button>
         )}
       </div>
+
+      {playbackError && <p role="alert" className="mb-3 text-xs font-semibold text-rose-300">{playbackError}</p>}
 
       {/* Scrubber & Controls */}
       <div className="space-y-2">
