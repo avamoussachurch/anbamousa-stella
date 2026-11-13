@@ -60,13 +60,6 @@ export const ConfettiCanvas: React.FC<{ layer?: 'top' | 'behind' }> = ({ layer =
       resizeCanvas();
     };
     window.addEventListener('resize', handleResize);
-    const handleVisibility = () => {
-      isVisible = !document.hidden;
-      if (isVisible) animId = requestAnimationFrame(render);
-      else cancelAnimationFrame(animId);
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
     // Keep celebrations lively without overwhelming mobile GPUs or battery.
     const maxParticles = width < 640 ? 42 : 110;
     const particles: Particle[] = [];
@@ -114,7 +107,7 @@ export const ConfettiCanvas: React.FC<{ layer?: 'top' | 'behind' }> = ({ layer =
       particles.push(createParticle(width * 0.85, height * 0.85, true));
     }
 
-    // Stop spawning new particles after 3.8 seconds so screen settles cleanly
+    // Stop spawning new particles after 2.8 seconds so the screen settles cleanly
     const stopSpawnTimer = setTimeout(() => {
       isSpawning = false;
     }, 2800);
@@ -191,7 +184,14 @@ export const ConfettiCanvas: React.FC<{ layer?: 'top' | 'behind' }> = ({ layer =
       }
 
       if (particles.length > 0 || isSpawning) {
-        animId = requestAnimationFrame(render);
+        const handleVisibility = () => {
+      isVisible = !document.hidden;
+      if (isVisible) animId = requestAnimationFrame(render);
+      else cancelAnimationFrame(animId);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    animId = requestAnimationFrame(render);
       }
     };
 
