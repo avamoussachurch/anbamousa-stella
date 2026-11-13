@@ -341,31 +341,44 @@ before(async () => {
         });
         return;
       }
-      const requestedId = (url.searchParams.get('id') || '').replace(/^eq\./, '') || userId;
-      if (missingProfileIds.has(requestedId)) return respondJson(res, 200, []);
-      return respondJson(res, 200, requestedId ? [{
-        id: requestedId,
-        name: requestedId,
-        email: `${requestedId}@example.test`,
-        role: roleAssignments.get(requestedId)?.[0] || role || 'student',
-        grade: profileGrades.get(requestedId) || 'Grade 4',
-        points: persistedProfiles.get(requestedId)?.points || 0,
-        hymns_taxis_level: profileHymnsTaxisLevels.get(requestedId) ?? null,
-        created_at: new Date(0).toISOString()
-      }] : []);
+      const idFilter = url.searchParams.get('id') || '';
+      const requestedIds = idFilter.startsWith('eq.')
+        ? [idFilter.slice(3)]
+        : idFilter.startsWith('in.(')
+          ? idFilter.slice(4, -1).split(',').map(value => value.replace(/^"|"$/g, ''))
+          : userId ? [userId] : [];
+      const rows = requestedIds
+        .filter(requestedId => !missingProfileIds.has(requestedId))
+        .map(requestedId => persistedProfiles.get(requestedId) || {
+          id: requestedId,
+          name: requestedId,
+          email: `${requestedId}@example.test`,
+          role: roleAssignments.get(requestedId)?.[0] || role || 'student',
+          grade: profileGrades.get(requestedId) || 'Grade 4',
+          points: 0,
+          avatar: null,
+          current_streak: 0,
+          longest_streak: 0,
+          hymns_taxis_level: profileHymnsTaxisLevels.get(requestedId) ?? null,
+          created_at: new Date(0).toISOString()
+        });
+      return respondPostgrestRows(req, res, 200, rows);
     }
     if (url.pathname === '/rest/v1/profile_role_assignments') {
-      const requestedId = (url.searchParams.get('user_id') || '').replace(/^eq\./, '') || userId;
-      if (roleLookupFailureIds.has(requestedId)) {
+      const userIdFilter = url.searchParams.get('user_id') || '';
+      const requestedIds = userIdFilter.startsWith('eq.')
+        ? [userIdFilter.slice(3)]
+        : userIdFilter.startsWith('in.(')
+          ? userIdFilter.slice(4, -1).split(',').map(value => value.replace(/^"|"$/g, ''))
+          : userId ? [userId] : [];
+      if (requestedIds.some(requestedId => roleLookupFailureIds.has(requestedId))) {
         return respondJson(res, 500, { message: 'Role lookup unavailable' });
       }
       const requestedRole = (url.searchParams.get('role') || '').replace(/^eq\./, '');
-      return respondJson(res, 200, (roleAssignments.get(requestedId) || [])
+      const rows = requestedIds.flatMap(requestedId => (roleAssignments.get(requestedId) || [])
         .filter(roleValue => !requestedRole || roleValue === requestedRole)
-        .map(roleValue => ({
-        role: roleValue,
-        revoked_at: null
-      })));
+        .map(roleValue => ({ user_id: requestedId, role: roleValue, revoked_at: null })));
+      return respondPostgrestRows(req, res, 200, rows);
     }
     if (url.pathname === '/rest/v1/role_promotion_requests') {
       const requestedId = (url.searchParams.get('requester_id') || '').replace(/^eq\./, '');
@@ -407,6 +420,10 @@ before(async () => {
       const requestedStudentId = (url.searchParams.get('student_id') || '').replace(/^eq\./, '');
       const requestedProfileId = (url.searchParams.get('id') || '').replace(/^eq\./, '');
       const requestedClassIds = (url.searchParams.get('id') || '').match(/^in\.\((.*)\)$/)?.[1].split(',') || [];
+      const classInstanceFilter = url.searchParams.get('class_instance_id') || '';
+      const requestedClassInstanceIds = classInstanceFilter.startsWith('eq.')
+        ? [classInstanceFilter.slice(3)]
+        : classInstanceFilter.match(/^in\.\((.*)\)$/)?.[1].split(',') || [];
       const usePersistedFixture =
         tableName === 'lessons' && (persistedLessons.has(requestedId) || persistedLessons.size > 0) ||
         tableName === 'lesson_versions' &&
@@ -418,7 +435,8 @@ before(async () => {
         tableName === 'profiles' && persistedProfiles.has(requestedProfileId) ||
         tableName === 'church_years' ||
         tableName === 'class_memberships' &&
-          persistedClassMemberships.some(row => row.student_id === requestedStudentId) ||
+          (persistedClassMemberships.some(row => row.student_id === requestedStudentId) ||
+            requestedClassInstanceIds.some(id => persistedClassMemberships.some(row => row.class_instance_id === id))) ||
         tableName === 'class_instances' &&
           requestedClassIds.some(id => persistedClassInstances.has(id)) ||
         ['lesson_section_progress', 'lesson_progress'].includes(tableName);
@@ -2378,6 +2396,96 @@ test('parent and teacher delegated student-data access is checked against Supaba
 
   delegatedAccessFailure = false;
   delegatedAccessResult = true;
+});
+
+
+test('authenticated student leaderboard uses only the active Supabase class roster and progress', async () => {
+  const studentId = 'a2111111-1111-4111-8111-111111111111';
+  const peerId = 'b2111111-1111-4111-8111-111111111111';
+  const classInstanceId = 'leaderboard-class-instance';
+  const yearId = '00000000-0000-4000-8000-000000000001';
+  const studentLessonId = 'c2111111-1111-4111-8111-111111111111';
+  const peerLessonId = 'd2111111-1111-4111-8111-111111111111';
+  const now = new Date().toISOString();
+
+  roleAssignments.set(studentId, ['student']);
+  roleAssignments.set(peerId, ['student']);
+  persistedClassInstances.set(classInstanceId, {
+    id: classInstanceId,
+    church_year_id: yearId,
+    class_group_id: 'leaderboard_test_group'
+  });
+  persistedClassMemberships.push(
+    { id: 'lb-membership-student', student_id: studentId, class_instance_id: classInstanceId, church_year_id: yearId, exact_grade: 'Grade 6', status: 'active', left_at: null },
+    { id: 'lb-membership-peer', student_id: peerId, class_instance_id: classInstanceId, church_year_id: yearId, exact_grade: 'Grade 6', status: 'active', left_at: null }
+  );
+  persistedProfiles.set(studentId, {
+    id: studentId, name: 'Current Student', avatar: null, grade: 'Grade 6',
+    points: 200, current_streak: 7, longest_streak: 8
+  });
+  persistedProfiles.set(peerId, {
+    id: peerId, name: 'Classmate', avatar: null, grade: 'Grade 6',
+    points: 260, current_streak: 2, longest_streak: 3
+  });
+  persistedLessonProgress.set(`${studentId}:${studentLessonId}`, {
+    student_id: studentId, lesson_id: studentLessonId, completed: true,
+    completed_at: now, points_earned: 40
+  });
+  persistedLessonProgress.set(`${peerId}:${peerLessonId}`, {
+    student_id: peerId, lesson_id: peerLessonId, completed: true,
+    completed_at: now, points_earned: 70
+  });
+
+  const response = await request('/api/church/leaderboard?timeframe=weekly', {
+    role: 'student',
+    userId: studentId
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  const payload = await response.json();
+  assert.equal(payload.classGroupId, 'leaderboard_test_group');
+  assert.equal(payload.totalParticipants, 2);
+  assert.equal(payload.leaderboard[0].studentId, peerId);
+  assert.equal(payload.leaderboard[0].pointsThisWeek, 70);
+  assert.equal(payload.leaderboard[1].studentId, studentId);
+  assert.equal(payload.leaderboard[1].pointsThisWeek, 40);
+  assert.equal(payload.currentUserEntry.studentId, studentId);
+  assert.equal(payload.streakLeaderboard[0].studentId, studentId);
+  assert.equal(payload.streakLeaderboard[0].streakDays, 7);
+  assert.equal(payload.leaderboard.some(entry => entry.studentId === 'mark'), false);
+
+  const forbidden = await request('/api/church/leaderboard?classGroupId=preparatory', {
+    role: 'student',
+    userId: studentId
+  });
+  assert.equal(forbidden.status, 403);
+
+  roleAssignments.delete(studentId);
+  roleAssignments.delete(peerId);
+  persistedClassInstances.delete(classInstanceId);
+  for (let index = persistedClassMemberships.length - 1; index >= 0; index -= 1) {
+    if (['lb-membership-student', 'lb-membership-peer'].includes(persistedClassMemberships[index].id)) {
+      persistedClassMemberships.splice(index, 1);
+    }
+  }
+  persistedProfiles.delete(studentId);
+  persistedProfiles.delete(peerId);
+  persistedLessonProgress.delete(`${studentId}:${studentLessonId}`);
+  persistedLessonProgress.delete(`${peerId}:${peerLessonId}`);
+});
+
+test('unassigned authenticated students receive an empty leaderboard instead of demo classmates', async () => {
+  const studentId = 'e2111111-1111-4111-8111-111111111111';
+  roleAssignments.set(studentId, ['student']);
+  const response = await request('/api/church/leaderboard', {
+    role: 'student',
+    userId: studentId
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  const payload = await response.json();
+  assert.equal(payload.classGroupId, null);
+  assert.deepEqual(payload.leaderboard, []);
+  assert.equal(payload.totalParticipants, 0);
+  roleAssignments.delete(studentId);
 });
 
 test('admin class assignment preserves role authority and records the verified actor', async () => {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { hasRole } from '../lib/workspaces';
 import { LeaderboardEntry, StreakLeaderboardEntry } from '../types';
@@ -8,6 +8,7 @@ import {
   updateLeaderboardUser, 
   updateStreakLeaderboardUser 
 } from '../lib/pointsService';
+import { getAuthoritativeLeaderboard } from '../lib/studentProgressService';
 
 export interface PointsContextType {
   points: number;
@@ -38,10 +39,60 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const [leaderboardList, setLeaderboardList] = useState<LeaderboardEntry[]>(() => getLeaderboard(userData));
   const [streakList, setStreakList] = useState<StreakLeaderboardEntry[]>(() => getStreakLeaderboard(userData));
+  const refreshRequestRef = useRef(0);
 
   const refreshScores = useCallback(() => {
-    setLeaderboardList(getLeaderboard(userData));
-    setStreakList(getStreakLeaderboard(userData));
+    const requestId = ++refreshRequestRef.current;
+    if (!userData) {
+      setLeaderboardList([]);
+      setStreakList([]);
+      return;
+    }
+
+    if (userData.id.startsWith('guest_')) {
+      setLeaderboardList(getLeaderboard(userData));
+      setStreakList(getStreakLeaderboard(userData));
+      return;
+    }
+
+    if (!hasRole(userData, 'student')) {
+      setLeaderboardList([]);
+      setStreakList([]);
+      return;
+    }
+
+    void getAuthoritativeLeaderboard({ timeframe: 'weekly' }).then(result => {
+      if (requestId !== refreshRequestRef.current) return;
+      if (!result.success) {
+        setLeaderboardList([]);
+        setStreakList([]);
+        return;
+      }
+
+      const entries: LeaderboardEntry[] = result.leaderboard.map((entry: any) => ({
+        id: entry.id,
+        studentId: entry.studentId,
+        studentName: entry.studentName,
+        avatarUrl: entry.avatarUrl,
+        pointsThisWeek: entry.pointsThisWeek,
+        rank: entry.rank
+      }));
+      setLeaderboardList(entries);
+      setStreakList((result.streakLeaderboard || []).map((entry: any) => ({
+        id: entry.id,
+        studentId: entry.studentId,
+        studentName: entry.studentName,
+        studentNameAr: entry.studentName,
+        avatarUrl: entry.avatarUrl,
+        streakDays: entry.streakDays,
+        longestStreak: entry.longestStreak,
+        rank: entry.rank
+      })));
+    }).catch(() => {
+      if (requestId !== refreshRequestRef.current) return;
+      setLeaderboardList([]);
+      setStreakList([]);
+    });
   }, [userData]);
 
   useEffect(() => {
@@ -69,6 +120,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Guaranteed unified Leaderboard: Synchronize current student's points identically
   const unifiedLeaderboard = useMemo<LeaderboardEntry[]>(() => {
     const isGuest = Boolean(userData?.id?.startsWith('guest_'));
+    if (!isGuest) return leaderboardList;
     const raw = leaderboardList.map(entry => {
       const isUser = Boolean(
         userData && (
@@ -102,6 +154,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Guaranteed unified Streak Leaderboard: Synchronize current student's streak identically
   const unifiedStreakLeaderboard = useMemo<StreakLeaderboardEntry[]>(() => {
     const isGuest = Boolean(userData?.id?.startsWith('guest_'));
+    if (!isGuest) return streakList;
     const raw = streakList.map(entry => {
       const isUser = Boolean(
         userData && (
@@ -136,7 +189,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const addPoints = async (delta: number): Promise<number> => {
     const newTotal = await authAddPoints(delta);
-    if (userData) {
+    if (userData?.id.startsWith('guest_')) {
       updateLeaderboardUser({ ...userData, points: newTotal }, delta);
     }
     refreshScores();
@@ -147,7 +200,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (authUpdateStreak) {
       await authUpdateStreak(streak, longest);
     }
-    if (userData) {
+    if (userData?.id.startsWith('guest_')) {
       updateStreakLeaderboardUser({
         ...userData,
         currentStreak: streak,
