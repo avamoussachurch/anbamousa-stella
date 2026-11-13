@@ -85,7 +85,7 @@ export function TopBar({
 
   const churchNameDisplay = lang === 'ar' ? 'كنيسة الأنبا موسى' : 'Anba Mousa';
   const workspaceLabels: Record<Role, string> = lang === 'ar'
-    ? { student: 'مساحة الطالب', parent: 'مساحة ولي الأمر', teacher: 'مساحة الخادم', admin: 'مساحة الإدارة' }
+    ? { student: 'مساحة التلميذ', parent: 'مساحة ولي الأمر', teacher: 'مساحة الخادم', admin: 'مساحة الإدارة' }
     : { student: 'Student workspace', parent: 'Parent workspace', teacher: 'Servant workspace', admin: 'Admin workspace' };
   const availableWorkspaces = userData?.roles || [];
   const showStudentProgress = shouldShowStudentProgress({
@@ -121,7 +121,7 @@ export function TopBar({
         <button
           type="button"
           onClick={onHomeClick}
-          aria-label={lang === 'ar' ? 'العودة للرئيسية' : 'Go to home'}
+          aria-label={lang === 'ar' ? 'ارجع للرئيسية' : 'Go to home'}
           className="flex items-center gap-2 rounded-lg text-start font-bold text-base sm:text-lg cursor-pointer shrink-0 hover:opacity-90 transition-opacity"
         >
           <Cross size={22} fill="currentColor" className="text-[var(--color-church-gold)] shrink-0" />
@@ -140,7 +140,7 @@ export function TopBar({
         <div className="flex gap-1.5 sm:gap-2.5 items-center">
           {availableWorkspaces.length > 1 && workspace && onWorkspaceChange && (
             <label className="sr-only" htmlFor="workspace-selector">
-              {lang === 'ar' ? 'تبديل مساحة العمل' : 'Switch workspace'}
+              {lang === 'ar' ? 'بدّل مساحة العمل' : 'Switch workspace'}
             </label>
           )}
           {showStudentProgress && userData && (
@@ -156,7 +156,7 @@ export function TopBar({
           {availableWorkspaces.length > 1 && workspace && onWorkspaceChange && (
             <select
               id="workspace-selector"
-              aria-label={lang === 'ar' ? 'تبديل مساحة العمل' : 'Switch workspace'}
+              aria-label={lang === 'ar' ? 'بدّل مساحة العمل' : 'Switch workspace'}
               value={workspace}
               onChange={event => onWorkspaceChange(event.target.value as Workspace)}
               className="max-w-[9rem] sm:max-w-none rounded-xl border border-white/20 bg-white/10 px-2 py-2 text-xs font-bold text-white"
@@ -171,10 +171,10 @@ export function TopBar({
             type="button"
             onClick={toggleTheme}
             aria-label={theme === 'dark'
-              ? (lang === 'ar' ? 'التبديل للوضع الفاتح' : 'Switch to light mode')
-              : (lang === 'ar' ? 'التبديل للوضع الداكن' : 'Switch to dark mode')}
+              ? (lang === 'ar' ? 'حوّل للوضع الفاتح' : 'Switch to light mode')
+              : (lang === 'ar' ? 'حوّل للوضع الداكن' : 'Switch to dark mode')}
             aria-pressed={theme === 'dark'}
-            title={theme === 'dark' ? (lang === 'ar' ? 'الوضع النهاري الكنسي' : 'Light Church Theme') : (lang === 'ar' ? 'الوضع الليلي الهادئ' : 'Dark Church Theme')}
+            title={theme === 'dark' ? (lang === 'ar' ? 'الوضع النهاري' : 'Light Church Theme') : (lang === 'ar' ? 'الوضع الليلي' : 'Dark Church Theme')}
             className="rounded-xl border border-white/20 bg-white/10 p-2 text-amber-200 transition-colors hover:bg-white/20 hover:text-white"
           >
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
@@ -190,9 +190,9 @@ export function TopBar({
               aria-expanded={showNotifs}
               aria-haspopup="true"
               aria-controls="church-notifications"
-              aria-label={lang === 'ar' ? `الإشعارات الكنسية، ${unreadCount} غير مقروءة` : `Church notifications, ${unreadCount} unread`}
+              aria-label={lang === 'ar' ? `إشعارات الكنيسة، ${unreadCount} غير مقروءة` : `Church notifications, ${unreadCount} unread`}
               className="relative rounded-xl p-2 text-[var(--navigation-text)] transition-colors hover:bg-white/15 hover:text-[var(--color-church-gold-light)]"
-              title={lang === 'ar' ? 'الإشعارات الكنسية' : 'Church Notifications'}
+              title={lang === 'ar' ? 'إشعارات الكنيسة' : 'Church Notifications'}
             >
               <Bell size={20} />
               {unreadCount > 0 && (
@@ -211,13 +211,13 @@ export function TopBar({
                   transition={reduceMotion ? { duration: 0 } : { type: 'spring', bounce: 0.4 }}
                   role="region"
                   id="church-notifications"
-                  aria-label={lang === 'ar' ? 'الإشعارات الكنسية' : 'Church notifications'}
+                  aria-label={lang === 'ar' ? 'إشعارات الكنيسة' : 'Church notifications'}
                   className="absolute end-0 origin-top-end mt-3 w-80 max-w-[90vw] rounded-3xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-2 text-[var(--text-primary)] shadow-2xl z-50 overflow-hidden text-start"
                 >
                   <div className="p-3 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-base font-bold text-[var(--color-church-blue)] dark:text-amber-200">
-                        {lang === 'ar' ? 'الإشعارات الكنسية' : 'Church Notifications'}
+                        {lang === 'ar' ? 'إشعارات الكنيسة' : 'Church Notifications'}
                       </span>
                       {unreadCount > 0 && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--mousa-gold)] text-[var(--mousa-teal-deep)] font-black">
@@ -231,10 +231,10 @@ export function TopBar({
                           type="button"
                           onClick={handleMarkAllRead}
                           className="text-[11px] text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-gold)] hover:underline font-bold flex items-center gap-1 cursor-pointer"
-                          title={lang === 'ar' ? 'تحديد الكل كمقروء' : 'Mark all read'}
+                          title={lang === 'ar' ? 'علّم الكل كمقروء' : 'Mark all read'}
                         >
                           <CheckCheck size={13} />
-                          <span>{lang === 'ar' ? 'قراءة الكل' : 'Mark all'}</span>
+                          <span>{lang === 'ar' ? 'علّم الكل كمقروء' : 'Mark all'}</span>
                         </button>
                       )}
                       <button 
@@ -251,7 +251,7 @@ export function TopBar({
                   {'Notification' in window && (
                     <div className="px-3 py-2 bg-amber-50/70 dark:bg-amber-950/30 border-b border-amber-200/50 dark:border-amber-900/50 flex items-center justify-between text-[11px]">
                       <span className="text-amber-900 dark:text-amber-200 font-bold">
-                        {lang === 'ar' ? 'إشعارات المتصفح الفورية:' : 'Browser Push:'}
+                        {lang === 'ar' ? 'تنبيهات المتصفح:' : 'Browser Push:'}
                       </span>
                       <button
                         type="button"
@@ -263,8 +263,8 @@ export function TopBar({
                         }`}
                       >
                         {browserNotifActive 
-                          ? (lang === 'ar' ? 'مفعّلة ✅' : 'Active ✅') 
-                          : (lang === 'ar' ? 'تفعيل الآن 🔔' : 'Enable 🔔')}
+                          ? (lang === 'ar' ? 'شغالة ✅' : 'Active ✅') 
+                          : (lang === 'ar' ? 'فعّل دلوقتي 🔔' : 'Enable 🔔')}
                       </button>
                     </div>
                   )}
@@ -273,8 +273,8 @@ export function TopBar({
                     {notifications.length === 0 ? (
                       <div className="p-6 text-center text-xs text-gray-500 dark:text-gray-400 space-y-1">
                         <span className="text-2xl block mb-1">🕊️</span>
-                        <p className="font-bold">{lang === 'ar' ? 'لا توجد إشعارات جديدة حالياً' : 'No new notifications'}</p>
-                        <p className="text-[11px]">{lang === 'ar' ? 'أنت على اطلاع دائم بجميع أنشطة كنيستك.' : 'You are all caught up.'}</p>
+                        <p className="font-bold">{lang === 'ar' ? 'مفيش إشعارات جديدة دلوقتي' : 'No new notifications'}</p>
+                        <p className="text-[11px]">{lang === 'ar' ? 'كده إنت متابع كل جديد في كنيستك.' : 'You are all caught up.'}</p>
                       </div>
                     ) : (
                       notifications.map(notif => (
