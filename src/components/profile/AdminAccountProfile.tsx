@@ -34,7 +34,7 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
     setSecurityMessage(null);
     const result = await refreshAssignedRoles();
     if (result.success) setSecurityMessage(isArabic ? 'تم التحقق من الأدوار المعيّنة من الخادم.' : 'Assigned roles were refreshed from the server.');
-    else setSecurityError(result.error || (isArabic ? 'تعذر التحقق من الأدوار.' : 'Could not refresh assigned roles.'));
+    else setSecurityError(result.error || (isArabic ? 'مش قادرين نراجع الأدوار.' : 'Could not refresh assigned roles.'));
     setRefreshingRoles(false);
   };
 
@@ -43,7 +43,7 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
       lang={lang}
       roleLabel={isArabic ? 'مسؤول النظام' : 'Administrator'}
       title={isArabic ? 'ملف المسؤول' : 'Administrator profile'}
-      subtitle={isArabic ? 'بيانات الحساب وإعدادات اللغة ومعلومات أمان الوصول الإداري.' : 'Your account details, language preferences, and administrative access security.'}
+      subtitle={isArabic ? 'بيانات حسابك وإعدادات اللغة ومعلومات أمان صلاحيات الإدارة.' : 'Your account details, language preferences, and administrative access security.'}
       icon={<ShieldCheck size={28} />}
       onLogout={onLogout}
     >
@@ -51,7 +51,7 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
         <section className="rounded-[1.75rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-6">
           <div className="mb-5">
             <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'حساب المسؤول' : 'Administrator account'}</p>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'تعديل الاسم لا يغيّر أدوارك أو صلاحياتك.' : 'Editing your name does not change your assigned roles or permissions.'}</p>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'تغيير اسمك مش هيغيّر أدوارك أو صلاحياتك.' : 'Editing your name does not change your assigned roles or permissions.'}</p>
           </div>
           <form onSubmit={event => void account.saveName(event)} className="space-y-4">
             <label className="block">
@@ -59,12 +59,12 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
               <input required minLength={2} maxLength={100} value={account.name} onChange={event => account.setName(event.target.value)} autoComplete="name" className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] px-4 py-3 text-[var(--text-primary)] outline-none focus:border-[var(--action-primary)]" />
             </label>
             <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)]/60 p-3">
-              <p className="text-xs font-bold text-[var(--text-secondary)]">{isArabic ? 'بريد تسجيل الدخول' : 'Sign-in email'}</p>
-              <p className="mt-2 break-all text-sm font-semibold text-[var(--text-primary)]">{account.userData.email || (isArabic ? 'غير متاح' : 'Not available')}</p>
+              <p className="text-xs font-bold text-[var(--text-secondary)]">{isArabic ? 'إيميل تسجيل الدخول' : 'Sign-in email'}</p>
+              <p className="mt-2 break-all text-sm font-semibold text-[var(--text-primary)]">{account.userData.email || (isArabic ? 'مش متاح' : 'Not available')}</p>
             </div>
             <button type="submit" disabled={account.savingName || account.name.trim() === (account.userData.fullName || '')} className="inline-flex items-center gap-2 rounded-xl bg-[var(--action-primary)] px-4 py-2.5 text-sm font-black text-[var(--action-primary-text)] disabled:cursor-not-allowed disabled:opacity-50">
               {account.savingName ? <LoaderCircle size={16} className="animate-spin" /> : <Save size={16} />}
-              {account.savingName ? (isArabic ? 'جارٍ الحفظ...' : 'Saving…') : (isArabic ? 'حفظ الاسم' : 'Save name')}
+              {account.savingName ? (isArabic ? 'بنحفظ...' : 'Saving…') : (isArabic ? 'احفظ الاسم' : 'Save name')}
             </button>
           </form>
           <ProfileFeedback error={account.error} message={account.message} />
@@ -88,23 +88,23 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
             <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'وصول المسؤول' : 'Administrator access'}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[var(--text-secondary)]">
               {isArabic
-                ? 'تُفحص صلاحية كل إجراء إداري على الخادم. اختيار مساحة العمل أو ظهور عناصر الواجهة لا يمنح صلاحية، ولا يمكن تعديل الأدوار من هذا الملف.'
+                ? 'الخادم بيتأكد من صلاحية كل إجراء إداري. اختيار مساحة العمل أو ظهور أزرار في الشاشة مش معناه إن عندك صلاحية، ومش ممكن تغيّر الأدوار من الملف ده.'
                 : 'The server verifies authorization for each administrative action. Workspace selection and visible controls do not grant permission, and roles cannot be edited from this profile.'}
             </p>
           </div>
         </div>
         <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)]/60 p-4">
           <div>
-            <p className="flex items-center gap-2 text-sm font-black text-[var(--brand-teal)]"><ShieldCheck size={17} />{isArabic ? 'الأدوار المعيّنة للحساب' : 'Roles assigned to this account'}</p>
+            <p className="flex items-center gap-2 text-sm font-black text-[var(--brand-teal)]"><ShieldCheck size={17} />{isArabic ? 'الأدوار المسجلة على الحساب' : 'Roles assigned to this account'}</p>
             <p className="mt-2 text-sm text-[var(--text-primary)]">{account.userData.roles.map(role => roleLabels[role]).join(' · ')}</p>
           </div>
           <button type="button" onClick={() => void recheckRoles()} disabled={refreshingRoles} className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-default)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--state-hover)] disabled:opacity-50">
-            <RefreshCw size={14} className={refreshingRoles ? 'animate-spin' : ''} />{isArabic ? 'إعادة التحقق من الأدوار' : 'Refresh assigned roles'}
+            <RefreshCw size={14} className={refreshingRoles ? 'animate-spin' : ''} />{isArabic ? 'راجع الأدوار تاني' : 'Refresh assigned roles'}
           </button>
         </div>
         <ProfileFeedback error={securityError} message={securityMessage} />
         <button type="button" onClick={() => onNavigate('security')} className="mt-4 text-sm font-bold text-[var(--action-primary)] hover:underline">
-          {isArabic ? 'فتح سجل الأمان والتدقيق' : 'Open security and audit'}
+          {isArabic ? 'افتح سجل الأمان والمراجعة' : 'Open security and audit'}
         </button>
       </section>
     </ProfilePageFrame>

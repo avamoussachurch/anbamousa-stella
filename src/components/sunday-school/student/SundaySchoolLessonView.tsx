@@ -151,7 +151,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
         );
         if (blockedPrivateReference) {
           setMediaAccessError(isAr
-            ? 'تعذر تحميل ملف من ملفات الدرس. تأكد من تسجيل الدخول أو حاول مرة أخرى.'
+            ? 'مش قادرين نحمّل واحد من ملفات الدرس. اتأكد إنك مسجّل دخول وجرّب تاني.'
             : 'A lesson file could not be loaded. Check your sign-in and try again.');
         }
       })
@@ -159,7 +159,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
         if (cancelled) return;
         console.error('Lesson media access resolution failed:', error);
         setMediaAccessError(isAr
-          ? 'تعذر تحميل ملفات الدرس. حاول مرة أخرى.'
+          ? 'مش قادرين نحمّل ملفات الدرس. جرّب تاني.'
           : 'Lesson files could not be loaded. Please try again.');
       });
     return () => { cancelled = true; };
@@ -193,7 +193,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           className="px-3.5 py-2 hover:bg-[var(--mousa-sand-100)] text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer"
         >
           {isAr ? <ChevronRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-          <span>{isAr ? 'الرجوع إلى محطات الدروس' : 'Back to Milestones'}</span>
+          <span>{isAr ? 'ارجع لمحطات الدروس' : 'Back to Milestones'}</span>
         </button>
 
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -202,7 +202,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               onClick={onNavigateHome || onBack}
               className="px-3.5 py-2 bg-[var(--mousa-teal)] hover:bg-[var(--mousa-teal-deep)] text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
             >
-              {isAr ? 'العودة للرئيسية' : 'Go Home'}
+              {isAr ? 'ارجع للرئيسية' : 'Go Home'}
             </button>
           )}
 
@@ -228,7 +228,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               disabled={isFinishing}
               className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shrink-0 cursor-pointer shadow-xs min-h-[36px]"
             >
-              {isAr ? 'إعادة المحاولة' : 'Retry'}
+              {isAr ? 'جرّب تاني' : 'Retry'}
             </button>
           )}
           {mediaAccessError && (
@@ -287,7 +287,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             {/* Metric 1 */}
             <div className="p-3 bg-[var(--mousa-sand-50)] dark:bg-stone-900/60 rounded-2xl border border-[var(--mousa-border-sand)] text-xs space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] font-bold">{isAr ? 'قراءة محتوى المحطة' : 'Lesson Content'}</span>
+                <span className="text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] font-bold">{isAr ? 'اقرأ محتوى المحطة' : 'Lesson Content'}</span>
                 <span className="font-mono font-black text-[var(--mousa-gold)]">{progress?.completionPercent || 0}%</span>
               </div>
               <div className="w-full h-2 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
@@ -303,7 +303,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] font-bold">{isAr ? 'اختبار المراجعة' : 'Review Quiz'}</span>
                 <span className="font-mono font-black text-[var(--mousa-coral)]">
-                  {latestQuizAttempt ? `${latestQuizAttempt.percentage}%` : (isAr ? 'لم يُؤدَّ بعد' : 'Not Taken')}
+                  {latestQuizAttempt ? `${latestQuizAttempt.percentage}%` : (isAr ? 'لسه ماعملتوش' : 'Not Taken')}
                 </span>
               </div>
               <div className="w-full h-2 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
@@ -323,11 +323,11 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
                   mastery?.status === 'DEVELOPING' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300' :
                   mastery?.status === 'NEEDS_REVIEW' ? 'bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-300' : 'bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
                 }`}>
-                  {mastery?.status || (isAr ? 'قيد المتابعة' : 'IN_PROGRESS')}
+                  {mastery?.status || (isAr ? 'تحت المتابعة' : 'IN_PROGRESS')}
                 </span>
               </div>
               <p className="text-[10px] text-[var(--mousa-sand-500)] truncate">
-                {mastery?.teacherNotes ? mastery.teacherNotes : (isAr ? 'متابعة أسبوعية من الخادم' : 'Weekly servant review')}
+                {mastery?.teacherNotes ? mastery.teacherNotes : (isAr ? 'الخادم بيتابع تقدمك كل أسبوع' : 'Weekly servant review')}
               </p>
             </div>
           </div>
@@ -339,7 +339,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
         <div className="p-6 bg-gradient-to-br from-[#FFFDF9] via-[#FAF5EB] to-[#F7EFE1] dark:from-[#251E17] dark:via-[#2F241A] dark:to-[#38281A] rounded-3xl border-2 border-[var(--mousa-gold)] shadow-md text-center space-y-3">
           <span className="text-xs font-black uppercase tracking-widest text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)] flex items-center justify-center gap-1.5">
             <span>✝</span>
-            <span>{lang === 'copt' || lang === 'cop' ? 'Ⲡⲓⲥϧⲁⲓ ⲉ̀ⲧⲉⲛⲛⲁⲁⲙⲟⲛⲓ ⲙ̀ⲙⲟϥ' : isAr ? 'آية الحفظ المقررة في المحطة' : 'Holy Scripture Memory Verse'}</span>
+            <span>{lang === 'copt' || lang === 'cop' ? 'Ⲡⲓⲥϧⲁⲓ ⲉ̀ⲧⲉⲛⲛⲁⲁⲙⲟⲛⲓ ⲙ̀ⲙⲟϥ' : isAr ? 'آية الحفظ الخاصة بالمحطة' : 'Holy Scripture Memory Verse'}</span>
           </span>
           {lesson.scriptureVerseAr && (
             <p className="text-lg sm:text-xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] font-sans leading-relaxed" dir="rtl">
@@ -368,12 +368,12 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-                {isAr ? 'عرض الشرائح التقديمية والملفات المرفقة (بوربوينت / PDF / Word)' : 'Classroom Slide Deck & Presentation'}
+                {isAr ? 'اعرض الشرائح والملفات المرفقة (PowerPoint / PDF / Word)' : 'Classroom Slide Deck & Presentation'}
               </h3>
               <p className="text-xs text-[var(--mousa-sand-500)]">
                 {eligibleSlides.length > 0
-                  ? (isAr ? `${eligibleSlides.length} شرائح تعليمية مرفقة من الخادم لشرح الدرس.` : `${eligibleSlides.length} visual slides prepared by your teacher.`)
-                  : (isAr ? 'مستند العرض والوسائل التعليمية المرفقة من الخادم (عرض مباشر داخل التطبيق).' : 'Direct in-app presentation slides without downloading.')}
+                  ? (isAr ? `${eligibleSlides.length} الخادم جهّزلك شرائح تساعدك تفهم الدرس.` : `${eligibleSlides.length} visual slides prepared by your teacher.`)
+                  : (isAr ? 'ملفات ووسائل شرح جهّزها الخادم، وتقدر تعرضها جوه التطبيق.' : 'Direct in-app presentation slides without downloading.')}
               </p>
             </div>
           </div>
@@ -383,7 +383,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             className="px-4 py-2.5 bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 text-white rounded-xl text-xs font-black shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
           >
             <Layers className="w-4 h-4" />
-            <span>{isAr ? 'فتح العرض التقديمي داخل التطبيق' : 'Open In-App Presentation'}</span>
+            <span>{isAr ? 'افتح العرض جوه التطبيق' : 'Open In-App Presentation'}</span>
           </button>
         </div>
       )}
@@ -394,10 +394,10 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           <div className="flex items-center justify-between border-b border-[var(--mousa-border-sand)]/60 pb-3">
             <h3 className="text-xs font-black uppercase tracking-wider text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-glow)] flex items-center gap-2">
               <FileText className="w-4 h-4 text-[var(--mousa-coral)]" />
-              <span>{isAr ? 'الشرح الكتابي وتأملات الخادم' : 'Written Explanation & Servant Commentary'}</span>
+              <span>{isAr ? 'شرح الخادم وتأملاته المكتوبة' : 'Written Explanation & Servant Commentary'}</span>
             </h3>
             <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[var(--mousa-gold-soft)] text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold-light)] border border-[var(--mousa-gold)]/30 font-bold">
-              {isAr ? 'محتوى تعليمي' : 'Lesson Content'}
+              {isAr ? 'محتوى الدرس' : 'Lesson Content'}
             </span>
           </div>
 
@@ -437,10 +437,10 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
               <Volume2 className="w-4 h-4 text-amber-500" />
-              <span>{isAr ? 'التسجيل والشرح الصوتي للخادم' : 'Classroom Voice Audio'}</span>
+              <span>{isAr ? 'تسجيل الخادم وشرحه الصوتي' : 'Classroom Voice Audio'}</span>
             </h3>
             <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800/60 font-mono">
-              {isAr ? 'تسجيل حقيقي للخادم' : 'Teacher Audio'}
+              {isAr ? 'تسجيل من الخادم' : 'Teacher Audio'}
             </span>
           </div>
 
@@ -448,7 +448,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             type="TEACHER_VOICE"
             title={isAr ? 'شرح الخادم الصوتي في فصل مدارس الأحد' : 'Classroom Voice Explanation'}
             titleAr="شرح الخادم الصوتي في فصل مدارس الأحد"
-            subTitle={isAr ? 'تسجيل صوتي حقيقي للخادم لشرح الدرس للأولاد.' : 'Real audio recorded by Sunday School servant during session.'}
+            subTitle={isAr ? 'تسجيل صوتي من الخادم لشرح الدرس للأولاد.' : 'Real audio recorded by Sunday School servant during session.'}
             audioUrl={displayedAudioUrl}
             durationSeconds={teacherVoiceSource?.durationSeconds || 320}
             recordedBy={lesson.approvedServantName || lesson.teacherName || (isAr ? 'خادم الفصل' : 'Sunday School Servant')}
@@ -738,7 +738,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           <p className="text-xs text-[var(--mousa-sand-500)] max-w-xl">
             {isContentCompleted
               ? (isAr 
-                  ? 'تم تسجيل إنجازك وحفظ النقاط بأمان. يمكنك مراجعة الأقسام أو العودة للرئيسية.' 
+                  ? 'تم تسجيل إنجازك وحفظ النقاط بأمان. يمكنك مراجعة الأقسام أو ارجع للرئيسية.' 
                   : 'Your progress is reliably saved and points awarded. You can return home or take the review quiz.')
               : previewMode
                   ? (isAr
@@ -757,7 +757,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
               onClick={onNavigateHome || onBack}
               className="px-4 py-2.5 bg-[var(--mousa-teal)] hover:bg-[var(--mousa-teal-deep)] text-white text-xs sm:text-sm font-black rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
             >
-              <span>{isAr ? 'العودة للرئيسية' : 'Back to Home'}</span>
+              <span>{isAr ? 'ارجع للرئيسية' : 'Back to Home'}</span>
             </button>
           )}
 

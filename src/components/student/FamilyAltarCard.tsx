@@ -54,7 +54,7 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
             </span>
             <div>
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-400">
-                {lang === 'ar' ? 'مذبح العائلة الأسبوعي • جلسة الصلاة بالبيت' : 'Weekly Family Altar • Home Prayer'}
+                {lang === 'ar' ? 'مذبح العيلة الأسبوعي • وقت الصلاة في البيت' : 'Weekly Family Altar • Home Prayer'}
               </span>
               <h3 className="text-lg sm:text-xl font-bold text-[var(--color-church-blue)] dark:text-amber-200">
                 {lang === 'ar' ? currentPrompt.titleAr : currentPrompt.titleEn}
@@ -66,14 +66,14 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
             onClick={() => setShowPromptPicker(!showPromptPicker)}
             className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:text-amber-900 px-2.5 py-1 rounded-lg bg-amber-100/70 dark:bg-amber-950/60 border border-amber-300/40 transition-colors"
           >
-            {lang === 'ar' ? 'تغيير الموضوع' : 'Change Topic'}
+            {lang === 'ar' ? 'غيّر الموضوع' : 'Change Topic'}
           </button>
         </div>
 
         {/* Prompt Selector Dropdown */}
         {showPromptPicker && (
           <div className="mb-4 p-3 rounded-2xl bg-white dark:bg-slate-800 border border-amber-200 dark:border-slate-700 shadow-md space-y-2">
-            <p className="text-xs font-bold text-gray-500">{lang === 'ar' ? 'اختر موضوع صلاة العائلة:' : 'Select Family Prompt:'}</p>
+            <p className="text-xs font-bold text-gray-500">{lang === 'ar' ? 'اختار موضوع صلاة العيلة:' : 'Select Family Prompt:'}</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {WEEKLY_FAMILY_ALTAR_PROMPTS.map((p) => (
                 <button
@@ -101,7 +101,7 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
           <div className="flex items-center justify-between text-xs font-bold text-amber-800 dark:text-amber-400 mb-1.5">
             <div className="flex items-center gap-1.5">
               <BookOpen size={14} />
-              <span>{lang === 'ar' ? 'قراءة إنجيل العائلة' : 'Scripture Reading'}</span>
+              <span>{lang === 'ar' ? 'قراءة إنجيل العيلة' : 'Scripture Reading'}</span>
             </div>
             <span className="bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-full text-[11px]">
               {lang === 'ar' ? currentPrompt.scriptureRefAr : currentPrompt.scriptureRefEn}
@@ -121,8 +121,8 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
             <MessageCircleHeart size={16} />
             <span>
               {isExpanded
-                ? (lang === 'ar' ? 'إخفاء أسئلة النقاش والصلاة' : 'Hide Discussion & Prayer')
-                : (lang === 'ar' ? 'عرض ٣ أسئلة للنقاش على سفرة العائلة والصلاة (+)' : 'View 3 Dinner Discussion Questions & Prayer (+)')}
+                ? (lang === 'ar' ? 'اخفي أسئلة النقاش والصلاة' : 'Hide Discussion & Prayer')
+                : (lang === 'ar' ? 'اعرض ٣ أسئلة تتناقشوا فيها على السفرة وتصلّوا مع بعض (+)' : 'View 3 Dinner Discussion Questions & Prayer (+)')}
             </span>
             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
@@ -140,8 +140,8 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
             <CheckCircle2 size={16} className={hasPrayedThisWeek ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-300'} />
             <span>
               {hasPrayedThisWeek
-                ? (lang === 'ar' ? 'صلينا معاً كمذبح عائلي ✓ (+٥٠ نقطة)' : 'Prayed Together ✓ (+50 Pts)')
-                : (lang === 'ar' ? 'صلينا معاً كمذبح عائلي (+٥٠ نقطة)' : 'We Prayed Together (+50 Pts)')}
+                ? (lang === 'ar' ? 'صلّينا مع بعض كعيلة ✓ (+٥٠ نقطة)' : 'Prayed Together ✓ (+50 Pts)')
+                : (lang === 'ar' ? 'صلّينا مع بعض كعيلة (+٥٠ نقطة)' : 'We Prayed Together (+50 Pts)')}
             </span>
           </button>
         </div>
@@ -159,7 +159,7 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-400 mb-2 flex items-center gap-1.5">
                   <Users size={14} />
-                  <span>{lang === 'ar' ? 'أسئلة نقاش مفتوحة بين الآباء والأبناء:' : 'Discussion Questions for Parents & Kids:'}</span>
+                  <span>{lang === 'ar' ? 'أسئلة للنقاش بين الأهل والأولاد:' : 'Discussion Questions for Parents & Kids:'}</span>
                 </h4>
                 <div className="space-y-2">
                   {(lang === 'ar' ? currentPrompt.discussionQuestionsAr : currentPrompt.discussionQuestionsEn).map((q, idx) => (
@@ -177,7 +177,7 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
               <div className="bg-amber-100/60 dark:bg-amber-950/40 border border-amber-300/50 dark:border-amber-900/40 rounded-2xl p-4">
                 <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 mb-1 flex items-center gap-1.5">
                   <Heart size={14} className="text-[var(--color-church-burgundy)] fill-[var(--color-church-burgundy)]" />
-                  <span>{lang === 'ar' ? 'صلاة العائلة المشتركة قبل النوم:' : 'United Bedtime Prayer:'}</span>
+                  <span>{lang === 'ar' ? 'صلاة العيلة مع بعض قبل النوم:' : 'United Bedtime Prayer:'}</span>
                 </h4>
                 <p className="text-xs sm:text-sm font-semibold text-amber-950 dark:text-amber-100 leading-relaxed italic">
                   "{lang === 'ar' ? currentPrompt.prayerAr : currentPrompt.prayerEn}"
@@ -188,7 +188,7 @@ export function FamilyAltarCard({ lang }: { lang: Language }) {
               <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800/80 border border-amber-200 dark:border-slate-700 text-xs text-amber-950 dark:text-amber-200">
                 <Sparkles size={16} className="text-[var(--color-church-gold)] shrink-0" />
                 <span>
-                  <strong>{lang === 'ar' ? 'خطوة عملية للبيت: ' : 'Practical Home Step: '}</strong>
+                  <strong>{lang === 'ar' ? 'خطوة عملية نعملها في البيت: ' : 'Practical Home Step: '}</strong>
                   {lang === 'ar' ? currentPrompt.practicalActionAr : currentPrompt.practicalActionEn}
                 </span>
               </div>

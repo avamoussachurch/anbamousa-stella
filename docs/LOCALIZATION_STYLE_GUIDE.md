@@ -67,6 +67,7 @@ Audit and localize every user-facing surface, not only the student home:
 - [x] Common feedback phrases use friendly Egyptian Arabic.
 - [ ] Complete screen-by-screen hardcoded-string inventory.
 - [ ] Full student, teacher, parent, and admin localization.
+- [x] Seventh Egyptian Arabic pass across Sunday School lesson resources, in-app document viewer, reward celebration, family altar controls, student church calendar, and parent/servant/admin profile forms.
 - [x] Fifth Egyptian Arabic pass across Agpeya prayer tracking interface, Coptic calendar navigation/countdowns, and parent/servant account profiles.
 - [x] Fourth Egyptian Arabic pass across student onboarding, parent QR scanning, child QR modal, parent learning journey, church events, student feature links, and student-facing FAQ.
 - [x] Third Egyptian Arabic pass across teacher Hymns/Taxis publishing studios, lesson authoring and express publishing, teacher learning review/engagement analytics, student roadmap, and Sunday School quizzes.
