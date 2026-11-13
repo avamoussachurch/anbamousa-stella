@@ -21,6 +21,7 @@ import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
 import { hasRole } from '../../lib/workspaces';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
+import { InAppDocumentViewer } from '../sunday-school/viewers/InAppDocumentViewer';
 
 interface CopticTaxisTabProps {
   lang?: Language;
@@ -38,6 +39,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const [selectedItem, setSelectedItem] = useState<TaxisItem | null>(null);
   const [resolvedDocumentUrls, setResolvedDocumentUrls] = useState<Record<string, string>>({});
   const [documentUrlError, setDocumentUrlError] = useState<string | null>(null);
+  const [activeDocument, setActiveDocument] = useState<{ title: string; url: string } | null>(null);
   const [completedRituals, setCompletedRituals] = useState<Record<string, boolean>>({});
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
@@ -335,17 +337,16 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                       </span>
                     ))}
                     {selectedItem.documents?.map((doc) => (
-                      <a
+                      <button
                         key={doc.id}
-                        href={resolvedDocumentUrls[doc.id] || undefined}
-                        aria-disabled={!resolvedDocumentUrls[doc.id]}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 rounded-lg font-black transition-colors ${resolvedDocumentUrls[doc.id] ? '' : 'pointer-events-none opacity-50'}`}
+                        type="button"
+                        disabled={!resolvedDocumentUrls[doc.id]}
+                        onClick={() => setActiveDocument({ title: doc.title, url: resolvedDocumentUrls[doc.id] })}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 rounded-lg font-black transition-colors disabled:opacity-50 disabled:cursor-wait`}
                       >
                         <FileText size={13} />
                         <span>{doc.title}</span>
-                      </a>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -454,6 +455,15 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
           )}
         </div>
       </div>
+          {activeDocument && (
+        <InAppDocumentViewer
+          documentUrl={activeDocument.url}
+          documentTitle={activeDocument.title}
+          documentType="pdf"
+          onClose={() => setActiveDocument(null)}
+          lang={isAr ? 'ar' : 'en'}
+        />
+      )}
     </motion.div>
   );
 }

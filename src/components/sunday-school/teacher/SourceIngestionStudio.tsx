@@ -28,6 +28,7 @@ interface SourceIngestionStudioProps {
   onDeleteSource: (id: string) => void;
   onViewSource: (source: LessonSource) => void;
   onPipelineComplete: (evidenceMap: EvidenceMap, outline: LessonOutline) => void;
+  lang?: 'en' | 'ar';
 }
 
 export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
@@ -36,8 +37,10 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
   onAddSource,
   onDeleteSource,
   onViewSource,
-  onPipelineComplete
+  onPipelineComplete,
+  lang = 'ar'
 }) => {
+  const isAr = lang === 'ar';
   const { userData, isGuest } = useAuth();
   const isOnlineAuth = !isGuest && Boolean(userData) && isSupabaseConfigured;
   const servantId = (isOnlineAuth && userData?.id) ? userData.id : session.teacherId;
@@ -46,6 +49,10 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recordingSeconds, setRecordingSeconds] = useState<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingStartedAtRef = useRef<number>(0);
 
   // Manual text note
   const [showTextModal, setShowTextModal] = useState<boolean>(false);
@@ -66,36 +73,86 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
   const [processingStage, setProcessingStage] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
 
-  // Voice recording handler
-  const startRecording = () => {
-    setIsRecording(true);
-    setRecordingSeconds(0);
-    timerRef.current = setInterval(() => {
-      setRecordingSeconds(prev => prev + 1);
-    }, 1000);
+  // Voice recording handler: capture the real microphone stream and persist it.
+  const startRecording = async () => {
+    const lessonId = session.activeLessonId;
+    if (!lessonId) {
+      setErrorMsg(isAr ? 'اختار درس الأول قبل ما تسجّل شرح صوتي.' : 'Select a lesson before recording its voice explanation.');
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setErrorMsg(isAr ? 'التسجيل الصوتي مش مدعوم في المتصفح ده.' : 'Microphone recording is not supported in this browser.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordingStreamRef.current = stream;
+      recordingChunksRef.current = [];
+      const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find(type => MediaRecorder.isTypeSupported(type));
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      recorderRef.current = recorder;
+      recorder.ondataavailable = event => {
+        if (event.data.size > 0) recordingChunksRef.current.push(event.data);
+      };
+      recorder.onerror = () => setErrorMsg(isAr ? 'حصلت مشكلة أثناء التسجيل. جرّب تاني.' : 'The recording was interrupted. Please try again.');
+      recorder.onstop = async () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+        recordingStreamRef.current = null;
+        setIsRecording(false);
+        const actualMimeType = recorder.mimeType || recordingChunksRef.current[0]?.type || 'audio/webm';
+        const blob = new Blob(recordingChunksRef.current, { type: actualMimeType });
+        recordingChunksRef.current = [];
+        if (!blob.size) {
+          setErrorMsg(isAr ? 'التسجيل طلع فاضي. سجّل تاني.' : 'The recording was empty. Please record again.');
+          return;
+        }
+        const extension = actualMimeType.includes('mp4') ? 'm4a' : actualMimeType.includes('ogg') ? 'ogg' : 'webm';
+        const file = new File([blob], `classroom-voice-${Date.now()}.${extension}`, { type: actualMimeType });
+        setIsUploading(true);
+        setErrorMsg('');
+        try {
+          const uploaded = await uploadSourceMedia(file, lessonId);
+          if (!uploaded.success || !uploaded.fileUrl) throw new Error(uploaded.error || 'Recording upload failed.');
+          onAddSource({
+            sessionId: session.id,
+            lessonId,
+            uploadedBy: servantId,
+            type: 'TEACHER_VOICE',
+            originalFilename: file.name,
+            mimeType: actualMimeType,
+            fileUrl: uploaded.fileUrl,
+            fileSize: file.size,
+            durationSeconds: Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000)),
+            description: 'Teacher voice explanation recorded in the Sunday School classroom.',
+            rightsStatus: 'TEACHER_OWNED',
+            processingStatus: 'INDEXED',
+            priority: 'PRIMARY'
+          });
+        } catch (error) {
+          setErrorMsg(error instanceof Error ? error.message : 'The recording could not be saved.');
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      recorder.start(1000);
+      recordingStartedAtRef.current = Date.now();
+      setRecordingSeconds(0);
+      setErrorMsg('');
+      setIsRecording(true);
+      timerRef.current = setInterval(() => setRecordingSeconds(prev => prev + 1), 1000);
+    } catch (error) {
+      recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+      recordingStreamRef.current = null;
+      setErrorMsg(error instanceof Error && error.name === 'NotAllowedError'
+        ? (isAr ? 'اسمح للمتصفح باستخدام الميكروفون عشان تسجّل.' : 'Allow microphone access to record audio.')
+        : (error instanceof Error ? error.message : 'Could not start microphone recording.'));
+    }
   };
 
   const stopRecording = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setIsRecording(false);
-
-    // Save as voice source
-    onAddSource({
-      sessionId: session.id,
-      lessonId: session.activeLessonId || 'l-cross-01',
-      uploadedBy: servantId,
-      type: 'TEACHER_VOICE',
-      originalFilename: `Teacher_Classroom_Recording_${new Date().toLocaleTimeString().replace(/:/g, '-')}.m4a`,
-      mimeType: 'audio/mp4',
-      fileUrl: 'https://cdn.freesound.org/previews/560/560446_12398463-lq.mp3',
-      fileSize: 4500000,
-      durationSeconds: recordingSeconds || 45,
-      description: 'Recorded live in the Sunday School classroom by servant.',
-      rightsStatus: 'TEACHER_OWNED',
-      processingStatus: 'INDEXED',
-      priority: 'PRIMARY',
-      transcript: `Voice transcription captured: Today we discussed the historical finding of the Cross by Queen Helena and Saint Macarius in Jerusalem. The cross is celebrated with joy and basil leaves.`
-    });
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: SourceType) => {
