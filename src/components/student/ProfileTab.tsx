@@ -1613,7 +1613,7 @@ export function ProfileTab({
               <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                 {lang === 'ar'
                   ? 'هل تريد بالتأكيد تسجيل الخروج من حسابك في تطبيق كنيسة القديس موسى؟'
-                  : 'Are you sure you want to log out of your Anba Mousa account?'}
+                  : 'Are you sure you want to log out of your Anba Moussa account?'}
               </p>
               <div className="flex gap-3 pt-2">
                 <button
