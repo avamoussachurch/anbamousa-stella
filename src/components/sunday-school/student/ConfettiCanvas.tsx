@@ -184,16 +184,16 @@ export const ConfettiCanvas: React.FC<{ layer?: 'top' | 'behind' }> = ({ layer =
       }
 
       if (particles.length > 0 || isSpawning) {
-        const handleVisibility = () => {
+        animId = requestAnimationFrame(render);
+      }
+    };
+
+    const handleVisibility = () => {
       isVisible = !document.hidden;
       if (isVisible) animId = requestAnimationFrame(render);
       else cancelAnimationFrame(animId);
     };
     document.addEventListener('visibilitychange', handleVisibility);
-
-    animId = requestAnimationFrame(render);
-      }
-    };
 
     animId = requestAnimationFrame(render);
 
