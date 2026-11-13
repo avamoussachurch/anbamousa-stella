@@ -341,31 +341,44 @@ before(async () => {
         });
         return;
       }
-      const requestedId = (url.searchParams.get('id') || '').replace(/^eq\./, '') || userId;
-      if (missingProfileIds.has(requestedId)) return respondJson(res, 200, []);
-      return respondJson(res, 200, requestedId ? [{
-        id: requestedId,
-        name: requestedId,
-        email: `${requestedId}@example.test`,
-        role: roleAssignments.get(requestedId)?.[0] || role || 'student',
-        grade: profileGrades.get(requestedId) || 'Grade 4',
-        points: persistedProfiles.get(requestedId)?.points || 0,
-        hymns_taxis_level: profileHymnsTaxisLevels.get(requestedId) ?? null,
-        created_at: new Date(0).toISOString()
-      }] : []);
+      const idFilter = url.searchParams.get('id') || '';
+      const requestedIds = idFilter.startsWith('eq.')
+        ? [idFilter.slice(3)]
+        : idFilter.startsWith('in.(')
+          ? idFilter.slice(4, -1).split(',').map(value => value.replace(/^"|"$/g, ''))
+          : userId ? [userId] : [];
+      const rows = requestedIds
+        .filter(requestedId => !missingProfileIds.has(requestedId))
+        .map(requestedId => persistedProfiles.get(requestedId) || {
+          id: requestedId,
+          name: requestedId,
+          email: `${requestedId}@example.test`,
+          role: roleAssignments.get(requestedId)?.[0] || role || 'student',
+          grade: profileGrades.get(requestedId) || 'Grade 4',
+          points: 0,
+          avatar: null,
+          current_streak: 0,
+          longest_streak: 0,
+          hymns_taxis_level: profileHymnsTaxisLevels.get(requestedId) ?? null,
+          created_at: new Date(0).toISOString()
+        });
+      return respondPostgrestRows(req, res, 200, rows);
     }
     if (url.pathname === '/rest/v1/profile_role_assignments') {
-      const requestedId = (url.searchParams.get('user_id') || '').replace(/^eq\./, '') || userId;
-      if (roleLookupFailureIds.has(requestedId)) {
+      const userIdFilter = url.searchParams.get('user_id') || '';
+      const requestedIds = userIdFilter.startsWith('eq.')
+        ? [userIdFilter.slice(3)]
+        : userIdFilter.startsWith('in.(')
+          ? userIdFilter.slice(4, -1).split(',').map(value => value.replace(/^"|"$/g, ''))
+          : userId ? [userId] : [];
+      if (requestedIds.some(requestedId => roleLookupFailureIds.has(requestedId))) {
         return respondJson(res, 500, { message: 'Role lookup unavailable' });
       }
       const requestedRole = (url.searchParams.get('role') || '').replace(/^eq\./, '');
-      return respondJson(res, 200, (roleAssignments.get(requestedId) || [])
+      const rows = requestedIds.flatMap(requestedId => (roleAssignments.get(requestedId) || [])
         .filter(roleValue => !requestedRole || roleValue === requestedRole)
-        .map(roleValue => ({
-        role: roleValue,
-        revoked_at: null
-      })));
+        .map(roleValue => ({ user_id: requestedId, role: roleValue, revoked_at: null })));
+      return respondPostgrestRows(req, res, 200, rows);
     }
     if (url.pathname === '/rest/v1/role_promotion_requests') {
       const requestedId = (url.searchParams.get('requester_id') || '').replace(/^eq\./, '');
@@ -415,12 +428,12 @@ before(async () => {
           ([...persistedLessonVersions.values()].some(version => version.id === requestedVersionId) ||
             [...persistedLessonVersions.values()].some(version => version.id === requestedLessonId) ||
             persistedLessonSections.size > 0) ||
-        tableName === 'profiles' && persistedProfiles.has(requestedProfileId) ||
+        tableName === 'profiles' && persistedProfiles.size > 0 ||
         tableName === 'church_years' ||
         tableName === 'class_memberships' &&
-          persistedClassMemberships.some(row => row.student_id === requestedStudentId) ||
+          persistedClassMemberships.length > 0 ||
         tableName === 'class_instances' &&
-          requestedClassIds.some(id => persistedClassInstances.has(id)) ||
+          persistedClassInstances.size > 0 ||
         ['lesson_section_progress', 'lesson_progress'].includes(tableName);
       if (usePersistedFixture) {
         return respondPostgrestRows(req, res, 200, filterPostgrestRows(persistedProgressRows(tableName), url));
