@@ -2,6 +2,19 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Language changes must never mirror the application shell. The app remains RTL
+   by design; individual language-aware content can set its own text direction. */
+:root[ data-language="en" ] {
+  --font-display: var(--font-english-ui);
+  --stella-font-body: var(--font-english-ui);
+}
+
+:root[ data-language="ar" ] {
+  --font-display: var(--font-arabic-ui);
+  --stella-font-body: var(--font-arabic-ui);
+}
+
+
 /* Stella 2.0 palette: raw colors are defined once and mapped to semantic tokens below. */
 :root {
   --stella-palette-midnight: #25334A;

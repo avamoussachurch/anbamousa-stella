@@ -31,8 +31,8 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   },
   'brand.motto': {
     key: 'brand.motto',
-    en: 'Faith, Learning, and Liturgical Life',
-    ar: 'إيمان، تعليم، وحياة طقسية',
+    en: 'Growing in Faith, Learning in Love',
+    ar: 'نكبر في الإيمان ونتعلّم بالمحبة',
     cop: 'Ⲡⲓⲛⲁϩϯ ⲛⲉⲙ ϯⲥⲃⲱ ⲛⲉⲙ ⲡⲓⲱⲛϧ ⲛ̀ⲗⲓⲧⲟⲩⲣⲅⲓⲕⲟⲛ',
     source: 'Coptic Orthodox Education Creed',
     sourceType: 'CHURCH_APPROVED',
@@ -558,7 +558,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'feedback.empty': {
     key: 'feedback.empty',
     en: 'No items found in this section.',
-    ar: 'لا توجد عناصر مسجلة في هذا القسم حالياً.',
+    ar: 'مفيش حاجة هنا لسه.',
     cop: 'Ⲙⲙⲟⲛ ϩⲗⲓ ⲛ̀ϩⲱⲃ ϧⲉⲛ ⲡⲁⲓⲙⲁ ϯⲛⲟⲩ.',
     source: 'Bohairic Coptic Dialogue',
     sourceType: 'UI_CONVENTION',
@@ -567,7 +567,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'feedback.noResults': {
     key: 'feedback.noResults',
     en: 'No matching results found.',
-    ar: 'لم يتم العثور على نتائج مطابقة.',
+    ar: 'ملقيناش نتائج مطابقة.',
     cop: 'Ⲙⲡⲟⲩϫⲓⲙⲓ ⲛ̀ϩⲗⲓ ⲉϥⲙⲟⲛⲕ.',
     source: 'Bohairic Scripture Standard',
     sourceType: 'UI_CONVENTION',
@@ -576,7 +576,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'feedback.tryAgain': {
     key: 'feedback.tryAgain',
     en: 'Try again',
-    ar: 'أعد المحاولة',
+    ar: 'جرّب تاني',
     cop: 'Ⲁⲣⲓⲟⲩⲁϩⲙⲉϥ ⲟⲛ',
     source: 'Liturgical Repeat formula',
     sourceType: 'UI_CONVENTION',
@@ -594,7 +594,7 @@ export const TRANSLATION_REGISTRY: Record<string, TranslationRegistryEntry> = {
   'feedback.loading': {
     key: 'feedback.loading',
     en: 'Loading sacred content...',
-    ar: 'جارٍ تحميل المحتوى الكنسي...',
+    ar: 'بنحمّل المحتوى...',
     cop: 'Ⲉϥⲥⲱⲕ ⲉ̀ϧⲟⲩⲛ ⲙ̀ⲡⲓϩⲱⲃ ⲉⲑⲟⲩⲁⲃ...',
     source: 'Ecclesiastical UI Standard',
     sourceType: 'UI_CONVENTION',

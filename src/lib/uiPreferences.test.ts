@@ -49,7 +49,7 @@ test('theme switching synchronizes the theme attribute, color scheme, and dark u
   assert.equal(root.classes.has('dark'), false);
 });
 
-test('direction follows Arabic, English, and Coptic language selections', () => {
+test('language changes preserve the Arabic-first app layout while updating content language metadata', () => {
   assert.equal(getLanguageDirection('ar'), 'rtl');
   assert.equal(getLanguageDirection('en'), 'ltr');
   assert.equal(getLanguageDirection('cop'), 'ltr');
@@ -59,12 +59,15 @@ test('direction follows Arabic, English, and Coptic language selections', () => 
   applyLanguagePreference(root, 'ar');
   assert.equal(root.attributes.get('dir'), 'rtl');
   assert.equal(root.attributes.get('lang'), 'ar');
+  assert.equal(root.attributes.get('data-language'), 'ar');
   applyLanguagePreference(root, 'en');
-  assert.equal(root.attributes.get('dir'), 'ltr');
+  assert.equal(root.attributes.get('dir'), 'rtl');
   assert.equal(root.attributes.get('lang'), 'en');
+  assert.equal(root.attributes.get('data-language'), 'en');
   applyLanguagePreference(root, 'copt');
-  assert.equal(root.attributes.get('dir'), 'ltr');
+  assert.equal(root.attributes.get('dir'), 'rtl');
   assert.equal(root.attributes.get('lang'), 'cop');
+  assert.equal(root.attributes.get('data-language'), 'cop');
 });
 
 test('main and quick navigation expose localized landmarks and selected destinations', async () => {

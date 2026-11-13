@@ -13,7 +13,7 @@ export function LanguageSettings({ lang, setLang }: LanguageSettingsProps) {
       <div className="mb-3">
         <h3 className="font-black text-[var(--text-primary)]">{isArabic ? 'اللغة' : 'Language'}</h3>
         <p className="mt-1 text-xs text-[var(--text-secondary)]">
-          {isArabic ? 'اختر لغة العرض واتجاه الواجهة.' : 'Choose the display language and interface direction.'}
+          {isArabic ? 'اختار اللغة اللي تحب تستخدمها. شكل وترتيب الموقع هيفضل زي ما هو.' : 'Choose your language. The app layout and navigation stay in the same place.'}
         </p>
       </div>
       <div role="group" aria-label={isArabic ? 'اختيار اللغة' : 'Choose language'} className="grid grid-cols-2 gap-2">

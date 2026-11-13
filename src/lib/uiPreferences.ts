@@ -20,8 +20,11 @@ export function applyLanguagePreference(
   root: Pick<HTMLElement, 'setAttribute'>,
   lang: Language
 ): void {
-  root.setAttribute('dir', getLanguageDirection(lang));
+  // Keep the app's spatial layout anchored RTL. Switching to English changes copy and
+  // language metadata, not the position/order of navigation, panels, or game-world UI.
+  root.setAttribute('dir', 'rtl');
   root.setAttribute('lang', lang === 'copt' ? 'cop' : lang);
+  root.setAttribute('data-language', lang === 'copt' ? 'cop' : lang);
 }
 
 export function applyThemePreference(
