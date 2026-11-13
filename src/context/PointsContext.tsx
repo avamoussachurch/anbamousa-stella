@@ -41,21 +41,43 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [streakList, setStreakList] = useState<StreakLeaderboardEntry[]>(() => getStreakLeaderboard(userData));
   const refreshRequestRef = useRef(0);
 
+  // Only values that affect leaderboard results belong in these dependencies.
+  // AuthContext also updates screenTimeSeconds every 10 seconds; depending on the
+  // whole user object here would refetch the full server leaderboard on every tick.
+  const refreshUserId = userData?.id;
+  const refreshUserRoles = userData?.roles;
+  const refreshUserPoints = userData?.points;
+  const refreshUserCurrentStreak = userData?.currentStreak;
+  const refreshUserLongestStreak = userData?.longestStreak;
+  const refreshUserName = userData?.fullName;
+  const refreshUserAvatar = userData?.avatarUrl;
+  const isGuestUser = Boolean(refreshUserId?.startsWith('guest_'));
+  const isStudentUser = userData ? hasRole(userData, 'student') : false;
+  const leaderboardUser = useMemo(() => userData, [
+    refreshUserId,
+    refreshUserRoles,
+    refreshUserPoints,
+    refreshUserCurrentStreak,
+    refreshUserLongestStreak,
+    refreshUserName,
+    refreshUserAvatar
+  ]);
+
   const refreshScores = useCallback(() => {
     const requestId = ++refreshRequestRef.current;
-    if (!userData) {
+    if (!refreshUserId) {
       setLeaderboardList([]);
       setStreakList([]);
       return;
     }
 
-    if (userData.id.startsWith('guest_')) {
-      setLeaderboardList(getLeaderboard(userData));
-      setStreakList(getStreakLeaderboard(userData));
+    if (isGuestUser) {
+      setLeaderboardList(getLeaderboard(leaderboardUser));
+      setStreakList(getStreakLeaderboard(leaderboardUser));
       return;
     }
 
-    if (!hasRole(userData, 'student')) {
+    if (!isStudentUser) {
       setLeaderboardList([]);
       setStreakList([]);
       return;
@@ -93,7 +115,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLeaderboardList([]);
       setStreakList([]);
     });
-  }, [userData]);
+  }, [leaderboardUser, refreshUserId, isGuestUser, isStudentUser]);
 
   useEffect(() => {
     refreshScores();
@@ -111,7 +133,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       window.removeEventListener('church_streak_updated', handleUpdate);
       window.removeEventListener('church_user_updated', handleUpdate);
     };
-  }, [userData, refreshScores]);
+  }, [refreshScores]);
 
   const currentPoints = userData?.points ?? 0;
   const currentStreak = userData?.currentStreak ?? 0;

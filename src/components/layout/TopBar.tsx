@@ -49,10 +49,18 @@ export function TopBar({
   const [notifications, setNotifications] = useState<ChurchNotification[]>([]);
   const [browserNotifActive, setBrowserNotifActive] = useState<boolean>(() => isBrowserNotificationEnabled());
 
+  // Notification generation only uses account identity, assigned roles, and streak.
+  // Keep the callback stable while AuthContext updates screenTimeSeconds every 10 seconds.
+  const notificationUser = React.useMemo(() => userData, [
+    userData?.id,
+    userData?.roles,
+    userData?.currentStreak
+  ]);
+
   const refreshNotifications = React.useCallback(async () => {
-    const list = await getLiveNotificationsForUser(userData, lessons || [], activeWorkspace);
+    const list = await getLiveNotificationsForUser(notificationUser, lessons || [], activeWorkspace);
     setNotifications(list);
-  }, [userData, lessons, activeWorkspace]);
+  }, [notificationUser, lessons, activeWorkspace]);
 
   useEffect(() => {
     refreshNotifications();
