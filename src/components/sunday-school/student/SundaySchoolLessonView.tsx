@@ -380,11 +380,18 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
 
           <button
             onClick={() => setShowDocumentModal(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 text-white rounded-xl text-xs font-black shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+            disabled={!displayedSlidesUrl && eligibleSlides.length === 0}
+            className="px-4 py-2.5 bg-gradient-to-r from-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-105 text-white rounded-xl text-xs font-black shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-wait"
           >
             <Layers className="w-4 h-4" />
             <span>{isAr ? 'افتح العرض جوه التطبيق' : 'Open In-App Presentation'}</span>
           </button>
+          {mediaAccessError && (
+            <p role="alert" className="w-full text-xs font-semibold text-rose-600 dark:text-rose-300">{mediaAccessError}</p>
+          )}
+          {effectiveSlidesUrl && !displayedSlidesUrl && !mediaAccessError && (
+            <p role="status" className="w-full text-xs text-stone-500">{isAr ? 'بنجهّز ملف الدرس...' : 'Preparing lesson document...'}</p>
+          )}
         </div>
       )}
 
