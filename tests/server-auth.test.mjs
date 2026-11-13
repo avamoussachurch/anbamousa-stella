@@ -2408,7 +2408,7 @@ test('authenticated student leaderboard uses only the active Supabase class rost
   persistedClassInstances.set(classInstanceId, {
     id: classInstanceId,
     church_year_id: yearId,
-    class_group_id: 'primary_2'
+    class_group_id: 'leaderboard_test_group'
   });
   persistedClassMemberships.push(
     { id: 'lb-membership-student', student_id: studentId, class_instance_id: classInstanceId, church_year_id: yearId, exact_grade: 'Grade 6', status: 'active', left_at: null },
@@ -2437,7 +2437,7 @@ test('authenticated student leaderboard uses only the active Supabase class rost
   });
   assert.equal(response.status, 200, await response.clone().text());
   const payload = await response.json();
-  assert.equal(payload.classGroupId, 'primary_2');
+  assert.equal(payload.classGroupId, 'leaderboard_test_group');
   assert.equal(payload.totalParticipants, 2);
   assert.equal(payload.leaderboard[0].studentId, peerId);
   assert.equal(payload.leaderboard[0].pointsThisWeek, 70);
@@ -2451,6 +2451,19 @@ test('authenticated student leaderboard uses only the active Supabase class rost
     userId: studentId
   });
   assert.equal(forbidden.status, 403);
+
+  roleAssignments.delete(studentId);
+  roleAssignments.delete(peerId);
+  persistedClassInstances.delete(classInstanceId);
+  for (let index = persistedClassMemberships.length - 1; index >= 0; index -= 1) {
+    if (['lb-membership-student', 'lb-membership-peer'].includes(persistedClassMemberships[index].id)) {
+      persistedClassMemberships.splice(index, 1);
+    }
+  }
+  persistedProfiles.delete(studentId);
+  persistedProfiles.delete(peerId);
+  persistedLessonProgress.delete(`${studentId}:${studentLessonId}`);
+  persistedLessonProgress.delete(`${peerId}:${peerLessonId}`);
 });
 
 test('unassigned authenticated students receive an empty leaderboard instead of demo classmates', async () => {
@@ -2465,6 +2478,7 @@ test('unassigned authenticated students receive an empty leaderboard instead of 
   assert.equal(payload.classGroupId, null);
   assert.deepEqual(payload.leaderboard, []);
   assert.equal(payload.totalParticipants, 0);
+  roleAssignments.delete(studentId);
 });
 
 test('admin class assignment preserves role authority and records the verified actor', async () => {
