@@ -15,11 +15,11 @@ test('student lesson resources, rewards, and family altar controls use Egyptian 
 
   assert.match(lesson, /مش قادرين نحمّل ملفات الدرس/);
   assert.match(lesson, /افتح العرض جوه التطبيق/);
-  assert.match(viewer, /اعرض شرائح ومستندات الخادم من غير ما تنزّل ملفات/);
+  assert.match(viewer, /تقدر تشوف شرائح ومستندات الخادم/);
   assert.match(viewer, /مفيش شرائح مرفقة للدرس ده/);
   assert.match(reward, /برافو عليك! كملت المهمة بنجاح!/);
   assert.match(family, /صلّينا مع بعض كعيلة/);
-  assert.match(family, /أسئلة للنقاش بين الأهل والأولاد/);
+  assert.match(family, /أسئلة تتكلموا فيها كعيلة/);
   assert.match(calendar, /فاضل/);
 });
 
