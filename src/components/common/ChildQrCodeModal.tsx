@@ -57,7 +57,7 @@ export function ChildQrCodeModal({
       })
       .catch((err) => {
         console.error('Failed to generate QR code', err);
-        setError(isCop ? 'Ⲙⲡⲓϣϫⲉⲙϫⲟⲙ ⲉ̀ⲑⲁⲙⲓⲟ ⲙ̀ⲡⲓ-QR' : lang === 'ar' ? 'تعذر إنشاء رمز QR' : 'Failed to generate QR Code');
+        setError(isCop ? 'Ⲙⲡⲓϣϫⲉⲙϫⲟⲙ ⲉ̀ⲑⲁⲙⲓⲟ ⲙ̀ⲡⲓ-QR' : lang === 'ar' ? 'مش قادرين نعمل كود QR.' : 'Failed to generate QR Code');
       });
   }, [isOpen, linkCode, shareUrl, lang, isCop]);
 
@@ -120,7 +120,7 @@ export function ChildQrCodeModal({
             </div>
 
             <h3 className="text-lg font-extrabold text-white">
-              {isCop ? 'Ⲡⲓⲕⲱⲇⲓⲝ QR ⲙ̀ⲙⲩⲥⲧⲏⲣⲓⲟⲛ ⲛ̀ⲧⲉ ⲡⲓⲁⲗⲟⲩ' : lang === 'ar' ? 'رمز QR السري للتلميذ' : 'Student Secret QR Code'}
+              {isCop ? 'Ⲡⲓⲕⲱⲇⲓⲝ QR ⲙ̀ⲙⲩⲥⲧⲏⲣⲓⲟⲛ ⲛ̀ⲧⲉ ⲡⲓⲁⲗⲟⲩ' : lang === 'ar' ? 'كود QR السري بتاعك' : 'Student Secret QR Code'}
             </h3>
             <p className="text-xs text-amber-100/90 font-medium mt-0.5">
               {childName}
@@ -139,7 +139,7 @@ export function ChildQrCodeModal({
               ) : (
                 <div className="w-56 h-56 flex flex-col items-center justify-center text-gray-400 gap-2">
                   <div className="w-8 h-8 border-3 border-[var(--color-church-blue)] border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs">{isCop ? 'ⲥⲉⲥⲟⲃϯ ⲙ̀ⲡⲓ-QR...' : lang === 'ar' ? 'جاري تجهيز الرمز...' : 'Generating QR...'}</span>
+                  <span className="text-xs">{isCop ? 'ⲥⲉⲥⲟⲃϯ ⲙ̀ⲡⲓ-QR...' : lang === 'ar' ? 'بنجهّز الكود...' : 'Generating QR...'}</span>
                 </div>
               )}
             </div>
@@ -148,7 +148,7 @@ export function ChildQrCodeModal({
             <div className="w-full bg-blue-50/80 border border-blue-200/80 rounded-2xl p-3 flex items-center justify-between">
               <div>
                 <span className="text-[10px] uppercase font-bold text-gray-500 block">
-                  {isCop ? 'Ⲡⲓⲕⲱⲇⲓⲝ ⲉⲧⲥϧⲏⲟⲩⲧ' : lang === 'ar' ? 'الرمز السري المكتوب' : 'Secret Text Code'}
+                  {isCop ? 'Ⲡⲓⲕⲱⲇⲓⲝ ⲉⲧⲥϧⲏⲟⲩⲧ' : lang === 'ar' ? 'الكود السري المكتوب' : 'Secret Text Code'}
                 </span>
                 <span className="font-mono font-black text-lg text-[var(--color-church-blue)] tracking-wider">
                   {linkCode}
@@ -160,7 +160,7 @@ export function ChildQrCodeModal({
                 className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
               >
                 {copiedCode ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                <span>{copiedCode ? (isCop ? 'Ⲁⲩⲟⲗϥ!' : lang === 'ar' ? 'تم النسخ!' : 'Copied!') : (isCop ? 'Ⲱⲗⲓ' : lang === 'ar' ? 'نسخ' : 'Copy')}</span>
+                <span>{copiedCode ? (isCop ? 'Ⲁⲩⲟⲗϥ!' : lang === 'ar' ? 'اتنسخ!' : 'Copied!') : (isCop ? 'Ⲱⲗⲓ' : lang === 'ar' ? 'نسخ' : 'Copy')}</span>
               </button>
             </div>
 
@@ -171,7 +171,7 @@ export function ChildQrCodeModal({
                 {isCop
                   ? 'Ⲙⲁⲧⲁⲙⲟ ⲡⲁⲓ-QR ⲉ̀ϯⲕⲁⲙⲉⲣⲁ ⲛ̀ⲧⲉ ⲛⲉⲕⲓⲟϯ ϧⲉⲛ «Ⲡⲓⲡⲩⲗⲏ ⲛ̀ⲧⲉ ⲛⲓⲓⲟϯ» ⲉ̀ⲑⲱⲧ ⲛ̀ⲛⲓⲕⲗⲟⲙ ⲥⲟⲡ ⲭⲱⲗⲉⲙ!'
                   : lang === 'ar'
-                  ? 'وجّه هذه الشاشة لكاميرا هاتف والدك/والدتك في شاشة "بوابة الأهل" لربط الحسابين في ثانية واحدة!'
+                  ? 'خلّي ولي أمرك يوجّه كاميرا موبايله للكود ده من شاشة "بوابة الأسرة" عشان تربطوا الحسابين بسرعة!'
                   : "Show this QR code to Mom or Dad's phone camera in the Parent Dashboard to link instantly!"}
               </span>
             </div>
@@ -193,13 +193,13 @@ export function ChildQrCodeModal({
                 className="py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download size={14} />
-                <span>{isCop ? 'Ⲁⲣⲉϩ ⲉ̀ⲡⲓϩⲓⲕⲱⲛ' : lang === 'ar' ? 'حفظ الصورة' : 'Save Image'}</span>
+                <span>{isCop ? 'Ⲁⲣⲉϩ ⲉ̀ⲡⲓϩⲓⲕⲱⲛ' : lang === 'ar' ? 'احفظ الصورة' : 'Save Image'}</span>
               </button>
             </div>
           </div>
 
           <div className="p-3 bg-gray-50 border-t border-gray-100 text-center text-[11px] text-gray-500 font-medium">
-            🔒 {isCop ? 'Ⲡⲓⲕⲱⲇⲓⲝ ⲉⲧϩⲏⲡ ⲛ̀ⲧⲉ ⲧⲉⲕⲡⲁⲧⲣⲓⲁ ⲙ̀ⲙⲁⲩⲁⲧⲥ' : lang === 'ar' ? 'رمز مشفر ومخصص لعائلتك فقط' : 'Encrypted code exclusively for your family'}
+            🔒 {isCop ? 'Ⲡⲓⲕⲱⲇⲓⲝ ⲉⲧϩⲏⲡ ⲛ̀ⲧⲉ ⲧⲉⲕⲡⲁⲧⲣⲓⲁ ⲙ̀ⲙⲁⲩⲁⲧⲥ' : lang === 'ar' ? 'كود مشفّر ومخصص لعيلتك بس' : 'Encrypted code exclusively for your family'}
           </div>
         </motion.div>
       </div>

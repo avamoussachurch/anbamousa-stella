@@ -77,7 +77,7 @@ export function QrCodeScanner({
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setCameraError(lang === 'ar' 
-        ? 'متصفحك لا يدعم الوصول المباشر للكاميرا في هذا الوضع. يمكنك رفع صورة لرمز QR.' 
+        ? 'المتصفح مش بيسمح باستخدام الكاميرا بالطريقة دي. تقدر ترفع صورة فيها كود QR بدل كده.' 
         : 'Camera access is not supported in this environment. You can upload a QR image.');
       setHasPermission(false);
       return;
@@ -120,11 +120,11 @@ export function QrCodeScanner({
       setHasPermission(false);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         setCameraError(lang === 'ar' 
-          ? 'تم رفض إذن الكاميرا. يرجى تفعيل إذن الكاميرا في إعدادات المتصفح أو رفع صورة الرمز.' 
+          ? 'إذن الكاميرا اترفض. فعّل الإذن من إعدادات المتصفح أو ارفع صورة للكود.' 
           : 'Camera permission denied. Please allow camera in browser settings or upload a QR image.');
       } else {
         setCameraError(lang === 'ar' 
-          ? 'تعذر تشغيل الكاميرا حالياً. يمكنك استخدام رفع الصورة أو إدخال الرمز السري يدوياً.' 
+          ? 'مش قادرين نشغّل الكاميرا دلوقتي. تقدر ترفع صورة أو تكتب الكود السري بنفسك.' 
           : 'Could not activate camera. You can upload an image or type the code manually.');
       }
     }
@@ -254,12 +254,12 @@ export function QrCodeScanner({
             handleSuccessfulScan(code.data);
           } else {
             setCameraError(lang === 'ar' 
-              ? 'لم يتم العثور على رمز QR واضح في هذه الصورة. يرجى اختيار صورة أوضح.' 
+              ? 'ملقيناش كود QR واضح في الصورة. اختار صورة أوضح وجرّب تاني.' 
               : 'No readable QR code found in this photo. Please try a clearer image.');
           }
         } catch (err) {
           setIsProcessingFile(false);
-          setCameraError(lang === 'ar' ? 'حدث خطأ أثناء معالجة الصورة.' : 'Error processing image.');
+          setCameraError(lang === 'ar' ? 'حصلت مشكلة وإحنا بنفحص الصورة.' : 'Error processing image.');
         }
       };
       img.src = event.target?.result as string;
@@ -307,13 +307,13 @@ export function QrCodeScanner({
               <CheckCircle2 size={36} />
             </div>
             <h4 className="text-lg font-black text-emerald-200">
-              {lang === 'ar' ? 'تم مسح الرمز بنجاح!' : 'QR Code Detected!'}
+              {lang === 'ar' ? 'الكود اتقري بنجاح!' : 'QR Code Detected!'}
             </h4>
             <p className="font-mono font-bold text-xl text-white mt-1 tracking-widest bg-black/40 px-3 py-1 rounded-xl border border-emerald-400/30">
               {scannedCode}
             </p>
             <span className="text-xs text-emerald-300/90 mt-2 font-medium">
-              {lang === 'ar' ? 'جاري التحقق من هوية الطفل...' : 'Verifying student identity...'}
+              {lang === 'ar' ? 'بنتأكد من حساب الطفل...' : 'Verifying student identity...'}
             </span>
           </motion.div>
         ) : (
@@ -337,7 +337,7 @@ export function QrCodeScanner({
             {/* Instruction badge inside viewfinder */}
             <div className="absolute bottom-3 inset-x-4 pointer-events-none">
               <span className="bg-black/70 backdrop-blur-xs text-white text-[11px] font-semibold px-3 py-1 rounded-full border border-white/20 inline-block shadow-sm">
-                {lang === 'ar' ? 'وجّه الكاميرا نحو رمز QR على شاشة هاتف طفلك' : 'Aim camera at your child’s QR code screen'}
+                {lang === 'ar' ? 'وجّه الكاميرا ناحية كود QR اللي ظاهر على شاشة موبايل ابنك.' : 'Aim camera at your child’s QR code screen'}
               </span>
             </div>
           </>
@@ -349,7 +349,7 @@ export function QrCodeScanner({
           <button
             type="button"
             onClick={flipCamera}
-            title={lang === 'ar' ? 'تبديل الكاميرا' : 'Switch Camera'}
+            title={lang === 'ar' ? 'بدّل الكاميرا' : 'Switch Camera'}
             className="w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-xs transition-colors cursor-pointer border border-white/20"
           >
             <RefreshCw size={18} />
@@ -372,7 +372,7 @@ export function QrCodeScanner({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            title={lang === 'ar' ? 'رفع صورة لرمز QR' : 'Upload QR Image'}
+            title={lang === 'ar' ? 'ارفع صورة لكود QR' : 'Upload QR Image'}
             className="w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-xs transition-colors cursor-pointer border border-white/20"
           >
             <ImageIcon size={18} />
@@ -383,7 +383,7 @@ export function QrCodeScanner({
         {isProcessingFile && (
           <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center text-white">
             <div className="w-8 h-8 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mb-2" />
-            <span className="text-xs font-bold">{lang === 'ar' ? 'جاري فحص الصورة...' : 'Processing image...'}</span>
+            <span className="text-xs font-bold">{lang === 'ar' ? 'بنفحص الصورة...' : 'Processing image...'}</span>
           </div>
         )}
       </div>
@@ -401,7 +401,7 @@ export function QrCodeScanner({
                 className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Upload size={13} />
-                <span>{lang === 'ar' ? 'اختيار صورة لرمز QR' : 'Upload QR Photo'}</span>
+                <span>{lang === 'ar' ? 'اختار صورة فيها كود QR' : 'Upload QR Photo'}</span>
               </button>
 
               <button
@@ -409,7 +409,7 @@ export function QrCodeScanner({
                 onClick={startCamera}
                 className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs transition-colors cursor-pointer"
               >
-                {lang === 'ar' ? 'إعادة المحاولة' : 'Retry Camera'}
+                {lang === 'ar' ? 'جرّب تاني' : 'Retry Camera'}
               </button>
             </div>
           </div>
@@ -422,7 +422,7 @@ export function QrCodeScanner({
           <Sparkles size={16} className="text-[var(--color-church-blue)] shrink-0" />
           <span>
             {lang === 'ar' 
-              ? 'اختبار سريع: جرب مسح حساب افتراضي فوري (ديفيد / مينا)' 
+              ? 'تجربة سريعة: جرّب تمسح حساب تجريبي (ديفيد / مينا).' 
               : 'Quick test: Simulate scanning child QR (David / Mina)'}
           </span>
         </div>
@@ -453,7 +453,7 @@ export function QrCodeScanner({
             className="text-xs text-[var(--color-church-blue)] hover:underline font-bold inline-flex items-center gap-1.5 cursor-pointer"
           >
             <KeyRound size={14} />
-            <span>{lang === 'ar' ? 'أو أدخل الرمز السري كتابةً (ST-4921)' : 'Or type alphanumeric secret code'}</span>
+            <span>{lang === 'ar' ? 'أو اكتب الكود السري بنفسك (ST-4921)' : 'Or type alphanumeric secret code'}</span>
           </button>
         </div>
       )}
