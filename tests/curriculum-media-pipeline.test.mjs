@@ -60,7 +60,7 @@ test('student and parent class RLS is limited to own or verified linked membersh
 test('server stores private media metadata and authorizes Hymns/Taxis attachments by publication and audience', () => {
   assert.match(server, /CURRICULUM_MEDIA_BUCKET/);
   assert.match(server, /from\('media_objects'\)\.insert/);
-  assert.match(server, /from\('hymns'\)[\s\S]{0,300}audio_url/);
+  assert.match(server, /const hymnColumns = \['audio_url', 'pdf_url', 'sheet_music_url'\]/);
   assert.match(server, /from\('coptic_taxis_items'\)[\s\S]{0,300}attachments/);
   assert.match(server, /item\.status !== 'published'/);
   assert.match(server, /item\.level !== studentLevel/);
