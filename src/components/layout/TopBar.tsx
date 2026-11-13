@@ -83,7 +83,7 @@ export function TopBar({
     };
   }, []);
 
-  const churchNameDisplay = lang === 'ar' ? 'كنيسة الأنبا موسى' : 'St. Musa Church';
+  const churchNameDisplay = lang === 'ar' ? 'كنيسة الأنبا موسى' : 'Anba Mousa';
   const workspaceLabels: Record<Role, string> = lang === 'ar'
     ? { student: 'مساحة الطالب', parent: 'مساحة ولي الأمر', teacher: 'مساحة الخادم', admin: 'مساحة الإدارة' }
     : { student: 'Student workspace', parent: 'Parent workspace', teacher: 'Servant workspace', admin: 'Admin workspace' };
