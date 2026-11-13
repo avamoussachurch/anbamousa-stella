@@ -6919,6 +6919,8 @@ app.get("/api/church/leaderboard", async (req, res) => {
         timeframe,
         leaderboard: [],
         currentUserEntry: null,
+        streakLeaderboard: [],
+        currentUserStreakEntry: null,
         totalParticipants: 0,
         cairoDate: todayCairo,
         cairoWeekReset
@@ -7091,12 +7093,27 @@ app.get("/api/church/leaderboard", async (req, res) => {
         leaderboard.push(currentUserEntry);
       }
 
+      const streakEntries = entries.map((entry: any) => ({ ...entry })).sort((left: any, right: any) =>
+        right.streakDays - left.streakDays ||
+        right.longestStreak - left.longestStreak ||
+        right.totalPoints - left.totalPoints ||
+        left.studentName.localeCompare(right.studentName)
+      );
+      streakEntries.forEach((entry: any, index: number) => { entry.rank = index + 1; });
+      const currentUserStreakEntry = streakEntries.find((entry: any) => entry.studentId === authContext.userId) || null;
+      const streakLeaderboard = streakEntries.slice(0, 20);
+      if (currentUserStreakEntry && !streakLeaderboard.some((entry: any) => entry.studentId === currentUserStreakEntry.studentId)) {
+        streakLeaderboard.push(currentUserStreakEntry);
+      }
+
       return res.json({
         success: true,
         classGroupId: effectiveClassGroup,
         timeframe,
         leaderboard,
         currentUserEntry,
+        streakLeaderboard,
+        currentUserStreakEntry,
         totalParticipants: entries.length,
         cairoDate: todayCairo,
         cairoWeekReset
