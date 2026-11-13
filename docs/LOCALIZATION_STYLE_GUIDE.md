@@ -67,6 +67,7 @@ Audit and localize every user-facing surface, not only the student home:
 - [x] Common feedback phrases use friendly Egyptian Arabic.
 - [ ] Complete screen-by-screen hardcoded-string inventory.
 - [ ] Full student, teacher, parent, and admin localization.
+- [x] Third Egyptian Arabic pass across teacher Hymns/Taxis publishing studios, lesson authoring and express publishing, teacher learning review/engagement analytics, student roadmap, and Sunday School quizzes.
 - [x] Second Egyptian Arabic pass across student profile, parent settings, child progress, weekly progress, secure child linking, teacher class management, source library, publishing hub, and curriculum import.
 - [x] First Egyptian Arabic copy pass across login/registration, student adventure home, lessons and lesson reading, points/rewards, community feed, teacher home, parent home, parent dashboard, admin workspace, Hymns, and Taxis screens.
 - [x] Localize administrative role names in Arabic instead of leaking raw English role identifiers.
