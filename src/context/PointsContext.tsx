@@ -78,7 +78,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         rank: entry.rank
       }));
       setLeaderboardList(entries);
-      setStreakList(result.leaderboard.map((entry: any) => ({
+      setStreakList((result.streakLeaderboard || []).map((entry: any) => ({
         id: entry.id,
         studentId: entry.studentId,
         studentName: entry.studentName,
