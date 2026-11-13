@@ -98,7 +98,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
                   {documentTitle}
                 </h3>
                 <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800/60 font-mono font-medium">
-                  {isAr ? 'عرض مباشر جوه التطبيق' : 'In-App Direct Viewer'}
+                  {isAr ? 'عرض المستند جوه التطبيق' : 'In-App Direct Viewer'}
                 </span>
                 {hasStructuredSlides && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-800 text-stone-300 font-mono">
@@ -108,7 +108,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
               </div>
               <p className="text-xs text-stone-400">
                 {isAr 
-                  ? 'اعرض شرائح ومستندات الخادم من غير ما تنزّل ملفات أو تفتح نوافذ برّه التطبيق.' 
+                  ? 'تقدر تشوف شرائح ومستندات الخادم من غير ما تنزّل ملفات أو تخرج من التطبيق.' 
                   : 'Teacher slide presentation and materials viewed directly within the application.'}
               </p>
             </div>

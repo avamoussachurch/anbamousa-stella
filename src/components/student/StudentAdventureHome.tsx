@@ -89,7 +89,7 @@ function JourneyPath({
         </div>
         <p className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200">
           {isArabic
-            ? `${completedLessons.length} من ${lessons.length} دروس مكتملة`
+            ? `${completedLessons.length} من ${lessons.length} دروس خلّصتها`
             : `${completedLessons.length} of ${lessons.length} lessons complete`}
         </p>
       </div>
@@ -125,7 +125,7 @@ function JourneyPath({
                     type="button"
                     onClick={() => onNavigate('lessons', isLocked ? undefined : lesson.id)}
                     aria-label={`${isLocked
-                      ? (isArabic ? 'مقفل، أكمل المحطة السابقة أولاً' : 'Locked, finish the previous lesson first')
+                      ? (isArabic ? 'مقفول، خلّص المحطة اللي قبله الأول' : 'Locked, finish the previous lesson first')
                       : (isArabic ? 'افتح الدرس' : 'Open lesson')}: ${title}`}
                     className={`group flex min-h-[76px] w-full items-center gap-3 rounded-2xl border px-3 py-3 text-start transition hover:-translate-y-0.5 hover:border-[#E6B75A]/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5D98C] sm:min-h-0 sm:flex-col sm:gap-2 sm:border-0 sm:bg-transparent sm:px-1 sm:py-0 sm:text-center ${
                       isCurrent
@@ -150,11 +150,11 @@ function JourneyPath({
                       </span>
                       <span className="mt-0.5 block text-[10px] font-bold text-slate-400">
                         {isCompleted
-                          ? (isArabic ? 'مكتمل' : 'Completed')
+                          ? (isArabic ? 'خلصت' : 'Completed')
                           : isCurrent
-                            ? (isArabic ? 'درسك التالي' : 'Up next')
+                            ? (isArabic ? 'الدرس اللي جاي' : 'Up next')
                             : isLocked
-                              ? (isArabic ? 'مقفل — أكمل الدرس السابق' : 'Locked — finish the previous lesson')
+                              ? (isArabic ? 'مقفول — خلّص الدرس اللي قبله' : 'Locked — finish the previous lesson')
                               : (isArabic ? 'جاهز تبدأه' : 'Ready to explore')}
                       </span>
                     </span>
@@ -234,7 +234,7 @@ function FeedPreview({
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#765640] bg-[#34291F] p-4 text-sm text-[#F0D8B8]">
             <span>{isArabic ? 'المنشورات مش متاحة دلوقتي.' : 'Community posts are unavailable right now.'}</span>
             <button type="button" onClick={() => setReload(value => value + 1)} className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2 font-bold hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
-              <RefreshCw size={14} /> {isArabic ? 'إعادة المحاولة' : 'Try again'}
+              <RefreshCw size={14} /> {isArabic ? 'جرّب تاني' : 'Try again'}
             </button>
           </div>
         ) : posts.length === 0 ? (
@@ -278,8 +278,8 @@ export function StudentAdventureHome({
   const reduceMotion = useReducedMotion();
   const progress = totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
   const displayName = isGuest
-    ? (isArabic ? 'صديقي' : 'friend')
-    : user.fullName.trim().split(/\s+/)[0] || (isArabic ? 'صديقي' : 'friend');
+    ? (isArabic ? 'يا صاحبي' : 'friend')
+    : user.fullName.trim().split(/\s+/)[0] || (isArabic ? 'يا صاحبي' : 'friend');
   const lessonTitle = nextLesson && (isArabic ? nextLesson.titleAr || nextLesson.title : nextLesson.title);
   const lessonSummary = nextLesson && (isArabic ? nextLesson.summaryAr || nextLesson.summary : nextLesson.summary);
 
@@ -326,7 +326,7 @@ export function StudentAdventureHome({
             </span>
             {isGuest && (
               <span className="ms-2 inline-flex items-center rounded-full border border-[#E5B85F]/35 bg-[#392F1E]/80 px-3 py-1.5 text-[10px] font-extrabold text-[#F5D98C]">
-                {isArabic ? 'نسخة تجريبية للضيف' : 'Guest preview · demo data'}
+                {isArabic ? 'معاينة ضيف · بيانات تجريبية' : 'Guest preview · demo data'}
               </span>
             )}
             <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight sm:text-5xl">
@@ -350,7 +350,7 @@ export function StudentAdventureHome({
           <div className="flex items-center gap-3 self-start rounded-2xl border border-white/10 bg-[#102431]/80 px-4 py-3 backdrop-blur sm:self-end">
             <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#E5B85F] bg-[#1B3B47] text-xl">✝</span>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#9BB9BE]">{isArabic ? 'محطات الرحلة' : 'Journey progress'}</p>
+              <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#9BB9BE]">{isArabic ? 'محطات رحلتك' : 'Journey progress'}</p>
               <p className="mt-0.5 text-sm font-black text-white">
                 {curriculumLoading
                   ? (isArabic ? 'بنحمّل المنهج' : 'Loading curriculum')
@@ -380,7 +380,7 @@ export function StudentAdventureHome({
               <div className="mt-5 flex flex-1 flex-col items-start justify-center gap-3">
                 <p className="text-sm leading-relaxed text-[#F0C9B9]">{isArabic ? 'تعذر تحميل دروس فصلك.' : 'Your class lessons could not be loaded.'}</p>
                 <button type="button" onClick={onRetryCurriculum} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#1D5256] px-4 text-sm font-extrabold text-white hover:bg-[#276B67] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
-                  <RefreshCw size={15} /> {isArabic ? 'إعادة المحاولة' : 'Try again'}
+                  <RefreshCw size={15} /> {isArabic ? 'جرّب تاني' : 'Try again'}
                 </button>
               </div>
             ) : nextLesson ? (
@@ -442,7 +442,7 @@ export function StudentAdventureHome({
             ) : curriculumError ? (
               <div className="mt-4">
                 <p className="text-sm text-[#F0C9B9]">{isArabic ? 'التقدم غير متاح حتى يكتمل تحميل المنهج.' : 'Progress is unavailable until the curriculum loads.'}</p>
-                <button type="button" onClick={onRetryCurriculum} className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-xs font-bold text-[#F5D98C] hover:bg-white/5"><RefreshCw size={13} />{isArabic ? 'إعادة المحاولة' : 'Try again'}</button>
+                <button type="button" onClick={onRetryCurriculum} className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-xs font-bold text-[#F5D98C] hover:bg-white/5"><RefreshCw size={13} />{isArabic ? 'جرّب تاني' : 'Try again'}</button>
               </div>
             ) : totalLessons > 0 ? (
               <>

@@ -160,7 +160,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   });
 
   const categories = [
-    { id: 'ALL', labelAr: 'كافة الطقوس', labelEn: 'All Rituals' },
+    { id: 'ALL', labelAr: 'كل الطقوس', labelEn: 'All Rituals' },
     { id: 'liturgy', labelAr: 'القداس الإلهي والأنافورا', labelEn: 'Divine Liturgy' },
     { id: 'incense', labelAr: 'رفع بخور عشية وباكر', labelEn: 'Offering of Incense' },
     { id: 'sacraments', labelAr: 'الأسرار الكنسية', labelEn: 'Holy Sacraments' },
@@ -366,12 +366,12 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                     <span>
                       {completedRituals[selectedItem.id]
                         ? (isAr ? '✓ تم إتمام دراسة الطقس وحساب الستريك' : '✓ Completed Ritual & Streak Active')
-                        : (isAr ? 'إتمام دراسة الترتيب الطقسي (+٥٠ نقطة)' : 'Complete Ritual Study (+50 Pts)')}
+                        : (isAr ? 'كمّل دراسة الترتيب الطقسي واكسب ٥٠ نقطة' : 'Complete Ritual Study (+50 Pts)')}
                     </span>
                   </button>
                   {completedRituals[selectedItem.id] && (
                     <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-                      🔥 {isAr ? 'تم تسجيل اليوم في سلسلتك الروحية' : 'Daily streak recorded!'}
+                      🔥 {isAr ? 'اتسجلت مواظبتك النهارده في رحلتك الروحية' : 'Daily streak recorded!'}
                     </span>
                   )}
                 </div>
@@ -381,7 +381,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
               <div className="space-y-4">
                 <h3 className="font-black text-sm text-[var(--mousa-teal-deep)] dark:text-amber-300 flex items-center gap-2">
                   <Layers size={16} />
-                  <span>{isAr ? 'خطوات الترتيب الطقسي بالتسلسل:' : 'Liturgical Sequence of Steps:'}</span>
+                  <span>{isAr ? 'خطوات الترتيب الطقسي بالترتيب:' : 'Liturgical Sequence of Steps:'}</span>
                 </h3>
 
                 <div className="space-y-4">
