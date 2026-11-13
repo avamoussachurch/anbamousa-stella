@@ -68,8 +68,9 @@ function JourneyPath({
   completedLessons,
   nextLesson,
   lang,
-  onNavigate
-}: Pick<StudentAdventureHomeProps, 'lessons' | 'completedLessons' | 'nextLesson' | 'lang' | 'onNavigate'>) {
+  onNavigate,
+  reduceMotion
+}: Pick<StudentAdventureHomeProps, 'lessons' | 'completedLessons' | 'nextLesson' | 'lang' | 'onNavigate'> & { reduceMotion: boolean }) {
   const isArabic = lang === 'ar';
   const pathLessons = lessons.slice(0, 5);
   const completedIds = new Set(completedLessons.map(lesson => lesson.id));
@@ -119,7 +120,7 @@ function JourneyPath({
               const isLocked = !isCompleted && !isCurrent;
               const title = isArabic ? (lesson.titleAr || lesson.title) : lesson.title;
               return (
-                <li key={lesson.id} className="min-w-0">
+                <motion.li key={lesson.id} className="min-w-0" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={reduceMotion ? { duration: 0 } : { duration: 0.28, delay: index * 0.055, ease: 'easeOut' }}>
                   <button
                     type="button"
                     onClick={() => onNavigate('lessons', isLocked ? undefined : lesson.id)}
@@ -159,7 +160,7 @@ function JourneyPath({
                     </span>
                     <ArrowUpRight size={14} className="ms-auto shrink-0 text-slate-500 sm:hidden" />
                   </button>
-                </li>
+                </motion.li>
               );
             })}
           </ol>
@@ -290,6 +291,7 @@ export function StudentAdventureHome({
         className="stella-adventure-hero relative isolate min-h-[300px] overflow-hidden rounded-[2rem] border border-[#34505E] bg-[#0A1925] px-5 py-5 text-white shadow-[0_32px_90px_-44px_rgba(0,0,0,.85)] sm:min-h-[330px] sm:px-9 sm:py-9"
       >
         <AdventureStars reduceMotion={Boolean(reduceMotion)} />
+        <motion.span aria-hidden="true" className="pointer-events-none absolute end-[12%] top-[18%] z-[1] text-2xl drop-shadow-[0_0_12px_rgba(245,217,140,.75)] sm:end-[18%] sm:top-[20%]" animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-4, 4, -4] }} transition={reduceMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}>🏮</motion.span>
         <div aria-hidden="true" className="absolute -end-14 -top-24 h-72 w-72 rounded-full bg-[#E7B956]/15 blur-[75px]" />
         <svg aria-hidden="true" viewBox="0 0 800 360" preserveAspectRatio="xMidYMax slice" className="absolute inset-x-0 bottom-0 h-[78%] w-full opacity-90">
           <defs>
@@ -479,6 +481,7 @@ export function StudentAdventureHome({
         nextLesson={nextLesson}
         lang={lang}
         onNavigate={onNavigate}
+        reduceMotion={Boolean(reduceMotion)}
       />
 
       {completedLessons.length > 0 && (

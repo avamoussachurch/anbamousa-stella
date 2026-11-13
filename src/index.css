@@ -2333,3 +2333,14 @@ main {
     background-attachment: scroll;
   }
 }
+
+
+/* Lightweight world delight: transform/opacity only; no layout or blur animation. */
+.stella-adventure-hero .stella-adventure-star { animation: stella-pixel-twinkle 2.8s steps(2, end) infinite; }
+@keyframes stella-pixel-twinkle {
+  0%, 100% { opacity: .35; transform: scale(.82); }
+  50% { opacity: 1; transform: scale(1.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stella-adventure-hero .stella-adventure-star { animation: none !important; }
+}

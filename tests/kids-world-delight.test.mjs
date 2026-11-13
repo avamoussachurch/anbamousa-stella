@@ -62,3 +62,15 @@ test('teacher dashboard explains missing assignments instead of presenting misle
   assert.match(server, /mergeStudentLessonProgress\(/);
   assert.match(server, /activeVersionByLesson/);
 });
+
+
+test('celebration effects stay lightweight on phones and pause when hidden', async () => {
+  const confetti = await read('../src/components/sunday-school/student/ConfettiCanvas.tsx');
+  const home = await read('../src/components/student/StudentAdventureHome.tsx');
+  assert.match(confetti, /width < 640 \? 42 : 110/);
+  assert.match(confetti, /Math\.min\(window\.devicePixelRatio \|\| 1, 1\.25\)/);
+  assert.match(confetti, /document\.addEventListener\('visibilitychange', handleVisibility\)/);
+  assert.match(confetti, /prefers-reduced-motion: reduce/);
+  assert.match(home, /🏮/);
+  assert.match(home, /reduceMotion \? false : \{ opacity: 0, y: 10 \}/);
+});
