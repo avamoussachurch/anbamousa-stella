@@ -963,13 +963,13 @@ test('parent workspace APIs allow hybrid parent accounts but reject accounts wit
   assert.equal(childList.status, 200, await childList.clone().text());
 
   const linkedReview = await request('/api/church/parent/child-learning-review/mark', {
-    role: 'student',
+    role: 'teacher',
     userId: hybridParentId
   });
   assert.equal(linkedReview.status, 200);
 
   const unrelatedReview = await request('/api/church/parent/child-learning-review/other', {
-    role: 'student',
+    role: 'teacher',
     userId: hybridParentId
   });
   assert.equal(unrelatedReview.status, 403);
