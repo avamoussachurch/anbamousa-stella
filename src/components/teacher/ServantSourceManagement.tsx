@@ -207,7 +207,7 @@ export const ServantSourceManagement: React.FC<ServantSourceManagementProps> = (
   const groundedCount = sources.filter(s => s.evidenceMapAvailable).length;
 
   return (
-    <div className="space-y-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       {/* Top Banner & Title */}
       <div className="bg-white dark:bg-slate-900 border border-[var(--color-church-cream-dark)] dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
