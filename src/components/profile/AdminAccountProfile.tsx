@@ -22,7 +22,7 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
   if (!account.userData || !account.roleAssigned) return <ProfileUnavailable lang={lang} />;
 
   const roleLabels: Record<Role, string> = {
-    student: isArabic ? 'طالب' : 'Student',
+    student: isArabic ? 'تلميذ' : 'Student',
     parent: isArabic ? 'ولي أمر' : 'Parent',
     teacher: isArabic ? 'خادم' : 'Servant',
     admin: isArabic ? 'مسؤول النظام' : 'Administrator',
@@ -33,8 +33,8 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
     setSecurityError(null);
     setSecurityMessage(null);
     const result = await refreshAssignedRoles();
-    if (result.success) setSecurityMessage(isArabic ? 'تم التحقق من الأدوار المعيّنة من الخادم.' : 'Assigned roles were refreshed from the server.');
-    else setSecurityError(result.error || (isArabic ? 'مش قادرين نراجع الأدوار.' : 'Could not refresh assigned roles.'));
+    if (result.success) setSecurityMessage(isArabic ? 'اتراجعنا من الأدوار المسجلة على الخادم.' : 'Assigned roles were refreshed from the server.');
+    else setSecurityError(result.error || (isArabic ? 'مش قادرين نراجع الأدوار دلوقتي.' : 'Could not refresh assigned roles.'));
     setRefreshingRoles(false);
   };
 
@@ -42,7 +42,7 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
     <ProfilePageFrame
       lang={lang}
       roleLabel={isArabic ? 'مسؤول النظام' : 'Administrator'}
-      title={isArabic ? 'ملف المسؤول' : 'Administrator profile'}
+      title={isArabic ? 'ملف مسؤول النظام' : 'Administrator profile'}
       subtitle={isArabic ? 'بيانات حسابك وإعدادات اللغة ومعلومات أمان صلاحيات الإدارة.' : 'Your account details, language preferences, and administrative access security.'}
       icon={<ShieldCheck size={28} />}
       onLogout={onLogout}
@@ -50,7 +50,7 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
       <div className="grid gap-5 lg:grid-cols-[1fr_.85fr]">
         <section className="rounded-[1.75rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-6">
           <div className="mb-5">
-            <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'حساب المسؤول' : 'Administrator account'}</p>
+            <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'حساب مسؤول النظام' : 'Administrator account'}</p>
             <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'تغيير اسمك مش هيغيّر أدوارك أو صلاحياتك.' : 'Editing your name does not change your assigned roles or permissions.'}</p>
           </div>
           <form onSubmit={event => void account.saveName(event)} className="space-y-4">
@@ -85,17 +85,17 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--state-selected)] text-[var(--action-primary)]"><LockKeyhole size={19} /></span>
           <div>
             <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'الأمان' : 'Security'}</p>
-            <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'وصول المسؤول' : 'Administrator access'}</h2>
+            <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'صلاحيات مسؤول النظام' : 'Administrator access'}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[var(--text-secondary)]">
               {isArabic
-                ? 'الخادم بيتأكد من صلاحية كل إجراء إداري. اختيار مساحة العمل أو ظهور أزرار في الشاشة مش معناه إن عندك صلاحية، ومش ممكن تغيّر الأدوار من الملف ده.'
+                ? 'الخادم بيتأكد من صلاحية كل إجراء إداري. ظهور مساحة العمل أو الأزرار مش معناه إن عندك صلاحية، ومش هتقدر تغيّر الأدوار من الملف ده.'
                 : 'The server verifies authorization for each administrative action. Workspace selection and visible controls do not grant permission, and roles cannot be edited from this profile.'}
             </p>
           </div>
         </div>
         <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)]/60 p-4">
           <div>
-            <p className="flex items-center gap-2 text-sm font-black text-[var(--brand-teal)]"><ShieldCheck size={17} />{isArabic ? 'الأدوار المسجلة على الحساب' : 'Roles assigned to this account'}</p>
+            <p className="flex items-center gap-2 text-sm font-black text-[var(--brand-teal)]"><ShieldCheck size={17} />{isArabic ? 'الأدوار المسجلة على حسابك' : 'Roles assigned to this account'}</p>
             <p className="mt-2 text-sm text-[var(--text-primary)]">{account.userData.roles.map(role => roleLabels[role]).join(' · ')}</p>
           </div>
           <button type="button" onClick={() => void recheckRoles()} disabled={refreshingRoles} className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-default)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--state-hover)] disabled:opacity-50">
