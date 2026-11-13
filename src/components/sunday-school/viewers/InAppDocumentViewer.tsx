@@ -98,7 +98,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
                   {documentTitle}
                 </h3>
                 <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800/60 font-mono font-medium">
-                  {isAr ? 'عرض مباشر داخل التطبيق' : 'In-App Direct Viewer'}
+                  {isAr ? 'عرض مباشر جوه التطبيق' : 'In-App Direct Viewer'}
                 </span>
                 {hasStructuredSlides && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-800 text-stone-300 font-mono">
@@ -108,7 +108,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
               </div>
               <p className="text-xs text-stone-400">
                 {isAr 
-                  ? 'عرض شرائح ومستندات الخادم بدون الحاجة للتحميل أو فتح نوافذ خارجية.' 
+                  ? 'اعرض شرائح ومستندات الخادم من غير ما تنزّل ملفات أو تفتح نوافذ برّه التطبيق.' 
                   : 'Teacher slide presentation and materials viewed directly within the application.'}
               </p>
             </div>
@@ -149,7 +149,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>{showNotes ? (isAr ? 'إخفاء الملاحظات' : 'Hide Notes') : (isAr ? 'عرض الملاحظات' : 'Show Notes')}</span>
+                <span>{showNotes ? (isAr ? 'اخفي الملاحظات' : 'Hide Notes') : (isAr ? 'اعرض الملاحظات' : 'Show Notes')}</span>
               </button>
             )}
 
@@ -185,7 +185,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
                 allow="autoplay"
               />
               <div className="p-2.5 bg-stone-950 border-t border-stone-800 text-center text-xs text-stone-400">
-                {isAr ? 'مستند العرض معروض بتقنية العارض المدمج دون مغادرة الدرس' : 'Document rendered via secure in-app viewer without leaving the lesson.'}
+                {isAr ? 'المستند بيتعرض جوه التطبيق من غير ما تخرج من الدرس.' : 'Document rendered via secure in-app viewer without leaving the lesson.'}
               </div>
             </div>
           ) : hasStructuredSlides && activeSlide ? (
@@ -230,7 +230,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
                   <div className="p-4 bg-stone-950/80 border border-amber-900/40 rounded-2xl space-y-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                       <FileText className="w-3.5 h-3.5" />
-                      {isAr ? 'ملاحظات وتوجيهات الخادم للشريحة' : 'Servant Teaching Notes'}
+                      {isAr ? 'ملاحظات الخادم على الشريحة' : 'Servant Teaching Notes'}
                     </span>
                     <p className="text-xs sm:text-sm text-stone-300 leading-relaxed font-serif">
                       {isAr && activeSlide.speakerNotesAr ? activeSlide.speakerNotesAr : activeSlide.speakerNotesEn}
@@ -244,7 +244,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
               <Layers className="w-12 h-12 text-stone-600" />
               <p className="text-sm text-stone-400">
-                {isAr ? 'لا توجد شرائح مرفقة لهذا الدرس.' : 'No presentation slides attached to this lesson.'}
+                {isAr ? 'مفيش شرائح مرفقة للدرس ده.' : 'No presentation slides attached to this lesson.'}
               </p>
             </div>
           )}
@@ -263,7 +263,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
               }`}
             >
               {isAr ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-              <span>{isAr ? 'الشريحة السابقة' : 'Previous Slide'}</span>
+              <span>{isAr ? 'الشريحة اللي قبلها' : 'Previous Slide'}</span>
             </button>
 
             {/* Slide Dots / Indicators */}
@@ -291,7 +291,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
                   : 'bg-amber-600 hover:bg-amber-500 text-white cursor-pointer active:scale-95 shadow-md'
               }`}
             >
-              <span>{isAr ? 'الشريحة التالية' : 'Next Slide'}</span>
+              <span>{isAr ? 'الشريحة اللي بعدها' : 'Next Slide'}</span>
               {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
           </div>
