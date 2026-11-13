@@ -81,7 +81,7 @@ test('main and quick navigation expose localized landmarks and selected destinat
     readFile(new URL('../App.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../index.css', import.meta.url), 'utf8')
   ]);
-  assert.match(bottomNav, /aria-label=\{lang === 'ar' \? 'التنقل الرئيسي' : 'Main navigation'\}/);
+  assert.match(bottomNav, /aria-label=\{lang === 'ar' \? 'القائمة الرئيسية' : 'Main navigation'\}/);
   assert.match(bottomNav, /aria-current=\{isActive \? 'page' : undefined\}/);
   assert.match(topBar, /aria-label=\{lang === 'ar' \? 'العودة للرئيسية' : 'Go to home'\}/);
   assert.match(topBar, /Church notifications, \$\{unreadCount\} unread/);
