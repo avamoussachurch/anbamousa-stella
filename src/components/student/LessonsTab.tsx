@@ -151,7 +151,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
             <div className="text-xs sm:text-sm text-stone-800 dark:text-stone-200 font-bold">
               <span>
                 {lang === 'ar' 
-                  ? '📅 يجري حالياً استكمال منهج دروس مدارس الأحد الأسبوعي لجميع الفصول بواسطة الخدام — الدروس المنشورة لمرحلتك متاحة أدناه للمعاينة والدراسة.' 
+                  ? '📅 الخدام بيكمّلوا منهج مدارس الأحد لكل الفصول. الدروس المنشورة لمرحلتك موجودة تحت، تقدر تشوفها وتذاكرها.' 
                   : '📅 The Sunday School weekly curriculum for each class is being finalized by servants — published lessons for your class are available below.'}
               </span>
             </div>
@@ -168,7 +168,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
                   {lang === 'copt' ? 'Ⲛⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲉⲕⲕⲗⲏⲥⲓⲁ' : lang === 'ar' ? 'محطات دروس مدارس الأحد' : 'Sunday School Milestones'}
                 </h1>
                 <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)]">
-                  {lang === 'copt' ? 'Ϩⲁⲛⲥⲃⲱ ⲙ̀ⲡⲛⲉⲩⲙⲁⲧⲓⲕⲟⲛ ⲛⲉⲙ ⲛⲓⲇⲟⲕⲓⲙⲏ' : lang === 'ar' ? 'مسيرة الأنبا موسى الروحية، قصص كتابية واختبارات تفاعلية' : 'Journey of Moses spiritual trail, Bible stories & interactive quizzes'}
+                  {lang === 'copt' ? 'Ϩⲁⲛⲥⲃⲱ ⲙ̀ⲡⲛⲉⲩⲙⲁⲧⲓⲕⲟⲛ ⲛⲉⲙ ⲛⲓⲇⲟⲕⲓⲙⲏ' : lang === 'ar' ? 'رحلة الأنبا موسى، وقصص من الكتاب المقدس واختبارات تفاعلية' : 'Journey of Moses spiritual trail, Bible stories & interactive quizzes'}
                 </p>
               </div>
             </div>
@@ -201,7 +201,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
           <button
             onClick={() => setShowClassModal(true)}
             className="px-3.5 py-2 rounded-2xl bg-[var(--mousa-cream-surface)] border border-[var(--mousa-border-sand)] text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] hover:border-[var(--mousa-gold)] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
-            title={lang === 'ar' ? 'تعديل أو مراجعة فصلك الدراسي' : 'Change or review your Sunday School class'}
+            title={lang === 'ar' ? 'غيّر فصلك أو راجع بياناته' : 'Change or review your Sunday School class'}
           >
             <span>⛪</span>
             <span>
@@ -209,7 +209,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
                 ? (userData.activationStatus === 'PENDING_APPROVAL' 
                     ? (lang === 'ar' ? `قيد المراجعة: ${userData.grade}` : `Pending: ${userData.grade}`) 
                     : (lang === 'ar' ? `فصلي: ${userData.grade}` : `Class: ${userData.grade}`))
-                : (lang === 'ar' ? 'تحديد فصل مدارس الأحد' : 'Select Class')}
+                : (lang === 'ar' ? 'اختار فصل مدارس الأحد' : 'Select Class')}
             </span>
             <span className="text-[10px] text-[var(--mousa-coral)] font-bold underline">
               {lang === 'ar' ? 'تعديل' : 'Change'}
@@ -226,7 +226,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
           </div>
           <input
             type="text"
-            placeholder={lang === 'copt' ? 'Ⲕⲱϯ ⲛ̀ⲥⲁ ⲟⲩⲥⲃⲱ...' : lang === 'ar' ? 'ابحث عن محطة أو درس في البرية...' : 'Search desert milestones or Bible stories...'}
+            placeholder={lang === 'copt' ? 'Ⲕⲱϯ ⲛ̀ⲥⲁ ⲟⲩⲥⲃⲱ...' : lang === 'ar' ? 'دوّر على محطة أو درس في رحلتك...' : 'Search desert milestones or Bible stories...'}
             className={`block w-full rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] py-2.5 ${lang === 'ar' ? 'pr-9 pl-4' : 'pl-9 pr-4'} text-xs sm:text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] placeholder-[var(--mousa-sand-500)] focus:border-[var(--mousa-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--mousa-gold)] transition-colors shadow-2xs`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -291,16 +291,16 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
         <div role="status" className="rounded-3xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-8 text-center space-y-3">
           <div className="text-3xl">📚</div>
           <p className="font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-            {lang === 'ar' ? 'جاري تحميل دروس فصلك...' : 'Loading your class curriculum...'}
+            {lang === 'ar' ? 'بنحمّل دروس فصلك...' : 'Loading your class curriculum...'}
           </p>
-          <p className="text-xs text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'نعرض الدروس المعتمدة من قاعدة البيانات فقط.' : 'Only lessons confirmed by Supabase will appear here.'}</p>
+          <p className="text-xs text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'هتلاقي هنا الدروس المنشورة والمعتمدة بس.' : 'Only lessons confirmed by Supabase will appear here.'}</p>
         </div>
       ) : isOnlineCurriculumFailed ? (
         <div role="alert" className="rounded-3xl border border-red-300 bg-red-50 p-6 text-center space-y-3 dark:border-red-900 dark:bg-red-950/30">
-          <p className="font-bold text-red-900 dark:text-red-200">{lang === 'ar' ? 'تعذر تحميل المنهج المعتمد.' : 'Could not load the published curriculum.'}</p>
+          <p className="font-bold text-red-900 dark:text-red-200">{lang === 'ar' ? 'مش قادرين نحمّل المنهج المنشور.' : 'Could not load the published curriculum.'}</p>
           <p className="text-xs text-red-800 dark:text-red-300">{curriculumError}</p>
           <button type="button" onClick={() => void refreshCurriculum()} className="rounded-xl bg-red-700 px-4 py-2 text-xs font-bold text-white">
-            {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+            {lang === 'ar' ? 'جرّب تاني' : 'Retry'}
           </button>
         </div>
       ) : (
@@ -397,7 +397,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
                       <button
                         onClick={() => setEditingLesson(lesson)}
                         className="px-3 py-1.5 rounded-xl bg-[var(--mousa-sand-100)] text-[var(--mousa-teal)] hover:bg-[var(--mousa-sand-200)] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer border border-[var(--mousa-border-sand)]"
-                        title={lang === 'copt' ? 'Ϣⲉⲃⲓⲱ' : lang === 'ar' ? 'تعديل هذا الدرس' : 'Edit lesson'}
+                        title={lang === 'copt' ? 'Ϣⲉⲃⲓⲱ' : lang === 'ar' ? 'عدّل الدرس ده' : 'Edit lesson'}
                       >
                         <Edit3 size={13} />
                         <span>{lang === 'copt' ? 'Ϣⲉⲃⲓⲱ' : lang === 'ar' ? 'تعديل' : 'Edit'}</span>
