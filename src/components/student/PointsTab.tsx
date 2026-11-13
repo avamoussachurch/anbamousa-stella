@@ -135,7 +135,7 @@ export function PointsTab({ lang }: { lang: Language }) {
   if (!userData) return null;
 
   return (
-    <div className="pb-24 pt-6 px-4 w-full max-w-7xl mx-auto space-y-8 overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="pb-24 pt-6 px-4 w-full max-w-7xl mx-auto space-y-8 overflow-hidden" dir="rtl">
       {/* 4-Section View Toggle in Exact Required Order */}
       <div className="flex flex-wrap bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] rounded-2xl p-1.5 shadow-sm border-2 border-[var(--mousa-border-sand)] relative z-10 text-xs sm:text-sm max-w-2xl mx-auto gap-1">
         {/* 1. Streak Stars — Arabic: نجوم الستريك (DEFAULT) */}
