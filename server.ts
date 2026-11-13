@@ -6947,7 +6947,11 @@ app.get("/api/church/leaderboard", async (req, res) => {
       const instanceById = new Map<string, any>((allInstances || []).map((item: any) => [item.id, item]));
       let permittedGroupIds: string[] = [];
 
-      if (hasServerRole(authContext, 'student')) {
+      if (hasServerRole(authContext, 'admin')) {
+        permittedGroupIds = Array.from(new Set((allInstances || [])
+          .map((instance: any) => instance.class_group_id)
+          .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
+      } else if (hasServerRole(authContext, 'student')) {
         const { data: ownMemberships, error: membershipError } = await client
           .from('class_memberships')
           .select('class_instance_id')
@@ -6975,10 +6979,6 @@ app.get("/api/church/leaderboard", async (req, res) => {
         }
         permittedGroupIds = Array.from(new Set((assignments || [])
           .map((assignment: any) => instanceById.get(assignment.class_instance_id)?.class_group_id)
-          .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
-      } else {
-        permittedGroupIds = Array.from(new Set((allInstances || [])
-          .map((instance: any) => instance.class_group_id)
           .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
       }
 
