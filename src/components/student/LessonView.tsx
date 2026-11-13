@@ -116,7 +116,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
         }
       });
     }
-  }, [lessonId, activePublishedVersion?.id, userData?.id, currentStudentId, readOnly, isOnlineAuth, lang]);
+  }, [lessonId, activePublishedVersion?.id, userData?.id, currentStudentId, readOnly, isOnlineAuth]);
 
   if (isOnlineAuth && !curriculumReady) {
     return (
