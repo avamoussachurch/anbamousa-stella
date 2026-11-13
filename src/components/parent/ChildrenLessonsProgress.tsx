@@ -189,7 +189,7 @@ export function ChildrenLessonsProgress({
   });
 
   return (
-    <div className="space-y-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       {/* Child Selector Tabs */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-[var(--color-church-cream-dark)] shadow-sm">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 flex-1">
