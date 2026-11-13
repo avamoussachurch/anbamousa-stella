@@ -55,7 +55,7 @@ interface ParentHomeDashboardProps {
 
 function FamilyIllustration({ lang }: { lang: Language }) {
   return (
-    <svg viewBox="0 0 440 250" role="img" aria-label={lang === 'ar' ? 'رسم للعائلة في طريقها إلى الكنيسة' : 'Illustration of a family walking toward church'} className="w-full max-w-[25rem]">
+    <svg viewBox="0 0 440 250" role="img" aria-label={lang === 'ar' ? 'رسمة لعيلة في طريقها للكنيسة' : 'Illustration of a family walking toward church'} className="w-full max-w-[25rem]">
       <defs>
         <linearGradient id="family-sky" x1="0" x2="1" y1="0" y2="1">
           <stop offset="0" stopColor="#20565a" />
@@ -103,16 +103,16 @@ function SectionHeading({ icon: Icon, eyebrow, title, action }: { icon: LucideIc
 
 function ReviewState({ state, lang, onRetry }: { state: ReturnType<typeof getParentChildReviewState>; lang: Language; onRetry: () => void }) {
   if (state === 'loading') {
-    return <div role="status" aria-label={lang === 'ar' ? 'جارٍ تحميل رحلة التعلّم' : 'Loading learning journey'} className="mt-4 space-y-2"><div className="h-3 animate-pulse rounded-full bg-[var(--surface-secondary)]" /><div className="h-3 w-2/3 animate-pulse rounded-full bg-[var(--surface-secondary)]" /></div>;
+    return <div role="status" aria-label={lang === 'ar' ? 'بنحمّل رحلة التعلّم' : 'Loading learning journey'} className="mt-4 space-y-2"><div className="h-3 animate-pulse rounded-full bg-[var(--surface-secondary)]" /><div className="h-3 w-2/3 animate-pulse rounded-full bg-[var(--surface-secondary)]" /></div>;
   }
   if (state === 'error') {
-    return <div role="alert" className="mt-4 rounded-xl border border-[var(--feedback-error)]/30 p-3 text-xs text-[var(--feedback-error)]"><AlertCircle size={15} className="me-1 inline" />{lang === 'ar' ? 'تعذر تحميل سجل التعلّم.' : 'Learning records could not be loaded.'}<button type="button" onClick={onRetry} className="ms-2 inline-flex items-center gap-1 font-bold underline"><RefreshCw size={12} />{lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}</button></div>;
+    return <div role="alert" className="mt-4 rounded-xl border border-[var(--feedback-error)]/30 p-3 text-xs text-[var(--feedback-error)]"><AlertCircle size={15} className="me-1 inline" />{lang === 'ar' ? 'مش قادرين نحمّل سجل التعلّم.' : 'Learning records could not be loaded.'}<button type="button" onClick={onRetry} className="ms-2 inline-flex items-center gap-1 font-bold underline"><RefreshCw size={12} />{lang === 'ar' ? 'جرّب تاني' : 'Retry'}</button></div>;
   }
   if (state === 'unavailable') {
-    return <p role="note" className="mt-4 text-xs text-[var(--text-secondary)]">{lang === 'ar' ? 'سجل التعلّم غير متاح حالياً.' : 'Learning records are currently unavailable.'}</p>;
+    return <p role="note" className="mt-4 text-xs text-[var(--text-secondary)]">{lang === 'ar' ? 'سجل التعلّم مش متاح دلوقتي.' : 'Learning records are currently unavailable.'}</p>;
   }
   if (state === 'empty') {
-    return <p className="mt-4 rounded-xl bg-[var(--surface-secondary)]/70 p-3 text-xs leading-relaxed text-[var(--text-secondary)]">{lang === 'ar' ? 'لا توجد دروس منشورة لهذا الصف أو سجلات تعلّم متاحة بعد.' : 'No published lessons or learning records are available for this grade yet.'}</p>;
+    return <p className="mt-4 rounded-xl bg-[var(--surface-secondary)]/70 p-3 text-xs leading-relaxed text-[var(--text-secondary)]">{lang === 'ar' ? 'لسه مفيش دروس منشورة للصف ده أو بيانات تقدّم متاحة.' : 'No published lessons or learning records are available for this grade yet.'}</p>;
   }
   return null;
 }
@@ -170,30 +170,30 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
     subtitle: 'كل لحظة تشجيع بتفرق. تابع رحلة أولادك من السجلات الحقيقية في مكان واحد.',
     children: 'أولادي',
     childrenIntro: 'حسابات مرتبطة بعلاقة أسرية موثّقة',
-    selectChild: 'اختار ابنك لمتابعة رحلته',
+    selectChild: 'اختار ابنك عشان تتابع رحلته',
     journey: 'رحلة التعلّم',
     completed: 'دروس مكتملة من المنهج المنشور',
     weekly: 'نشاط آخر ٧ أيام',
     weeklyComplete: 'إتمام مسجل هذا الأسبوع',
     className: 'فصل مدارس الأحد',
     hymns: 'مستوى الألحان والطقس',
-    openJourney: 'عرض رحلة التعلّم',
+    openJourney: 'اعرض رحلة التعلّم',
     noChildren: 'لسه مفيش أطفال مرتبطين بالحساب',
     noChildrenText: 'اربط حساب الطفل بكود التوصيل الموثّق عشان تتابع بياناته الحقيقية.',
     connect: 'ربط طفل',
     connectAnother: 'ربط طفل آخر',
-    retry: 'إعادة المحاولة',
+    retry: 'جرّب تاني',
     refresh: 'تحديث البيانات',
     attention: 'محتاج اهتمامك',
     rewardCount: 'طلب مكافأة بانتظار مراجعتك',
-    noAttention: 'لا توجد طلبات تتطلب مراجعتك حالياً.',
+    noAttention: 'مفيش طلبات محتاجة مراجعتك دلوقتي.',
     events: 'مواعيد تهم الأسرة',
-    noEvents: 'لا توجد فعاليات قادمة مسجلة.',
+    noEvents: 'مفيش فعاليات جاية متسجلة.',
     announcements: 'أخبار الكنيسة',
-    noAnnouncements: 'لا توجد إعلانات منشورة حالياً.',
-    noLearningWeek: 'لا يوجد إتمام دروس مسجل خلال الأيام السبعة الماضية.',
-    achievementsUnavailable: 'سجل الإنجازات غير متاح من مصدر موثوق.',
-    attendanceUnavailable: 'بيانات الحضور غير متاحة من مصدر موثوق.'
+    noAnnouncements: 'مفيش إعلانات منشورة دلوقتي.',
+    noLearningWeek: 'مفيش دروس اتسجل إكمالها خلال آخر ٧ أيام.',
+    achievementsUnavailable: 'سجل الإنجازات مش متاح من مصدر موثوق.',
+    attendanceUnavailable: 'بيانات الحضور مش متاحة من مصدر موثوق.'
   } : {
     eyebrow: 'FAMILY PORTAL',
     welcome: `Welcome, ${parentName}`,
@@ -249,7 +249,7 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
             <p className="mt-3 max-w-xl text-sm leading-7 text-white/75 sm:text-base">{labels.subtitle}</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold"><Users size={16} />{childrenLoading ? '…' : childrenError ? '—' : children.length} {isArabic ? 'أبناء مرتبطين' : 'linked children'}</span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold text-white/75"><ShieldCheck size={15} />{isArabic ? 'بيانات مرتبطة موثّقة' : 'Verified linked records'}</span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold text-white/75"><ShieldCheck size={15} />{isArabic ? 'بيانات مرتبطة وموثّقة' : 'Verified linked records'}</span>
               {!childrenLoading && !childrenError && children.length > 0 && <button type="button" onClick={onAddChild} className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-black text-white transition hover:bg-white/20"><Plus size={15} />{labels.connectAnother}</button>}
             </div>
           </div>
@@ -265,7 +265,7 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
           action={<button type="button" onClick={onRefreshChildren} aria-label={labels.refresh} className="rounded-xl border border-[var(--border-default)] p-2 text-[var(--text-secondary)] transition hover:bg-[var(--state-hover)]"><RefreshCw size={17} /></button>}
         />
         {familyState === 'loading' ? (
-          <div role="status" aria-label={isArabic ? 'جارٍ تحميل بيانات الأبناء' : 'Loading linked children'} className="grid gap-4 md:grid-cols-2">
+          <div role="status" aria-label={isArabic ? 'بنحمّل بيانات الأولاد' : 'Loading linked children'} className="grid gap-4 md:grid-cols-2">
             {[0, 1].map(item => <div key={item} className="h-56 animate-pulse rounded-2xl bg-[var(--surface-secondary)]" />)}
           </div>
         ) : familyState === 'error' ? (
@@ -295,14 +295,14 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
                       {child.avatarUrl ? <img src={child.avatarUrl} alt="" className="h-14 w-14 shrink-0 rounded-2xl bg-[var(--surface-primary)] object-cover" /> : <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--state-selected)] text-xl font-black text-[var(--action-primary)]">{initials}</span>}
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-lg font-black text-[var(--text-primary)]">{child.name}</span>
-                        <span className="mt-1 block text-xs text-[var(--text-secondary)]">{child.grade || (isArabic ? 'الصف غير مسجل' : 'Grade not recorded')}</span>
+                        <span className="mt-1 block text-xs text-[var(--text-secondary)]">{child.grade || (isArabic ? 'الصف مش متسجل' : 'Grade not recorded')}</span>
                       </span>
                       <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black ${isSelected ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)]' : 'bg-[var(--surface-primary)] text-[var(--text-secondary)]'}`}>{isSelected ? (isArabic ? 'محدد' : 'Selected') : (isArabic ? 'اختيار' : 'Select')}</span>
                     </button>
 
                     <div className="mt-4 grid grid-cols-2 gap-2 border-y border-[var(--border-default)] py-3 text-xs">
-                      <div><p className="text-[var(--text-tertiary)]">{labels.className}</p><p className="mt-1 truncate font-bold text-[var(--text-primary)]">{isArabic ? child.classNameAr || 'غير مسجل' : child.className || 'Not recorded'}</p></div>
-                      <div><p className="text-[var(--text-tertiary)]">{labels.hymns}</p><p className="mt-1 truncate font-bold text-[var(--text-primary)]">{child.hymnsTaxisLevel ? (isArabic ? `المستوى ${child.hymnsTaxisLevel}` : `Level ${child.hymnsTaxisLevel}`) : (isArabic ? 'غير متاح' : 'Not available')}</p></div>
+                      <div><p className="text-[var(--text-tertiary)]">{labels.className}</p><p className="mt-1 truncate font-bold text-[var(--text-primary)]">{isArabic ? child.classNameAr || 'مش متسجل' : child.className || 'Not recorded'}</p></div>
+                      <div><p className="text-[var(--text-tertiary)]">{labels.hymns}</p><p className="mt-1 truncate font-bold text-[var(--text-primary)]">{child.hymnsTaxisLevel ? (isArabic ? `المستوى ${child.hymnsTaxisLevel}` : `Level ${child.hymnsTaxisLevel}`) : (isArabic ? 'مش متاح' : 'Not available')}</p></div>
                     </div>
 
                     {reviewState === 'ready' && result.data && (
@@ -361,7 +361,7 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
                         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-200/70 text-amber-900 dark:bg-amber-300/10 dark:text-amber-200"><Sparkles size={18} /></span>
                         <div><p className="font-black text-[var(--text-primary)]">{pendingForLinkedChildren.length} {labels.rewardCount}</p><p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">{isArabic ? 'الطلبات المعروضة تخص الأبناء المرتبطين الموثقين فقط.' : 'Only requests for verified linked children are included.'}</p></div>
                       </div>
-                      <button type="button" onClick={onOpenFamily} className="mt-4 rounded-xl bg-amber-800 px-3 py-2 text-xs font-black text-white hover:bg-amber-900">{isArabic ? 'مراجعة الطلبات' : 'Review requests'}</button>
+                      <button type="button" onClick={onOpenFamily} className="mt-4 rounded-xl bg-amber-800 px-3 py-2 text-xs font-black text-white hover:bg-amber-900">{isArabic ? 'راجع الطلبات' : 'Review requests'}</button>
                     </div>
                   ) : <div className="flex items-center gap-3 rounded-xl bg-[var(--surface-secondary)]/60 p-4"><CheckCircle2 size={19} className="shrink-0 text-[var(--brand-teal)]" /><p className="text-sm text-[var(--text-secondary)]">{labels.noAttention}</p></div>}
           <div className="mt-4 grid gap-2 border-t border-[var(--border-default)] pt-4 sm:grid-cols-2">
@@ -373,9 +373,9 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
         <section className="rounded-[1.75rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-6">
           <SectionHeading
             icon={CalendarDays}
-            eyebrow={isArabic ? 'تقويم الأسرة' : 'FAMILY CALENDAR'}
+            eyebrow={isArabic ? 'تقويم العيلة' : 'FAMILY CALENDAR'}
             title={labels.events}
-            action={<button type="button" onClick={onOpenEvents} className="rounded-lg px-2 py-1 text-xs font-black text-[var(--action-primary)] hover:bg-[var(--state-hover)]">{isArabic ? 'عرض التقويم' : 'Open calendar'}</button>}
+            action={<button type="button" onClick={onOpenEvents} className="rounded-lg px-2 py-1 text-xs font-black text-[var(--action-primary)] hover:bg-[var(--state-hover)]">{isArabic ? 'افتح التقويم' : 'Open calendar'}</button>}
           />
           {eventsLoading ? <div role="status" className="space-y-2"><div className="h-16 animate-pulse rounded-xl bg-[var(--surface-secondary)]" /><div className="h-16 animate-pulse rounded-xl bg-[var(--surface-secondary)]" /></div>
             : eventsError ? <p role="alert" className="rounded-xl border border-[var(--feedback-error)]/30 p-3 text-sm text-[var(--feedback-error)]">{eventsError}</p>

@@ -44,7 +44,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
     setError('');
     const registrationLevel = parseHymnsTaxisLevel(selectedHymnsTaxisLevel);
     if (isRegister && role === 'student' && registrationLevel === null) {
-      setError(lang === 'ar' ? 'اختار المستوى المشترك للألحان والطقس قبل إنشاء الحساب.' : 'Choose your shared Hymns & Taxis level before registering.');
+      setError(lang === 'ar' ? 'اختار مستوى الألحان والطقس قبل ما تعمل حساب.' : 'Choose your shared Hymns & Taxis level before registering.');
       setLoading(false);
       return;
     }
@@ -62,7 +62,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
             registrationLevel
           );
           if (!res.success) {
-            setError(res.error || (lang === 'ar' ? 'فشل إنشاء الحساب' : 'Registration failed'));
+            setError(res.error || (lang === 'ar' ? 'حصلت مشكلة وإحنا بنعمل الحساب. جرّب تاني.' : 'Registration failed'));
             setLoading(false);
             return;
           }
@@ -81,7 +81,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
         } else {
           const res = await loginWithSupabase(email, password);
           if (!res.success) {
-            setError(res.error || (lang === 'ar' ? 'فشل تسجيل الدخول. تحقق من البريد وكلمة السر.' : 'Login failed. Please check your credentials.'));
+            setError(res.error || (lang === 'ar' ? 'مش قادرين نسجّل دخولك. اتأكد من الإيميل وكلمة السر وجرّب تاني.' : 'Login failed. Please check your credentials.'));
             setLoading(false);
             return;
           }
@@ -93,7 +93,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
         return;
       } catch (sbErr: any) {
         console.warn('Supabase auth attempt error:', sbErr);
-        setError(sbErr.message || 'Authentication error');
+        setError(sbErr.message || 'حصلت مشكلة في تسجيل الدخول. جرّب تاني.');
         setLoading(false);
         return;
       }
@@ -230,11 +230,11 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
             {lang === 'copt' ? 'Ⲁⲛⲃⲁ Ⲙⲱⲩⲥⲏ' : lang === 'ar' ? 'الأنبا موسى' : 'Anba Mousa'}
           </h1>
           <p className="mx-auto max-w-xs text-[10px] font-black uppercase tracking-[.16em] text-[var(--mousa-gold-dark)] dark:text-[var(--mousa-gold)]">
-            {lang === 'ar' ? 'ننمو في الإيمان، ونتعلم بمحبة' : lang === 'copt' ? 'Ⲧⲉⲛϣⲟⲩϣⲟⲩ ϧⲉⲛ ⲡⲓⲛⲁϩϯ ⲛⲉⲙ ⲡⲓⲙⲁⲑⲏⲧⲏⲥ' : 'Growing in Faith, Learning in Love'}
+            {lang === 'ar' ? 'نكبر في الإيمان ونتعلّم بالمحبة' : lang === 'copt' ? 'Ⲧⲉⲛϣⲟⲩϣⲟⲩ ϧⲉⲛ ⲡⲓⲛⲁϩϯ ⲛⲉⲙ ⲡⲓⲙⲁⲑⲏⲧⲏⲥ' : 'Growing in Faith, Learning in Love'}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {isRegister 
-              ? (lang === 'copt' ? 'Ⲁⲣⲓ ⲟⲩⲕⲗⲟⲙ ⲙ̀ⲃⲉⲣⲓ ⲉ̀ⲛⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲕⲩⲣⲓⲁⲕⲏ' : lang === 'ar' ? 'أنشئ حسابك الجديد للانضمام إلى مدارس الأحد' : 'Create your Sunday School account')
+              ? (lang === 'copt' ? 'Ⲁⲣⲓ ⲟⲩⲕⲗⲟⲙ ⲙ̀ⲃⲉⲣⲓ ⲉ̀ⲛⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲕⲩⲣⲓⲁⲕⲏ' : lang === 'ar' ? 'اعمل حساب جديد وانضم لمدارس الأحد' : 'Create your Sunday School account')
               : (lang === 'copt' ? 'Ϣⲉ ⲉ̀ϧⲟⲩⲛ ⲉ̀ⲛⲓⲥⲃⲱ ⲟⲩⲟϩ ϭⲓ ⲛⲓⲧⲁⲓⲟ' : lang === 'ar' ? 'سجل دخولك عشان تتابع دروسك وتجمع نقاط' : 'Sign in to follow lessons & earn points')
             }
           </p>
@@ -250,7 +250,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
         {isRegister && (
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-              {lang === 'copt' ? 'Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ⲡⲓⲣⲁⲛ:' : lang === 'ar' ? 'نوع الحساب:' : 'Account Role:'}
+              {lang === 'copt' ? 'Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ⲡⲓⲣⲁⲛ:' : lang === 'ar' ? 'هتستخدم الموقع بصفتك إيه؟' : 'Account Role:'}
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -294,7 +294,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
           {isRegister && (
             <div>
               <label className="text-xs font-bold text-gray-600 dark:text-gray-300 block mb-1">
-                {lang === 'copt' ? 'Ⲡⲉⲕⲣⲁⲛ ⲧⲏⲣϥ' : lang === 'ar' ? 'الاسم بالكامل' : 'Full Name'}
+                {lang === 'copt' ? 'Ⲡⲉⲕⲣⲁⲛ ⲧⲏⲣϥ' : lang === 'ar' ? 'اسمك بالكامل' : 'Full Name'}
               </label>
               <div className="relative">
                 <input 
@@ -315,7 +315,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
             <div className="space-y-3 p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40">
               <div>
                 <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5 flex items-center justify-between">
-                  <span>{lang === 'copt' ? 'Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ϯⲕⲩⲣⲓⲁⲕⲏ:' : lang === 'ar' ? 'فصل مدارس الأحد (المرحلة):' : 'Sunday School Class Group:'}</span>
+                  <span>{lang === 'copt' ? 'Ⲡⲓⲧⲁⲝⲓⲥ ⲛ̀ⲧⲉ ϯⲕⲩⲣⲓⲁⲕⲏ:' : lang === 'ar' ? 'فصل مدارس الأحد:' : 'Sunday School Class Group:'}</span>
                   <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold">
                     {CLASS_GROUPS[selectedClassGroupId]?.name[lang === 'ar' ? 'ar' : 'en']}
                   </span>
@@ -348,7 +348,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
 
               <div>
                 <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
-                  {lang === 'copt' ? 'ϯⲧⲁⲝⲓⲥ ⲉⲧⲥⲟⲧⲡ:' : lang === 'ar' ? 'الصف الدراسي المحدد:' : 'Specific Grade:'}
+                  {lang === 'copt' ? 'ϯⲧⲁⲝⲓⲥ ⲉⲧⲥⲟⲧⲡ:' : lang === 'ar' ? 'صفّك الدراسي:' : 'Specific Grade:'}
                 </label>
                 <select
                   value={selectedGrade}
@@ -363,14 +363,14 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
                 </select>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
                   {lang === 'ar' 
-                    ? 'سيتم إرسال طلب تفعيل الحساب للخادم المسؤول عن هذا الفصل لاعتماده فوراً.' 
+                    ? 'هنبعت طلب تفعيل حسابك لخادم الفصل عشان يراجعه.' 
                     : 'An account activation request will be sent to your Sunday School servant.'}
                 </p>
               </div>
 
               <div>
                 <label htmlFor="hymns-taxis-level" className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
-                  {lang === 'ar' ? 'المستوى المشترك للألحان والطقس:' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲛ̀ϩⲓⲙⲛⲟⲥ ⲛⲉⲙ ⲛ̀ⲧⲁⲝⲓⲥ:' : 'Shared Hymns & Taxis Level:'}
+                  {lang === 'ar' ? 'مستوى الألحان والطقس:' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲛ̀ϩⲓⲙⲛⲟⲥ ⲛⲉⲙ ⲛ̀ⲧⲁⲝⲓⲥ:' : 'Shared Hymns & Taxis Level:'}
                 </label>
                 <select
                   id="hymns-taxis-level"
@@ -379,14 +379,14 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
                   onChange={event => setSelectedHymnsTaxisLevel(parseHymnsTaxisLevel(event.target.value) || '')}
                   className="w-full bg-white dark:bg-slate-800 text-gray-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--mousa-teal)]"
                 >
-                  <option value="">{lang === 'ar' ? 'اختار المستوى' : 'Select a level'}</option>
+                  <option value="">{lang === 'ar' ? 'اختار مستواك' : 'Select a level'}</option>
                   <option value={1}>{lang === 'ar' ? 'المستوى الأول' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲛ̀ϩⲟⲩⲓⲧ' : 'Level 1'}</option>
                   <option value={2}>{lang === 'ar' ? 'المستوى الثاني' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲙ̀ⲙⲁϩⲥⲛⲟⲩϯ' : 'Level 2'}</option>
                   <option value={3}>{lang === 'ar' ? 'المستوى الثالث' : lang === 'copt' ? 'Ⲡⲓⲙⲁ ⲙ̀ⲙⲁϩϣⲟⲙϯ' : 'Level 3'}</option>
                 </select>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
                   {lang === 'ar'
-                    ? 'اختيار واحد هيتطبق على الألحان والطقس معاً، ويتحفظ في ملفك.'
+                    ? 'المستوى اللي هتختاره هيتطبق على الألحان والطقس، وهيتحفظ في حسابك.'
                     : 'One selection applies to both Hymns and Taxis and is saved to your profile.'}
                 </p>
               </div>
@@ -395,7 +395,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
 
           <div>
             <label className="text-xs font-bold text-gray-600 dark:text-gray-300 block mb-1">
-              {lang === 'copt' ? 'Ⲡⲓⲧⲁⲭⲩⲇⲣⲟⲙⲟⲥ' : lang === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+              {lang === 'copt' ? 'Ⲡⲓⲧⲁⲭⲩⲇⲣⲟⲙⲟⲥ' : lang === 'ar' ? 'الإيميل' : 'Email'}
             </label>
             <div className="relative">
               <input 
@@ -412,7 +412,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
 
           <div>
             <label className="text-xs font-bold text-gray-600 dark:text-gray-300 block mb-1">
-              {lang === 'copt' ? 'Ⲡⲓⲗⲟⲅⲟⲥ ⲛ̀ⲕⲉⲗⲉⲯ' : lang === 'ar' ? 'كلمة المرور' : 'Password'}
+              {lang === 'copt' ? 'Ⲡⲓⲗⲟⲅⲟⲥ ⲛ̀ⲕⲉⲗⲉⲯ' : lang === 'ar' ? 'كلمة السر' : 'Password'}
             </label>
             <div className="relative">
               <input 
@@ -437,7 +437,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
                 className="w-4 h-4 rounded border-[var(--mousa-border-sand)] text-[var(--mousa-teal)] focus:ring-[var(--mousa-teal)] accent-[var(--mousa-teal)] cursor-pointer"
               />
               <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                {lang === 'copt' ? 'Ⲁⲣⲓⲡⲁⲙⲉⲩⲓ ϧⲉⲛ ⲡⲁⲓⲥⲕⲉⲩⲟⲥ' : lang === 'ar' ? 'تذكرني على هذا الجهاز' : 'Remember me on this device'}
+                {lang === 'copt' ? 'Ⲁⲣⲓⲡⲁⲙⲉⲩⲓ ϧⲉⲛ ⲡⲁⲓⲥⲕⲉⲩⲟⲥ' : lang === 'ar' ? 'افتكرني على الجهاز ده' : 'Remember me on this device'}
               </span>
             </label>
           </div>
@@ -452,8 +452,8 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
             ) : (
               <span>
                 {isRegister 
-                  ? (lang === 'copt' ? 'Ⲑⲁⲙⲓⲟ ⲛ̀ⲟⲩⲕⲗⲟⲙ ⲙ̀ⲃⲉⲣⲓ' : lang === 'ar' ? 'إنشاء حساب جديد بالبريد' : 'Create Account with Email')
-                  : (lang === 'copt' ? 'Ϣⲉ ⲉ̀ϧⲟⲩⲛ' : lang === 'ar' ? 'تسجيل الدخول بالبريد' : 'Sign In with Email')
+                  ? (lang === 'copt' ? 'Ⲑⲁⲙⲓⲟ ⲛ̀ⲟⲩⲕⲗⲟⲙ ⲙ̀ⲃⲉⲣⲓ' : lang === 'ar' ? 'اعمل حساب بالإيميل' : 'Create Account with Email')
+                  : (lang === 'copt' ? 'Ϣⲉ ⲉ̀ϧⲟⲩⲛ' : lang === 'ar' ? 'سجّل دخول بالإيميل' : 'Sign In with Email')
                 }
               </span>
             )}
@@ -489,7 +489,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
               </svg>
             )}
             <span>
-              {lang === 'copt' ? 'Ϣⲉ ⲉ̀ϧⲟⲩⲛ ⲛ̀ⲧⲉ Google' : lang === 'ar' ? 'المتابعة بحساب Google' : 'Continue with Google'}
+              {lang === 'copt' ? 'Ϣⲉ ⲉ̀ϧⲟⲩⲛ ⲛ̀ⲧⲉ Google' : lang === 'ar' ? 'كمّل بحساب Google' : 'Continue with Google'}
             </span>
           </button>
         </form>
@@ -497,7 +497,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
         <div className="relative flex py-1 items-center">
           <div className="flex-grow border-t border-[var(--mousa-border-sand)] dark:border-slate-700"></div>
           <span className="flex-shrink mx-4 text-xs font-bold text-gray-400 uppercase">
-            {lang === 'copt' ? 'Ⲓⲉ ⲇⲟⲕⲓⲙⲁⲍⲓⲛ' : lang === 'ar' ? 'أو تجربة فورية' : 'or instant demo'}
+            {lang === 'copt' ? 'Ⲓⲉ ⲇⲟⲕⲓⲙⲁⲍⲓⲛ' : lang === 'ar' ? 'أو جرّب الموقع فوراً' : 'or instant demo'}
           </span>
           <div className="flex-grow border-t border-[var(--mousa-border-sand)] dark:border-slate-700"></div>
         </div>
@@ -505,7 +505,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
         {/* Quick Demo Access buttons for Sunday School testing */}
         <div className="space-y-2">
           <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 text-center">
-            {lang === 'copt' ? 'Ⲇⲟⲕⲓⲙⲏ ⲛ̀ⲛⲓⲧⲁⲝⲓⲥ:' : lang === 'ar' ? 'الدخول كحساب تجريبي مباشر:' : 'Instant Role Demo Testing:'}
+            {lang === 'copt' ? 'Ⲇⲟⲕⲓⲙⲏ ⲛ̀ⲛⲓⲧⲁⲝⲓⲥ:' : lang === 'ar' ? 'جرّب الموقع بحساب تجريبي:' : 'Instant Role Demo Testing:'}
           </p>
           <div className="grid grid-cols-3 gap-2">
             <button
@@ -542,8 +542,8 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
             className="text-xs font-bold text-[var(--mousa-teal)] dark:text-[var(--mousa-gold-light)] hover:underline cursor-pointer"
           >
             {isRegister 
-              ? (lang === 'copt' ? 'Ⲟⲩⲟⲛ ⲛ̀ⲧⲁⲕ ⲟⲩⲕⲗⲟⲙ? Ϣⲉ ⲉ̀ϧⲟⲩⲛ' : lang === 'ar' ? 'لديك حساب بالفعل؟ سجل دخولك' : 'Already have an account? Sign in')
-              : (lang === 'copt' ? 'Ⲙⲙⲟⲛ ⲕⲗⲟⲙ ⲛ̀ⲧⲁⲕ? Ⲑⲁⲙⲓⲟ ⲧⲛⲟⲩ' : lang === 'ar' ? 'مستخدم جديد؟ سجل الآن' : "Don't have an account? Sign up")
+              ? (lang === 'copt' ? 'Ⲟⲩⲟⲛ ⲛ̀ⲧⲁⲕ ⲟⲩⲕⲗⲟⲙ? Ϣⲉ ⲉ̀ϧⲟⲩⲛ' : lang === 'ar' ? 'عندك حساب؟ سجّل دخولك' : 'Already have an account? Sign in')
+              : (lang === 'copt' ? 'Ⲙⲙⲟⲛ ⲕⲗⲟⲙ ⲛ̀ⲧⲁⲕ? Ⲑⲁⲙⲓⲟ ⲧⲛⲟⲩ' : lang === 'ar' ? 'لسه جديد؟ اعمل حساب دلوقتي' : "Don't have an account? Sign up")
             }
           </button>
         </div>

@@ -122,13 +122,13 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
         <BookOpen className="w-12 h-12 text-gray-400" />
         <h2 className="text-lg font-bold text-gray-800">
-          {curriculumError || (lang === 'ar' ? 'جارٍ تحميل الدروس المنشورة...' : 'Loading published lessons...')}
+          {curriculumError || (lang === 'ar' ? 'بنحمّل الدروس المنشورة...' : 'Loading published lessons...')}
         </h2>
         <button
           onClick={onBack}
           className="px-4 py-2 rounded-xl bg-[var(--color-church-blue)] text-white text-xs font-bold"
         >
-          {lang === 'ar' ? 'الرجوع للدروس' : 'Back to Lessons'}
+          {lang === 'ar' ? 'ارجع للدروس' : 'Back to Lessons'}
         </button>
       </div>
     );
@@ -139,13 +139,13 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
         <BookOpen className="w-12 h-12 text-gray-400" />
         <h2 className="text-lg font-bold text-gray-800">
-          {curriculumError || (lang === 'ar' ? 'الدرس غير موجود' : 'Lesson not found')}
+          {curriculumError || (lang === 'ar' ? 'مش لاقيين الدرس ده' : 'Lesson not found')}
         </h2>
         <button
           onClick={onBack}
           className="px-4 py-2 rounded-xl bg-[var(--color-church-blue)] text-white text-xs font-bold"
         >
-          {lang === 'ar' ? 'الرجوع للدروس' : 'Back to Lessons'}
+          {lang === 'ar' ? 'ارجع للدروس' : 'Back to Lessons'}
         </button>
       </div>
     );
@@ -156,13 +156,13 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
         <BookOpen className="w-12 h-12 text-gray-400" />
         <h2 className="text-lg font-bold text-gray-800">
-          {lang === 'ar' ? 'لا يوجد إصدار منشور لهذا الدرس' : 'No active published lesson version is available'}
+          {lang === 'ar' ? 'الدرس ده لسه ملوش نسخة منشورة' : 'No active published lesson version is available'}
         </h2>
         <button
           onClick={onBack}
           className="px-4 py-2 rounded-xl bg-[var(--color-church-blue)] text-white text-xs font-bold"
         >
-          {lang === 'ar' ? 'الرجوع للدروس' : 'Back to Lessons'}
+          {lang === 'ar' ? 'ارجع للدروس' : 'Back to Lessons'}
         </button>
       </div>
     );
@@ -192,18 +192,18 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
           🔒
         </div>
         <h2 className="text-xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-          {lang === 'ar' ? 'هذا الدرس مخصص لمرحلة دراسية أخرى' : 'Restricted Lesson Milestone'}
+          {lang === 'ar' ? 'الدرس ده مخصص لمرحلة دراسية تانية' : 'Restricted Lesson Milestone'}
         </h2>
         <p className="text-xs sm:text-sm text-[var(--mousa-sand-500)] leading-relaxed">
           {lang === 'ar'
-            ? `هذه المحطة مخصصة لطلاب مرحلة (${getClassGroupLabel(lessonClass, lang)})، وفصلك المسجل هو (${getClassGroupLabel(studentClass, lang)}). يمكنك فقط تصفح الدروس المخصصة لصفك الدراسي.`
+            ? `المحطة دي مخصصة لطلاب مرحلة (${getClassGroupLabel(lessonClass, lang)})، وفصلك المسجل هو (${getClassGroupLabel(studentClass, lang)}). تقدر تشوف الدروس المخصصة لصفك بس.`
             : `This milestone is assigned to ${getClassGroupLabel(lessonClass, 'en')}. You are currently registered in ${getClassGroupLabel(studentClass, 'en')}.`}
         </p>
         <button
           onClick={onBack}
           className="px-5 py-2.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--mousa-teal-deep)] text-white text-xs font-black shadow-xs cursor-pointer"
         >
-          {lang === 'ar' ? 'الرجوع إلى دروس صفي' : 'Back to My Class Lessons'}
+          {lang === 'ar' ? 'ارجع لدروس فصلي' : 'Back to My Class Lessons'}
         </button>
       </div>
     );
@@ -218,7 +218,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
   const handleFinishLesson = async () => {
     if (readOnly || !isOnlineAuth) {
       setFinishError(lang === 'ar'
-        ? 'يجب تسجيل الدخول والاتصال بقاعدة البيانات لحفظ إتمام الدرس.'
+        ? 'لازم تسجّل دخولك وتكون متصل بالإنترنت عشان نحفظ إتمام الدرس.'
         : 'Sign in and connect to Supabase to save lesson completion.');
       return;
     }
@@ -236,7 +236,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       if (allSections.length > 0 && remainingSections.length > 0) {
         setFinishError(
           lang === 'ar'
-            ? `يرجى قراءة جميع الأقسام (${currentSections.length} من ${allSections.length} مقروء) قبل إنهاء محطة الدرس.`
+            ? `اقرأ كل الأقسام (${currentSections.length} من ${allSections.length} مقروء) قبل إنهاء محطة الدرس.`
             : `Please read all sections (${currentSections.length} of ${allSections.length} read) before finishing the lesson.`
         );
         setIsFinishing(false);
@@ -252,7 +252,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       });
 
       if (res.error) {
-        setFinishError(res.error.message || (lang === 'ar' ? 'تعذر حفظ إتمام الدرس' : 'Failed to save lesson completion'));
+        setFinishError(res.error.message || (lang === 'ar' ? 'مش قادرين نحفظ إتمام الدرس' : 'Failed to save lesson completion'));
         setIsFinishing(false);
         completionInFlightRef.current = false;
         return;
@@ -319,7 +319,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       }
     } catch (err: any) {
       console.error(err);
-      setFinishError(err?.message || (lang === 'ar' ? 'فشل حفظ الإتمام' : 'Error saving completion'));
+      setFinishError(err?.message || (lang === 'ar' ? 'حصلت مشكلة وإحنا بنحفظ إتمام الدرس' : 'Error saving completion'));
       setIsFinishing(false);
       completionInFlightRef.current = false;
     }
@@ -496,7 +496,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
               type="star"
               pulse={true}
               lang={lang}
-              badgeText={lang === 'ar' ? 'اكتملت القراءة بنجاح! 📖✨' : 'Reading Completed! 📖✨'}
+              badgeText={lang === 'ar' ? 'خلصت قراءة الدرس بنجاح! 📖✨' : 'Reading Completed! 📖✨'}
               titleAr="حان وقت اختبار مراجعة الدرس!"
               title="Time for Your Review Quiz!"
               subtitleAr="أحسنت إتمام القراءة! اختبر استيعابك الآن وأكمل الاختبار لكسب النقاط وتثبيت حضورك اليومي."
@@ -519,7 +519,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
 
                 <div className="flex flex-col items-center justify-center leading-tight flex-1">
                   <span className="text-base sm:text-xl font-black font-sans tracking-wide">
-                    {lang === 'ar' ? 'ابدأ اختبار المراجعة الآن ⚡' : 'Start Review Quiz'}
+                    {lang === 'ar' ? 'يلا ابدأ اختبار المراجعة! ⚡' : 'Start Review Quiz'}
                   </span>
                   <span className="text-[11px] sm:text-xs font-bold text-amber-100 opacity-95">
                     {lang === 'ar' ? 'أكمل الاختبار لكسب النقاط • Complete the quiz to earn points.' : 'Complete the quiz to earn points.'}
@@ -539,7 +539,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
                 onClick={() => setIsTransitioningToQuiz(false)}
                 className="w-full py-2 px-4 text-xs font-bold text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal-deep)] dark:hover:text-white transition-colors cursor-pointer rounded-xl hover:bg-black/5 dark:hover:bg-white/5"
               >
-                {lang === 'ar' ? 'العودة لمراجعة نص الدرس' : 'Stay on lesson reading text'}
+                {lang === 'ar' ? 'ارجع لقراءة الدرس' : 'Stay on lesson reading text'}
               </button>
             </div>
           </div>

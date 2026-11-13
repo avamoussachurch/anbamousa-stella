@@ -62,7 +62,7 @@ function DataState({
 }) {
   if (loading) {
     return (
-      <div role="status" className="space-y-3" aria-label={lang === 'ar' ? 'جارٍ تحميل بيانات الخدمة' : 'Loading service data'}>
+      <div role="status" className="space-y-3" aria-label={lang === 'ar' ? 'بنحمّل بيانات الخدمة' : 'Loading service data'}>
         <div className="h-20 animate-pulse rounded-2xl bg-[var(--surface-secondary)]" />
         <div className="h-20 animate-pulse rounded-2xl bg-[var(--surface-secondary)]" />
       </div>
@@ -77,7 +77,7 @@ function DataState({
             <p className="font-black text-[var(--text-primary)]">{errorTitle}</p>
             <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">{error}</p>
             <button type="button" onClick={onRetry} className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[var(--border-default)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--state-hover)]">
-              <RefreshCw size={15} />{lang === 'ar' ? 'إعادة المحاولة' : 'Try again'}
+              <RefreshCw size={15} />{lang === 'ar' ? 'جرّب تاني' : 'Try again'}
             </button>
           </div>
         </div>
@@ -219,9 +219,9 @@ export function ServantHomeDashboard({
               <p className="text-sm font-bold text-[var(--action-primary)]">{isArabic ? 'مركز خدمة مدارس الأحد' : 'Sunday School service desk'}</p>
               <h1 className="mt-1 text-2xl font-black text-[var(--text-primary)]">{isArabic ? `أهلاً يا ${servantName}` : `Welcome, ${servantName}`}</h1>
             </div>
-            <button type="button" onClick={refresh} aria-label={isArabic ? 'تحديث لوحة الخدمة' : 'Refresh service dashboard'} className="rounded-xl border border-[var(--border-default)] p-2 text-[var(--text-secondary)] hover:bg-[var(--state-hover)]"><RefreshCw size={18} /></button>
+            <button type="button" onClick={refresh} aria-label={isArabic ? 'تحديث بيانات الخدمة' : 'Refresh service dashboard'} className="rounded-xl border border-[var(--border-default)] p-2 text-[var(--text-secondary)] hover:bg-[var(--state-hover)]"><RefreshCw size={18} /></button>
           </div>
-          <DataState loading={loading} error={error} hasData={false} emptyTitle="" emptyDescription="" errorTitle={isArabic ? 'تعذر تحميل بيانات خدمتك' : 'Service data could not be loaded'} lang={lang} onRetry={refresh} />
+          <DataState loading={loading} error={error} hasData={false} emptyTitle="" emptyDescription="" errorTitle={isArabic ? 'مش قادرين نحمّل بيانات خدمتك' : 'Service data could not be loaded'} lang={lang} onRetry={refresh} />
         </section>
       ) : (
         <>
@@ -252,21 +252,21 @@ export function ServantHomeDashboard({
               <div className="relative mt-5 flex items-start gap-3 rounded-2xl border border-amber-200/35 bg-amber-100/10 p-4 sm:p-5" role="status" aria-live="polite">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-200/15 text-amber-200"><GraduationCap size={22} /></span>
                 <div className="min-w-0">
-                  <p className="font-black text-amber-100">{isArabic ? 'لا يوجد فصل نشط مسند لهذا الحساب بعد' : 'No active class is assigned to this teacher account yet'}</p>
+                  <p className="font-black text-amber-100">{isArabic ? 'لسه مفيش فصل نشط متسجل على حسابك' : 'No active class is assigned to this teacher account yet'}</p>
                   <p className="mt-1 max-w-3xl text-xs leading-6 text-teal-50/90">
                     {isArabic
                       ? 'الأرقام لن تظهر قبل أن يربط المسؤول حساب الخادم بالفصل الصحيح في السنة الكنسية النشطة. لا نعرض بيانات فصول أخرى حفاظاً على خصوصية التلاميذ.'
                       : 'The class, student and curriculum totals will appear after an administrator assigns this account to the correct class for the active church year. We do not mix in other teachers’ class data.'}
                   </p>
-                  <p className="mt-2 text-[11px] font-bold text-amber-100/90">{isArabic ? 'السنة الكنسية النشطة:' : 'Active church year:'} {summary.churchYear || (isArabic ? 'غير محددة' : 'Not set')}</p>
+                  <p className="mt-2 text-[11px] font-bold text-amber-100/90">{isArabic ? 'السنة الكنسية الحالية:' : 'Active church year:'} {summary.churchYear || (isArabic ? 'مش متحددة' : 'Not set')}</p>
                 </div>
               </div>
             ) : (
               <div className="relative mt-5 grid grid-cols-2 gap-y-4 rounded-2xl border border-white/10 bg-black/10 p-4 sm:grid-cols-4 sm:gap-0 sm:p-5">
-                <SummaryMetric icon={GraduationCap} label={isArabic ? 'الفصول المسندة' : 'Assigned classes'} value={loading ? '—' : error ? '—' : String(summary?.classes.length ?? 0)} note={isArabic ? 'للسنة الكنسية النشطة' : 'Active church year'} />
-                <SummaryMetric icon={Users} label={isArabic ? 'التلاميذ المسجلون' : 'Enrolled students'} value={loading ? '—' : error ? '—' : String(summary?.totals.students ?? 0)} note={isArabic ? 'في فصولك المسندة' : 'In your assigned classes'} />
-                <SummaryMetric icon={CheckCircle2} label={isArabic ? 'إتمام الدروس المسجل' : 'Recorded completions'} value={loading ? '—' : error ? '—' : String(summary?.totals.completedLessons ?? 0)} note={isArabic ? 'من سجلات قاعدة البيانات' : 'Persisted lesson records'} />
-                <SummaryMetric icon={BookOpen} label={isArabic ? 'المنهج المنشور' : 'Published curriculum'} value={loading ? '—' : error ? '—' : String(summary?.totals.curriculumCount ?? 0)} note={isArabic ? 'للصفوف المسندة' : 'For assigned grade groups'} />
+                <SummaryMetric icon={GraduationCap} label={isArabic ? 'الفصول اللي مسؤول عنها' : 'Assigned classes'} value={loading ? '—' : error ? '—' : String(summary?.classes.length ?? 0)} note={isArabic ? 'للسنة الكنسية النشطة' : 'Active church year'} />
+                <SummaryMetric icon={Users} label={isArabic ? 'التلاميذ المسجلين' : 'Enrolled students'} value={loading ? '—' : error ? '—' : String(summary?.totals.students ?? 0)} note={isArabic ? 'في فصولك المسندة' : 'In your assigned classes'} />
+                <SummaryMetric icon={CheckCircle2} label={isArabic ? 'الدروس اللي التلاميذ كمّلوها' : 'Recorded completions'} value={loading ? '—' : error ? '—' : String(summary?.totals.completedLessons ?? 0)} note={isArabic ? 'حسب البيانات المسجلة' : 'Persisted lesson records'} />
+                <SummaryMetric icon={BookOpen} label={isArabic ? 'المنهج المنشور' : 'Published curriculum'} value={loading ? '—' : error ? '—' : String(summary?.totals.curriculumCount ?? 0)} note={isArabic ? 'للصفوف اللي مسؤول عنها' : 'For assigned grade groups'} />
               </div>
             )}
           </section>
@@ -274,8 +274,8 @@ export function ServantHomeDashboard({
           <section aria-labelledby="curriculum-areas-heading" className="space-y-4">
             <div className="flex flex-wrap items-end justify-between gap-3 px-1">
               <div>
-                <p className="text-xs font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'مساحات بناء المنهج' : 'Curriculum studios'}</p>
-                <h2 id="curriculum-areas-heading" className="mt-1 text-xl font-black text-[var(--text-primary)] sm:text-2xl">{isArabic ? 'ثلاثة مسارات للتعليم والخدمة' : 'Three paths for teaching and service'}</h2>
+                <p className="text-xs font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'أقسام تجهيز المنهج' : 'Curriculum studios'}</p>
+                <h2 id="curriculum-areas-heading" className="mt-1 text-xl font-black text-[var(--text-primary)] sm:text-2xl">{isArabic ? '٣ أقسام للتعليم والخدمة' : 'Three paths for teaching and service'}</h2>
                 <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
                   {isArabic ? 'افتح مساحة المنهج المناسبة لمتابعة التأليف والمراجعة والنشر بأدواتها المتخصصة.' : 'Enter a curriculum area to work with its dedicated authoring, review, and publishing tools.'}
                 </p>
@@ -345,18 +345,18 @@ export function ServantHomeDashboard({
                     <p className="text-[10px] font-black uppercase tracking-[.16em] text-sky-100">{isArabic ? 'الطقس والترتيب' : 'RITES & ORDER'}</p>
                     <h3 className="mt-1 text-xl font-black">{isArabic ? 'طقوس الكنيسة — التاكسيس' : 'Coptic Rituals — Taxis'}</h3>
                     <p className="mt-1 text-xs leading-relaxed text-white/75">{isArabic ? 'تنظيم الطقوس والأقسام والمردات والمواد التعليمية.' : 'Organize rites, sections, responses, and supporting learning materials.'}</p>
-                    <p className="mt-3 text-xs font-bold text-sky-100">{isArabic ? 'مرجع طقسي قابل للتصفح' : 'Browseable liturgical reference'}</p>
+                    <p className="mt-3 text-xs font-bold text-sky-100">{isArabic ? 'مرجع طقسي تقدر تتصفحه' : 'Browseable liturgical reference'}</p>
                   </div>
                 </div>
               </button>
             </div>
           </section>
 
-          <section aria-label={isArabic ? 'اختصارات مساحات العمل' : 'Workspace shortcuts'} className="grid gap-4 md:grid-cols-3">
+          <section aria-label={isArabic ? 'اختصارات سريعة' : 'Workspace shortcuts'} className="grid gap-4 md:grid-cols-3">
             <article className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)]">
               <div>
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-100 text-amber-900 dark:bg-amber-300/10 dark:text-amber-200"><Sparkles size={19} /></span>
-                <h3 className="mt-3 font-black text-[var(--text-primary)]">{isArabic ? 'إنتاج المحتوى' : 'Content production'}</h3>
+                <h3 className="mt-3 font-black text-[var(--text-primary)]">{isArabic ? 'تجهيز المحتوى' : 'Content production'}</h3>
                 <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">{isArabic ? 'أنشئ درسًا يدويًا أو جهّز مسودة من تسجيل صوتي.' : 'Author a lesson manually or prepare a draft from a voice recording.'}</p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -367,10 +367,10 @@ export function ServantHomeDashboard({
             <article className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)]">
               <div>
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--state-selected)] text-[var(--action-primary)]"><GraduationCap size={19} /></span>
-                <h3 className="mt-3 font-black text-[var(--text-primary)]">{isArabic ? 'رعاية الفصول' : 'Class stewardship'}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">{isArabic ? 'تابع الفصول المسندة وطلبات تسجيل التلاميذ من السجل المعتمد.' : 'Manage assigned classes and student enrollment requests against the authorized roster.'}</p>
+                <h3 className="mt-3 font-black text-[var(--text-primary)]">{isArabic ? 'متابعة الفصول' : 'Class stewardship'}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">{isArabic ? 'تابع الفصول اللي مسؤول عنها وطلبات تسجيل التلاميذ من السجل المعتمد.' : 'Manage assigned classes and student enrollment requests against the authorized roster.'}</p>
               </div>
-              <button type="button" onClick={() => onOpenWorkspaceTab('classManagement')} className="self-start rounded-xl border border-[var(--border-default)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--state-hover)]">{isArabic ? 'فتح إدارة الفصول' : 'Open class management'}</button>
+              <button type="button" onClick={() => onOpenWorkspaceTab('classManagement')} className="self-start rounded-xl border border-[var(--border-default)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--state-hover)]">{isArabic ? 'افتح إدارة الفصول' : 'Open class management'}</button>
             </article>
             <article className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)]">
               <div>
@@ -399,8 +399,8 @@ export function ServantHomeDashboard({
             <section aria-labelledby="servant-classes-heading" className="rounded-[1.75rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-6">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'مجتمع الفصل' : 'Your classrooms'}</p>
-                  <h2 id="servant-classes-heading" className="mt-1 text-xl font-black text-[var(--text-primary)]">{isArabic ? 'الفصول المسندة ورحلة التلاميذ' : 'Assigned classes & student journey'}</h2>
+                  <p className="text-xs font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'فصولك' : 'Your classrooms'}</p>
+                  <h2 id="servant-classes-heading" className="mt-1 text-xl font-black text-[var(--text-primary)]">{isArabic ? 'الفصول اللي مسؤول عنها ورحلة التلاميذ' : 'Assigned classes & student journey'}</h2>
                 </div>
                 <button type="button" onClick={refresh} aria-label={isArabic ? 'تحديث بيانات الفصول' : 'Refresh class data'} className="rounded-xl border border-[var(--border-default)] p-2 text-[var(--text-secondary)] hover:bg-[var(--state-hover)]"><RefreshCw size={17} /></button>
               </div>
@@ -408,9 +408,9 @@ export function ServantHomeDashboard({
                 loading={loading}
                 error={error}
                 hasData={classesExist}
-                emptyTitle={isArabic ? 'لا توجد فصول مسندة حالياً' : 'No assigned classes yet'}
+                emptyTitle={isArabic ? 'مفيش فصول متسجلة على حسابك دلوقتي' : 'No assigned classes yet'}
                 emptyDescription={isArabic ? 'عند تكليفك بفصل للسنة الكنسية النشطة، ستظهر بياناته الحقيقية هنا.' : 'When a class is assigned to you for the active church year, its verified information will appear here.'}
-                errorTitle={isArabic ? 'بيانات الفصول غير متاحة' : 'Class data is unavailable'}
+                errorTitle={isArabic ? 'بيانات الفصول مش متاحة دلوقتي' : 'Class data is unavailable'}
                 lang={lang}
                 onRetry={refresh}
               />
@@ -436,8 +436,8 @@ export function ServantHomeDashboard({
                         <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
                           <div>
                             <div className="mb-2 flex items-center justify-between gap-2 text-xs">
-                              <span className="font-bold text-[var(--text-secondary)]">{isArabic ? 'إتمام من سجلات التقدم' : 'Completion in recorded progress'}</span>
-                              <span className="font-black tabular-nums text-[var(--text-primary)]">{rate === null ? (isArabic ? 'لا توجد بيانات بعد' : 'No progress records yet') : `${rate}%`}</span>
+                              <span className="font-bold text-[var(--text-secondary)]">{isArabic ? 'الدروس مكتملة حسب سجلات التقدم' : 'Completion in recorded progress'}</span>
+                              <span className="font-black tabular-nums text-[var(--text-primary)]">{rate === null ? (isArabic ? 'لسه مفيش بيانات' : 'No progress records yet') : `${rate}%`}</span>
                             </div>
                             <div className="h-2.5 overflow-hidden rounded-full bg-[var(--surface-primary)]">
                               {rate !== null && <div className="h-full rounded-full bg-gradient-to-r from-[var(--brand-teal)] to-[var(--brand-gold)] transition-[width] duration-700" style={{ width: `${rate}%` }} />}
@@ -445,7 +445,7 @@ export function ServantHomeDashboard({
                           </div>
                           <div className="text-start sm:text-end">
                             <p className="text-xl font-black tabular-nums text-[var(--text-primary)]">{classroom.completedLessons}</p>
-                            <p className="text-[10px] font-bold text-[var(--text-tertiary)]">{isArabic ? 'إتمام مسجل' : 'completions recorded'}</p>
+                            <p className="text-[10px] font-bold text-[var(--text-tertiary)]">{isArabic ? 'دروس مكتملة مسجل' : 'completions recorded'}</p>
                           </div>
                         </div>
                       </article>
@@ -460,12 +460,12 @@ export function ServantHomeDashboard({
               <h2 id="servant-progress-heading" className="mt-1 text-xl font-black text-[var(--text-primary)]">{isArabic ? 'التقدم المسجل فعلياً' : 'Persisted learning progress'}</h2>
               {loading ? <div role="status" className="mt-5 h-44 animate-pulse rounded-2xl bg-[var(--surface-secondary)]" />
                 : error ? <p role="note" className="mt-5 text-sm text-[var(--text-secondary)]">{isArabic ? 'الرسم غير متاح بسبب تعذر تحميل بيانات التقدم.' : 'The visualization is unavailable because progress data could not be loaded.'}</p>
-                  : completionRate === null ? <div className="mt-5 grid min-h-44 place-items-center rounded-2xl border border-dashed border-[var(--border-default)] bg-[var(--surface-secondary)]/40 p-5 text-center"><div><BookOpen className="mx-auto text-[var(--text-tertiary)]" size={27} /><p className="mt-3 font-black text-[var(--text-primary)]">{isArabic ? 'لسه مفيش سجلات تقدم' : 'No progress records yet'}</p><p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'سيظهر المؤشر عند تسجيل أول تقدم للتلاميذ.' : 'The chart will appear once student progress is recorded.'}</p></div></div>
+                  : completionRate === null ? <div className="mt-5 grid min-h-44 place-items-center rounded-2xl border border-dashed border-[var(--border-default)] bg-[var(--surface-secondary)]/40 p-5 text-center"><div><BookOpen className="mx-auto text-[var(--text-tertiary)]" size={27} /><p className="mt-3 font-black text-[var(--text-primary)]">{isArabic ? 'لسه مفيش سجلات للتقدم' : 'No progress records yet'}</p><p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'المؤشر ده هيظهر لما يتسجل أول تقدم للتلاميذ.' : 'The chart will appear once student progress is recorded.'}</p></div></div>
                     : (
                       <div className="mt-5 rounded-2xl bg-[linear-gradient(145deg,var(--surface-secondary),transparent)] p-5">
                         <div className="flex flex-col items-center gap-5 sm:flex-row">
                           <div className="relative grid h-36 w-36 shrink-0 place-items-center">
-                            <svg viewBox="0 0 120 120" className="-rotate-90" aria-label={isArabic ? `إتمام ${completionRate}% من سجلات التقدم` : `${completionRate}% of progress records completed`}>
+                            <svg viewBox="0 0 120 120" className="-rotate-90" aria-label={isArabic ? `دروس مكتملة ${completionRate}% من سجلات التقدم` : `${completionRate}% of progress records completed`}>
                               <circle cx="60" cy="60" r="48" fill="none" stroke="var(--border-default)" strokeWidth="10" />
                               <circle cx="60" cy="60" r="48" fill="none" stroke="var(--brand-gold)" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${completionRate * 3.016} 301.6`} />
                               <circle cx="60" cy="60" r="34" fill="none" stroke="var(--brand-teal)" strokeWidth="3" strokeDasharray="2 7" opacity=".65" />
@@ -476,14 +476,14 @@ export function ServantHomeDashboard({
                             </div>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-[var(--text-primary)]">{isArabic ? 'سجلات إتمام الدروس مقابل كل سجلات التقدم المحفوظة.' : 'Completed lesson records compared with all persisted progress records.'}</p>
+                            <p className="text-sm font-bold text-[var(--text-primary)]">{isArabic ? 'سجلات دروس مكتملة الدروس مقابل كل سجلات التقدم المحفوظة.' : 'Completed lesson records compared with all persisted progress records.'}</p>
                             <div className="mt-4 grid grid-cols-2 gap-3">
-                              <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-3"><p className="text-[10px] font-bold text-[var(--text-secondary)]">{isArabic ? 'إتمام' : 'Completed'}</p><p className="mt-1 text-xl font-black tabular-nums text-[var(--text-primary)]">{summary?.totals.completedLessons}</p></div>
-                              <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-3"><p className="text-[10px] font-bold text-[var(--text-secondary)]">{isArabic ? 'سجلات تقدم' : 'Progress records'}</p><p className="mt-1 text-xl font-black tabular-nums text-[var(--text-primary)]">{summary?.totals.progressRecords}</p></div>
+                              <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-3"><p className="text-[10px] font-bold text-[var(--text-secondary)]">{isArabic ? 'دروس مكتملة' : 'Completed'}</p><p className="mt-1 text-xl font-black tabular-nums text-[var(--text-primary)]">{summary?.totals.completedLessons}</p></div>
+                              <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-3"><p className="text-[10px] font-bold text-[var(--text-secondary)]">{isArabic ? 'سجلات التقدم' : 'Progress records'}</p><p className="mt-1 text-xl font-black tabular-nums text-[var(--text-primary)]">{summary?.totals.progressRecords}</p></div>
                             </div>
                           </div>
                         </div>
-                        <p className="mt-4 border-t border-[var(--border-default)] pt-3 text-[10px] leading-relaxed text-[var(--text-tertiary)]">{isArabic ? 'المؤشر يصف السجلات المتاحة فقط، ولا يمثل نسبة إتمام كل تلميذ للمنهج.' : 'This reflects available records only; it is not the percentage of each student’s curriculum completed.'}</p>
+                        <p className="mt-4 border-t border-[var(--border-default)] pt-3 text-[10px] leading-relaxed text-[var(--text-tertiary)]">{isArabic ? 'المؤشر يصف السجلات المتاحة فقط، ولا يمثل نسبة دروس مكتملة كل تلميذ للمنهج.' : 'This reflects available records only; it is not the percentage of each student’s curriculum completed.'}</p>
                       </div>
                     )}
               <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--border-default)] px-3 py-3">
@@ -513,7 +513,7 @@ export function ServantHomeDashboard({
                       <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-200/70 text-amber-900 dark:bg-amber-300/10 dark:text-amber-200"><Users size={18} /></span>
                       <div><p className="font-black text-[var(--text-primary)]">{pendingRequestsCount} {isArabic ? 'طلب تفعيل معلّق' : 'pending activation requests'}</p><p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'تحتاج مراجعة قبل ضم التلاميذ.' : 'Review before enrolling students.'}</p></div>
                     </div>
-                    <button type="button" onClick={onReviewRequests} className="rounded-xl bg-amber-800 px-3 py-2 text-xs font-black text-white hover:bg-amber-900">{isArabic ? 'مراجعة الطلبات' : 'Review requests'}</button>
+                    <button type="button" onClick={onReviewRequests} className="rounded-xl bg-amber-800 px-3 py-2 text-xs font-black text-white hover:bg-amber-900">{isArabic ? 'راجع الطلبات' : 'Review requests'}</button>
                   </article>
                 ) : (
                   <div className="flex items-center gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)]/50 p-4">
@@ -524,13 +524,13 @@ export function ServantHomeDashboard({
                 {summary && !error && summary.studentsWithoutProgress > 0 && (
                   <div className="flex items-start gap-3 rounded-2xl border border-[var(--border-default)] p-4">
                     <BookOpen size={18} className="mt-0.5 shrink-0 text-[var(--action-primary)]" />
-                    <p className="text-sm leading-relaxed text-[var(--text-secondary)]"><strong className="text-[var(--text-primary)]">{summary.studentsWithoutProgress}</strong> {isArabic ? 'تلميذ مسجل لا توجد له سجلات تقدم دروس بعد.' : 'enrolled students have no lesson progress records yet.'}</p>
+                    <p className="text-sm leading-relaxed text-[var(--text-secondary)]"><strong className="text-[var(--text-primary)]">{summary.studentsWithoutProgress}</strong> {isArabic ? 'تلميذ مسجل لا توجد له سجلات التقدم دروس بعد.' : 'enrolled students have no lesson progress records yet.'}</p>
                   </div>
                 )}
                 {summary && !error && summary.lessonsAwaitingReview > 0 && (
                   <div className="flex items-start gap-3 rounded-2xl border border-[var(--border-default)] p-4">
                     <BookOpen size={18} className="mt-0.5 shrink-0 text-[var(--action-primary)]" />
-                    <p className="text-sm leading-relaxed text-[var(--text-secondary)]"><strong className="text-[var(--text-primary)]">{summary.lessonsAwaitingReview}</strong> {isArabic ? 'منهج بانتظار مراجعة الخادم للصفوف المسندة.' : 'curriculum items are awaiting servant review for your assigned grade groups.'}</p>
+                    <p className="text-sm leading-relaxed text-[var(--text-secondary)]"><strong className="text-[var(--text-primary)]">{summary.lessonsAwaitingReview}</strong> {isArabic ? 'منهج بانتظار مراجعة الخادم للصفوف اللي مسؤول عنها.' : 'curriculum items are awaiting servant review for your assigned grade groups.'}</p>
                   </div>
                 )}
                 {summary && !error && summary.classes.some(item => item.studentCount === 0) && (
@@ -551,15 +551,15 @@ export function ServantHomeDashboard({
             <section aria-labelledby="servant-events-heading" className="rounded-[1.75rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-6">
               <div className="mb-4 flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--state-selected)] text-[var(--action-primary)]"><CalendarDays size={19} /></span>
-                <div><p className="text-xs font-black uppercase tracking-[.14em] text-[var(--text-tertiary)]">{isArabic ? 'على الأجندة' : 'On the calendar'}</p><h2 id="servant-events-heading" className="text-lg font-black text-[var(--text-primary)]">{isArabic ? 'فعاليات قادمة' : 'Upcoming events'}</h2></div>
+                <div><p className="text-xs font-black uppercase tracking-[.14em] text-[var(--text-tertiary)]">{isArabic ? 'في الجدول' : 'On the calendar'}</p><h2 id="servant-events-heading" className="text-lg font-black text-[var(--text-primary)]">{isArabic ? 'فعاليات جاية' : 'Upcoming events'}</h2></div>
               </div>
               <DataState
                 loading={loading}
                 error={error}
                 hasData={Boolean(summary?.upcomingEvents.length)}
-                emptyTitle={isArabic ? 'لا توجد فعاليات قادمة مسجلة' : 'No upcoming events on record'}
+                emptyTitle={isArabic ? 'لا توجد فعاليات جاية مسجلة' : 'No upcoming events on record'}
                 emptyDescription={isArabic ? 'ستظهر هنا الفعاليات المنشورة في تقويم الكنيسة.' : 'Published church calendar events will appear here.'}
-                errorTitle={isArabic ? 'الفعاليات غير متاحة' : 'Events are unavailable'}
+                errorTitle={isArabic ? 'الفعاليات مش متاحة دلوقتي' : 'Events are unavailable'}
                 lang={lang}
                 onRetry={refresh}
               />
@@ -580,7 +580,7 @@ export function ServantHomeDashboard({
                 </div>
               )}
               <div className="mt-4 border-t border-[var(--border-default)] pt-4">
-                <h3 className="mb-3 text-sm font-black text-[var(--text-primary)]">{isArabic ? 'مواعيد النشر المجدولة' : 'Scheduled publishing'}</h3>
+                <h3 className="mb-3 text-sm font-black text-[var(--text-primary)]">{isArabic ? 'مواعيد النشر' : 'Scheduled publishing'}</h3>
                 {loading ? <div role="status" className="h-14 animate-pulse rounded-xl bg-[var(--surface-secondary)]" />
                   : error ? <p className="text-xs text-[var(--text-secondary)]">{isArabic ? 'مواعيد النشر غير متاحة حالياً.' : 'Publishing schedules are currently unavailable.'}</p>
                     : summary && !summary.publicationScheduleAvailable ? <p role="note" className="rounded-xl border border-amber-300/40 bg-amber-50/60 p-3 text-xs leading-relaxed text-amber-950 dark:bg-amber-300/5 dark:text-amber-100">{summary.publicationScheduleError || (isArabic ? 'ميزة جدولة النشر غير متاحة.' : 'Scheduled publishing is unavailable.')}</p>
@@ -599,7 +599,7 @@ export function ServantHomeDashboard({
                       ) : <p className="text-xs text-[var(--text-secondary)]">{isArabic ? 'لا توجد مواعيد نشر قادمة مسجلة.' : 'No upcoming publication deadlines are scheduled.'}</p>}
               </div>
               <div className="mt-4 border-t border-[var(--border-default)] pt-4">
-                <h3 className="mb-3 text-sm font-black text-[var(--text-primary)]">{isArabic ? 'آخر إتمام مسجل' : 'Recent recorded completions'}</h3>
+                <h3 className="mb-3 text-sm font-black text-[var(--text-primary)]">{isArabic ? 'آخر دروس مكتملة مسجل' : 'Recent recorded completions'}</h3>
                 {loading ? <div role="status" className="h-16 animate-pulse rounded-xl bg-[var(--surface-secondary)]" />
                   : error ? <p className="text-xs text-[var(--text-secondary)]">{isArabic ? 'سجل النشاط غير متاح حالياً.' : 'Activity history is currently unavailable.'}</p>
                     : summary?.recentActivity.length ? (
@@ -614,7 +614,7 @@ export function ServantHomeDashboard({
                           </li>
                         ))}
                       </ol>
-                    ) : <p className="text-xs text-[var(--text-secondary)]">{isArabic ? 'لا توجد إتمامات دروس مسجلة حديثاً.' : 'No recent lesson completions are recorded.'}</p>}
+                    ) : <p className="text-xs text-[var(--text-secondary)]">{isArabic ? 'لا توجد دروس مكتملةات دروس مسجلة حديثاً.' : 'No recent lesson completions are recorded.'}</p>}
               </div>
             </section>
           </div>

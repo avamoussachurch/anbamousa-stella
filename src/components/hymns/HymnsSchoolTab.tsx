@@ -87,7 +87,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         }
       } else {
         setHymnsList([]);
-        setHymnsLoadError(res.error || (isAr ? 'تعذر تحميل الألحان.' : 'Could not load Hymns.'));
+        setHymnsLoadError(res.error || (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
       }
     });
 
@@ -282,7 +282,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           </h1>
           <p className="text-xs sm:text-base text-gray-200 leading-relaxed max-w-2xl font-medium">
             {isAr
-              ? 'تعلّم ألحان وتسابيح الكنيسة القبطية الأصيلة بـ ٣ لغات (قبطي، معرب، عربي)، عبر المستويات الثلاثة مع التحكم في سرعة الصوت وتدريب الهزات وتسجيل صوتك للتقييم.'
+              ? 'اتعلّم ألحان وتسابيح الكنيسة القبطية بالقبطي والمعرّب والعربي. اختار مستواك، واتدرّب على الهزات، وسجّل صوتك عشان تراجع أداءك.'
               : 'Master ancient Coptic hymns across 3 class levels with 3-way synchronized lyrics, melodic hazat guidance, adjustable playback speed, and voice rehearsal.'}
           </p>
         </div>
@@ -298,7 +298,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           />
         ) : (
           <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-3 text-sm font-bold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
-            {isAr ? `محتوى الألحان المعروض على مستواك المشترك: المستوى ${assignedLevel}.` : `Showing Hymns for your shared Level ${assignedLevel}.`}
+            {isAr ? `الألحان اللي هتظهرلك حسب مستواك المشترك: ${assignedLevel}.` : `Showing Hymns for your shared Level ${assignedLevel}.`}
           </div>
         )
       )}
@@ -313,7 +313,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
-            { id: 'all' as const, levelNum: 0, labelAr: 'جميع المستويات', labelEn: 'All Levels', subAr: 'كامل الألحان', subEn: 'Complete' },
+            { id: 'all' as const, levelNum: 0, labelAr: 'كل المستويات', labelEn: 'All Levels', subAr: 'كل الألحان', subEn: 'Complete' },
             { id: 1 as const, levelNum: 1, labelAr: 'المستوى الأول', labelEn: 'Level 1: Novice', subAr: 'تمهيدي ومبتدئين', subEn: 'Foundational' },
             { id: 2 as const, levelNum: 2, labelAr: 'المستوى الثاني', labelEn: 'Level 2: Intermediate', subAr: 'متوسط وشمامسة', subEn: 'Deacon Service' },
             { id: 3 as const, levelNum: 3, labelAr: 'المستوى الثالث', labelEn: 'Level 3: Advanced', subAr: 'متقدم والمناسبات الكبرى', subEn: 'Solemn Rites' },
@@ -447,13 +447,13 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 }`}
               >
                 <CheckCircle2 size={16} />
-                <span>{masteredHymns[selectedHymn.id] ? (isAr ? 'تم إتقان اللحن (٧٥ نقطة)' : 'Mastered (75 pts)') : (isAr ? 'تأكيد الحفظ والإتقان' : 'Mark as Mastered')}</span>
+                <span>{masteredHymns[selectedHymn.id] ? (isAr ? 'أتقنت اللحن (٧٥ نقطة)' : 'Mastered (75 pts)') : (isAr ? 'أكد إنك حفظت اللحن وأتقنته' : 'Mark as Mastered')}</span>
               </button>
             </div>
 
             {/* Hazat & Performance Explanation */}
             <div className="bg-amber-50/70 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 text-xs text-amber-950 dark:text-amber-200 leading-relaxed font-medium">
-              <span className="font-bold text-amber-900 dark:text-amber-300">💡 {isAr ? 'دليل الهزات والتقاسيم النغمية: ' : 'Hazat Guide: '}</span>
+              <span className="font-bold text-amber-900 dark:text-amber-300">💡 {isAr ? 'شرح الهزات والتقسيمات النغمية: ' : 'Hazat Guide: '}</span>
               {selectedHymn.hazatExplanationAr}
             </div>
 
@@ -476,7 +476,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--mousa-teal)]/30 text-[var(--mousa-teal-deep)] dark:text-amber-300 text-xs font-bold hover:bg-[var(--mousa-teal)]/10 transition-colors"
                 >
-                  {isAr ? 'عرض نوتة اللحن PDF' : 'View sheet music PDF'}
+                  {isAr ? 'افتح نوتة اللحن PDF' : 'View sheet music PDF'}
                 </a>
               )}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -499,7 +499,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
 
                 {/* Speed Toggle */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] text-stone-500 font-bold">{isAr ? 'سرعة الأداء:' : 'Speed:'}</span>
+                  <span className="text-[11px] text-stone-500 font-bold">{isAr ? 'سرعة اللحن:' : 'Speed:'}</span>
                   {[0.75, 1.0, 1.25].map(sp => (
                     <button
                       key={sp}
@@ -522,7 +522,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
             <div className="space-y-3">
               <h3 className="font-black text-sm text-stone-800 dark:text-stone-200 flex items-center gap-2">
                 <BookOpen size={16} className="text-amber-600" />
-                <span>{isAr ? 'كلمات اللحن باللغات الثلاث (متابعة حية مع الصوت):' : 'Synchronized Lyrics:'}</span>
+                <span>{isAr ? 'كلمات اللحن باللغات التلاتة (متزامنة مع الصوت):' : 'Synchronized Lyrics:'}</span>
               </h3>
 
               <div className="space-y-3">
@@ -561,10 +561,10 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
             <div className="bg-gradient-to-r from-amber-500/10 via-[var(--color-church-gold)]/5 to-amber-500/10 dark:bg-slate-900 rounded-3xl p-5 border border-amber-300/60 dark:border-slate-800">
               <h4 className="font-bold text-sm text-amber-950 dark:text-amber-200 flex items-center gap-2 mb-2">
                 <Mic size={16} className="text-amber-600" />
-                <span>{isAr ? 'تدريب الشماس: سجل صوتك واستمع لأدائك' : 'Deacon Practice: Record & Listen to Your Voice'}</span>
+                <span>{isAr ? 'تدريب الشماس: سجّل صوتك واسمعه' : 'Deacon Practice: Record & Listen to Your Voice'}</span>
               </h4>
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                {isAr ? 'شغّل اللحن وردد معه ثم استمع لتسجيلك لتقارن نغماتك وهزاتك مع المرتل.' : 'Chant alongside the cantor, then replay your voice to verify your pitch and rhythm.'}
+                {isAr ? 'شغّل اللحن وردّد وراه، وبعدها اسمع تسجيلك وقارن نغماتك وهزاتك بالمرتل.' : 'Chant alongside the cantor, then replay your voice to verify your pitch and rhythm.'}
               </p>
 
               <div className="flex flex-wrap items-center gap-3">

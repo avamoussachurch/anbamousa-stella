@@ -57,8 +57,8 @@ const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
   overview: { en: 'Servant Studio', ar: 'استوديو الخادم' },
   attendance: { en: 'Attendance & visits', ar: 'الحضور والافتقاد' },
   sundaySchool: { en: 'Curriculum & publishing', ar: 'المناهج والنشر' },
-  sources: { en: 'Lesson sources & media', ar: 'مصادر ووسائط الدروس' },
-  mastery: { en: 'Student progress & quizzes', ar: 'تقدم الطلاب والاختبارات' },
+  sources: { en: 'Lesson sources & media', ar: 'مصادر الدروس والملفات' },
+  mastery: { en: 'Student progress & quizzes', ar: 'تقدم التلاميذ والاختبارات' },
   classManagement: { en: 'Classes & students', ar: 'الفصول والطلاب' },
   ai: { en: 'Lesson creator', ar: 'إنشاء درس' },
   lessons: { en: 'Lesson library', ar: 'مكتبة الدروس' },
@@ -230,12 +230,12 @@ export function TeacherDashboard({
         setPendingRequestsCount(res.requests.filter(r => r.status === 'PENDING_APPROVAL').length);
       } else {
         setPendingRequestsCount(null);
-        setPendingRequestsError(res.error || (lang === 'ar' ? 'تعذر تحميل طلبات التفعيل.' : 'Could not load activation requests.'));
+        setPendingRequestsError(res.error || (lang === 'ar' ? 'مش قادرين نحمّل طلبات التفعيل دلوقتي.' : 'Could not load activation requests.'));
       }
     }).catch((error: unknown) => {
       if (!isMounted) return;
       setPendingRequestsCount(null);
-      setPendingRequestsError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر تحميل طلبات التفعيل.' : 'Could not load activation requests.'));
+      setPendingRequestsError(error instanceof Error ? error.message : (lang === 'ar' ? 'مش قادرين نحمّل طلبات التفعيل دلوقتي.' : 'Could not load activation requests.'));
     });
 
     return () => { isMounted = false; };
@@ -385,7 +385,7 @@ export function TeacherDashboard({
       }
 
       alert(lang === 'ar' 
-        ? 'تم إنشاء مسودة الدرس بنجاح بحالة (AI_DRAFT). لن يظهر الدرس للطلاب حتى يتم مراجعته واعتماده رسمياً.' 
+        ? 'مسودة الدرس اتعملت بنجاح. مش هتظهر للتلاميذ غير بعد ما تتراجع وتتوافق عليها.' 
         : 'Lesson draft created safely as AI_DRAFT! It is NOT student-visible until servant review and approval.');
       setGeneratedData(null);
       setAiStatus('idle');
@@ -402,7 +402,7 @@ export function TeacherDashboard({
       quiz: formattedQuiz.length > 0 ? formattedQuiz : undefined
     });
 
-    alert(lang === 'ar' ? 'تم حفظ مسودة الدرس محلياً!' : 'Lesson draft saved locally!');
+    alert(lang === 'ar' ? 'مسودة الدرس اتحفظت على الجهاز.' : 'Lesson draft saved locally!');
     setGeneratedData(null);
     setAiStatus('idle');
     setActiveTab('lessons');
