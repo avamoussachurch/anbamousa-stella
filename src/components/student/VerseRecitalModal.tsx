@@ -132,7 +132,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
       console.error("Microphone access failed:", err);
       setAudioError(
         lang === 'ar'
-          ? 'تعذر الوصول إلى الميكروفون. يرجى التأكد من السماح بصلاحيات الصوت في المتصفح.'
+          ? 'مش قادرين نوصل للميكروفون. اتأكد إنك سامح للمتصفح يستخدم الميكروفون.'
           : 'Could not access microphone. Please enable audio permissions in your browser.'
       );
     }
@@ -191,10 +191,10 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
         missedWords: [],
         wordAnalysis: words.map(w => ({ word: w, status: 'correct' })),
         feedback: lang === 'ar' 
-          ? 'تسميع رائع ومجهود ممتاز في حفظ آية الكتاب المقدس! بارك الله فيك.' 
+          ? 'تسميع رائع ومجهود ممتاز في حفظ آية الكتاب المقدس! ربنا يباركك.' 
           : 'Wonderful recital and great effort memorizing Scripture! God bless you.',
         aiTeacherComment: lang === 'ar'
-          ? 'أحسنت يا بطل! سمعت نطقك لكلمات الآية بصوت واضح وجميل. استمر في حفظ كلام ربنا ليكون نوراً لطريقك.'
+          ? 'برافو عليك يا بطل! نطقت كلمات الآية بصوت واضح وجميل. كمّل حفظ كلام ربنا وخليه نور لطريقك.'
           : 'Splendid recital! Your voice sounded clear and confident. Keep hiding God\'s word in your heart!',
         pointsAwarded: 100
       });
@@ -241,7 +241,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
             {lang === 'copt' 
               ? 'Ⲁⲣⲓⲡⲁⲙⲉⲩⲓ ⲟⲩⲟϩ ⲥⲁϫⲓ ϧⲉⲛ ⲡⲉⲕϧⲣⲱⲟⲩ ⲉ̀ⲡⲓ-AI ⲉ̀ⲥⲱⲧⲉⲙ'
               : lang === 'ar' 
-                ? 'اقرأ واحفظ، ثم اضغط على الميكروفون وسمّع بصوتك ليقوم الذكاء الاصطناعي بالاستماع الحقيقي والتعليق على كل كلمة نطقتها!' 
+                ? 'اقرأ الآية واحفظها، وبعدها اضغط على الميكروفون وسمّع بصوتك. الذكاء الاصطناعي هيسمعك ويعلّق على الكلمات اللي نطقتها.' 
                 : 'Memorize and tap the microphone. Real AI listens to your voice and comments specifically on every spoken word!'
             }
           </p>
@@ -272,12 +272,12 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
                   </button>
                 </div>
                 <p className="text-sm font-bold text-red-600 dark:text-red-400 animate-pulse">
-                  {lang === 'ar' ? 'نستمع إليك الآن... اضغط لإنهاء التسميع' : 'Listening to your voice... Tap to finish'}
+                  {lang === 'ar' ? 'بنسمعك دلوقتي... اضغط عشان تنهي التسميع' : 'Listening to your voice... Tap to finish'}
                 </p>
                 {liveTranscript && (
                   <div className="w-full text-center text-xs text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 p-3 rounded-2xl max-h-24 overflow-y-auto border border-gray-200 dark:border-slate-700">
                     <span className="text-[10px] text-gray-400 block mb-1 font-bold">
-                      {lang === 'ar' ? 'الكلمات التي يتم التقاطها مباشرة:' : 'Live Captured Speech:'}
+                      {lang === 'ar' ? 'الكلمات اللي بنسمعها دلوقتي:' : 'Live Captured Speech:'}
                     </span>
                     "{liveTranscript}"
                   </div>
@@ -287,7 +287,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
               <div className="flex flex-col items-center space-y-3 py-6">
                 <div className="w-12 h-12 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                  {lang === 'ar' ? 'خادم مدارس الأحد الذكي يستمع لصوتك ويحلل الكلمات...' : 'AI Teacher is listening and evaluating every word...'}
+                  {lang === 'ar' ? 'مساعد مدارس الأحد بيسمعك وبيحلل الكلمات...' : 'AI Teacher is listening and evaluating every word...'}
                 </p>
               </div>
             ) : (
@@ -299,10 +299,10 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
                   <Mic size={32} />
                 </button>
                 <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                  {lang === 'ar' ? 'اضغط للبدء في التسميع بصوتك' : 'Tap to start voice recital'}
+                  {lang === 'ar' ? 'اضغط عشان تبدأ التسميع بصوتك' : 'Tap to start voice recital'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {lang === 'ar' ? 'المكافأة: +١٠٠ نقطة في رصيدك الكنسي عند النجاح' : 'Reward: +100 Points in your Church Profile'}
+                  {lang === 'ar' ? 'المكافأة: +١٠٠ نقطة في رصيدك عند النجاح' : 'Reward: +100 Points in your Church Profile'}
                 </p>
               </div>
             )}
@@ -343,8 +343,8 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
               </div>
               <h4 className="text-lg font-bold mt-1 text-[var(--color-church-blue)] dark:text-amber-200">
                 {result.passed 
-                  ? (lang === 'ar' ? '🎉 تم الحفظ بنجاح تام! مبروك يا بطل!' : '🎉 Mastered! Outstanding Job!') 
-                  : (lang === 'ar' ? 'محاولة قريبة جداً! راجع الكلمات وجرب مرة أخرى' : 'Almost there! Review and try again')}
+                  ? (lang === 'ar' ? '🎉 حفظت الآية بإتقان! مبروك يا بطل!' : '🎉 Mastered! Outstanding Job!') 
+                  : (lang === 'ar' ? 'كنت قريب جدًا! راجع الكلمات وجرّب تاني.' : 'Almost there! Review and try again')}
               </h4>
             </div>
 
@@ -353,7 +353,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
               <div className="p-4 rounded-2xl bg-amber-50/90 dark:bg-slate-800 border border-amber-300 dark:border-slate-700 text-start relative overflow-hidden">
                 <div className="flex items-center gap-2 mb-2 text-amber-900 dark:text-amber-300 font-bold text-xs">
                   <MessageSquareQuote size={18} className="text-amber-600 shrink-0" />
-                  <span>{lang === 'ar' ? 'تعليق خادم مدارس الأحد الذكي على نطقك:' : 'Sunday School AI Teacher Evaluation:'}</span>
+                  <span>{lang === 'ar' ? 'تعليق مساعد مدارس الأحد على نطقك:' : 'Sunday School AI Teacher Evaluation:'}</span>
                 </div>
                 <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-medium italic">
                   "{result.aiTeacherComment}"
@@ -365,7 +365,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
             {result.transcription && (
               <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700 text-xs text-start">
                 <span className="font-bold text-gray-500 block mb-1">
-                  {lang === 'ar' ? 'ما استمعه الذكاء الاصطناعي من صوتك:' : 'What AI Heard From Your Voice:'}
+                  {lang === 'ar' ? 'الكلمات اللي الذكاء الاصطناعي سمعها منك:' : 'What AI Heard From Your Voice:'}
                 </span>
                 <p className="text-gray-800 dark:text-gray-200 italic font-medium">
                   "{result.transcription}"
@@ -376,7 +376,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
             {/* WORD-BY-WORD ACCURACY BREAKDOWN */}
             <div className="p-3.5 bg-gray-50 dark:bg-slate-800/60 rounded-2xl border border-gray-100 dark:border-slate-700 text-start">
               <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block mb-2.5">
-                {lang === 'ar' ? 'تحليل كل كلمة في الآية:' : 'Word-by-Word Evaluation:'}
+                {lang === 'ar' ? 'مراجعة كل كلمة في الآية:' : 'Word-by-Word Evaluation:'}
               </span>
               <div className="flex flex-wrap gap-2">
                 {result.wordAnalysis && result.wordAnalysis.length > 0 ? (
@@ -418,7 +418,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
             {result.passed && (
               <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-bold text-xs flex items-center justify-center gap-2">
                 <Sparkles size={16} />
-                <span>{lang === 'ar' ? 'حصلت على +١٠٠ نقطة أضيفت إلى حسابك الكنسي في Supabase!' : '+100 Points added to your Church profile in Supabase!'}</span>
+                <span>{lang === 'ar' ? 'اتضافت ١٠٠ نقطة لحسابك على Supabase!' : '+100 Points added to your Church profile in Supabase!'}</span>
               </div>
             )}
 
@@ -432,13 +432,13 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
                 className="flex-1 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 font-bold text-xs text-gray-700 dark:text-gray-200 flex items-center justify-center gap-2 cursor-pointer transition-colors"
               >
                 <RotateCcw size={14} />
-                <span>{lang === 'ar' ? 'تسميع مرة أخرى' : 'Recite Again'}</span>
+                <span>{lang === 'ar' ? 'سمّع تاني' : 'Recite Again'}</span>
               </button>
               <button
                 onClick={onClose}
                 className="flex-1 py-2.5 rounded-xl bg-[var(--color-church-burgundy)] hover:bg-[#6e1623] font-bold text-xs text-white shadow-md cursor-pointer transition-colors"
               >
-                {lang === 'ar' ? 'تم ومتابعة الدروس' : 'Done & Continue'}
+                {lang === 'ar' ? 'تمام، كمّل الدروس' : 'Done & Continue'}
               </button>
             </div>
           </motion.div>
