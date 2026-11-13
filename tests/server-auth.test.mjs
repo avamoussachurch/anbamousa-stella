@@ -2393,6 +2393,80 @@ test('parent and teacher delegated student-data access is checked against Supaba
   delegatedAccessResult = true;
 });
 
+
+test('authenticated student leaderboard uses only the active Supabase class roster and progress', async () => {
+  const studentId = 'a2111111-1111-4111-8111-111111111111';
+  const peerId = 'b2111111-1111-4111-8111-111111111111';
+  const classInstanceId = 'leaderboard-class-instance';
+  const yearId = '00000000-0000-4000-8000-000000000001';
+  const studentLessonId = 'c2111111-1111-4111-8111-111111111111';
+  const peerLessonId = 'd2111111-1111-4111-8111-111111111111';
+  const now = new Date().toISOString();
+
+  roleAssignments.set(studentId, ['student']);
+  roleAssignments.set(peerId, ['student']);
+  persistedClassInstances.set(classInstanceId, {
+    id: classInstanceId,
+    church_year_id: yearId,
+    class_group_id: 'primary_2'
+  });
+  persistedClassMemberships.push(
+    { id: 'lb-membership-student', student_id: studentId, class_instance_id: classInstanceId, church_year_id: yearId, exact_grade: 'Grade 6', status: 'active', left_at: null },
+    { id: 'lb-membership-peer', student_id: peerId, class_instance_id: classInstanceId, church_year_id: yearId, exact_grade: 'Grade 6', status: 'active', left_at: null }
+  );
+  persistedProfiles.set(studentId, {
+    id: studentId, name: 'Current Student', avatar: null, grade: 'Grade 6',
+    points: 200, current_streak: 3, longest_streak: 5
+  });
+  persistedProfiles.set(peerId, {
+    id: peerId, name: 'Classmate', avatar: null, grade: 'Grade 6',
+    points: 260, current_streak: 4, longest_streak: 6
+  });
+  persistedLessonProgress.set(`${studentId}:${studentLessonId}`, {
+    student_id: studentId, lesson_id: studentLessonId, completed: true,
+    completed_at: now, points_earned: 40
+  });
+  persistedLessonProgress.set(`${peerId}:${peerLessonId}`, {
+    student_id: peerId, lesson_id: peerLessonId, completed: true,
+    completed_at: now, points_earned: 70
+  });
+
+  const response = await request('/api/church/leaderboard?timeframe=weekly', {
+    role: 'student',
+    userId: studentId
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  const payload = await response.json();
+  assert.equal(payload.classGroupId, 'primary_2');
+  assert.equal(payload.totalParticipants, 2);
+  assert.equal(payload.leaderboard[0].studentId, peerId);
+  assert.equal(payload.leaderboard[0].pointsThisWeek, 70);
+  assert.equal(payload.leaderboard[1].studentId, studentId);
+  assert.equal(payload.leaderboard[1].pointsThisWeek, 40);
+  assert.equal(payload.currentUserEntry.studentId, studentId);
+  assert.equal(payload.leaderboard.some(entry => entry.studentId === 'mark'), false);
+
+  const forbidden = await request('/api/church/leaderboard?classGroupId=preparatory', {
+    role: 'student',
+    userId: studentId
+  });
+  assert.equal(forbidden.status, 403);
+});
+
+test('unassigned authenticated students receive an empty leaderboard instead of demo classmates', async () => {
+  const studentId = 'e2111111-1111-4111-8111-111111111111';
+  roleAssignments.set(studentId, ['student']);
+  const response = await request('/api/church/leaderboard', {
+    role: 'student',
+    userId: studentId
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  const payload = await response.json();
+  assert.equal(payload.classGroupId, null);
+  assert.deepEqual(payload.leaderboard, []);
+  assert.equal(payload.totalParticipants, 0);
+});
+
 test('admin class assignment preserves role authority and records the verified actor', async () => {
   const adminId = 'admin-class-actor';
   const servantId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
