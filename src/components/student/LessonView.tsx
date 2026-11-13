@@ -187,7 +187,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
 
   if (isRestrictedForStudent && studentClass && lessonClass) {
     return (
-      <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4 max-w-md mx-auto" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-4 max-w-md mx-auto" dir="rtl">
         <div className="w-16 h-16 rounded-3xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-3xl border border-amber-300">
           🔒
         </div>
