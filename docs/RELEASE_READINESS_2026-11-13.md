@@ -91,6 +91,13 @@ The organization usage snapshot supplied for the current billing cycle showed:
 
 The concentrated Node/Google Cloud traffic included repeated leaderboard-related reads. PR #70 removes the screen-time-driven refresh dependency, but its impact cannot be measured until the merged code is deployed. Recheck quota consumption and request volume after deployment; do not assume the fix alone will bring all quota meters below plan limits.
 
+## Hymns/Taxis write-path diagnosis
+
+- The current Hymns service obtains its bearer token from `supabase.auth.getSession()`; the current Taxis service uses the same authenticated session token. The older fake/local-storage token path described in the historical Friday audit is no longer present in these service functions.
+- The current Express middleware handles `/api/church/hymns` and `/api/church/taxis` by writing through a user-scoped Supabase client, so database RLS remains in force. The legacy in-memory route handlers are downstream fallbacks and are not reached for the recognized collection/item requests handled by the middleware.
+- The Supabase edge-log sample for the last 30 days showed 34 successful GETs and **no POST/PATCH requests** to either table. That means the database never received the observed create/update attempts; this does not support a schema/column failure as the cause. The remaining likely failure boundary is before the PostgREST write: browser event path, API request, Cloud Run runtime auth configuration, or server-side role validation.
+- This is why the new real-token smoke test is necessary. Cloud Run request logs and a real teacher save are needed to distinguish those pre-database causes. Do not seed or publish unreviewed content as a workaround.
+
 ## Authenticated publishing smoke test
 
 A new script, `scripts/smoke-test-hymns-taxis-production.mjs`, exercises the live authenticated path end-to-end:
