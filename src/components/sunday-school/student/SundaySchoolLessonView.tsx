@@ -461,6 +461,12 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             recordedBy={lesson.approvedServantName || lesson.teacherName || (isAr ? 'خادم الفصل' : 'Sunday School Servant')}
             transcript={teacherVoiceSource?.transcript}
           />
+          {!displayedAudioUrl && !mediaAccessError && (
+            <p role="status" className="text-xs text-stone-500">{isAr ? 'بنجهّز التسجيل الصوتي...' : 'Preparing classroom audio...'}</p>
+          )}
+          {mediaAccessError && (
+            <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-300">{mediaAccessError}</p>
+          )}
         </div>
       )}
 
