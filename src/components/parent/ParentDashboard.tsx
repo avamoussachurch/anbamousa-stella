@@ -16,6 +16,7 @@ import { AddChildModal } from './AddChildModal';
 import { ChurchEventNotifications } from './ChurchEventNotifications';
 import { ParentLearningJourney } from './ParentLearningJourney';
 import { ParentHomeDashboard } from './ParentHomeDashboard';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 
 type ParentSection = 'home' | 'children' | 'journey' | 'family' | 'events';
 
@@ -111,7 +112,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     const result = await getAuthoritativeParentChildren();
     if (result.error || !result.data) {
       setChildren([]);
-      setChildrenError(result.error?.message || (isArabic ? 'مش قادرين نحمّل بيانات الأولاد المرتبطين بالحساب.' : 'Unable to load linked children.'));
+      setChildrenError(getLocalizedErrorMessage(result.error?.message, lang) || (isArabic ? 'مش قادرين نحمّل بيانات الأولاد المرتبطين بالحساب.' : 'Unable to load linked children.'));
       setChildrenLoading(false);
       return;
     }
@@ -125,9 +126,9 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     setEventsError(null);
     const result = await getAuthoritativeChurchEvents();
     setEvents(result.data || []);
-    setEventsError(result.error?.message || null);
+    setEventsError(result.error?.message ? getLocalizedErrorMessage(result.error.message, lang) : null);
     setEventsLoading(false);
-  }, []);
+  }, [lang]);
 
   const refreshAnnouncements = useCallback(async () => {
     setAnnouncementsLoading(true);
@@ -135,7 +136,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     const result = await fetchFeedPostsFromSupabase();
     if (result.error || !result.data) {
       setAnnouncements([]);
-      setAnnouncementsError(result.error?.message || (isArabic ? 'مش قادرين نحمّل الإعلانات دلوقتي.' : 'Unable to load announcements.'));
+      setAnnouncementsError(getLocalizedErrorMessage(result.error?.message, lang) || (isArabic ? 'مش قادرين نحمّل الإعلانات دلوقتي.' : 'Unable to load announcements.'));
     } else {
       setAnnouncements(result.data.filter(post => post.isAnnouncement).slice(0, 8));
     }
@@ -152,9 +153,9 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     setRewardsError(null);
     const result = await getParentRewardRequests();
     setRewardRequests(result.data || []);
-    setRewardsError(result.error?.message || null);
+    setRewardsError(result.error?.message ? getLocalizedErrorMessage(result.error.message, lang) : null);
     setRewardsLoading(false);
-  }, [isParent]);
+  }, [isParent, lang]);
 
   useEffect(() => {
     void refreshChildren();
@@ -179,7 +180,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     setReviewError(null);
     const result = await reviewParentRewardRequest(request.id, decision);
     if (result.error) {
-      setReviewError(result.error.message);
+      setReviewError(getLocalizedErrorMessage(result.error.message, lang));
     } else {
       await refreshRewards();
     }
@@ -194,7 +195,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     setSavingSetting(field);
     setSettingsError(null);
     const result = await updateUserProfile({ [field]: value } as Partial<User>);
-    if (!result.success) setSettingsError(result.error || (isArabic ? 'ماقدرناش نحفظ الإعداد.' : 'Could not save this setting.'));
+    if (!result.success) setSettingsError(getLocalizedErrorMessage(result.error, lang) || (isArabic ? 'ماقدرناش نحفظ الإعداد.' : 'Could not save this setting.'));
     setSavingSetting(null);
   };
 
