@@ -421,7 +421,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
   };
 
   return (
-    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-[#2B1B17] via-[#3E2723] to-[#795548] text-white p-5 md:p-6 rounded-3xl shadow-sm border border-amber-600/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
