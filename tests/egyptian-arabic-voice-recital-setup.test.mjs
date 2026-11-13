@@ -7,10 +7,10 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 test('student Scripture recital instructions and feedback use Egyptian Arabic', async () => {
   const recital = await read('../src/components/student/VerseRecitalModal.tsx');
   assert.match(recital, /اقرأ الآية واحفظها، وبعدها اضغط على الميكروفون/);
-  assert.match(recital, /برافو يا بطل! نطقك لكلمات الآية كان واضح وجميل/);
+  assert.match(recital, /برافو عليك يا بطل! نطقت كلمات الآية بصوت واضح وجميل/);
   assert.match(recital, /🎉 حفظت الآية بإتقان!/);
   assert.match(recital, /كنت قريب جدًا! راجع الكلمات وجرّب تاني/);
-  assert.match(recital, /سمّع الآية تاني/);
+  assert.match(recital, /سمّع تاني/);
 });
 
 test('Supabase connection setup guidance uses clear Egyptian Arabic', async () => {
