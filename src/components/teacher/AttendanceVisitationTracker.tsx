@@ -177,7 +177,7 @@ export function AttendanceVisitationTracker({ lang }: { lang: 'en' | 'ar' }) {
   // Visitation logging modal state
   const [activeVisitationStudent, setActiveVisitationStudent] = useState<StudentRecord | null>(null);
   const [visitationType, setVisitationType] = useState<'call' | 'visit' | 'whatsapp'>('call');
-  const [servantName, setServantName] = useState('الخادم المسئول');
+  const [servantName, setServantName] = useState('الخادم المسؤول');
   const [visitationNotes, setVisitationNotes] = useState('');
 
   // Load attendance for date
@@ -232,7 +232,7 @@ export function AttendanceVisitationTracker({ lang }: { lang: 'en' | 'ar' }) {
       date: selectedDate,
       type: visitationType,
       servantName: servantName.trim() || 'خادم مدارس الأحد',
-      notes: visitationNotes.trim() || (lang === 'ar' ? 'تم الافتقاد والاطمئنان عليه.' : 'Followed up and checked in.')
+      notes: visitationNotes.trim() || (lang === 'ar' ? 'اتواصلنا معاه واطمنا عليه.' : 'Followed up and checked in.')
     };
 
     const updatedStudents = students.map(s => {
@@ -308,7 +308,7 @@ export function AttendanceVisitationTracker({ lang }: { lang: 'en' | 'ar' }) {
               </h3>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {lang === 'ar' ? `شفيع الأسرة: ${currentStageInfo.patronSaintAr} • ${currentStageInfo.gradeRangeAr}` : `Patron: ${currentStageInfo.patronSaintEn}`}
+              {lang === 'ar' ? `شفيع العيلة: ${currentStageInfo.patronSaintAr} • ${currentStageInfo.gradeRangeAr}` : `Patron: ${currentStageInfo.patronSaintEn}`}
             </p>
           </div>
 
@@ -328,24 +328,24 @@ export function AttendanceVisitationTracker({ lang }: { lang: 'en' | 'ar' }) {
         {/* Metrics Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
-            <span className="text-xs text-gray-500 font-bold block">{lang === 'ar' ? 'إجمالي المخدومين' : 'Total Students'}</span>
+            <span className="text-xs text-gray-500 font-bold block">{lang === 'ar' ? 'إجمالي التلاميذ' : 'Total Students'}</span>
             <span className="text-xl font-extrabold text-gray-800 dark:text-gray-100">{totalInStage}</span>
           </div>
 
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
-            <span className="text-xs text-emerald-800 dark:text-emerald-300 font-bold block">{lang === 'ar' ? 'حاضر اليوم' : 'Present'}</span>
+            <span className="text-xs text-emerald-800 dark:text-emerald-300 font-bold block">{lang === 'ar' ? 'حاضر النهارده' : 'Present'}</span>
             <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
               {presentCount} ({totalInStage > 0 ? Math.round((presentCount / totalInStage) * 100) : 0}%)
             </span>
           </div>
 
           <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50">
-            <span className="text-xs text-[var(--color-church-burgundy)] dark:text-red-300 font-bold block">{lang === 'ar' ? 'غائب اليوم' : 'Absent'}</span>
+            <span className="text-xs text-[var(--color-church-burgundy)] dark:text-red-300 font-bold block">{lang === 'ar' ? 'غايب النهارده' : 'Absent'}</span>
             <span className="text-xl font-extrabold text-[var(--color-church-burgundy)] dark:text-red-400">{absentCount}</span>
           </div>
 
           <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
-            <span className="text-xs text-amber-800 dark:text-amber-300 font-bold block">{lang === 'ar' ? 'يحتاج افتقاد (غياب ٢+)' : 'Needs Visitation'}</span>
+            <span className="text-xs text-amber-800 dark:text-amber-300 font-bold block">{lang === 'ar' ? 'محتاج متابعة (غايب مرتين أو أكتر)' : 'Needs Visitation'}</span>
             <span className="text-xl font-extrabold text-amber-600 dark:text-amber-400">{needingVisitationCount}</span>
           </div>
         </div>
@@ -358,7 +358,7 @@ export function AttendanceVisitationTracker({ lang }: { lang: 'en' | 'ar' }) {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={lang === 'ar' ? 'ابحث باسم المخدوم في هذا الفصل...' : 'Search student by name...'}
+          placeholder={lang === 'ar' ? 'دوّر على اسم التلميذ في الفصل...' : 'Search student by name...'}
           className="w-full pr-10 pl-4 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm focus:outline-hidden focus:border-amber-500 text-gray-800 dark:text-gray-100"
         />
       </div>
@@ -367,7 +367,7 @@ export function AttendanceVisitationTracker({ lang }: { lang: 'en' | 'ar' }) {
       <div className="space-y-3">
         {stageStudents.length === 0 ? (
           <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-slate-800 text-gray-500">
-            {lang === 'ar' ? 'لا يوجد مخدومين مطابقين للبحث في هذه المرحلة.' : 'No students found in this stage.'}
+            {lang === 'ar' ? 'ملقيناش تلاميذ مطابقين للبحث في المرحلة دي.' : 'No students found in this stage.'}
           </div>
         ) : (
           stageStudents.map((student) => {
@@ -392,7 +392,7 @@ export function AttendanceVisitationTracker({ lang }: { lang: 'en' | 'ar' }) {
                     {needsVisitation && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-[var(--color-church-burgundy)] text-white shadow-xs animate-pulse">
                         <AlertCircle size={12} />
-                        {lang === 'ar' ? `يحتاج افتقاد (غائب ${student.consecutiveAbsences} أسابيع)` : `Needs Visit (${student.consecutiveAbsences}w absent)`}
+                        {lang === 'ar' ? `محتاج متابعة (غايب ${student.consecutiveAbsences} أسابيع)` : `Needs Visit (${student.consecutiveAbsences}w absent)`}
                       </span>
                     )}
                   </div>
