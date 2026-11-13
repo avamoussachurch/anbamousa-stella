@@ -17,6 +17,7 @@ import type { CopticHymnItem } from '../../data/hymnsData';
 import { CANONICAL_GRADES, findCanonicalGrade, findClassGroupForGrade } from '../../lib/classGroups';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { loadServantPreviewSchoolContent } from '../../lib/servantPreview';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import type { Language, Lesson, LessonVersion, QuizDraft, StudentContentProgress, TaxisItem } from '../../types';
 
 type PreviewScreen = 'home' | 'lessons' | 'lesson' | 'quiz' | 'hymns' | 'taxis' | 'achievements';
@@ -155,7 +156,7 @@ export function StudentExperiencePreview({ lang, initialLessonId }: StudentExper
       .catch(error => {
         if (!active) return;
         setSchoolContent({ hymns: [], taxis: [] });
-        setSchoolContentError(error instanceof Error ? error.message : (isAr ? 'تعذر تحميل المنهج المنشور.' : 'Could not load published curriculum.'));
+        setSchoolContentError(getLocalizedErrorMessage(error, lang));
       })
       .finally(() => {
         if (active) setSchoolContentLoading(false);
@@ -195,11 +196,11 @@ export function StudentExperiencePreview({ lang, initialLessonId }: StudentExper
   ];
 
   const previewUnavailableMessage = !isOnlineAuth
-    ? (isAr ? 'المعاينة تحتاج جلسة خادم موثقة واتصالاً بالمنهج المنشور.' : 'Preview requires a verified Servant session and live published curriculum.')
+    ? (isAr ? 'المعاينة محتاجة تسجيل دخول خادم موثّق واتصال بالمنهج المنشور.' : 'Preview requires a verified Servant session and live published curriculum.')
     : curriculumLoading || curriculumLoadedForUserId !== userData?.id
       ? (isAr ? 'بنحمّل المنهج المنشور...' : 'Loading published curriculum...')
       : curriculumError
-        ? (isAr ? `تعذر تحميل المنهج المنشور: ${curriculumError}` : `Published curriculum could not be loaded: ${curriculumError}`)
+        ? (isAr ? `مش قادرين نحمّل المنهج المنشور: ${getLocalizedErrorMessage(curriculumError, lang)}` : `Published curriculum could not be loaded: ${curriculumError}`)
         : null;
 
   return (
@@ -207,7 +208,7 @@ export function StudentExperiencePreview({ lang, initialLessonId }: StudentExper
       <div className="sticky top-0 z-30 rounded-2xl border-2 border-amber-400 bg-amber-100 px-4 py-3 text-center text-sm font-black text-amber-950 shadow-md dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
         معاينة فقط — لن يتم حفظ أي تقدم
         <span className="mx-2 hidden sm:inline">•</span>
-        <span className="block font-bold sm:inline">{isAr ? 'أي تفاعل هنا مؤقت داخل المعاينة فقط.' : 'All interactions are temporary and stay in this preview only.'}</span>
+        <span className="block font-bold sm:inline">{isAr ? 'أي حاجة تعملها هنا مؤقتة ومش هتتحفظ.' : 'All interactions are temporary and stay in this preview only.'}</span>
       </div>
 
       <header className="rounded-3xl border border-[var(--mousa-border-sand)] bg-gradient-to-br from-[var(--mousa-teal-deep)] via-[#164e50] to-[#302414] p-5 text-white shadow-lg sm:p-7">
@@ -216,7 +217,7 @@ export function StudentExperiencePreview({ lang, initialLessonId }: StudentExper
           <div className="min-w-0 flex-1">
             <p className="text-xs font-black uppercase tracking-wide text-amber-200">{isAr ? 'مساحة الخادم' : 'Servant workspace'}</p>
             <h2 className="mt-1 text-xl font-black sm:text-2xl">{isAr ? 'معاينة رحلة التلميذ' : 'Student Experience Preview'}</h2>
-            <p className="mt-2 text-sm text-white/80">{isAr ? 'اختار الصف ومستوى الألحان والطقس عشان تشوف المنهج المنشور للتلميذ.' : 'Choose a grade and Hymns/Taxis level to preview the published student curriculum.'}</p>
+            <p className="mt-2 text-sm text-white/80">{isAr ? 'اختار الصف ومستوى الألحان والطقس عشان تشوف التلميذ هيشوف إيه من الدروس المنشورة.' : 'Choose a grade and Hymns/Taxis level to preview the published student curriculum.'}</p>
           </div>
         </div>
 
