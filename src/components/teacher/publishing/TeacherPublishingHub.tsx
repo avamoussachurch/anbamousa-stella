@@ -68,7 +68,7 @@ export function TeacherPublishingHub({
   const ActiveModeIcon = activeMode.icon;
 
   return (
-    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       <section className="relative isolate overflow-hidden rounded-[2rem] border border-[var(--border-default)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)]">
         <div className="relative overflow-hidden bg-[linear-gradient(115deg,#102a34_0%,#174b54_62%,#8c682f_140%)] p-5 text-white sm:p-7 lg:p-8">
           <div aria-hidden="true" className="pointer-events-none absolute -end-12 -top-20 h-64 w-64 rounded-full border border-white/10" />

@@ -195,7 +195,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
         exit={{ opacity: 0, scale: 0.96, y: 10 }}
         transition={{ duration: 0.2 }}
         className="w-full max-w-xl bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-border-sand)] rounded-3xl shadow-2xl p-6 relative overflow-hidden my-8"
-        dir={isAr ? 'rtl' : 'ltr'}
+        dir="rtl"
       >
         {/* Close Button */}
         <button

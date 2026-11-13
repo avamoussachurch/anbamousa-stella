@@ -284,7 +284,7 @@ export function StudentAdventureHome({
   const lessonSummary = nextLesson && (isArabic ? nextLesson.summaryAr || nextLesson.summary : nextLesson.summary);
 
   return (
-    <main className="stella-student-home mx-auto w-full max-w-[1440px] space-y-5 px-4 pb-28 pt-5 sm:space-y-7 sm:px-7 lg:px-10" dir={isArabic ? 'rtl' : 'ltr'}>
+    <main className="stella-student-home mx-auto w-full max-w-[1440px] space-y-5 px-4 pb-28 pt-5 sm:space-y-7 sm:px-7 lg:px-10" dir="rtl">
       <motion.section
         initial={reduceMotion ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}

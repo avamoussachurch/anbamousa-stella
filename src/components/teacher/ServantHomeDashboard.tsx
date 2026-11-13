@@ -211,7 +211,7 @@ export function ServantHomeDashboard({
   const classesExist = Boolean(summary && summary.classes.length > 0);
 
   return (
-    <main className="mx-auto w-full max-w-[90rem] space-y-5 px-4 pb-8 pt-5 sm:px-6 lg:px-8" dir={isArabic ? 'rtl' : 'ltr'}>
+    <main className="mx-auto w-full max-w-[90rem] space-y-5 px-4 pb-8 pt-5 sm:px-6 lg:px-8" dir="rtl">
       {!summary && !loading && error ? (
         <section className="rounded-[2rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-8">
           <div className="mb-5 flex items-center justify-between gap-3">

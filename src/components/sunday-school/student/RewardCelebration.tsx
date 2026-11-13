@@ -60,7 +60,7 @@ export const RewardCelebration: React.FC<RewardCelebrationProps> = ({
   return (
     <div 
       className={`relative text-center space-y-4 max-w-xl mx-auto py-2 select-none ${className}`}
-      dir={isAr ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       {/* Gentle Pulsing Glow Ambient Aura */}
       <div 

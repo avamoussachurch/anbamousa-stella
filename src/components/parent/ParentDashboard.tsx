@@ -205,7 +205,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
 
   if (!isParent) {
     return (
-      <main className="mx-auto max-w-3xl p-6" dir={isArabic ? 'rtl' : 'ltr'}>
+      <main className="mx-auto max-w-3xl p-6" dir="rtl">
         <div className="mousa-card-sand p-8 text-center" role="alert">
           <ShieldCheck className="mx-auto mb-3 text-[var(--action-primary)]" size={28} />
           <h1 className="text-xl font-black text-[var(--text-primary)]">{isArabic ? 'مساحة ولي الأمر' : 'Parent workspace'}</h1>
@@ -259,7 +259,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
   };
 
   return (
-    <main className="parent-portal mx-auto w-full max-w-7xl px-4 pb-28 pt-5 sm:px-6 lg:px-8" dir={isArabic ? 'rtl' : 'ltr'}>
+    <main className="parent-portal mx-auto w-full max-w-7xl px-4 pb-28 pt-5 sm:px-6 lg:px-8" dir="rtl">
       {section !== 'home' && (
         <header className="mb-4 border-b border-[var(--border-default)] pb-3">
           <p className="text-xs font-black uppercase tracking-[.14em] text-[var(--action-primary)]">

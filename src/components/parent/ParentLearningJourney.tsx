@@ -100,7 +100,7 @@ export function ParentLearningJourney({ child, lang }: ParentLearningJourneyProp
     : labels.noEnrollment;
 
   return (
-    <section className="space-y-5" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <section className="space-y-5" dir="rtl">
       <header className="mousa-card-sand p-5 sm:p-6 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-[var(--text-primary)]">{labels.title}</h2>

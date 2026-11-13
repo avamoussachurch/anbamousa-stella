@@ -58,7 +58,7 @@ export const StudentLearningReviewView: React.FC<StudentLearningReviewViewProps>
   }, [studentId]);
 
   return (
-    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       {/* Top Header with Back Button */}
       <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">

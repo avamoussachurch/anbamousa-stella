@@ -275,7 +275,7 @@ export function QrCodeScanner({
   }, [facingMode]);
 
   return (
-    <div className="space-y-4 text-center" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-4 text-center" dir="rtl">
       {/* Hidden file input for image upload fallback */}
       <input
         type="file"

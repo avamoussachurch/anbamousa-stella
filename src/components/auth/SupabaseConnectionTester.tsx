@@ -69,7 +69,7 @@ export function SupabaseConnectionTester({ lang, onClose }: SupabaseConnectionTe
   return (
     <div 
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-lg w-full p-6 space-y-5 text-start animate-in fade-in zoom-in-95 duration-150">
         

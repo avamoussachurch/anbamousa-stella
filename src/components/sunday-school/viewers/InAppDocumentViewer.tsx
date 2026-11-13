@@ -79,7 +79,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
   return (
     <div 
       className={`fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md transition-all`}
-      dir={isAr ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       <div
         className={`bg-stone-900 border border-stone-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-all ${

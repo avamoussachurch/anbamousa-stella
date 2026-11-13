@@ -692,7 +692,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       exit={{ opacity: 0, y: -15 }}
       transition={{ duration: 0.3 }}
       className="pb-24 pt-6 px-4 w-full max-w-7xl mx-auto space-y-6" 
-      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

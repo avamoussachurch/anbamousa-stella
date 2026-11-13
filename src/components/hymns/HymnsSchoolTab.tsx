@@ -263,7 +263,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       exit={{ opacity: 0, y: -15 }}
       transition={{ duration: 0.3 }}
       className="pb-28 pt-6 px-4 w-full max-w-7xl mx-auto space-y-6"
-      dir={isAr ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0B2E5C] via-[#1E3A8A] to-[#8B1E2E] text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">

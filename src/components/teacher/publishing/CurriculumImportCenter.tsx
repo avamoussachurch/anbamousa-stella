@@ -527,7 +527,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
 
   if (!authorized) {
     return (
-      <section dir={isAr ? 'rtl' : 'ltr'} className="mx-auto max-w-4xl rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:bg-amber-950/30 dark:text-amber-100">
+      <section dir="rtl" className="mx-auto max-w-4xl rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:bg-amber-950/30 dark:text-amber-100">
         <div className="flex items-start gap-3">
           <AlertCircle className="mt-1 shrink-0" />
           <div>
@@ -540,7 +540,7 @@ export function CurriculumImportCenter({ lang = 'ar' }: CurriculumImportCenterPr
   }
 
   return (
-    <section dir={isAr ? 'rtl' : 'ltr'} className="mx-auto max-w-6xl space-y-5">
+    <section dir="rtl" className="mx-auto max-w-6xl space-y-5">
       <header className="rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-gradient-to-br from-white to-amber-50 p-5 shadow-sm dark:from-slate-900 dark:to-slate-800 md:p-7">
         <div className="flex items-start gap-3">
           <div className="rounded-2xl bg-[var(--mousa-teal-deep)] p-3 text-white"><Upload size={23} /></div>

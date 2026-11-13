@@ -516,7 +516,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
   }
 
   return (
-    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       {/* Header Bar */}
       <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 shadow-xl flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3.5">

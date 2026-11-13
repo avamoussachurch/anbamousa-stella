@@ -544,7 +544,7 @@ export const MosesJourneyBadge: React.FC<MosesJourneyBadgeProps> = ({
       exit={{ opacity: 0, scale: 0.95, y: -10 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="relative overflow-hidden rounded-3xl border-2 border-[var(--mousa-gold)] bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E5] to-[#F7E7D0] dark:from-[#251E17] dark:via-[#2F241A] dark:to-[#38281A] p-5 sm:p-6 shadow-md"
-      dir={isAr ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       {/* Radiant Golden-Coral Background Glows */}
       <div 

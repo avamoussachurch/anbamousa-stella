@@ -261,7 +261,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5 pb-16" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="max-w-3xl mx-auto space-y-5 pb-16" dir="rtl">
       {/* Top Header Navigation */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <button
@@ -801,13 +801,13 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
                       }`}>
                         {idx + 1}
                       </span>
-                      <span className="font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]" dir={isAr ? 'rtl' : 'ltr'}>
+                      <span className="font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]" dir="rtl">
                         {isAr && q.questionAr ? q.questionAr : q.questionEn}
                       </span>
                     </div>
 
                     {!isCorrect && (q.explanationAr || q.explanationEn) && (
-                      <p className="text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] text-[11px] pt-1" dir={isAr ? 'rtl' : 'ltr'}>
+                      <p className="text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] text-[11px] pt-1" dir="rtl">
                         💡 {isAr && q.explanationAr ? q.explanationAr : q.explanationEn}
                       </p>
                     )}

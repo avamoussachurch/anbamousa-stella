@@ -316,7 +316,7 @@ export function ExpressLessonPublishModal({
   return (
     <div
       className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
-      dir={isAr ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       <div className="bg-stone-900 border border-stone-800 rounded-3xl shadow-2xl max-w-3xl w-full p-5 sm:p-7 space-y-6 max-h-[92vh] overflow-y-auto text-start my-auto">
         

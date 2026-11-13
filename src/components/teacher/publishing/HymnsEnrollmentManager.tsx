@@ -114,7 +114,7 @@ export function HymnsEnrollmentManager({ lang = 'ar', onRefresh }: HymnsEnrollme
   const pendingCount = requests.filter(r => r.status === 'pending').length;
 
   return (
-    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl border border-[var(--mousa-border-sand)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center gap-3">

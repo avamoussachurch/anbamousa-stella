@@ -255,7 +255,7 @@ export const DesignSystemPage: React.FC<DesignSystemPageProps> = ({ lang, setLan
       {/* TAB 3: COMPONENTS */}
       {activeTab === 'components' && (
         <div className="space-y-6">
-          <StellaCard variant="feature" padding="md" className="sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+          <StellaCard variant="feature" padding="md" className="sm:p-7" dir="rtl">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <StellaPageHeader
                 eyebrow={lang === 'ar' ? 'هوية ستيلا • الأساس المشترك' : 'Stella identity • shared foundation'}
@@ -348,11 +348,11 @@ export const DesignSystemPage: React.FC<DesignSystemPageProps> = ({ lang, setLan
                 <StellaSectionTitle
                   title={lang === 'ar' ? 'مخطط النشاط' : 'Activity chart'}
                   description={lang === 'ar' ? 'مثال توضيحي — اربطه ببيانات موثوقة عند الاستخدام' : 'Illustrative only—connect to verified data in product screens'}
-                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  dir="rtl"
                 />
                 <StellaBarChart
                   label={lang === 'ar' ? 'نشاط تعليمي توضيحي' : 'Illustrative learning activity'}
-                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  dir="rtl"
                   formatValue={value => lang === 'ar' ? `${value} درس` : `${value} lessons`}
                   data={[
                     { id: 'sunday-school-demo', label: lang === 'ar' ? 'مدارس الأحد' : 'Sunday School', value: 4, tone: 'teal' },
@@ -365,11 +365,11 @@ export const DesignSystemPage: React.FC<DesignSystemPageProps> = ({ lang, setLan
                 <StellaSectionTitle
                   title={lang === 'ar' ? 'خط زمني' : 'Timeline'}
                   description={lang === 'ar' ? 'المواعيد هنا أمثلة وليست أحداثاً حقيقية' : 'Example dates only—not live events'}
-                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  dir="rtl"
                 />
                 <StellaTimeline
                   label={lang === 'ar' ? 'خط زمني توضيحي' : 'Illustrative timeline'}
-                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  dir="rtl"
                   items={[
                     {
                       id: 'gathering-demo',
@@ -395,21 +395,21 @@ export const DesignSystemPage: React.FC<DesignSystemPageProps> = ({ lang, setLan
                 <StellaSectionTitle
                   title={lang === 'ar' ? 'حقول النماذج' : 'Form controls'}
                   description={lang === 'ar' ? 'تسميات وحالات تركيز وأخطاء متوافقة مع الاتجاه' : 'Labeled controls with direction-aware focus and validation'}
-                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  dir="rtl"
                 />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <StellaFormField
                     id="stella-demo-name"
                     label={lang === 'ar' ? 'الاسم' : 'Display name'}
                     hint={lang === 'ar' ? 'اكتب الاسم الظاهر للحساب.' : 'Enter the account display name.'}
-                    dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                    dir="rtl"
                   >
                     <StellaInput id="stella-demo-name" hintId="stella-demo-name-hint" placeholder={lang === 'ar' ? 'الاسم' : 'Name'} />
                   </StellaFormField>
                   <StellaFormField
                     id="stella-demo-grade"
                     label={lang === 'ar' ? 'الصف' : 'Grade'}
-                    dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                    dir="rtl"
                   >
                     <StellaSelect id="stella-demo-grade" defaultValue="primary">
                       <option value="primary">{lang === 'ar' ? 'ابتدائي' : 'Primary'}</option>
@@ -421,7 +421,7 @@ export const DesignSystemPage: React.FC<DesignSystemPageProps> = ({ lang, setLan
               <StellaErrorState
                 title={lang === 'ar' ? 'تعذر تحميل هذا القسم' : 'This section could not load'}
                 description={lang === 'ar' ? 'اعرض الخطأ بوضوح وأتح للمستخدم المحاولة مرة أخرى.' : 'Explain the problem and provide a clear recovery action.'}
-                dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                dir="rtl"
                 action={<CopticButton variant="secondary" size="sm" lang={lang}>{lang === 'ar' ? 'إعادة المحاولة' : 'Try again'}</CopticButton>}
               />
             </div>

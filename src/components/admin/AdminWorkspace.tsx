@@ -444,7 +444,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
     || (activeTab === 'role-requests' ? (isArabic ? 'طلبات الأدوار' : 'Role requests') : isArabic ? 'مركز الإدارة' : 'Admin Control Center');
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6" dir={isArabic ? 'rtl' : 'ltr'}>
+    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6" dir="rtl">
       <header className="mb-5 overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-6 text-white shadow-xl">
         <div className="flex items-start gap-4">
           <div className="rounded-2xl bg-white/10 p-3 text-amber-300"><Shield size={28} /></div>

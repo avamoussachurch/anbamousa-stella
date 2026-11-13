@@ -203,7 +203,7 @@ export function StudentExperiencePreview({ lang, initialLessonId }: StudentExper
         : null;
 
   return (
-    <section className="space-y-5" dir={isAr ? 'rtl' : 'ltr'} aria-label={isAr ? 'معاينة رحلة التلميذ' : 'Student experience preview'}>
+    <section className="space-y-5" dir="rtl" aria-label={isAr ? 'معاينة رحلة التلميذ' : 'Student experience preview'}>
       <div className="sticky top-0 z-30 rounded-2xl border-2 border-amber-400 bg-amber-100 px-4 py-3 text-center text-sm font-black text-amber-950 shadow-md dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
         معاينة فقط — لن يتم حفظ أي تقدم
         <span className="mx-2 hidden sm:inline">•</span>

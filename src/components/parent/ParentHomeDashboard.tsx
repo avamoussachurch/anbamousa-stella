@@ -238,7 +238,7 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
   });
 
   return (
-    <div className="space-y-6" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir="rtl">
       <section className="relative isolate overflow-hidden rounded-[2rem] bg-[linear-gradient(120deg,#102d3a,#1b5558_58%,#286b68)] px-5 py-7 text-white shadow-[var(--shadow-card)] sm:px-8 sm:py-9 lg:px-10">
         <div aria-hidden="true" className="absolute -end-24 -top-32 -z-10 h-80 w-80 rounded-full bg-[#f0c77c]/10 blur-3xl" />
         <div className="absolute inset-0 -z-10 opacity-[.08]" aria-hidden="true" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
