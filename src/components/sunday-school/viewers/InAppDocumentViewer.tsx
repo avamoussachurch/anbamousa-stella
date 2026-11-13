@@ -53,10 +53,14 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
     if (documentUrl.startsWith('data:') || documentUrl.startsWith('blob:')) {
       return documentUrl;
     }
+    if (isPdf) {
+      // Render private signed PDFs directly in the browser's native PDF viewer.
+      // Third-party viewers often cannot fetch short-lived signed Storage URLs reliably.
+      return documentUrl;
+    }
     if (isOfficeDoc) {
       return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(documentUrl)}`;
     }
-    // Universal Google Docs in-app viewer fallback
     return `https://docs.google.com/viewer?url=${encodeURIComponent(documentUrl)}&embedded=true`;
   };
 
@@ -151,6 +155,18 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
                 <FileText className="w-3.5 h-3.5" />
                 <span>{showNotes ? (isAr ? 'اخفي الملاحظات' : 'Hide Notes') : (isAr ? 'اعرض الملاحظات' : 'Show Notes')}</span>
               </button>
+            )}
+
+            {documentUrl && isPdf && (
+              <a
+                href={documentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2 bg-stone-900 hover:bg-stone-800 text-stone-200 rounded-xl border border-stone-700 text-xs font-bold inline-flex items-center gap-1.5"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                {isAr ? 'افتح PDF في نافذة جديدة' : 'Open PDF in new tab'}
+              </a>
             )}
 
             {/* Fullscreen button */}
