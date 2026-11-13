@@ -129,7 +129,7 @@ export const LessonEngagementSummary: React.FC<LessonEngagementSummaryProps> = (
   }, [publishedLessons]);
 
   return (
-    <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-6" dir="rtl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-5">
         <div className="flex items-center gap-3">
