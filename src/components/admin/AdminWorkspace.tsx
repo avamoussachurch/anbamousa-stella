@@ -108,6 +108,11 @@ async function adminRequest<T>(path: string, method = 'GET', body?: object): Pro
   return payload as T;
 }
 
+function getAdminRoleLabel(role: Role, isArabic: boolean): string {
+  if (isArabic) return ({ student: 'تلميذ', parent: 'ولي أمر', teacher: 'خادم', admin: 'مشرف' })[role];
+  return ({ student: 'Student', parent: 'Parent', teacher: 'Servant', admin: 'Administrator' })[role];
+}
+
 const ADMIN_SECTIONS = [
   ['home', 'Overview', 'نظرة عامة', Home],
   ['accounts', 'Accounts', 'الحسابات', Users],
@@ -271,7 +276,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       ? (isArabic ? 'خادم' : 'Servant')
       : request?.requested_role || (isArabic ? 'الدور المطلوب' : 'requested role');
     if (!window.confirm(isArabic
-      ? `تأكيد ${decisionLabel} طلب ${roleLabel} للحساب ${request?.requester_id || requestId}؟ سيتم تسجيل القرار واسم المنفذ في سجل التدقيق.`
+      ? `تأكيد ${decisionLabel} طلب ${roleLabel} للحساب ${request?.requester_id || requestId}؟ سيتم تسجيل القرار واسم اللي نفّذ الإجراء في سجل التدقيق.`
       : `Confirm ${decisionLabel} of the ${roleLabel} request for account ${request?.requester_id || requestId}? The decision and verified actor will be recorded in the audit log.`)) return;
     return runAction(async () => {
       await adminRequest(`/api/church/admin/role-requests/${encodeURIComponent(requestId)}/review`, 'POST', {
@@ -289,7 +294,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
     event.preventDefault();
     const target = roleTargetAccount?.id === targetUserId.trim() ? roleTargetAccount : null;
     if (!target) {
-      setError(isArabic ? 'ابحث عن الحساب أولاً لمراجعة الأدوار الحالية وتأثير التغيير.' : 'Look up the account first to review its current roles and the impact of this change.');
+      setError(isArabic ? 'ادوّر على الحساب أولاً لمراجعة الأدوار الحالية وتأثير التغيير.' : 'Look up the account first to review its current roles and the impact of this change.');
       return;
     }
     const hasRole = target.roles.some(assignment => assignment.role === selectedRole);
@@ -352,7 +357,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
   const openSupport = (event: React.FormEvent) => {
     event.preventDefault();
     if (!window.confirm(isArabic
-      ? 'سيُفتح عرض دعم للقراءة فقط لهذا الحساب، وسيُسجل وصولك وسبب الدعم. لن يتم انتحال هوية المستخدم. متابعة؟'
+      ? 'سيُفتح شاشة دعم للعرض فقط لهذا الحساب، وسيُسجل وصولك وسبب الدعم. لن يتم انتحال هوية المستخدم. متابعة؟'
       : 'Open an audited, read-only support view for this account? The target will not be impersonated and no actions can be taken as them.')) return;
     return runAction(async () => {
       const result = await adminRequest<{ account: AdminAccount }>('/api/church/admin/support-sessions', 'POST', {
@@ -424,15 +429,15 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
 
   const lookupRoleTarget = () => runAction(async () => {
     const userId = targetUserId.trim();
-    if (!userId) throw new Error(isArabic ? 'أدخل معرّف الحساب أولاً.' : 'Enter an account ID first.');
+    if (!userId) throw new Error(isArabic ? 'أدخل رقم الحساب أولاً.' : 'Enter an account ID first.');
     const matchingAccounts = await loadAccounts(userId);
     const matchingAccount = matchingAccounts.find(account => account.id === userId);
     if (!matchingAccount) {
       setRoleTargetAccount(null);
-      throw new Error(isArabic ? 'لم يتم العثور على حساب مطابق.' : 'No matching account was found.');
+      throw new Error(isArabic ? 'ملقيناش حساب مطابق.' : 'No matching account was found.');
     }
     setRoleTargetAccount(matchingAccount);
-  }, isArabic ? 'تم تحميل بيانات الحساب وأدواره الحالية.' : 'Account details and current roles loaded.');
+  }, isArabic ? 'تم تحميل بيانات الحساب والأدوار الحالية.' : 'Account details and current roles loaded.');
 
   const refreshAdminCurriculum = async () => {
     if (!refreshCurriculum) throw new Error('The trusted curriculum refresh is unavailable.');
@@ -452,7 +457,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
             <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-200">Stella • Admin</p>
             <h1 className="mt-1 text-2xl font-black sm:text-3xl">{title}</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-300">
-              {isArabic ? 'مركز إدارة مستقل. البيانات من الخدمات الموثوقة، والإجراءات الحساسة ووصول الدعم مسجلان.' : 'An isolated control center using trusted data; sensitive admin actions and support access are audited.'}
+              {isArabic ? 'مركز إدارة مستقل. البيانات جاية من مصادر موثوقة، وكل إجراءات الإدارة والدعم الحساسة بتتسجل.' : 'An isolated control center using trusted data; sensitive admin actions and support access are audited.'}
             </p>
           </div>
           <button type="button" onClick={() => void loadCurrentSection()} disabled={loading} className="rounded-xl border border-white/20 p-2 text-white hover:bg-white/10 disabled:opacity-50" aria-label={isArabic ? 'تحديث البيانات' : 'Refresh data'}>
@@ -476,7 +481,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
 
       {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-800">{error}</p>}
       {notice && <p role="status" className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-800">{notice}</p>}
-      {loading && <div className="mb-4 flex items-center gap-2 text-sm text-slate-500"><LoaderCircle size={16} className="animate-spin" />{isArabic ? 'جارٍ تحميل بيانات موثوقة...' : 'Loading authoritative data...'}</div>}
+      {loading && <div className="mb-4 flex items-center gap-2 text-sm text-slate-500"><LoaderCircle size={16} className="animate-spin" />{isArabic ? 'بنحمّل البيانات الموثوقة...' : 'Loading authoritative data...'}</div>}
 
       {activeTab === 'home' && (
         <section className="space-y-5">
@@ -489,7 +494,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
                   [isArabic ? 'أولياء الأمور' : 'Parents', overview.roles.parent],
                   [isArabic ? 'الخدام' : 'Servants', overview.roles.teacher],
                   [isArabic ? 'المشرفون' : 'Administrators', overview.roles.admin],
-                  [isArabic ? 'طلبات أدوار معلقة' : 'Pending role requests', overview.pendingRoleRequests],
+                  [isArabic ? 'طلبات أدوار مستنية المراجعة' : 'Pending role requests', overview.pendingRoleRequests],
                   [isArabic ? 'الفصول النشطة' : 'Active-year classes', overview.classes],
                   [isArabic ? 'عناصر المنهج' : 'Curriculum items', overview.curriculumItems],
                   [isArabic ? 'الدروس المنشورة' : 'Published lessons', overview.publishedLessons],
@@ -504,9 +509,9 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[.14em] text-indigo-700">{isArabic ? 'توزيع الصلاحيات' : 'Access distribution'}</p>
-                    <h2 id="admin-role-distribution" className="mt-1 text-lg font-black text-slate-950">{isArabic ? 'الأدوار النشطة المسندة' : 'Active assigned roles'}</h2>
+                    <h2 id="admin-role-distribution" className="mt-1 text-lg font-black text-slate-950">{isArabic ? 'الأدوار النشطة على الحسابات' : 'Active assigned roles'}</h2>
                   </div>
-                  <p className="text-xs text-slate-500">{isArabic ? 'الحساب متعدد الأدوار يظهر في كل دور مسند إليه.' : 'Multi-role accounts appear once in each assigned role.'}</p>
+                  <p className="text-xs text-slate-500">{isArabic ? 'لو الحساب عليه أكتر من دور، هيظهر في كل دور منهم.' : 'Multi-role accounts appear once in each assigned role.'}</p>
                 </div>
                 <div className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
                   {([
@@ -547,15 +552,15 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
               </section>
               <div className="rounded-2xl border bg-white p-4 text-sm">
                 <p className="font-black">{isArabic ? 'مصدر البيانات' : 'Data source'}: {overview.dataSource}</p>
-                <p className="mt-1 text-slate-500">{isArabic ? 'السنة الكنسية النشطة' : 'Active church year'}: {overview.activeChurchYear?.name || (isArabic ? 'غير محددة' : 'Not configured')}</p>
+                <p className="mt-1 text-slate-500">{isArabic ? 'السنة الكنسية الحالية' : 'Active church year'}: {overview.activeChurchYear?.name || (isArabic ? 'مش متحددة' : 'Not configured')}</p>
                 <p className="mt-1 text-xs text-slate-500">{new Date(overview.checkedAt).toLocaleString(isArabic ? 'ar' : 'en')}</p>
               </div>
             </>
-          ) : !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'لا توجد بيانات متاحة.' : 'No overview data is available.'}</p>}
+          ) : !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'مفيش بيانات متاحة دلوقتي.' : 'No overview data is available.'}</p>}
           <div className="rounded-2xl border bg-white p-4">
-            <h2 className="mb-3 flex items-center gap-2 font-black"><Activity size={18} />{isArabic ? 'أحدث إجراءات الإدارة' : 'Recent administrative activity'}</h2>
+            <h2 className="mb-3 flex items-center gap-2 font-black"><Activity size={18} />{isArabic ? 'آخر إجراءات الإدارة' : 'Recent administrative activity'}</h2>
             {auditError
-              ? <p role="alert" className="text-sm text-rose-800">{isArabic ? 'تعذر تحميل سجل التدقيق.' : 'Administrative audit history could not be loaded.'}</p>
+              ? <p role="alert" className="text-sm text-rose-800">{isArabic ? 'مش قادرين نحمّل سجل المراجعة.' : 'Administrative audit history could not be loaded.'}</p>
               : <AuditList entries={actionAudit.slice(0, 5)} isArabic={isArabic} />}
           </div>
         </section>
@@ -565,26 +570,26 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
         <section className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
             <form onSubmit={event => { event.preventDefault(); setAccountQuery(search.trim()); }} className="flex gap-2 rounded-2xl border bg-white p-4">
-              <label className="sr-only" htmlFor="account-search">{isArabic ? 'بحث عن حساب' : 'Search accounts'}</label>
-              <input id="account-search" value={search} onChange={event => setSearch(event.target.value)} placeholder={isArabic ? 'الاسم أو البريد أو المعرّف' : 'Name, email, or ID'} className="min-w-0 flex-1 rounded-xl border px-3 py-2" />
+              <label className="sr-only" htmlFor="account-search">{isArabic ? 'دوّر على حساب' : 'Search accounts'}</label>
+              <input id="account-search" value={search} onChange={event => setSearch(event.target.value)} placeholder={isArabic ? 'الاسم أو الإيميل أو رقم الحساب' : 'Name, email, or ID'} className="min-w-0 flex-1 rounded-xl border px-3 py-2" />
               <button className="rounded-xl bg-indigo-900 px-4 text-white" aria-label={isArabic ? 'بحث' : 'Search'}><Search size={18} /></button>
             </form>
             <form onSubmit={event => void inviteAccount(event)} className="flex gap-2 rounded-2xl border bg-white p-4">
-              <label className="sr-only" htmlFor="invite-email">{isArabic ? 'البريد الإلكتروني للدعوة' : 'Invitation email'}</label>
-              <input id="invite-email" type="email" required value={email} onChange={event => setEmail(event.target.value)} placeholder={isArabic ? 'بريد إلكتروني لإرسال دعوة' : 'Email address to invite'} className="min-w-0 flex-1 rounded-xl border px-3 py-2" />
+              <label className="sr-only" htmlFor="invite-email">{isArabic ? 'إيميل الدعوة' : 'Invitation email'}</label>
+              <input id="invite-email" type="email" required value={email} onChange={event => setEmail(event.target.value)} placeholder={isArabic ? 'اكتب الإيميل اللي هتبعتله الدعوة' : 'Email address to invite'} className="min-w-0 flex-1 rounded-xl border px-3 py-2" />
               <button disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-indigo-900 px-3 py-2 font-bold text-white disabled:opacity-50"><MailPlus size={17} />{isArabic ? 'دعوة' : 'Invite'}</button>
             </form>
           </div>
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border bg-white p-4">
             <label className="text-sm font-bold text-slate-700">
-              {isArabic ? 'تصفية حسب الدور' : 'Filter by role'}
+              {isArabic ? 'فلترة حسب الدور' : 'Filter by role'}
               <select value={accountRoleFilter} onChange={event => setAccountRoleFilter(event.target.value as AdminAccountRoleFilter)} className="ms-2 rounded-xl border px-3 py-2 font-normal text-slate-900">
                 <option value="all">{isArabic ? 'كل الأدوار' : 'All roles'}</option>
                 {(['student', 'parent', 'teacher', 'admin'] as const).map(role => <option key={role} value={role}>{role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : role}</option>)}
               </select>
             </label>
             <label className="text-sm font-bold text-slate-700">
-              {isArabic ? 'تصفية حسب الحالة' : 'Filter by status'}
+              {isArabic ? 'فلترة حسب الحالة' : 'Filter by status'}
               <select value={accountStatusFilter} onChange={event => setAccountStatusFilter(event.target.value as AdminAccountStatusFilter)} className="ms-2 rounded-xl border px-3 py-2 font-normal text-slate-900">
                 <option value="all">{isArabic ? 'كل الحالات' : 'All statuses'}</option>
                 <option value="active">{isArabic ? 'نشط' : 'Active'}</option>
@@ -608,14 +613,14 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
                     <p className="mt-2 text-xs font-bold">{isArabic ? 'الحالة' : 'Status'}: {account.status === 'suspended' ? (isArabic ? 'موقوف' : 'Suspended') : account.status === 'invited' ? (isArabic ? 'مدعو' : 'Invited') : account.status === 'unknown' ? (isArabic ? 'غير متاحة' : 'Unavailable') : (isArabic ? 'نشط' : 'Active')}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {account.roles.map(assignment => <span key={assignment.role} title={`${assignment.granted_by || 'system'} · ${new Date(assignment.granted_at).toLocaleString()}`} className="rounded-full bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-900">{assignment.role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : assignment.role} · {new Date(assignment.granted_at).toLocaleDateString(isArabic ? 'ar' : 'en')}</span>)}
-                      {!account.roles.length && <span className="text-xs text-slate-500">{isArabic ? 'لا توجد أدوار نشطة' : 'No active assigned roles'}</span>}
+                      {!account.roles.length && <span className="text-xs text-slate-500">{isArabic ? 'مفيش أدوار نشطة' : 'No active assigned roles'}</span>}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button type="button" onClick={() => { setTargetUserId(account.id); setRoleTargetAccount(account); onNavigate('roles'); }} className="rounded-xl border px-3 py-2 text-xs font-bold">{isArabic ? 'إدارة الأدوار' : 'Manage roles'}</button>
                     <button type="button" onClick={() => { setTargetUserId(account.id); onNavigate('support'); }} className="rounded-xl border px-3 py-2 text-xs font-bold">{isArabic ? 'عرض الدعم' : 'Support view'}</button>
                     {account.status === 'unknown'
-                      ? <span className="rounded-xl border px-3 py-2 text-xs text-slate-500">{isArabic ? 'حالة الحساب غير متاحة' : 'Account status unavailable'}</span>
+                      ? <span className="rounded-xl border px-3 py-2 text-xs text-slate-500">{isArabic ? 'حالة الحساب مش متاحة' : 'Account status unavailable'}</span>
                       : account.status === 'suspended'
                       ? <button type="button" onClick={() => void updateAccountStatus(account, 'reactivate')} disabled={busy} className="rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white">{isArabic ? 'إعادة تفعيل' : 'Reactivate'}</button>
                       : <button type="button" onClick={() => void updateAccountStatus(account, 'suspend')} disabled={busy} className="rounded-xl bg-rose-700 px-3 py-2 text-xs font-bold text-white">{isArabic ? 'إيقاف' : 'Suspend'}</button>}
@@ -623,8 +628,8 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
                 </div>
               </article>
             ))}
-            {accountsLimited && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">{isArabic ? 'تم تحديد النتائج بأحدث ٥٠٠ حساب. استخدم البحث للوصول إلى حساب آخر.' : 'Showing the most recent 500 matching accounts. Search to narrow the results.'}</p>}
-            {!visibleAccounts.length && !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'لا توجد حسابات تطابق البحث والتصفية.' : 'No accounts match the search and filters.'}</p>}
+            {accountsLimited && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">{isArabic ? 'النتائج بتعرض أحدث ٥٠٠ حساب. استخدم البحث عشان توصل لحساب تاني.' : 'Showing the most recent 500 matching accounts. Search to narrow the results.'}</p>}
+            {!visibleAccounts.length && !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'ملقيناش حسابات مطابقة للبحث والتصفية.' : 'No accounts match the search and filters.'}</p>}
           </div>
         </section>
       )}
@@ -632,7 +637,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       {(activeTab === 'roles' || activeTab === 'role-requests') && (
         <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.8fr)]">
           <div className="space-y-3">
-            <h2 className="text-lg font-black">{isArabic ? 'طلبات الأدوار المعلقة' : 'Pending role requests'}</h2>
+            <h2 className="text-lg font-black">{isArabic ? 'طلبات الأدوار اللي مستنية المراجعة' : 'Pending role requests'}</h2>
             {requests.map(request => (
               <article key={request.id} className="rounded-2xl border bg-white p-4 shadow-sm">
                 <p className="font-black">{request.requested_role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : request.requested_role}</p>
@@ -645,20 +650,20 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
                 </div>
               </article>
             ))}
-            {!requests.length && !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'لا توجد طلبات معلقة.' : 'No pending requests.'}</p>}
+            {!requests.length && !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'مفيش طلبات معلقة دلوقتي.' : 'No pending requests.'}</p>}
           </div>
           <div className="h-fit rounded-2xl border bg-white p-5">
-            <div className="mb-3 flex items-center gap-2"><UserRoundCog className="text-indigo-800" /><h2 className="font-black">{isArabic ? 'منح أو سحب دور' : 'Grant or revoke a role'}</h2></div>
+            <div className="mb-3 flex items-center gap-2"><UserRoundCog className="text-indigo-800" /><h2 className="font-black">{isArabic ? 'إضافة دور أو سحبه' : 'Grant or revoke a role'}</h2></div>
             <form onSubmit={event => void changeRole(event)} className="space-y-3">
               <div className="flex flex-col gap-2 sm:flex-row">
-                <label className="block min-w-0 flex-1 text-sm font-bold">{isArabic ? 'معرّف الحساب' : 'Account ID'}<input required value={targetUserId} onChange={event => { setTargetUserId(event.target.value); setRoleTargetAccount(null); }} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal" /></label>
-                <button type="button" onClick={() => void lookupRoleTarget()} disabled={busy || !targetUserId.trim()} className="self-end rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-50">{isArabic ? 'بحث عن الحساب' : 'Look up account'}</button>
+                <label className="block min-w-0 flex-1 text-sm font-bold">{isArabic ? 'رقم الحساب' : 'Account ID'}<input required value={targetUserId} onChange={event => { setTargetUserId(event.target.value); setRoleTargetAccount(null); }} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal" /></label>
+                <button type="button" onClick={() => void lookupRoleTarget()} disabled={busy || !targetUserId.trim()} className="self-end rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-50">{isArabic ? 'دوّر على الحساب' : 'Look up account'}</button>
               </div>
               {roleTargetAccount?.id === targetUserId.trim() && (
                 <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-950">
                   <p className="font-black">{roleTargetAccount.name || roleTargetAccount.email}</p>
                   <p className="break-all text-xs">{roleTargetAccount.email} · {roleTargetAccount.id}</p>
-                  <p className="mt-2 font-bold">{isArabic ? 'الأدوار الحالية:' : 'Current roles:'} {roleTargetAccount.roles.map(item => item.role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : item.role).join('، ') || (isArabic ? 'لا توجد أدوار نشطة' : 'No active roles')}</p>
+                  <p className="mt-2 font-bold">{isArabic ? 'الأدوار الحالية:' : 'Current roles:'} {roleTargetAccount.roles.map(item => item.role === 'teacher' ? (isArabic ? 'خادم' : 'Servant') : item.role).join('، ') || (isArabic ? 'مفيش أدوار نشطة' : 'No active roles')}</p>
                 </div>
               )}
               <select aria-label={isArabic ? 'الدور' : 'Role'} value={selectedRole} onChange={event => setSelectedRole(event.target.value as Role)} className="w-full rounded-xl border px-3 py-2">
@@ -670,13 +675,13 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
               {roleTargetAccount?.id === targetUserId.trim() && (
                 <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950">
                   {roleAction === 'grant'
-                    ? (isArabic ? 'التأثير: سيضاف الدور المحدد دون استبدال الأدوار الحالية.' : 'Impact: the selected role will be added without replacing current roles.')
-                    : (isArabic ? 'التأثير: سيُسحب الدور المحدد فقط؛ الوصول لمساحة العمل المرتبطة به سيتوقف، وستبقى بيانات الحساب وسجلاته الأخرى.' : 'Impact: only the selected role will be revoked; access to its workspace will end, while the account and its other data and records remain.')}
+                    ? (isArabic ? 'النتيجة: الدور ده هيتضاف من غير ما يلغي أي دور موجود.' : 'Impact: the selected role will be added without replacing current roles.')
+                    : (isArabic ? 'النتيجة: الدور ده بس هو اللي هيتسحب، والوصول لمساحته هيتوقف. باقي بيانات الحساب وسجلاته هتفضل زي ما هي.' : 'Impact: only the selected role will be revoked; access to its workspace will end, while the account and its other data and records remain.')}
                 </p>
               )}
               <label className="block text-sm font-bold">{isArabic ? 'السبب' : 'Reason'}<textarea value={reason} onChange={event => setReason(event.target.value)} maxLength={1000} rows={2} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal" /></label>
               <button type="submit" disabled={busy || roleTargetAccount?.id !== targetUserId.trim()} className="rounded-xl bg-indigo-900 px-4 py-2 font-bold text-white disabled:opacity-50">{isArabic ? 'تنفيذ التغيير' : 'Apply role change'}</button>
-              <p className="text-xs text-slate-500">{isArabic ? 'الدور يضاف ولا يستبدل الأدوار الأخرى. حماية آخر مشرف وتسجيل التغييرات مفعلان على الخادم.' : 'Roles are additive. Last-admin protection and audit logging are enforced server-side.'}</p>
+              <p className="text-xs text-slate-500">{isArabic ? 'الأدوار بتتضاف ومش بتلغي بعضها. الخادم بيحمي آخر مشرف وبيسجل كل تغيير.' : 'Roles are additive. Last-admin protection and audit logging are enforced server-side.'}</p>
             </form>
           </div>
         </section>
@@ -684,7 +689,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
 
       {activeTab === 'families' && (
         <section className="space-y-3">
-          <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">{isArabic ? 'عرض فقط. لا يمكن تجاوز خطوات التحقق أو تغيير روابط الأسرة من هذه الشاشة.' : 'Read-only view. Verification cannot be bypassed or family links edited here.'}</p>
+          <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">{isArabic ? 'عرض فقط. مش ممكن نتخطى خطوات التحقق أو نغيّر روابط الأسرة من الشاشة دي.' : 'Read-only view. Verification cannot be bypassed or family links edited here.'}</p>
           {families.map(family => (
             <article key={family.id} className="grid gap-2 rounded-2xl border bg-white p-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
               <div><p className="font-black">{family.parent?.name || (isArabic ? 'حساب ولي الأمر' : 'Parent account')}</p><p className="break-all text-xs text-slate-500">{family.parent?.email || family.parent_id}</p></div>
@@ -693,7 +698,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
               <p className="text-xs text-slate-500 sm:col-span-3">{new Date(family.created_at).toLocaleString(isArabic ? 'ar' : 'en')}</p>
             </article>
           ))}
-          {!families.length && !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'لا توجد روابط مسجلة.' : 'No relationships recorded.'}</p>}
+          {!families.length && !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'مفيش روابط أسرية متسجلة.' : 'No relationships recorded.'}</p>}
         </section>
       )}
 
@@ -701,44 +706,44 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
         <section className="space-y-4">
           <form onSubmit={event => void assignServant(event)} className="grid gap-3 rounded-2xl border bg-white p-4 md:grid-cols-[1fr_1fr_auto_auto]">
             <label className="text-sm font-bold">{isArabic ? 'معرّف الخادم' : 'Servant account ID'}<input required value={classServantId} onChange={event => setClassServantId(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal" /></label>
-            <label className="text-sm font-bold">{isArabic ? 'الفصل' : 'Class'}<select required value={classGroupId} onChange={event => setClassGroupId(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal"><option value="">{isArabic ? 'اختر فصلاً' : 'Select a class'}</option>{classes.map(item => <option key={item.id} value={item.class_group_id}>{isArabic ? item.name_ar : item.name_en}</option>)}</select></label>
+            <label className="text-sm font-bold">{isArabic ? 'الفصل' : 'Class'}<select required value={classGroupId} onChange={event => setClassGroupId(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal"><option value="">{isArabic ? 'اختار فصل' : 'Select a class'}</option>{classes.map(item => <option key={item.id} value={item.class_group_id}>{isArabic ? item.name_ar : item.name_en}</option>)}</select></label>
             <select aria-label={isArabic ? 'إجراء التكليف' : 'Assignment action'} value={classAction} onChange={event => setClassAction(event.target.value as 'ASSIGN' | 'REMOVE')} className="self-end rounded-xl border px-3 py-2"><option value="ASSIGN">{isArabic ? 'تكليف' : 'Assign'}</option><option value="REMOVE">{isArabic ? 'إزالة' : 'Remove'}</option></select>
             <button disabled={busy || !classes.length} className="self-end rounded-xl bg-indigo-900 px-4 py-2 font-bold text-white disabled:opacity-50">{isArabic ? 'حفظ التكليف' : 'Save assignment'}</button>
           </form>
           <form onSubmit={event => void enrollStudent(event)} className="grid gap-3 rounded-2xl border bg-white p-4 md:grid-cols-[1fr_1fr_auto]">
             <label className="text-sm font-bold">{isArabic ? 'معرّف حساب التلميذ' : 'Student account ID'}<input required value={rosterStudentId} onChange={event => setRosterStudentId(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal" /></label>
-            <label className="text-sm font-bold">{isArabic ? 'الفصل' : 'Class'}<select required value={rosterClassGroupId} onChange={event => setRosterClassGroupId(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal"><option value="">{isArabic ? 'اختر فصلاً' : 'Select a class'}</option>{classes.map(item => <option key={item.id} value={item.class_group_id}>{isArabic ? item.name_ar : item.name_en}</option>)}</select></label>
+            <label className="text-sm font-bold">{isArabic ? 'الفصل' : 'Class'}<select required value={rosterClassGroupId} onChange={event => setRosterClassGroupId(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal"><option value="">{isArabic ? 'اختار فصل' : 'Select a class'}</option>{classes.map(item => <option key={item.id} value={item.class_group_id}>{isArabic ? item.name_ar : item.name_en}</option>)}</select></label>
             <button disabled={busy || !classes.length} className="self-end rounded-xl bg-indigo-900 px-4 py-2 font-bold text-white disabled:opacity-50">{isArabic ? 'إضافة التلميذ' : 'Enroll student'}</button>
-            <p className="text-xs text-slate-500 md:col-span-3">{isArabic ? 'يتم التحقق من دور التلميذ وفصله المناسب على الخادم. إزالة التلميذ تحفظ سجل العضوية والتاريخ.' : 'Student role and grade compatibility are verified server-side. Removal preserves membership history.'}</p>
+            <p className="text-xs text-slate-500 md:col-span-3">{isArabic ? 'الخادم بيتأكد من دور التلميذ والصف المناسب. ولو اتشال من الفصل، سجل عضويته وتاريخه بيفضل محفوظ.' : 'Student role and grade compatibility are verified server-side. Removal preserves membership history.'}</p>
           </form>
           {classes.map(classRoom => (
             <article key={classRoom.id} className="rounded-2xl border bg-white p-4 shadow-sm">
               <div className="flex flex-wrap justify-between gap-2"><h2 className="font-black">{isArabic ? classRoom.name_ar : classRoom.name_en}</h2><span className="text-xs text-slate-500">{classRoom.students.length} {isArabic ? 'تلميذ' : 'students'}</span></div>
-              <p className="mt-2 text-sm"><strong>{isArabic ? 'الخدام' : 'Servants'}:</strong> {classRoom.servants.map(item => item.name || item.servant_id).join('، ') || (isArabic ? 'لا يوجد تكليف نشط' : 'No active assignment')}</p>
-              <details className="mt-3"><summary className="cursor-pointer text-sm font-bold">{isArabic ? 'عرض قائمة التلاميذ' : 'View student roster'}</summary><ul className="mt-2 grid gap-2 text-sm sm:grid-cols-2">{classRoom.students.map(student => <li key={student.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 p-2"><span className="min-w-0 break-all">{student.name || student.id}<small className="block text-xs text-slate-500">{student.id}</small></span><button type="button" onClick={() => void manageStudent('remove', classRoom.class_group_id, student.id)} disabled={busy} className="shrink-0 rounded-lg border border-rose-200 px-2 py-1 text-xs font-bold text-rose-800 disabled:opacity-50">{isArabic ? 'إزالة' : 'Remove'}</button></li>)}</ul></details>
+              <p className="mt-2 text-sm"><strong>{isArabic ? 'الخدام' : 'Servants'}:</strong> {classRoom.servants.map(item => item.name || item.servant_id).join('، ') || (isArabic ? 'مفيش خادم متكلف بالفصل دلوقتي' : 'No active assignment')}</p>
+              <details className="mt-3"><summary className="cursor-pointer text-sm font-bold">{isArabic ? 'اعرض قائمة التلاميذ' : 'View student roster'}</summary><ul className="mt-2 grid gap-2 text-sm sm:grid-cols-2">{classRoom.students.map(student => <li key={student.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 p-2"><span className="min-w-0 break-all">{student.name || student.id}<small className="block text-xs text-slate-500">{student.id}</small></span><button type="button" onClick={() => void manageStudent('remove', classRoom.class_group_id, student.id)} disabled={busy} className="shrink-0 rounded-lg border border-rose-200 px-2 py-1 text-xs font-bold text-rose-800 disabled:opacity-50">{isArabic ? 'إزالة' : 'Remove'}</button></li>)}</ul></details>
             </article>
           ))}
-          {!classes.length && !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'لا توجد فصول في السنة الكنسية النشطة.' : 'No classes are configured for the active church year.'}</p>}
+          {!classes.length && !loading && !error && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'مفيش فصول متسجلة في السنة الكنسية الحالية.' : 'No classes are configured for the active church year.'}</p>}
         </section>
       )}
 
       {activeTab === 'curriculum' && (
         <section className="space-y-4">
-          <p className="rounded-xl bg-indigo-50 p-3 text-sm text-indigo-950">{isArabic ? 'تستخدم أدوات المنهج خدمات النشر المخولة القائمة؛ ولا تعرض هذه الشاشة إحصاءات أو محتوى تجريبيًا.' : 'Curriculum tools use the existing authorized publishing services; no demo content or statistics are shown.'}</p>
+          <p className="rounded-xl bg-indigo-50 p-3 text-sm text-indigo-950">{isArabic ? 'أدوات المنهج بتستخدم خدمات النشر المعتمدة، والشاشة دي مش بتعرض بيانات أو إحصاءات تجريبية.' : 'Curriculum tools use the existing authorized publishing services; no demo content or statistics are shown.'}</p>
           <TeacherPublishingHub
             lang={lang === 'ar' ? 'ar' : 'en'}
             sundaySchoolContent={
               <section className="space-y-4 rounded-2xl border bg-white p-4 sm:p-5">
                 <div>
                   <h2 className="text-lg font-black">{isArabic ? 'دروس مدارس الأحد والنشر' : 'Sunday School lessons & publishing'}</h2>
-                  <p className="mt-1 text-sm text-slate-600">{isArabic ? 'مراجعة الدروس الحقيقية وحالات النشر عبر أدوات النشر المعتمدة.' : 'Review persisted lessons and publication states using the existing trusted publishing workflow.'}</p>
+                  <p className="mt-1 text-sm text-slate-600">{isArabic ? 'راجع الدروس الفعلية وحالة نشرها من خلال أدوات النشر المعتمدة.' : 'Review persisted lessons and publication states using the existing trusted publishing workflow.'}</p>
                 </div>
                 {!canManageCurriculum
-                  ? <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">{isArabic ? 'بيانات المنهج الموثوقة غير متاحة دون جلسة إدارية متصلة.' : 'Trusted curriculum data is unavailable without an authenticated online admin session.'}</p>
+                  ? <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">{isArabic ? 'بيانات المنهج الموثوقة مش متاحة من غير تسجيل دخول إداري.' : 'Trusted curriculum data is unavailable without an authenticated online admin session.'}</p>
                   : curriculumLoading
-                    ? <p role="status" className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{isArabic ? 'جارٍ تحميل المنهج...' : 'Loading curriculum...'}</p>
+                    ? <p role="status" className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{isArabic ? 'بنحمّل المنهج...' : 'Loading curriculum...'}</p>
                     : curriculumError
-                      ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">{isArabic ? 'تعذر تحميل بيانات المنهج من المصدر الموثوق.' : 'Trusted curriculum data could not be loaded.'} {curriculumError}</p>
+                      ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">{isArabic ? 'مش قادرين نحمّل بيانات المنهج من المصدر الموثوق.' : 'Trusted curriculum data could not be loaded.'} {curriculumError}</p>
                       : <LessonPublicationManager
                         lessons={lessons}
                         lessonVersions={lessonVersions}
@@ -758,27 +763,27 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
         <section className="space-y-5">
           <div className="rounded-2xl border bg-white p-4">
             <h2 className="mb-3 flex items-center gap-2 font-black"><ScrollText size={18} />{isArabic ? 'سجل إجراءات الإدارة والدعم' : 'Administrative and support audit'}</h2>
-            {auditError ? <p role="alert" className="text-sm text-rose-800">{isArabic ? 'تعذر تحميل سجل التدقيق.' : 'Administrative audit history could not be loaded.'}</p> : <AuditList entries={actionAudit} isArabic={isArabic} />}
+            {auditError ? <p role="alert" className="text-sm text-rose-800">{isArabic ? 'مش قادرين نحمّل سجل المراجعة.' : 'Administrative audit history could not be loaded.'}</p> : <AuditList entries={actionAudit} isArabic={isArabic} />}
           </div>
           <div className="rounded-2xl border bg-white p-4">
             <h2 className="mb-3 flex items-center gap-2 font-black"><ShieldCheck size={18} />{isArabic ? 'سجل تغييرات الأدوار' : 'Role-change audit'}</h2>
-            {auditError ? <p role="alert" className="text-sm text-rose-800">{isArabic ? 'تعذر تحميل سجل التدقيق.' : 'Role-change audit history could not be loaded.'}</p> : <AuditList entries={roleAudit} isArabic={isArabic} />}
+            {auditError ? <p role="alert" className="text-sm text-rose-800">{isArabic ? 'مش قادرين نحمّل سجل المراجعة.' : 'Role-change audit history could not be loaded.'}</p> : <AuditList entries={roleAudit} isArabic={isArabic} />}
           </div>
         </section>
       )}
 
       {activeTab === 'support' && (
         <section className="max-w-2xl rounded-2xl border bg-white p-5">
-          <h2 className="font-black">{isArabic ? 'فتح عرض دعم للقراءة فقط' : 'Open a read-only support view'}</h2>
-          <p className="mt-2 text-sm text-slate-600">{isArabic ? 'يعرض بيانات الحساب وأدواره المعتمدة فقط، دون تبديل الجلسة أو استخدام هوية المستخدم.' : 'Shows verified account profile and role information without switching or impersonating the user session.'}</p>
+          <h2 className="font-black">{isArabic ? 'فتح شاشة دعم للعرض فقط' : 'Open a read-only support view'}</h2>
+          <p className="mt-2 text-sm text-slate-600">{isArabic ? 'الشاشة دي بتعرض بيانات الحساب وأدواره المعتمدة بس، من غير ما تبدّل جلسة المستخدم أو تدخل بهويته.' : 'Shows verified account profile and role information without switching or impersonating the user session.'}</p>
           <form onSubmit={event => void openSupport(event)} className="mt-4 space-y-3">
-            <label className="block text-sm font-bold">{isArabic ? 'معرّف الحساب المستهدف' : 'Target account ID'}<input required value={targetUserId} onChange={event => setTargetUserId(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal" /></label>
+            <label className="block text-sm font-bold">{isArabic ? 'رقم الحساب الحساب المستهدف' : 'Target account ID'}<input required value={targetUserId} onChange={event => setTargetUserId(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal" /></label>
             <label className="block text-sm font-bold">{isArabic ? 'سبب الوصول (مطلوب)' : 'Reason for access (required)'}<textarea required minLength={3} maxLength={1000} value={supportReason} onChange={event => setSupportReason(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal" /></label>
-            <button disabled={busy || Boolean(supportAccount)} className="rounded-xl bg-indigo-900 px-4 py-2 font-bold text-white disabled:opacity-50">{isArabic ? 'فتح عرض الدعم' : 'Open support view'}</button>
+            <button disabled={busy || Boolean(supportAccount)} className="rounded-xl bg-indigo-900 px-4 py-2 font-bold text-white disabled:opacity-50">{isArabic ? 'افتح شاشة الدعم' : 'Open support view'}</button>
           </form>
           {supportAccount && <article className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
             <p className="font-black">{supportAccount.name}</p><p>{supportAccount.email}</p><p className="break-all text-xs">{supportAccount.id}</p>
-            <p className="mt-2">{supportAccount.roles.map(item => item.role).join(', ') || (isArabic ? 'لا توجد أدوار نشطة' : 'No active roles')}</p>
+            <p className="mt-2">{supportAccount.roles.map(item => getAdminRoleLabel(item.role, isArabic)).join('، ') || (isArabic ? 'مفيش أدوار نشطة' : 'No active roles')}</p>
             {supportAccount.workspaceData?.studentMemberships.map((membership, index) => <p key={`student-${index}`} className="mt-2 text-sm">{isArabic ? 'فصل التلميذ' : 'Student class'}: {membership.class_instance_id} · {membership.exact_grade} · {membership.status}</p>)}
             {supportAccount.workspaceData?.servantAssignments.map((assignment, index) => <p key={`servant-${index}`} className="mt-2 text-sm">{isArabic ? 'تكليف الخادم' : 'Servant assignment'}: {assignment.class_instance_id}</p>)}
             {supportAccount.workspaceData?.familyLinks.map((relationship, index) => <p key={`family-${index}`} className="mt-2 break-all text-sm">{isArabic ? 'طفل مرتبط' : 'Linked child'}: {relationship.child_id} · {relationship.relationship_type}</p>)}
@@ -786,20 +791,20 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
         </section>
       )}
 
-      {activeTab === 'profile' && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'إعدادات الحساب متاحة من قائمة الحساب.' : 'Account settings are available from the account menu.'}</p>}
+      {activeTab === 'profile' && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'تقدر تفتح إعدادات الحساب من قائمة الحساب.' : 'Account settings are available from the account menu.'}</p>}
     </main>
   );
 }
 
 function AuditList({ entries, isArabic }: { entries: AuditEntry[]; isArabic: boolean }) {
-  if (!entries.length) return <p className="text-sm text-slate-500">{isArabic ? 'لا توجد أحداث مسجلة.' : 'No audit events recorded.'}</p>;
+  if (!entries.length) return <p className="text-sm text-slate-500">{isArabic ? 'مفيش أحداث متسجلة.' : 'No audit events recorded.'}</p>;
   return <div className="space-y-2">{entries.map(entry => (
     <article key={entry.id} className="rounded-xl border p-3 text-sm">
       <div className="flex flex-wrap justify-between gap-2">
         <strong>{entry.operation || entry.action}</strong>
         <time className="text-xs text-slate-500">{new Date(entry.occurred_at).toLocaleString(isArabic ? 'ar' : 'en')}</time>
       </div>
-      <p className="mt-1 break-all text-xs text-slate-600">{isArabic ? 'المنفذ' : 'Actor'}: {entry.actor_id || '—'} · {isArabic ? 'المستهدف' : 'Target'}: {entry.target_user_id || '—'}</p>
+      <p className="mt-1 break-all text-xs text-slate-600">{isArabic ? 'اللي نفّذ الإجراء' : 'Actor'}: {entry.actor_id || '—'} · {isArabic ? 'الحساب المستهدف' : 'Target'}: {entry.target_user_id || '—'}</p>
       {(entry.previous_role || entry.new_role || entry.requested_role) && <p className="mt-1 text-xs text-slate-500">{entry.previous_role || '—'} → {entry.new_role || entry.requested_role || '—'}</p>}
       {entry.reason && <p className="mt-2">{entry.reason}</p>}
       {entry.details && Object.keys(entry.details).length > 0 && <pre className="mt-2 overflow-auto text-xs text-slate-500">{JSON.stringify(entry.details, null, 2)}</pre>}
