@@ -38,27 +38,27 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
   // Spiritual encouragement message depending on real progress state
   const getEncouragement = () => {
     if (isLoading) {
-      return isCop ? 'Ⲥⲉⲓⲛⲓ ⲛ̀ⲛⲓⲥⲃⲱ...' : isAr ? 'جاري تحميل مسيرتك الروحية...' : 'Loading your journey progress...';
+      return isCop ? 'Ⲥⲉⲓⲛⲓ ⲛ̀ⲛⲓⲥⲃⲱ...' : isAr ? 'بنحمّل تقدم رحلتك...' : 'Loading your journey progress...';
     }
     if (error) {
-      return isCop ? 'Ⲙ̀ⲙⲟⲛ ⲥ̀ϣϫⲟⲙ ⲛ̀ϯⲛⲓ ⲛ̀ⲛⲓⲥⲃⲱ' : isAr ? 'تعذر تحميل تقدم الدروس. حاول مرة أخرى.' : 'Unable to load lesson progress. Please try again.';
+      return isCop ? 'Ⲙ̀ⲙⲟⲛ ⲥ̀ϣϫⲟⲙ ⲛ̀ϯⲛⲓ ⲛ̀ⲛⲓⲥⲃⲱ' : isAr ? 'مش قادرين نحمّل تقدم الدروس. جرّب تاني.' : 'Unable to load lesson progress. Please try again.';
     }
     if (safeTotal === 0) {
-      return isCop ? 'Ⲙ̀ⲙⲟⲛ ϩⲁⲛⲥⲃⲱ ϯⲛⲟⲩ' : isAr ? 'في انتظار نشر المحطات الجديدة من الخدام' : 'Awaiting new milestones from your servants';
+      return isCop ? 'Ⲙ̀ⲙⲟⲛ ϩⲁⲛⲥⲃⲱ ϯⲛⲟⲩ' : isAr ? 'مستنيين الخدام ينشروا المحطات الجديدة' : 'Awaiting new milestones from your servants';
     }
     if (percentage === 100) {
-      return isCop ? 'Ⲁⲕϫⲱⲕ ⲉ̀ⲃⲟⲗ ⲛ̀ⲧⲉ ⲡⲓⲙⲱⲓⲧ ⲧⲏⲣϥ! Ⲁⲝⲓⲟⲥ 👑' : isAr ? 'مبارك! أتممت جميع محطات المنهج بنجاح 👑' : 'Axios! You completed all milestones on the path 👑';
+      return isCop ? 'Ⲁⲕϫⲱⲕ ⲉ̀ⲃⲟⲗ ⲛ̀ⲧⲉ ⲡⲓⲙⲱⲓⲧ ⲧⲏⲣϥ! Ⲁⲝⲓⲟⲥ 👑' : isAr ? 'مبروك! خلّصت كل محطات المنهج بنجاح 👑' : 'Axios! You completed all milestones on the path 👑';
     }
     if (percentage >= 75) {
-      return isCop ? 'Ϩⲱⲗ ⲉ̀ϧⲟⲩⲛ ⲉ̀ⲡⲓⲙⲟⲛⲁⲥⲧⲏⲣⲓⲟⲛ ⛪' : isAr ? 'اقتربت جداً من بلوغ دير القديسين! استمر ⛪' : 'Nearing the Sanctuary of Scetis! Keep going ⛪';
+      return isCop ? 'Ϩⲱⲗ ⲉ̀ϧⲟⲩⲛ ⲉ̀ⲡⲓⲙⲟⲛⲁⲥⲧⲏⲣⲓⲟⲛ ⛪' : isAr ? 'قربت توصل لدير القديسين! كمّل ⛪' : 'Nearing the Sanctuary of Scetis! Keep going ⛪';
     }
     if (percentage >= 50) {
       return isCop ? 'Ⲁⲕⲫⲟϩ ⲉ̀ⲧⲫⲁϣⲓ ⲛ̀ⲧⲉ ⲡⲓⲙⲱⲓⲧ 💧' : isAr ? 'عاش يا بطل! قطعت نصف طريق البرية 💧' : 'Well done! Halfway through the desert journey 💧';
     }
     if (percentage > 0) {
-      return isCop ? 'Ⲁⲣⲓϩⲏⲧⲥ ϧⲉⲛ ⲟⲩϫⲟⲙ 🌅' : isAr ? 'خطوات مباركة في نور البرية 🌅' : 'Blessed first steps in the morning light 🌅';
+      return isCop ? 'Ⲁⲣⲓϩⲏⲧⲥ ϧⲉⲛ ⲟⲩϫⲟⲙ 🌅' : isAr ? 'خطواتك في نور البرية جميلة 🌅' : 'Blessed first steps in the morning light 🌅';
     }
-    return isCop ? 'Ⲁⲣⲓϩⲏⲧⲥ ⲉ̀ⲧⲉⲕⲥⲃⲱ ⲛ̀ϣⲟⲣⲡ' : isAr ? 'ابدأ أولى محطات رحلة الأنبا موسى اليوم' : 'Begin your first milestone in the Journey of Moses today';
+    return isCop ? 'Ⲁⲣⲓϩⲏⲧⲥ ⲉ̀ⲧⲉⲕⲥⲃⲱ ⲛ̀ϣⲟⲣⲡ' : isAr ? 'يلا ابدأ أول محطة في رحلة الأنبا موسى النهارده' : 'Begin your first milestone in the Journey of Moses today';
   };
 
   return (
@@ -83,12 +83,12 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-sm sm:text-base text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-                  {isCop ? 'Ⲡⲓϫⲱⲕ ⲛ̀ⲧⲉ ⲛⲓⲥⲃⲱ ⲧⲏⲣⲟⲩ' : isAr ? 'إنجاز محطات دروس المنهج' : 'Curriculum Milestones Completion'}
+                  {isCop ? 'Ⲡⲓϫⲱⲕ ⲛ̀ⲧⲉ ⲛⲓⲥⲃⲱ ⲧⲏⲣⲟⲩ' : isAr ? 'إنجاز محطات المنهج' : 'Curriculum Milestones Completion'}
                 </h3>
                 {percentage === 100 && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300">
                     <CheckCircle2 size={11} />
-                    <span>{isAr ? 'مكتمل' : 'Completed'}</span>
+                    <span>{isAr ? 'خلصت' : 'Completed'}</span>
                   </span>
                 )}
               </div>
@@ -103,7 +103,7 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
             {error && (
               <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 px-2.5 py-1 rounded-xl flex items-center gap-1">
                 <AlertCircle size={12} />
-                <span>{isAr ? 'تعذر التحميل' : 'Load failed'}</span>
+                <span>{isAr ? 'مش قادرين نحمّل' : 'Load failed'}</span>
               </span>
             )}
             <div className="flex items-baseline gap-1 px-3 py-1.5 rounded-2xl bg-[var(--mousa-sand-100)] dark:bg-[#25201A] border border-[var(--mousa-border-sand)] text-xs font-black shadow-2xs">
@@ -154,7 +154,7 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
               onClick={onRetry}
               className="px-3.5 py-1.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--mousa-teal-deep)] text-white font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
             >
-              <span>{isAr ? 'إعادة المحاولة' : 'Retry'}</span>
+              <span>{isAr ? 'جرّب تاني' : 'Retry'}</span>
             </button>
           </div>
         ) : onExploreLessons ? (
@@ -164,7 +164,7 @@ export const MosesLessonProgressBar: React.FC<MosesLessonProgressBarProps> = ({
               className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[var(--mousa-gold)]/20 to-[var(--mousa-teal)]/20 hover:from-[var(--mousa-gold)]/30 hover:to-[var(--mousa-teal)]/30 text-[var(--mousa-teal-deep)] dark:text-[var(--mousa-gold-light)] font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--mousa-border-sand)] shadow-2xs active:scale-95"
             >
               <span>🗺️</span>
-              <span>{isAr ? 'عرض خريطة مسيرة الأنبا موسى' : 'View Journey Roadmap'}</span>
+              <span>{isAr ? 'شوف خريطة رحلة الأنبا موسى' : 'View Journey Roadmap'}</span>
               <ChevronRight size={13} className={isAr ? 'rotate-180' : ''} />
             </button>
           </div>
