@@ -128,7 +128,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     setEvents(result.data || []);
     setEventsError(result.error?.message ? getLocalizedErrorMessage(result.error.message, lang) : null);
     setEventsLoading(false);
-  }, [lang]);
+  }, []);
 
   const refreshAnnouncements = useCallback(async () => {
     setAnnouncementsLoading(true);
@@ -155,7 +155,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     setRewardRequests(result.data || []);
     setRewardsError(result.error?.message ? getLocalizedErrorMessage(result.error.message, lang) : null);
     setRewardsLoading(false);
-  }, [isParent, lang]);
+  }, [isParent]);
 
   useEffect(() => {
     void refreshChildren();
