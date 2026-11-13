@@ -6937,22 +6937,19 @@ app.get("/api/church/leaderboard", async (req, res) => {
       }
       if (!activeYear?.id) return emptyLeaderboard(null);
 
-      const { data: allInstances, error: instancesError } = await client
-        .from('class_instances')
-        .select('id, class_group_id')
-        .eq('church_year_id', activeYear.id);
-      if (instancesError) {
-        console.error('Leaderboard class lookup failed:', instancesError.message);
-        return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
-      }
-
-      const instanceById = new Map<string, any>((allInstances || []).map((item: any) => [item.id, item]));
+      let allInstances: any[] = [];
       let permittedGroupIds: string[] = [];
 
       if (hasServerRole(authContext, 'admin')) {
-        permittedGroupIds = Array.from(new Set((allInstances || [])
-          .map((instance: any) => instance.class_group_id)
-          .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
+        const { data, error } = await client
+          .from('class_instances')
+          .select('id, class_group_id')
+          .eq('church_year_id', activeYear.id);
+        if (error) {
+          console.error('Leaderboard class lookup failed:', error.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+        }
+        allInstances = data || [];
       } else if (hasServerRole(authContext, 'student')) {
         const { data: ownMemberships, error: membershipError } = await client
           .from('class_memberships')
@@ -6965,9 +6962,21 @@ app.get("/api/church/leaderboard", async (req, res) => {
           console.error('Leaderboard student membership lookup failed:', membershipError.message);
           return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
         }
-        permittedGroupIds = Array.from(new Set((ownMemberships || [])
-          .map((membership: any) => instanceById.get(membership.class_instance_id)?.class_group_id)
+        const ownInstanceIds = Array.from(new Set((ownMemberships || [])
+          .map((membership: any) => membership.class_instance_id)
           .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
+        if (ownInstanceIds.length === 0) return emptyLeaderboard(null);
+
+        const { data, error } = await client
+          .from('class_instances')
+          .select('id, class_group_id')
+          .in('id', ownInstanceIds)
+          .eq('church_year_id', activeYear.id);
+        if (error) {
+          console.error('Leaderboard student class lookup failed:', error.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+        }
+        allInstances = data || [];
       } else if (hasServerRole(authContext, 'teacher')) {
         const { data: assignments, error: assignmentError } = await client
           .from('servant_class_assignments')
@@ -6979,11 +6988,26 @@ app.get("/api/church/leaderboard", async (req, res) => {
           console.error('Leaderboard servant assignment lookup failed:', assignmentError.message);
           return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
         }
-        permittedGroupIds = Array.from(new Set((assignments || [])
-          .map((assignment: any) => instanceById.get(assignment.class_instance_id)?.class_group_id)
+        const assignedInstanceIds = Array.from(new Set((assignments || [])
+          .map((assignment: any) => assignment.class_instance_id)
           .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
+        if (assignedInstanceIds.length === 0) return emptyLeaderboard(null);
+
+        const { data, error } = await client
+          .from('class_instances')
+          .select('id, class_group_id')
+          .in('id', assignedInstanceIds)
+          .eq('church_year_id', activeYear.id);
+        if (error) {
+          console.error('Leaderboard assigned-class lookup failed:', error.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+        }
+        allInstances = data || [];
       }
 
+      permittedGroupIds = Array.from(new Set(allInstances
+        .map((instance: any) => instance.class_group_id)
+        .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
       permittedGroupIds.sort();
       if (requestedClassGroupId && !permittedGroupIds.includes(requestedClassGroupId)) {
         return res.status(403).json({
