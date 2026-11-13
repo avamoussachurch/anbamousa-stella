@@ -153,13 +153,13 @@ export function LessonPublicationManager({
   );
   const labels = {
     Draft: isAr ? 'مسودة' : 'Draft',
-    'Awaiting Review': isAr ? 'بانتظار المراجعة' : 'Awaiting Review',
-    'Revision Requested': isAr ? 'مطلوب تعديل' : 'Revision requested',
-    Approved: isAr ? 'معتمد للنشر' : 'Approved',
+    'Awaiting Review': isAr ? 'مستني المراجعة' : 'Awaiting Review',
+    'Revision Requested': isAr ? 'محتاج تعديل' : 'Revision requested',
+    Approved: isAr ? 'معتمد وجاهز للنشر' : 'Approved',
     Scheduled: isAr ? 'مجدول' : 'Scheduled',
     Published: isAr ? 'منشور' : 'Published',
-    Failed: isAr ? 'فشل النشر' : 'Failed',
-    Cancelled: isAr ? 'أُلغي الموعد' : 'Cancelled'
+    Failed: isAr ? 'النشر فشل' : 'Failed',
+    Cancelled: isAr ? 'الموعد اتلغى' : 'Cancelled'
   };
   const statusCounts = filteredRows.reduce<Record<string, number>>((counts, row) => {
     counts[row.status] = (counts[row.status] || 0) + 1;
@@ -183,7 +183,7 @@ export function LessonPublicationManager({
       `${row.lesson.title} (v${row.version!.versionNumber})`
     );
     const confirmation = isAr
-      ? `سيتم نشر النسخ المعتمدة التالية الآن:\n${affectedItems.join('\n')}\n\nهل تريد المتابعة؟`
+      ? `النسخ المعتمدة دي هتتنشر دلوقتي:\n${affectedItems.join('\n')}\n\nهل تريد المتابعة؟`
       : `These approved versions will be published now:\n${affectedItems.join('\n')}\n\nContinue?`;
     if (!window.confirm(confirmation)) return;
 
@@ -248,7 +248,7 @@ export function LessonPublicationManager({
   const handleCancel = async (job: ScheduledLessonPublication) => {
     const title = lessons.find(lesson => lesson.id === job.lesson_id)?.title || job.lesson_id;
     const confirmation = isAr
-      ? `إلغاء موعد نشر "${title}" في ${formatPublicationTime(job.scheduled_at, timezone, 'ar-EG')}؟`
+      ? `تلغي موعد نشر "${title}" في ${formatPublicationTime(job.scheduled_at, timezone, 'ar-EG')}؟`
       : `Cancel the scheduled publication for "${title}" at ${formatPublicationTime(job.scheduled_at, timezone, 'en')}?`;
     if (!window.confirm(confirmation)) return;
 
@@ -259,7 +259,7 @@ export function LessonPublicationManager({
       setResults([{
         lessonId: job.lesson_id,
         success,
-        error: success ? undefined : response.error?.message || (isAr ? 'لم يؤكد الخادم إلغاء الموعد.' : 'The server did not confirm cancellation.')
+        error: success ? undefined : response.error?.message || (isAr ? 'الخادم مأكّدش إلغاء الموعد.' : 'The server did not confirm cancellation.')
       }]);
       void refreshJobs().catch(error => console.warn('Post-cancel refresh failed:', error));
     } catch (error) {
@@ -278,7 +278,7 @@ export function LessonPublicationManager({
     if (!scheduledDate || scheduledDate.getTime() <= Date.now()) return;
     const title = lessons.find(lesson => lesson.id === job.lesson_id)?.title || job.lesson_id;
     const confirmation = isAr
-      ? `إعادة جدولة "${title}" إلى ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'ar-EG')} (${timezone})؟`
+      ? `تغيّر موعد نشر "${title}" إلى ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'ar-EG')} (${timezone})؟`
       : `Reschedule "${title}" to ${formatPublicationTime(scheduledDate.toISOString(), timezone, 'en')} (${timezone})?`;
     if (!window.confirm(confirmation)) return;
 
@@ -313,11 +313,11 @@ export function LessonPublicationManager({
         <CalendarClock className="mt-1 shrink-0 text-[var(--color-church-blue)]" />
         <div>
           <h3 className="font-black text-[var(--color-church-blue)] dark:text-white">
-            {isAr ? 'النشر الفوري والمجدول' : 'Publish now or schedule'}
+            {isAr ? 'النشر الفوري أو بموعد' : 'Publish now or schedule'}
           </h3>
           <p className="mt-1 text-xs leading-5 text-stone-600 dark:text-stone-300">
             {isAr
-              ? 'اختار الدروس المعتمدة فقط. المواعيد محفوظة بتوقيت UTC وتُعرض حسب منطقتك الزمنية.'
+              ? 'اختار الدروس المعتمدة بس. مواعيد النشر بتتحفظ بتوقيت UTC وبتظهر حسب منطقتك الزمنية.'
               : 'Select approved lessons only. Times are stored in UTC and shown in your local timezone.'}
             {' '}<span dir="ltr">({timezone})</span>
           </p>
@@ -328,7 +328,7 @@ export function LessonPublicationManager({
         <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-300 bg-red-50 p-3 text-xs text-red-800">
           <span>{loadError}</span>
           <button type="button" onClick={() => void refreshJobs()} disabled={loadingJobs} className="font-black underline disabled:opacity-50">
-            {isAr ? 'حاول تاني' : 'Retry'}
+            {isAr ? 'جرّب تاني' : 'Retry'}
           </button>
         </div>
       )}
@@ -340,7 +340,7 @@ export function LessonPublicationManager({
           </p>
           {selectedIds.size > 0 && (
             <button type="button" onClick={() => setSelectedIds(new Set())} disabled={working} className="text-xs font-bold text-stone-500 underline disabled:opacity-50">
-              {isAr ? 'مسح التحديد' : 'Clear selection'}
+              {isAr ? 'إلغاء التحديد' : 'Clear selection'}
             </button>
           )}
         </div>
@@ -361,7 +361,7 @@ export function LessonPublicationManager({
           className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[var(--color-church-blue)] px-4 py-2 text-xs font-black text-white disabled:opacity-40"
         >
           {working ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-          {isAr ? 'نشر المعتمد الآن' : 'Publish approved now'}
+          {isAr ? 'انشر الدروس المعتمدة دلوقتي' : 'Publish approved now'}
         </button>
         <button
           type="button"
@@ -370,7 +370,7 @@ export function LessonPublicationManager({
           className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-xs font-black text-white disabled:opacity-40"
         >
           <CalendarClock size={15} />
-          {isAr ? 'جدولة المعتمد' : 'Schedule approved'}
+          {isAr ? 'حدّد موعد نشر الدروس المعتمدة' : 'Schedule approved'}
         </button>
       </div>
 
@@ -381,8 +381,8 @@ export function LessonPublicationManager({
             type="search"
             value={search}
             onChange={event => setSearch(event.target.value)}
-            placeholder={isAr ? 'بحث بالعنوان أو الملخص أو الصف' : 'Search title, summary, or grade'}
-            aria-label={isAr ? 'بحث في مكتبة المناهج' : 'Search curriculum library'}
+            placeholder={isAr ? 'دوّر بالعنوان أو الملخص أو الصف' : 'Search title, summary, or grade'}
+            aria-label={isAr ? 'دوّر في مكتبة المناهج' : 'Search curriculum library'}
             className="w-full rounded-xl border border-stone-300 bg-white py-2.5 ps-9 pe-3 text-sm dark:border-slate-700 dark:bg-slate-900"
           />
         </label>
@@ -528,7 +528,7 @@ export function LessonPublicationManager({
               {isScheduled && (
                 <div className="flex gap-2">
                   <button type="button" onClick={() => void handleReschedule(job)} disabled={!validFutureTime || working} className="rounded-md border border-stone-300 px-2 py-1 font-bold disabled:opacity-40">
-                    {isAr ? 'إعادة جدولة' : 'Reschedule'}
+                    {isAr ? 'تغيّر موعد نشر' : 'Reschedule'}
                   </button>
                   <button type="button" onClick={() => void handleCancel(job)} disabled={working} className="rounded-md border border-red-300 px-2 py-1 font-bold text-red-700 disabled:opacity-40">
                     {isAr ? 'إلغاء' : 'Cancel'}
