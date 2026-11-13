@@ -48,7 +48,7 @@ export function ChurchEventNotifications({ events, lang }: ChurchEventNotificati
   ];
 
   return (
-    <div className="space-y-5" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-5" dir="rtl">
       <header className="mousa-card-sand p-5 sm:p-6">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-[var(--surface-secondary)] text-[var(--action-primary)] flex items-center justify-center">
