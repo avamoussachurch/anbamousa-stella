@@ -212,7 +212,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      dir="rtl"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
