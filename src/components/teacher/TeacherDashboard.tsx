@@ -409,7 +409,7 @@ export function TeacherDashboard({
   };
 
   return (
-    <div className={`${activeTab === 'overview' ? 'w-full' : 'mx-auto w-full max-w-[96rem] px-4 pt-4 sm:px-6 lg:px-8'} space-y-6 pb-28`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={`${activeTab === 'overview' ? 'w-full' : 'mx-auto w-full max-w-[96rem] px-4 pt-4 sm:px-6 lg:px-8'} space-y-6 pb-28`} dir="rtl">
       {activeTab !== 'overview' && (
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-default)] pb-4">
           <div className="min-w-0">
