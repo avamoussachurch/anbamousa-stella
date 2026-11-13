@@ -3,8 +3,8 @@
 **Audit date:** November 13, 2026  
 **Repository:** `avamoussachurch/anbamousa-stella`  
 **Audited branch:** `main`  
-**Main commit at audit:** `782df71c52289cfc1a51c36e94b419ae38434caa`  
-**Decision:** **Code build is green; full public release is not yet verified.**
+**Main commit at audit:** `498c955943373b8d597dd7ce2b7bf9ea07186f76`  
+**Decision:** **Code build is green; full public release is not yet verified.** The village redesign is out of scope for this release.
 
 > This report replaces the November 10 readiness report. Several of its critical findings are now stale: the live database has an administrator, teacher assignments, published Sunday School lessons, and the Hymns/Taxis API code now contains Supabase persistence and private-media resolution. The current remaining gaps are primarily live curriculum content, roster/role provisioning, security configuration, and real-device/production verification.
 
@@ -139,7 +139,7 @@ A read-only privilege check confirmed that **none of the SECURITY DEFINER functi
 
 ### Not yet verified or not yet complete
 
-- **Detailed pixel-art village:** the current student home is a stylized desert/journey dashboard. The repository contains no detailed isometric Coptic village map asset or implemented seven-location world. The detailed pixel-art world in the design brief is therefore not complete.
+- **Village redesign:** explicitly deferred from this release pass. The current student home and navigation remain in place; this audit does not authorize replacing them with a new village/map experience. The pixel-art world brief is a separate future design project and is not a gate for deploying the existing product.
 - **Native visual review:** no authenticated browser session was available for full Arabic/English visual review at phone and desktop sizes. CI cannot verify contrast, clipping, animation feel, or real touch interactions.
 - **Parent experience:** no parent-role account or verified family link exists in the live database, so the parent portal cannot be validated with real data.
 - **Full roster:** only one student is currently enrolled, and only one class group has active servant assignments.
@@ -160,6 +160,6 @@ Before describing the full product as ready for public use:
 4. Create or identify a real parent account and verify the parent-child relationship through the trusted admin flow before testing the parent workspace.
 5. Enable leaked-password protection and review the authenticated SECURITY DEFINER RPC grants.
 6. Perform real phone and desktop visual QA in Arabic and English, including the student, teacher, parent, and admin workspaces.
-7. Complete the detailed pixel-art village/map experience before claiming that the requested Stella 2.0 world design is finished.
+7. Treat the detailed pixel-art village/map as a separate future project; it is not required to deploy the current product and must not be started as part of this release without explicit approval.
 
 **Deployment note:** a deploy can publish the current merged code, but it will not populate empty curriculum tables, enroll students, create verified family links, or complete the missing pixel-art world.
