@@ -24,7 +24,7 @@ export function HymnsTaxisLevelSetup({ lang, onSaved }: HymnsTaxisLevelSetupProp
     const result = await initializeMyHymnsTaxisLevel(selectedLevel);
     setSaving(false);
     if (!result.success || !result.level) {
-      setError(result.error || (isAr ? 'تعذر حفظ المستوى.' : 'Could not save your level.'));
+      setError(result.error || (isAr ? 'مش قادرين نحفظ المستوى. جرّب تاني.' : 'Could not save your level.'));
       return;
     }
     onSaved(result.level);
@@ -65,8 +65,8 @@ export function HymnsTaxisLevelSetup({ lang, onSaved }: HymnsTaxisLevelSetupProp
       <button type="submit" disabled={saving} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--mousa-teal)] px-4 py-2.5 font-black text-white transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60">
         {saving && <LoaderCircle size={16} className="animate-spin" />}
         {saving
-          ? (isAr ? 'بيتم حفظ اختيارك...' : 'Saving your selection...')
-          : (isAr ? 'حفظ المستوى وفتح المحتوى' : 'Save level and open lessons')}
+          ? (isAr ? 'بنحفظ اختيارك...' : 'Saving your selection...')
+          : (isAr ? 'احفظ المستوى وافتح الدروس' : 'Save level and open lessons')}
       </button>
     </form>
   );
