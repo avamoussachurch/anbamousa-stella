@@ -23,6 +23,7 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
   titleAr,
   subTitle,
   transcript,
+  lang = 'ar',
   recordedBy,
   isApproved = true,
   onTimeUpdate
