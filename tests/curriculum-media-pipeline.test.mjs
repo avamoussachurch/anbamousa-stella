@@ -93,7 +93,11 @@ test('PDF viewer uses the browser PDF renderer and provides a direct open fallba
 test('shared audio player provides seek, speed presets, fine speed, and playback errors', () => {
   assert.match(universalAudio, /type="range"/);
   assert.match(universalAudio, /SPEED_PRESETS/);
-  assert.match(universalAudio, /min={0.5}[\\s\\S]*max={2}[\\s\\S]*step={0.05}/);
+  assert.match(universalAudio, /min={0.5}/);
+  assert.match(universalAudio, /max={2}/);
+  assert.match(universalAudio, /step={0.05}/);
+  assert.match(universalAudio, /aria-label={isAr ? 'مستوى الصوت' : 'Volume'}/);
+  assert.match(universalAudio, /setMuted\(value => !value\)/);
   assert.match(universalAudio, /audio\.playbackRate = next/);
   assert.match(universalAudio, /onError/);
   assert.match(sundaySchoolAudio, /UniversalAudioPlayer/);
