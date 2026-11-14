@@ -2357,3 +2357,16 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .stella-adventure-hero .stella-adventure-star { animation: none !important; }
 }
+
+
+/* Responsive guardrails for phones and compact tablets. */
+html, body, #root { max-width: 100%; }
+body { overflow-x: clip; }
+main, section, article, aside, form, [role="dialog"] { min-width: 0; }
+img, video, iframe, canvas, svg { max-width: 100%; }
+button, a, input, select, textarea { max-width: 100%; }
+@media (max-width: 767px) {
+  main { width: 100%; min-width: 0; }
+  input, select, textarea { min-width: 0; }
+  [role="dialog"] { max-height: 100dvh; overflow-y: auto; }
+}
