@@ -174,6 +174,7 @@ export function FeedTab({ lang }: { lang: Language }) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingStreamRef = useRef<MediaStream | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
+  const isUnmountingRef = useRef(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
   useEffect(() => {
@@ -187,6 +188,7 @@ export function FeedTab({ lang }: { lang: Language }) {
   }, []);
 
   useEffect(() => () => {
+    isUnmountingRef.current = true;
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop();
     recordingStreamRef.current?.getTracks().forEach(track => track.stop());
   }, []);
@@ -503,7 +505,7 @@ export function FeedTab({ lang }: { lang: Language }) {
             return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'مش قادرين نرفع الملف.' : 'Upload failed.') };
           }
           URL.revokeObjectURL(current.localPreviewUrl || '');
-          return { ...result.data, localPreviewUrl: undefined };
+          return { ...result.data, isVoiceRecording: current.isVoiceRecording, includeInGlobalPlayer: current.includeInGlobalPlayer, globalAudioTitle: current.globalAudioTitle, localPreviewUrl: undefined };
         }));
       }
     } finally {
@@ -554,8 +556,9 @@ export function FeedTab({ lang }: { lang: Language }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       recordingStreamRef.current = stream;
       recordingChunksRef.current = [];
-      const mimeType = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
-        .find(type => MediaRecorder.isTypeSupported(type));
+      const mimeType = typeof MediaRecorder.isTypeSupported === 'function'
+        ? ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find(type => MediaRecorder.isTypeSupported(type))
+        : undefined;
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = event => { if (event.data.size > 0) recordingChunksRef.current.push(event.data); };
@@ -567,6 +570,7 @@ export function FeedTab({ lang }: { lang: Language }) {
         const type = recorder.mimeType || 'audio/webm';
         const blob = new Blob(recordingChunksRef.current, { type });
         recordingChunksRef.current = [];
+        if (isUnmountingRef.current) return;
         if (!blob.size) {
           setMediaError(lang === 'ar' ? 'التسجيل فارغ. جرّب مرة تانية.' : 'The recording was empty. Please try again.');
           return;
@@ -668,6 +672,10 @@ export function FeedTab({ lang }: { lang: Language }) {
   };
 
   const handleCloseComposer = async () => {
+    if (isRecordingVoice) {
+      stopVoiceRecording();
+      return;
+    }
     if (isUploadingMedia || isCreatingPost) return;
     setMediaError(null);
     const cleanupError = await clearComposerAttachments();
