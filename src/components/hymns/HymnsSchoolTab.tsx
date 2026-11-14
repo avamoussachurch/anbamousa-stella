@@ -18,7 +18,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { COPTIC_HYMNS_COLLECTION, CopticHymnItem, HymnLyricLine } from '../../data/hymnsData';
+import { CopticHymnItem, HymnLyricLine } from '../../data/hymnsData';
 import { useAuth } from '../../context/AuthContext';
 import { awardPoints } from '../../lib/pointsService';
 import { Language } from '../../types';
@@ -37,7 +37,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isTeacherOrAdmin = workspace === 'teacher' || workspace === 'admin';
 
   // Live Hymns & Enrollment State
-  const [hymnsList, setHymnsList] = useState<CopticHymnItem[]>(COPTIC_HYMNS_COLLECTION);
+  const [hymnsList, setHymnsList] = useState<CopticHymnItem[]>([]);
+  const [isHymnsLoading, setIsHymnsLoading] = useState(true);
   const [hymnsLoadError, setHymnsLoadError] = useState<string | null>(null);
   const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem>(COPTIC_HYMNS_COLLECTION[0]);
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
@@ -78,22 +79,25 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     let isMounted = true;
     if (!isTeacherOrAdmin && assignedLevel === null) {
       setHymnsList([]);
+      setIsHymnsLoading(false);
       setHymnsLoadError(null);
       return () => { isMounted = false; };
     }
     const reqLevel = isTeacherOrAdmin && levelFilter !== 'all' ? levelFilter : undefined;
+    setIsHymnsLoading(true);
     setHymnsLoadError(null);
     getHymns(reqLevel, seasonFilter, undefined, userData ? { roles: userData.roles, hymnsTaxisLevel: userData.hymnsTaxisLevel } : undefined).then(res => {
       if (!isMounted) return;
       if (res.success && res.items) {
         setHymnsList(res.items);
-        if (!res.items.some(h => h.id === selectedHymn.id)) {
-          if (res.items[0]) setSelectedHymn(res.items[0]);
-        }
+        // Always select the matching record returned by the server, not a local demo object.
+        const serverSelection = res.items.find(h => h.id === selectedHymn.id) || res.items[0];
+        if (serverSelection) setSelectedHymn(serverSelection);
       } else {
         setHymnsList([]);
         setHymnsLoadError(res.error || (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
       }
+      setIsHymnsLoading(false);
     });
 
     return () => { isMounted = false; };
@@ -415,7 +419,15 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           </div>
 
           <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-            {filteredHymns.map((hymn) => {
+            {isHymnsLoading ? (
+              <div role="status" aria-live="polite" className="rounded-2xl border border-[var(--mousa-border-sand)] bg-white/70 dark:bg-slate-900/60 p-5 text-center text-sm font-semibold text-stone-500 dark:text-stone-300">
+                {isAr ? 'بنحمّل الألحان...' : 'Loading hymns...'}
+              </div>
+            ) : filteredHymns.length === 0 ? (
+              <div className="rounded-2xl border border-[var(--mousa-border-sand)] bg-white/70 dark:bg-slate-900/60 p-5 text-center text-sm font-semibold text-stone-500 dark:text-stone-300">
+                {isAr ? 'مفيش ألحان متاحة للمستوى أو المناسبة دي دلوقتي.' : 'No hymns are available for this level or season yet.'}
+              </div>
+            ) : filteredHymns.map((hymn) => {
               const isSelected = hymn.id === selectedHymn.id;
               const isMastered = Boolean(masteredHymns[hymn.id]);
 

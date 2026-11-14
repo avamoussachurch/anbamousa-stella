@@ -95,3 +95,12 @@ test('bulk and scheduled Sunday School publishing always release the working sta
     assert.match(block, /finally\s*\{[\s\S]*?setWorking\(false\)/);
   }
 });
+
+test('student Hymns tab never flashes the local demo collection before Supabase responds', () => {
+  const hymnStudent = read('../src/components/hymns/HymnsSchoolTab.tsx');
+  assert.match(hymnStudent, /useState<CopticHymnItem\[]>\(\[\]\)/);
+  assert.match(hymnStudent, /const \[isHymnsLoading, setIsHymnsLoading\] = useState\(true\)/);
+  assert.match(hymnStudent, /isHymnsLoading \? \([\s\S]*?Loading hymns/);
+  assert.match(hymnStudent, /serverSelection = res\.items\.find\([\s\S]*?\) \|\| res\.items\[0\]/);
+  assert.doesNotMatch(hymnStudent, /COPTIC_HYMNS_COLLECTION/);
+});
