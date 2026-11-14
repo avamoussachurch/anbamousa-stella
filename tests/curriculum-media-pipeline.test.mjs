@@ -91,12 +91,11 @@ test('PDF viewer uses the browser PDF renderer and provides a direct open fallba
   assert.match(taxisStudent, /InAppDocumentViewer/);
 });
 
-test('shared audio player provides seek, speed presets, fine speed, and playback errors', () => {
+test('shared audio player provides seek, compact speed presets, and playback errors', () => {
   assert.match(universalAudio, /type="range"/);
   assert.match(universalAudio, /SPEED_PRESETS/);
-  assert.ok(universalAudio.includes('min={0.5}'), 'fine speed slider has a 0.5x minimum');
-  assert.ok(universalAudio.includes('max={2}'), 'fine speed slider has a 2x maximum');
-  assert.ok(universalAudio.includes('step={0.05}'), 'fine speed slider supports precise increments');
+  assert.match(universalAudio, /grid grid-cols-4 sm:flex/);
+  assert.match(universalAudio, /aria-pressed=\{speed === rate\}/);
   assert.ok(universalAudio.includes("aria-label={isAr ? 'مستوى الصوت' : 'Volume'}"), 'volume control remains available');
   assert.match(universalAudio, /setMuted\(value => !value\)/);
   assert.match(universalAudio, /audioRef\.current\.playbackRate = next/);
@@ -138,5 +137,5 @@ test('mobile audio and PDF controls remain within viewport and viewer content ca
   assert.match(audio, /min-w-0 overflow-hidden/);
   assert.match(pdf, /h-\[100dvh\]/);
   assert.match(pdf, /min-h-0 min-w-0/);
-  assert.match(pdf, /w-full h-full min-h-0 min-w-0 flex-1/);
+  assert.match(pdf, /w-full min-h-0 min-w-0 flex-1/);
 });
