@@ -577,6 +577,11 @@ export function FeedTab({ lang }: { lang: Language }) {
     let frame = 0;
     const draw = () => {
       if (waveformAnalyserRef.current !== analyser) return;
+      if (mediaRecorderRef.current?.state === 'paused') {
+        setWaveformLevels(Array(32).fill(0.08));
+        waveformFrameRef.current = requestAnimationFrame(draw);
+        return;
+      }
       analyser.getByteFrequencyData(bins);
       frame += 1;
       if (frame % 3 === 0) {
