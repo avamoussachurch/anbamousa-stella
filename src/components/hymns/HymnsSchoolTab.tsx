@@ -40,7 +40,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const [hymnsList, setHymnsList] = useState<CopticHymnItem[]>([]);
   const [isHymnsLoading, setIsHymnsLoading] = useState(true);
   const [hymnsLoadError, setHymnsLoadError] = useState<string | null>(null);
-  const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem>(COPTIC_HYMNS_COLLECTION[0]);
+  const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem>({} as CopticHymnItem);
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
   const [resolvedSheetMusicUrl, setResolvedSheetMusicUrl] = useState('');
   const [audioUrlError, setAudioUrlError] = useState<string | null>(null);
@@ -86,7 +86,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     const reqLevel = isTeacherOrAdmin && levelFilter !== 'all' ? levelFilter : undefined;
     setIsHymnsLoading(true);
     setHymnsLoadError(null);
-    getHymns(reqLevel, seasonFilter, undefined, userData ? { roles: userData.roles, hymnsTaxisLevel: userData.hymnsTaxisLevel } : undefined).then(res => {
+    getHymns(reqLevel, seasonFilter, undefined, userData ? { roles: userData.roles, hymnsTaxisLevel: userData.hymnsTaxisLevel } : undefined)
+      .then(res => {
       if (!isMounted) return;
       if (res.success && res.items) {
         setHymnsList(res.items);
@@ -97,8 +98,15 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         setHymnsList([]);
         setHymnsLoadError(res.error || (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
       }
-      setIsHymnsLoading(false);
-    });
+      })
+      .catch(error => {
+        if (!isMounted) return;
+        setHymnsList([]);
+        setHymnsLoadError(error instanceof Error ? error.message : (isAr ? 'حصلت مشكلة أثناء تحميل الألحان.' : 'An unexpected error occurred while loading hymns.'));
+      })
+      .finally(() => {
+        if (isMounted) setIsHymnsLoading(false);
+      });
 
     return () => { isMounted = false; };
   }, [levelFilter, seasonFilter, isTeacherOrAdmin, assignedLevel, userData?.id, userData?.roles, lang]);
