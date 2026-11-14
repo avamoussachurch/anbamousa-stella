@@ -14,6 +14,8 @@ The templates use Supabase's supported `{{ .ConfirmationURL }}` variable and kee
 
 **Important for this project:** it was created in September 2026 on the Free plan. Supabase's June 3, 2026 breaking change prevents new Free projects using Supabase's default SMTP from customizing Auth email templates. To use these templates, configure a custom SMTP provider first. Set the SMTP sender display name to **Anba Mousa** and use a From address on a domain you control after completing SPF, DKIM, and DMARC. Never commit SMTP credentials.
 
+A custom SMTP provider is supported on the Free plan, but Supabase's pricing page lists removal of Supabase email branding as a paid-plan feature. So branded sender name and message content can be configured with custom SMTP, while removing every Supabase footer/brand mark may require Pro.
+
 Supabase docs: https://supabase.com/docs/guides/auth/auth-smtp and https://supabase.com/docs/guides/auth/auth-email-templates
 
 ## Supabase Auth URL configuration
@@ -37,7 +39,7 @@ Google owns the consent-screen branding and verification; this cannot be changed
 
 ## Removing the Supabase project hostname from OAuth flows
 
-A Supabase custom Auth domain can replace the project-ref hostname in Auth URLs and OAuth callback flows. Supabase documents this as a paid add-on for paid-plan projects. Do not enable or purchase it without explicit budget approval. The exact custom domain must be a domain the church controls and can configure in DNS.
+A Supabase custom Auth domain can replace the project-ref hostname in Auth URLs and OAuth callback flows. Supabase documents this as a paid add-on available only to paid-plan projects; its current listed price is **$10/month per project**, in addition to the paid plan. Do not enable or purchase it without explicit budget approval. The exact custom domain must be a domain the church controls and can configure in DNS.
 
 ## Required launch verification
 
