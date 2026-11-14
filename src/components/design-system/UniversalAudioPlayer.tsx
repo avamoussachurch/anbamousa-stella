@@ -89,7 +89,7 @@ export function UniversalAudioPlayer({
   };
 
   return (
-    <section className={`w-full rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-3 sm:p-4 space-y-3 ${className}`} dir={isAr ? 'rtl' : 'ltr'}>
+    <section className={`w-full min-w-0 overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-3 sm:p-4 space-y-3 ${className}`} dir={isAr ? 'rtl' : 'ltr'}>
       <audio
         ref={audioRef}
         src={src}
@@ -126,9 +126,9 @@ export function UniversalAudioPlayer({
         </div>
       </div>
 
-      <div className={`flex flex-wrap items-center justify-between gap-3 ${compact ? '' : 'sm:pt-1'}`}>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => seek(Math.max(0, currentTime - 10))} disabled={!duration} aria-label={isAr ? 'رجوع ١٠ ثواني' : 'Back 10 seconds'} className="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40">
+      <div className={`flex min-w-0 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${compact ? '' : 'sm:pt-1'}`}>
+        <div className="flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2">
+          <button type="button" onClick={() => seek(Math.max(0, currentTime - 10)) disabled={!duration} aria-label={isAr ? 'رجوع ١٠ ثواني' : 'Back 10 seconds'} className="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40">
             <RotateCcw size={17} />
           </button>
           <button type="button" onClick={togglePlayback} disabled={!src} aria-label={playing ? (isAr ? 'إيقاف مؤقت' : 'Pause') : (isAr ? 'تشغيل' : 'Play')} className="w-11 h-11 rounded-full bg-[var(--mousa-teal)] text-white flex items-center justify-center shadow-md disabled:opacity-40">
@@ -139,26 +139,24 @@ export function UniversalAudioPlayer({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-stone-500">{isAr ? 'السرعة' : 'Speed'}</span>
-          <select value={SPEED_PRESETS.includes(speed) ? String(speed) : 'custom'} onChange={event => event.target.value !== 'custom' && changeSpeed(Number(event.target.value))} aria-label={isAr ? 'اختار سرعة التشغيل' : 'Choose playback speed'} className="rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-2 py-1 text-xs font-bold text-stone-800 dark:text-stone-100">
-            {!SPEED_PRESETS.includes(speed) && <option value="custom">{speed.toFixed(2)}x</option>}
-            {SPEED_PRESETS.map(rate => <option key={rate} value={rate}>{rate}x</option>)}
-          </select>
+        <div className="min-w-0 w-full sm:w-auto space-y-1">
+          <span className="block text-[11px] font-bold text-stone-500">{isAr ? 'السرعة' : 'Speed'}</span>
+          <div className="grid grid-cols-4 sm:flex gap-1" role="group" aria-label={isAr ? 'سرعة التشغيل' : 'Playback speed'}>
+            {SPEED_PRESETS.map(rate => (
+              <button key={rate} type="button" onClick={() => changeSpeed(rate)} aria-pressed={speed === rate}
+                className={`min-w-0 rounded-lg border px-2 py-2 text-[11px] font-bold transition-colors ${speed === rate ? 'border-[var(--mousa-teal)] bg-[var(--mousa-teal)] text-white' : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200'}`}>
+                {rate}x
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
-        <span className="text-[11px] font-semibold text-stone-500 whitespace-nowrap">{isAr ? 'ضبط السرعة' : 'Fine speed'}</span>
-        <input type="range" min={0.5} max={2} step={0.05} value={speed} onChange={event => changeSpeed(Number(event.target.value))} aria-label={isAr ? 'ضبط سرعة التشغيل بدقة' : 'Fine playback speed adjustment'} className={`w-full h-1.5 cursor-pointer ${accentClass}`} />
-        <span className="text-xs font-mono font-bold text-stone-700 dark:text-stone-200 w-12 text-end">{speed.toFixed(2)}x</span>
-      </div>
-
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <button type="button" onClick={() => setMuted(value => !value)} aria-label={muted ? (isAr ? 'إلغاء كتم الصوت' : 'Unmute') : (isAr ? 'كتم الصوت' : 'Mute')} className="p-1.5 text-stone-500">
           {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
-        <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={event => { setVolume(Number(event.target.value)); setMuted(false); }} aria-label={isAr ? 'مستوى الصوت' : 'Volume'} className={`${compact ? 'w-20' : 'w-24'} ${accentClass}`} />
+        <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={event => { setVolume(Number(event.target.value)); setMuted(false); }} aria-label={isAr ? 'مستوى الصوت' : 'Volume'} className={`min-w-0 flex-1 max-w-32 ${accentClass}`} />
       </div>
     </section>
   );
