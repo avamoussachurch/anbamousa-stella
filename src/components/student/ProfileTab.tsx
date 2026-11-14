@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useGlobalAudio } from '../../context/AudioContext';
 import { updateSupabaseProfile, uploadAvatarToSupabase } from '../../lib/supabaseDatabase';
-import { getShareableChildLink, getWhatsAppShareUrl, getOrCreateChildLinkCode } from '../../lib/parentChildService';
+import { getShareableChildLink, getWhatsAppShareUrl, getStudentFamilyLinkCode } from '../../lib/parentChildService';
 import { ChildQrCodeModal } from '../common/ChildQrCodeModal';
 import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { CLASS_GROUPS, getClassGroupForGrade } from '../../lib/classGroups';
@@ -55,6 +55,9 @@ export function ProfileTab({
   const [copiedLinkCode, setCopiedLinkCode] = useState(false);
   const [copiedDirectLink, setCopiedDirectLink] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [studentLinkCode, setStudentLinkCode] = useState('');
+  const [familyCodeLoading, setFamilyCodeLoading] = useState(false);
+  const [familyCodeError, setFamilyCodeError] = useState<string | null>(null);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   // Church Year & Student Join Code state
@@ -199,10 +202,34 @@ export function ProfileTab({
   const isParent = workspaceRole ? workspaceRole === 'parent' : hasRole(userData, 'parent');
   const isTeacher = workspaceRole ? workspaceRole === 'teacher' : hasRole(userData, 'teacher');
 
-  // Only students have unique child codes for parents to link them
-  const studentLinkCode = isStudent ? getOrCreateChildLinkCode(userData) : '';
+  // Real family codes are issued and persisted by the trusted server, never derived
+  // from a profile ID or stored as an authorization credential in browser storage.
+  useEffect(() => {
+    let cancelled = false;
+    setStudentLinkCode('');
+    setFamilyCodeError(null);
+    if (!isStudent || !userData || isGuest) {
+      setFamilyCodeLoading(false);
+      return;
+    }
+    setFamilyCodeLoading(true);
+    getStudentFamilyLinkCode().then(result => {
+      if (cancelled) return;
+      if (result.error || !result.code) {
+        setFamilyCodeError(result.error?.message || 'Could not load your family code.');
+        return;
+      }
+      setStudentLinkCode(result.code);
+    }).catch(error => {
+      if (!cancelled) setFamilyCodeError(error instanceof Error ? error.message : 'Could not load your family code.');
+    }).finally(() => {
+      if (!cancelled) setFamilyCodeLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [userData?.id, isStudent, isGuest]);
 
   const handleCopyLinkCode = () => {
+    if (!studentLinkCode) return;
     try {
       navigator.clipboard.writeText(studentLinkCode);
       setCopiedLinkCode(true);
@@ -214,6 +241,7 @@ export function ProfileTab({
   };
 
   const handleCopyDirectLink = () => {
+    if (!studentLinkCode) return;
     try {
       const shareUrl = getShareableChildLink(studentLinkCode);
       navigator.clipboard.writeText(shareUrl);
@@ -226,6 +254,7 @@ export function ProfileTab({
   };
 
   const handleShareWhatsApp = () => {
+    if (!studentLinkCode) return;
     try {
       const url = getWhatsAppShareUrl(studentLinkCode, userData?.fullName || 'Child', lang);
       window.open(url, '_blank');
@@ -616,7 +645,9 @@ export function ProfileTab({
                             {lang === 'ar' ? 'الرمز السري الخاص بالطفل' : 'Child Unique Secret Code'}
                           </span>
                           <span className="font-mono font-black text-lg text-[var(--mousa-teal-deep)] tracking-wider">
-                            {studentLinkCode}
+                            {familyCodeLoading
+                              ? (lang === 'ar' ? 'بنجهّز الكود...' : 'Loading secure code…')
+                              : studentLinkCode || familyCodeError || (lang === 'ar' ? 'الكود غير متاح حالياً' : 'Code unavailable')}
                           </span>
                         </div>
                       </div>
@@ -625,7 +656,8 @@ export function ProfileTab({
                         <button
                           type="button"
                           onClick={() => setShowQrModal(true)}
-                          className="flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-[var(--mousa-teal-deep)] hover:bg-blue-900 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                          disabled={!studentLinkCode || familyCodeLoading}
+                          className="flex-1 sm:flex-initial disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl bg-[var(--mousa-teal-deep)] hover:bg-blue-900 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                         >
                           <QrCode size={14} className="text-amber-300" />
                           <span>{lang === 'ar' ? 'عرض رمز QR' : 'Show QR Code'}</span>
@@ -634,7 +666,8 @@ export function ProfileTab({
                         <button
                           type="button"
                           onClick={handleCopyLinkCode}
-                          className="flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-gray-50 dark:bg-[var(--surface-secondary)] hover:bg-gray-100 dark:hover:bg-[var(--state-hover)] border border-gray-200 dark:border-[var(--border-default)] text-gray-800 dark:text-[var(--text-primary)] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          disabled={!studentLinkCode || familyCodeLoading}
+                          className="flex-1 sm:flex-initial disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl bg-gray-50 dark:bg-[var(--surface-secondary)] hover:bg-gray-100 dark:hover:bg-[var(--state-hover)] border border-gray-200 dark:border-[var(--border-default)] text-gray-800 dark:text-[var(--text-primary)] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
                           {copiedLinkCode ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
                           <span>{copiedLinkCode ? (lang === 'ar' ? 'تم نسخ الرمز!' : 'Copied!') : (lang === 'ar' ? 'نسخ الرمز' : 'Copy Code')}</span>
@@ -647,7 +680,8 @@ export function ProfileTab({
                       <button
                         type="button"
                         onClick={handleCopyDirectLink}
-                        className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-[var(--surface-overlay)] hover:bg-gray-50 dark:hover:bg-[var(--state-hover)] border border-blue-200 dark:border-[var(--border-default)] text-[var(--mousa-teal-deep)] dark:text-[var(--text-primary)] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                        disabled={!studentLinkCode || familyCodeLoading}
+                        className="px-3.5 disabled:opacity-40 disabled:cursor-not-allowed py-2.5 rounded-xl bg-white dark:bg-[var(--surface-overlay)] hover:bg-gray-50 dark:hover:bg-[var(--state-hover)] border border-blue-200 dark:border-[var(--border-default)] text-[var(--mousa-teal-deep)] dark:text-[var(--text-primary)] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                       >
                         {copiedDirectLink ? <Check size={14} className="text-emerald-600" /> : <LinkIcon size={14} />}
                         <span>{copiedDirectLink ? (lang === 'ar' ? 'تم نسخ الرابط!' : 'Link Copied!') : (lang === 'ar' ? 'نسخ رابط الربط المباشر' : 'Copy Direct Link')}</span>
@@ -656,7 +690,8 @@ export function ProfileTab({
                       <button
                         type="button"
                         onClick={handleShareWhatsApp}
-                        className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                        disabled={!studentLinkCode || familyCodeLoading}
+                        className="px-3.5 disabled:opacity-40 disabled:cursor-not-allowed py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                       >
                         <Share2 size={14} />
                         <span>{lang === 'ar' ? 'إرسال لوالديك عبر واتساب 💬' : 'Send to Parent via WhatsApp 💬'}</span>

@@ -24,7 +24,8 @@ test('authorized profile routes select a separate profile component for each non
   assert.match(app, /activeWorkspace === 'admin'[\s\S]*?RoleAccountProfile role="admin"/);
   assert.match(app, /workspaceRole="student"/);
   assert.match(student, /getStudentActiveMembership/);
-  assert.match(student, /getOrCreateChildLinkCode/);
+  assert.match(student, /getStudentFamilyLinkCode/);
+  assert.doesNotMatch(student, /getOrCreateChildLinkCode/);
   assert.doesNotMatch(student, /parent-' \+ manualParentEmail|Link Now|ربط الآن/);
   assert.match(student, /Hymns School Level/);
   assert.match(student, /updateMyHymnsTaxisLevel/);

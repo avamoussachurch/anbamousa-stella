@@ -1019,6 +1019,40 @@ export function updateRewardRequestStatus(
 
 export const getRewardRequests = getSyncedRewardRequests;
 
+export async function getStudentFamilyLinkCode(): Promise<{ code: string | null; error: Error | null }> {
+  const headers = await getAuthHeader();
+  try {
+    const response = await fetch('/api/church/student/family-code', { method: 'GET', headers });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.success !== true || typeof payload.code !== 'string') {
+      return {
+        code: null,
+        error: new Error(payload?.message || payload?.error || `Could not load family code (HTTP ${response.status}).`)
+      };
+    }
+    return { code: payload.code, error: null };
+  } catch (error) {
+    return { code: null, error: error instanceof Error ? error : new Error('Could not load family code.') };
+  }
+}
+
+export async function rotateStudentFamilyLinkCode(): Promise<{ code: string | null; error: Error | null }> {
+  const headers = await getAuthHeader();
+  try {
+    const response = await fetch('/api/church/student/family-code/rotate', { method: 'POST', headers });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.success !== true || typeof payload.code !== 'string') {
+      return {
+        code: null,
+        error: new Error(payload?.message || payload?.error || `Could not rotate family code (HTTP ${response.status}).`)
+      };
+    }
+    return { code: payload.code, error: null };
+  } catch (error) {
+    return { code: null, error: error instanceof Error ? error : new Error('Could not rotate family code.') };
+  }
+}
+
 async function getAuthHeader(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'

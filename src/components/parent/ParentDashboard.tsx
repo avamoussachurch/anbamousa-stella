@@ -17,6 +17,7 @@ import { ChurchEventNotifications } from './ChurchEventNotifications';
 import { ParentLearningJourney } from './ParentLearningJourney';
 import { ParentHomeDashboard } from './ParentHomeDashboard';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
+import { supabase } from '../../lib/supabase';
 
 type ParentSection = 'home' | 'children' | 'journey' | 'family' | 'events';
 
@@ -182,6 +183,35 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
       window.removeEventListener('church:parent_linked', onChildrenUpdated);
     };
   }, [isParent, section, refreshChildren, refreshEvents, refreshAnnouncements, refreshRewards]);
+
+  // Subscribe only to rows the authenticated parent is authorized to read.
+  // The database RLS policies scope these changes to verified family relationships.
+  const linkedChildIdsKey = children.map(child => child.id).sort().join(',');
+  useEffect(() => {
+    if (!isParent || !supabase || !linkedChildIdsKey) return;
+    const childIds = linkedChildIdsKey.split(',').filter(Boolean);
+    const channel = supabase.channel(`parent-family-live-${userData?.id || 'session'}`);
+    for (const studentId of childIds) {
+      const notifyChildChanged = () => {
+        void refreshChildren();
+        window.dispatchEvent(new CustomEvent('church:parent-child-updated', { detail: { studentId } }));
+      };
+      channel.on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'profiles',
+        filter: `id=eq.${studentId}`
+      }, notifyChildChanged);
+      channel.on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'lesson_progress',
+        filter: `student_id=eq.${studentId}`
+      }, notifyChildChanged);
+    }
+    channel.subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [isParent, linkedChildIdsKey, refreshChildren, userData?.id]);
 
   const pendingRewards = useMemo(() => rewardRequests.filter(request => request.status === 'pending'), [rewardRequests]);
 

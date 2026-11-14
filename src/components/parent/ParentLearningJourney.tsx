@@ -28,6 +28,15 @@ export function ParentLearningJourney({ child, lang }: ParentLearningJourneyProp
     void loadReview();
   }, [child.id]);
 
+  useEffect(() => {
+    const handleLiveChildUpdate = (event: Event) => {
+      const detail = (event as CustomEvent<{ studentId?: string }>).detail;
+      if (!detail?.studentId || detail.studentId === child.id) void loadReview();
+    };
+    window.addEventListener('church:parent-child-updated', handleLiveChildUpdate);
+    return () => window.removeEventListener('church:parent-child-updated', handleLiveChildUpdate);
+  }, [child.id]);
+
   const lessons = review?.lessons || [];
   const completedLessons = lessons.filter(lesson => lesson.progressStatus === 'COMPLETED');
   const quizAttempts = lessons.reduce((count, lesson) => count + lesson.quizAttemptsCount, 0);

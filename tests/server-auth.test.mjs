@@ -48,6 +48,7 @@ const persistedLessons = new Map();
 const persistedLessonVersions = new Map();
 const persistedLessonSections = new Map();
 const persistedProfiles = new Map();
+const studentFamilyCodes = new Map();
 const persistedClassMemberships = [];
 const persistedClassInstances = new Map();
 const persistedSectionProgress = new Map();
@@ -447,8 +448,56 @@ before(async () => {
     if (bearer === 'test-service-role-key' && url.pathname === '/rest/v1/class_memberships') {
       return respondJson(res, 200, []);
     }
+    if (url.pathname === '/rest/v1/student_family_link_codes') {
+      if (bearer !== 'test-service-role-key') {
+        return respondJson(res, 403, { message: 'Trusted server key required' });
+      }
+      const studentId = (url.searchParams.get('student_id') || '').replace(/^eq\./, '');
+      const codeFilter = (url.searchParams.get('code') || '').replace(/^eq\./, '');
+      if (req.method === 'GET') {
+        const rows = [...studentFamilyCodes.values()].filter(row =>
+          (!studentId || row.student_id === studentId) && (!codeFilter || row.code === codeFilter)
+        );
+        return respondPostgrestRows(req, res, 200, rows);
+      }
+      if (req.method === 'POST') {
+        let rawBody = '';
+        req.on('data', chunk => { rawBody += chunk; });
+        req.on('end', () => {
+          const payload = JSON.parse(rawBody || '{}');
+          const rows = Array.isArray(payload) ? payload : [payload];
+          for (const row of rows) {
+            if (studentFamilyCodes.has(row.student_id) || [...studentFamilyCodes.values()].some(existing => existing.code === row.code)) {
+              return respondJson(res, 409, { code: '23505', message: 'Duplicate family code' });
+            }
+          }
+          for (const row of rows) studentFamilyCodes.set(row.student_id, row);
+          return respondPostgrestRows(req, res, 201, []);
+        });
+        return;
+      }
+      if (req.method === 'PATCH') {
+        let rawBody = '';
+        req.on('data', chunk => { rawBody += chunk; });
+        req.on('end', () => {
+          const payload = JSON.parse(rawBody || '{}');
+          const row = studentFamilyCodes.get(studentId);
+          if (!row) return respondPostgrestRows(req, res, 200, []);
+          if ([...studentFamilyCodes.values()].some(existing => existing.student_id !== studentId && existing.code === payload.code)) {
+            return respondJson(res, 409, { code: '23505', message: 'Duplicate family code' });
+          }
+          const updated = { ...row, ...payload };
+          studentFamilyCodes.set(studentId, updated);
+          return respondPostgrestRows(req, res, 200, [updated]);
+        });
+        return;
+      }
+    }
     if (url.pathname === '/rest/v1/user_relationships') {
-      return respondJson(res, 200, []);
+      if (req.method === 'POST' || req.method === 'PATCH') {
+        return respondJson(res, 201, []);
+      }
+      return respondPostgrestRows(req, res, 200, []);
     }
     if (url.pathname === '/rest/v1/rpc/can_access_student_data') {
       let rawBody = '';
@@ -1015,6 +1064,59 @@ test('parent workspace APIs allow hybrid parent accounts but reject accounts wit
     body: { decision: 'pending' }
   });
   assert.equal(invalidRewardDecision.status, 400);
+});
+
+test('student family codes are server-issued, persistent, and required for parent linking', async () => {
+  const studentId = 'family-code-student-001';
+  const parentId = 'family-code-parent-001';
+  roleAssignments.set(studentId, ['student']);
+  roleAssignments.set(parentId, ['parent']);
+
+  const anonymous = await request('/api/church/student/family-code');
+  assert.equal(anonymous.status, 401);
+
+  const forbiddenParent = await request('/api/church/student/family-code', {
+    role: 'parent', userId: parentId
+  });
+  assert.equal(forbiddenParent.status, 403);
+
+  const issued = await request('/api/church/student/family-code', {
+    role: 'student', userId: studentId
+  });
+  assert.equal(issued.status, 200, await issued.clone().text());
+  const issuedPayload = await issued.json();
+  assert.match(issuedPayload.code, /^ST-[A-Z0-9]{10}$/);
+
+  const repeated = await request('/api/church/student/family-code', {
+    role: 'student', userId: studentId
+  });
+  assert.equal((await repeated.json()).code, issuedPayload.code);
+
+  const rotated = await request('/api/church/student/family-code/rotate', {
+    method: 'POST', role: 'student', userId: studentId
+  });
+  assert.equal(rotated.status, 200, await rotated.clone().text());
+  const rotatedCode = (await rotated.json()).code;
+  assert.match(rotatedCode, /^ST-[A-Z0-9]{10}$/);
+  assert.notEqual(rotatedCode, issuedPayload.code);
+
+  const connected = await request('/api/church/parent/connect-child', {
+    method: 'POST', role: 'parent', userId: parentId,
+    body: { childCode: rotatedCode }
+  });
+  assert.equal(connected.status, 201, await connected.clone().text());
+  const connectedPayload = await connected.json();
+  assert.equal(connectedPayload.child.id, studentId);
+
+  const oldCode = await request('/api/church/parent/connect-child', {
+    method: 'POST', role: 'parent', userId: 'another-parent',
+    body: { childCode: issuedPayload.code }
+  });
+  assert.equal(oldCode.status, 404);
+
+  studentFamilyCodes.delete(studentId);
+  roleAssignments.delete(studentId);
+  roleAssignments.delete(parentId);
 });
 
 test('anonymous and non-owner lesson publishing is rejected, including missing ownership', async () => {
