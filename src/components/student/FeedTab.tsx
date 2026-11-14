@@ -570,6 +570,11 @@ export function FeedTab({ lang }: { lang: Language }) {
     analyser.fftSize = 256;
     analyser.smoothingTimeConstant = 0.72;
     context.createMediaStreamSource(stream).connect(analyser);
+    // Keep the analyser graph alive without monitoring microphone audio through speakers.
+    const silentOutput = context.createGain();
+    silentOutput.gain.value = 0;
+    analyser.connect(silentOutput);
+    silentOutput.connect(context.destination);
     waveformContextRef.current = context;
     waveformAnalyserRef.current = analyser;
     void context.resume().catch(() => undefined);
