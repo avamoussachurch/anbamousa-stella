@@ -98,7 +98,7 @@ test('shared audio player provides seek, speed presets, fine speed, and playback
   assert.ok(universalAudio.includes('step={0.05}'), 'fine speed slider supports precise increments');
   assert.ok(universalAudio.includes("aria-label={isAr ? 'مستوى الصوت' : 'Volume'}"), 'volume control remains available');
   assert.match(universalAudio, /setMuted\(value => !value\)/);
-  assert.match(universalAudio, /audio\.playbackRate = next/);
+  assert.match(universalAudio, /audioRef\.current\.playbackRate = next/);
   assert.match(universalAudio, /onError/);
   assert.match(sundaySchoolAudio, /UniversalAudioPlayer/);
 });
