@@ -135,6 +135,12 @@ test('feed voice recording is microphone-captured and excluded from global audio
   assert.match(feed, /Pause recording/);
   assert.match(feed, /Resume recording/);
   assert.match(feed, /setIsVoiceRecordingPaused\(false\)/);
+  assert.match(feed, /recorder\.requestData\(\)/, 'stop flushes the final MediaRecorder chunk before stopping');
+  assert.match(feed, /recorder\.start\(250\)/, 'recording emits short chunks instead of relying only on the stop event');
+  assert.match(feed, /const recordingChunks: Blob\[\] = \[\]/, 'each recording owns its own chunk buffer');
+  assert.match(feed, /new Blob\(recordingChunks, \{ type \}\)/);
+  assert.match(feed, /h-10 w-10 shrink-0 items-center justify-center rounded-full/, 'record, pause, resume, and finish controls use compact icon buttons');
+  assert.match(feed, /title=\{isVoiceRecordingPaused \?/, 'icon-only pause/resume controls retain accessible labels and tooltips');
   assert.match(feed, /Also add this recording to the global audio player/);
   assert.match(feed, /globalAudioTitle\?\.trim\(\)/);
   assert.match(attachments, /include_in_global_player: Boolean\(attachment\.includeInGlobalPlayer/);

@@ -560,31 +560,34 @@ export function FeedTab({ lang }: { lang: Language }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       recordingStreamRef.current = stream;
-      recordingChunksRef.current = [];
+      const recordingChunks: Blob[] = [];
+      recordingChunksRef.current = recordingChunks;
       const mimeType = typeof MediaRecorder.isTypeSupported === 'function'
-        ? ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find(type => MediaRecorder.isTypeSupported(type))
+        ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(type => MediaRecorder.isTypeSupported(type))
         : undefined;
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = recorder;
-      recorder.ondataavailable = event => { if (event.data.size > 0) recordingChunksRef.current.push(event.data); };
+      recorder.ondataavailable = event => {
+        if (event.data && event.data.size > 0) recordingChunks.push(event.data);
+      };
       recorder.onerror = () => setMediaError(lang === 'ar' ? 'حصلت مشكلة أثناء التسجيل.' : 'The recording encountered an error.');
       recorder.onstop = () => {
         stream.getTracks().forEach(track => track.stop());
         recordingStreamRef.current = null;
         setIsRecordingVoice(false);
         setIsVoiceRecordingPaused(false);
-        const type = recorder.mimeType || 'audio/webm';
-        const blob = new Blob(recordingChunksRef.current, { type });
+        const type = recorder.mimeType || mimeType || 'audio/webm';
+        const blob = new Blob(recordingChunks, { type });
         recordingChunksRef.current = [];
         if (isUnmountingRef.current) return;
         if (!blob.size) {
-          setMediaError(lang === 'ar' ? 'التسجيل فارغ. جرّب مرة تانية.' : 'The recording was empty. Please try again.');
+          setMediaError(lang === 'ar' ? 'لم يلتقط التسجيل أي صوت. تأكد من إذن الميكروفون وحاول مرة أخرى.' : 'No audio was captured. Check microphone permission and try again.');
           return;
         }
         const extension = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
         void uploadVoiceRecording(new File([blob], `voice-recording-${Date.now()}.${extension}`, { type }));
       };
-      recorder.start(1000);
+      // Emit short chunks while recording, then explicitly flush the final chunk on stop.\n      recorder.start(250);
       setMediaError(null);
       setIsVoiceRecordingPaused(false);
       setIsRecordingVoice(true);
@@ -612,7 +615,15 @@ export function FeedTab({ lang }: { lang: Language }) {
   };
 
   const stopVoiceRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop();
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') return;
+    try {
+      // requestData queues the final non-empty chunk before the stop event.
+      if (recorder.state === 'recording' && typeof recorder.requestData === 'function') recorder.requestData();
+      recorder.stop();
+    } catch (error) {
+      setMediaError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر إنهاء التسجيل.' : 'Could not finish the recording.'));
+    }
   };
 
   const retryComposerAttachment = async (id: string) => {
@@ -1074,10 +1085,10 @@ export function FeedTab({ lang }: { lang: Language }) {
                       type="button"
                       onClick={pauseOrResumeVoiceRecording}
                       aria-label={isVoiceRecordingPaused ? (lang === 'ar' ? 'استئناف التسجيل' : 'Resume recording') : (lang === 'ar' ? 'إيقاف التسجيل مؤقتًا' : 'Pause recording')}
-                      className="inline-flex shrink-0 items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-violet-300 bg-violet-100 hover:bg-violet-200 text-violet-900 text-xs font-bold transition-colors"
+                      title={isVoiceRecordingPaused ? (lang === 'ar' ? 'استئناف التسجيل' : 'Resume recording') : (lang === 'ar' ? 'إيقاف التسجيل مؤقتًا' : 'Pause recording')}
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300 bg-violet-100 text-violet-900 transition-colors hover:bg-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                     >
-                      {isVoiceRecordingPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} fill="currentColor" />}
-                      <span>{isVoiceRecordingPaused ? (lang === 'ar' ? 'استئناف' : 'Resume') : (lang === 'ar' ? 'إيقاف مؤقت' : 'Pause')}</span>
+                      {isVoiceRecordingPaused ? <Play size={17} fill="currentColor" /> : <Pause size={17} fill="currentColor" />}
                     </button>
                   )}
 
@@ -1085,10 +1096,11 @@ export function FeedTab({ lang }: { lang: Language }) {
                     type="button"
                     onClick={isRecordingVoice ? stopVoiceRecording : () => void startVoiceRecording()}
                     disabled={!userData || isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
-                    className={`inline-flex shrink-0 items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all disabled:opacity-50 ${isRecordingVoice ? 'bg-rose-600 text-white border-rose-700' : 'bg-violet-50 hover:bg-violet-100 text-violet-800 border-violet-200'}`}
+                    aria-label={isRecordingVoice ? (lang === 'ar' ? 'إنهاء التسجيل' : 'Finish recording') : (lang === 'ar' ? 'بدء تسجيل صوتي' : 'Start voice recording')}
+                    title={isRecordingVoice ? (lang === 'ar' ? 'إنهاء التسجيل' : 'Finish recording') : (lang === 'ar' ? 'بدء تسجيل صوتي' : 'Start voice recording')}
+                    className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 ${isRecordingVoice ? 'border-rose-700 bg-rose-600 text-white hover:bg-rose-700' : 'border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100'}`}
                   >
-                    {isRecordingVoice ? <Square size={14} fill="currentColor" /> : <Mic size={15} />}
-                    <span>{isRecordingVoice ? (lang === 'ar' ? 'إنهاء التسجيل' : 'Finish recording') : (lang === 'ar' ? 'تسجيل صوتي' : 'Record voice')}</span>
+                    {isRecordingVoice ? <Square size={16} fill="currentColor" /> : <Mic size={17} />}
                   </button>
 
                   <button
