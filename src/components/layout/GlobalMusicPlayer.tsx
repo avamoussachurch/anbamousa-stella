@@ -7,7 +7,7 @@ import { getHymns } from '../../lib/hymnsService';
 import type { CopticHymnItem } from '../../data/hymnsData';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
-import { fetchGlobalFeedAudioTracks, GlobalFeedAudioTrack } from '../../lib/feedService';
+import { fetchGlobalFeedAudioTracks, type GlobalFeedAudioTrack } from '../../lib/feedService';
 
 export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const { currentTrackUrl, isPlaying, volume, playTrack, togglePlay, setVolume } = useGlobalAudio();
@@ -129,7 +129,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
                     {lang === 'ar' ? 'جرّب تاني' : 'Retry'}
                   </button>
                 </div>
-              ) : hymns.length === 0 ? (
+              ) : hymns.length === 0 && feedTracks.length === 0 ? (
                 <p className="py-5 text-center text-sm text-[var(--text-secondary)]">
                   {lang === 'ar' ? 'لسه مفيش ألحان منشورة بتسجيل صوتي.' : 'No published hymns with audio are available yet.'}
                 </p>
