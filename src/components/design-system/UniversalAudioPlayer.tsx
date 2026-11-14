@@ -154,14 +154,12 @@ export function UniversalAudioPlayer({
         <span className="text-xs font-mono font-bold text-stone-700 dark:text-stone-200 w-12 text-end">{speed.toFixed(2)}x</span>
       </div>
 
-      {!compact && (
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => setMuted(value => !value)} aria-label={muted ? (isAr ? 'إلغاء كتم الصوت' : 'Unmute') : (isAr ? 'كتم الصوت' : 'Mute')} className="p-1.5 text-stone-500">
-            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-          </button>
-          <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={event => { setVolume(Number(event.target.value)); setMuted(false); }} aria-label={isAr ? 'مستوى الصوت' : 'Volume'} className={`w-24 ${accentClass}`} />
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={() => setMuted(value => !value)} aria-label={muted ? (isAr ? 'إلغاء كتم الصوت' : 'Unmute') : (isAr ? 'كتم الصوت' : 'Mute')} className="p-1.5 text-stone-500">
+          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
+        <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={event => { setVolume(Number(event.target.value)); setMuted(false); }} aria-label={isAr ? 'مستوى الصوت' : 'Volume'} className={`${compact ? 'w-20' : 'w-24'} ${accentClass}`} />
+      </div>
     </section>
   );
 }
