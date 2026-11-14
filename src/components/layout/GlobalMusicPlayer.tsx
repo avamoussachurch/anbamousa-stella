@@ -145,12 +145,12 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
                   }`}
                 >
                   <div>
-                    <p className={`font-bold text-sm ${currentTrackUrl === hymn.audioUrl ? 'text-[var(--color-church-burgundy)]' : 'text-gray-800'}`}>
+                    <p className={`font-bold text-sm ${currentTrackUrl === hymn.resolvedAudioUrl ? 'text-[var(--color-church-burgundy)]' : 'text-gray-800'}`}>
                       {lang === 'ar' ? hymn.titleAr : hymn.titleEn}
                     </p>
                     <p className="text-xs text-gray-500 font-medium mt-0.5">{lang === 'ar' ? hymn.seasonAr : hymn.seasonEn}</p>
                   </div>
-                  {currentTrackUrl === hymn.audioUrl && isPlaying ? (
+                  {currentTrackUrl === hymn.resolvedAudioUrl && isPlaying ? (
                     <Pause size={16} className="text-[var(--color-church-burgundy)]" />
                   ) : (
                     <Play size={16} className="text-gray-400" />
