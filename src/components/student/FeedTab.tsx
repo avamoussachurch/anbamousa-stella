@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
   ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
-  Image as ImageIcon, Video, Link2, Loader2, Play, Info, ExternalLink, AlertCircle, Check, Maximize2, Mic, Square,
+  Image as ImageIcon, Video, Link2, Loader2, Play, Info, ExternalLink, AlertCircle, Check, Maximize2, Mic, Square, Pause,
   Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -176,6 +176,7 @@ export function FeedTab({ lang }: { lang: Language }) {
   const recordingChunksRef = useRef<Blob[]>([]);
   const isUnmountingRef = useRef(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [isVoiceRecordingPaused, setIsVoiceRecordingPaused] = useState(false);
 
   useEffect(() => {
     composerAttachmentsRef.current = composerAttachments;
@@ -571,6 +572,7 @@ export function FeedTab({ lang }: { lang: Language }) {
         stream.getTracks().forEach(track => track.stop());
         recordingStreamRef.current = null;
         setIsRecordingVoice(false);
+        setIsVoiceRecordingPaused(false);
         const type = recorder.mimeType || 'audio/webm';
         const blob = new Blob(recordingChunksRef.current, { type });
         recordingChunksRef.current = [];
@@ -584,11 +586,28 @@ export function FeedTab({ lang }: { lang: Language }) {
       };
       recorder.start(1000);
       setMediaError(null);
+      setIsVoiceRecordingPaused(false);
       setIsRecordingVoice(true);
     } catch (error) {
       recordingStreamRef.current?.getTracks().forEach(track => track.stop());
       recordingStreamRef.current = null;
       setMediaError(error instanceof Error ? error.message : (lang === 'ar' ? 'مش قادرين نفتح الميكروفون.' : 'Could not access the microphone.'));
+    }
+  };
+
+  const pauseOrResumeVoiceRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') return;
+    try {
+      if (recorder.state === 'recording' && typeof recorder.pause === 'function') {
+        recorder.pause();
+        setIsVoiceRecordingPaused(true);
+      } else if (recorder.state === 'paused' && typeof recorder.resume === 'function') {
+        recorder.resume();
+        setIsVoiceRecordingPaused(false);
+      }
+    } catch (error) {
+      setMediaError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر إيقاف التسجيل مؤقتًا.' : 'Could not pause or resume the recording.'));
     }
   };
 
@@ -1050,14 +1069,26 @@ export function FeedTab({ lang }: { lang: Language }) {
                     <span>{lang === 'ar' ? 'تسجيل لحن كنسي (صوت MP3)' : 'Hymn Audio (MP3)'}</span>
                   </button>
 
+                  {isRecordingVoice && (
+                    <button
+                      type="button"
+                      onClick={pauseOrResumeVoiceRecording}
+                      aria-label={isVoiceRecordingPaused ? (lang === 'ar' ? 'استئناف التسجيل' : 'Resume recording') : (lang === 'ar' ? 'إيقاف التسجيل مؤقتًا' : 'Pause recording')}
+                      className="inline-flex shrink-0 items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-violet-300 bg-violet-100 hover:bg-violet-200 text-violet-900 text-xs font-bold transition-colors"
+                    >
+                      {isVoiceRecordingPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} fill="currentColor" />}
+                      <span>{isVoiceRecordingPaused ? (lang === 'ar' ? 'استئناف' : 'Resume') : (lang === 'ar' ? 'إيقاف مؤقت' : 'Pause')}</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={isRecordingVoice ? stopVoiceRecording : () => void startVoiceRecording()}
                     disabled={!userData || isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all disabled:opacity-50 ${isRecordingVoice ? 'bg-rose-600 text-white border-rose-700' : 'bg-violet-50 hover:bg-violet-100 text-violet-800 border-violet-200'}`}
+                    className={`inline-flex shrink-0 items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all disabled:opacity-50 ${isRecordingVoice ? 'bg-rose-600 text-white border-rose-700' : 'bg-violet-50 hover:bg-violet-100 text-violet-800 border-violet-200'}`}
                   >
                     {isRecordingVoice ? <Square size={14} fill="currentColor" /> : <Mic size={15} />}
-                    <span>{isRecordingVoice ? (lang === 'ar' ? 'إيقاف التسجيل' : 'Stop recording') : (lang === 'ar' ? 'تسجيل صوتي' : 'Record voice')}</span>
+                    <span>{isRecordingVoice ? (lang === 'ar' ? 'إنهاء التسجيل' : 'Finish recording') : (lang === 'ar' ? 'تسجيل صوتي' : 'Record voice')}</span>
                   </button>
 
                   <button
