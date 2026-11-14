@@ -1051,7 +1051,7 @@ export function FeedTab({ lang }: { lang: Language }) {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative space-y-4 my-8"
+              className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl p-4 sm:p-5 shadow-2xl relative space-y-4 my-4"
             >
               {/* Hidden file inputs */}
               <input 
@@ -1232,7 +1232,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                     <span>{lang === 'ar' ? 'المرفقات' : 'Attachments'}</span>
                     <span>{composerAttachments.length} / {MAX_FEED_ATTACHMENTS}</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3">
                     {composerAttachments.map(attachment => (
                       <div key={attachment.id} className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
                         <div className="flex items-center justify-between gap-2 p-2">
@@ -1251,7 +1251,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                         </div>
                         {attachment.mediaType === 'audio' ? (
                           <>
-                            <div className="p-3"><UniversalAudioPlayer src={attachment.mediaUrl} lang={lang === 'ar' ? 'ar' : 'en'} compact /></div>
+                            <div className="min-w-0 px-3 pt-2"><UniversalAudioPlayer src={attachment.mediaUrl} lang={lang === 'ar' ? 'ar' : 'en'} compact /></div>
                             {attachment.isVoiceRecording && (
                               <div className="mx-3 mb-3 rounded-xl border border-violet-200 bg-violet-50 p-3 space-y-2">
                                 <label className="flex items-start gap-2 text-xs font-bold text-violet-900">
@@ -1281,7 +1281,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                             {attachment.status === 'ready'
                               ? (lang === 'ar' ? 'جاهز للنشر' : 'Ready to publish')
                               : attachment.status === 'error'
-                              ? (attachment.error || (lang === 'ar' ? 'فشل الرفع' : 'Upload failed'))
+                              ? (attachment.error ? getLocalizedErrorMessage(attachment.error, lang) : (lang === 'ar' ? 'فشل الرفع' : 'Upload failed'))
                               : (lang === 'ar' ? 'جارٍ الرفع...' : 'Uploading...')}
                           </span>
                           {attachment.status === 'error' && (

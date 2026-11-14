@@ -176,3 +176,18 @@ test('feed voice controls use recorder lifecycle events and a live microphone wa
   assert.match(feed, /stopVoiceWaveform\(\)/);
   assert.match(feed, /Also add this recording to the global audio player/);
 });
+
+
+test('feed composer uses a wider scrollable dialog and full-width attachment previews', () => {
+  const feed = read('../src/components/student/FeedTab.tsx');
+  assert.match(feed, /max-w-2xl max-h-\[calc\(100dvh-2rem\)\] overflow-y-auto/);
+  assert.match(feed, /className="grid grid-cols-1 gap-3"/);
+  assert.match(feed, /getLocalizedErrorMessage\(attachment\.error, lang\)/);
+});
+
+test('feed storage migration allows browser-recorded WebM audio uploads', () => {
+  const migration = read('../scripts/migrations/phase35_allow_webm_feed_audio.sql');
+  assert.match(migration, /stella-feed-media-v1/);
+  assert.match(migration, /audio\/webm/);
+  assert.match(migration, /allowed_mime_types/);
+});
