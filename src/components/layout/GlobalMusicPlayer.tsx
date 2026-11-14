@@ -100,7 +100,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="bg-white rounded-3xl shadow-xl border border-[var(--color-church-cream-dark)] p-4 mb-4 w-72 md:w-80 overflow-hidden"
+            className="bg-white rounded-3xl shadow-xl border border-[var(--color-church-cream-dark)] p-4 mb-4 w-[min(18rem,calc(100vw-1.5rem))] sm:w-80 max-h-[70dvh] overflow-y-auto overflow-x-hidden"
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-[var(--color-church-blue)] flex items-center gap-2">
