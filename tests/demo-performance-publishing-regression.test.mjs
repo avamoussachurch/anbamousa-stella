@@ -103,4 +103,6 @@ test('student Hymns tab never flashes the local demo collection before Supabase 
   assert.match(hymnStudent, /isHymnsLoading \? \([\s\S]*?Loading hymns/);
   assert.match(hymnStudent, /serverSelection = res\.items\.find\([\s\S]*?\) \|\| res\.items\[0\]/);
   assert.doesNotMatch(hymnStudent, /COPTIC_HYMNS_COLLECTION/);
+  assert.match(hymnStudent, /useState<CopticHymnItem \| null>\(null\)/);
+  assert.match(hymnStudent, /\.catch\(error => \{/);
 });
