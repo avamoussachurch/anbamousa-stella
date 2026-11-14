@@ -61,7 +61,7 @@ export const SundaySchoolAudioPlayer: React.FC<SundaySchoolAudioPlayerProps> = (
       </div>
 
       {audioUrl ? (
-        <UniversalAudioPlayer src={audioUrl} lang={lang} accent={isTeacher ? 'amber' : 'blue'} compact onTimeUpdate={onTimeUpdate} />
+        <UniversalAudioPlayer src={audioUrl} lang={isAr ? 'ar' : 'en'} accent={isTeacher ? 'amber' : 'blue'} compact onTimeUpdate={onTimeUpdate} />
       ) : (
         <p role="status" className="text-xs text-stone-400">{isAr ? 'التسجيل الصوتي مش متاح دلوقتي.' : 'Audio recording is not available.'}</p>
       )}
