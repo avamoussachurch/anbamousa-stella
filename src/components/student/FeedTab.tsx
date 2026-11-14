@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
+import { UniversalAudioPlayer } from '../design-system/UniversalAudioPlayer';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -1024,7 +1025,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                           </button>
                         </div>
                         {attachment.mediaType === 'audio' ? (
-                          <div className="p-3"><audio src={attachment.mediaUrl} controls className="w-full" /></div>
+                          <div className="p-3"><UniversalAudioPlayer src={attachment.mediaUrl} lang={lang === 'ar' ? 'ar' : 'en'} compact /></div>
                         ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
                           <iframe src={attachment.mediaUrl} title="Media preview" className="aspect-video w-full bg-black" allowFullScreen />
                         ) : attachment.mediaType === 'video' ? (

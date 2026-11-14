@@ -529,7 +529,23 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
               {audioPlaybackError && (
                 <p role="alert" className="text-xs font-semibold text-rose-600">{audioPlaybackError}</p>
               )}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="space-y-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 0}
+                  step={0.1}
+                  value={Math.min(currentTime, duration || 0)}
+                  onChange={event => {
+                    const nextTime = Number(event.target.value);
+                    setCurrentTime(nextTime);
+                    if (audioRef.current) audioRef.current.currentTime = nextTime;
+                  }}
+                  disabled={!duration}
+                  aria-label={isAr ? 'موضع تشغيل اللحن' : 'Hymn playback position'}
+                  className="w-full h-2 accent-amber-500 cursor-pointer disabled:opacity-40"
+                />
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -550,7 +566,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 {/* Speed Toggle */}
                 <div className="flex items-center gap-1.5 text-xs">
                   <span className="text-[11px] text-stone-500 font-bold">{isAr ? 'سرعة اللحن:' : 'Speed:'}</span>
-                  {[0.75, 1.0, 1.25].map(sp => (
+                  {[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2].map(sp => (
                     <button
                       key={sp}
                       type="button"
@@ -565,7 +581,22 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                     </button>
                   ))}
                 </div>
+                <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 w-full">
+                  <span className="text-[11px] font-bold text-stone-500">{isAr ? 'ضبط السرعة' : 'Fine speed'}</span>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={2}
+                    step={0.05}
+                    value={playbackSpeed}
+                    onChange={event => setPlaybackSpeed(Number(event.target.value))}
+                    aria-label={isAr ? 'ضبط سرعة اللحن' : 'Fine playback speed'}
+                    className="w-full accent-amber-500"
+                  />
+                  <span className="text-xs font-mono font-bold text-stone-700 dark:text-stone-200 w-12 text-end">{playbackSpeed.toFixed(2)}x</span>
+                </div>
               </div>
+            </div>
             </div>
 
             {/* Synced 3-Language Karaoke Lyrics */}

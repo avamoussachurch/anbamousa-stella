@@ -455,6 +455,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             type="TEACHER_VOICE"
             title={isAr ? 'شرح الخادم الصوتي في فصل مدارس الأحد' : 'Classroom Voice Explanation'}
             titleAr="شرح الخادم الصوتي في فصل مدارس الأحد"
+            lang={isAr ? 'ar' : 'en'}
             subTitle={isAr ? 'تسجيل صوتي من الخادم لشرح الدرس للأولاد.' : 'Real audio recorded by Sunday School servant during session.'}
             audioUrl={displayedAudioUrl}
             durationSeconds={teacherVoiceSource?.durationSeconds || 320}
@@ -794,6 +795,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
         <InAppDocumentViewer
           documentUrl={displayedSlidesUrl}
           documentTitle={isAr && lesson.titleAr ? lesson.titleAr : lesson.title}
+          documentType={slideDeckSource?.type === 'PDF' ? 'pdf' : 'auto'}
           slides={eligibleSlides}
           onClose={() => setShowDocumentModal(false)}
           lang={isAr ? 'ar' : 'en'}
