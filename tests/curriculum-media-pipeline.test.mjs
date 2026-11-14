@@ -159,7 +159,7 @@ test('mobile audio and PDF controls remain within viewport and viewer content ca
 
 test('feed recorder start is executable and not swallowed by a malformed comment', () => {
   const feed = read('../src/components/student/FeedTab.tsx');
-  const startLine = feed.split(/\\r?\\n/).find(line => line.includes('recorder.start(250);')) || '';
+  const startLine = feed.split(/\r?\n/).find(line => line.includes('recorder.start(250);')) || '';
   assert.equal(startLine.trim(), 'recorder.start(250);', 'MediaRecorder.start must be a standalone executable statement');
 });
 
