@@ -128,7 +128,7 @@ export function UniversalAudioPlayer({
 
       <div className={`flex min-w-0 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${compact ? '' : 'sm:pt-1'}`}>
         <div className="flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2">
-          <button type="button" onClick={() => seek(Math.max(0, currentTime - 10)) disabled={!duration} aria-label={isAr ? 'رجوع ١٠ ثواني' : 'Back 10 seconds'} className="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40">
+          <button type="button" onClick={() => seek(Math.max(0, currentTime - 10))} disabled={!duration} aria-label={isAr ? 'رجوع ١٠ ثواني' : 'Back 10 seconds'} className="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40">
             <RotateCcw size={17} />
           </button>
           <button type="button" onClick={togglePlayback} disabled={!src} aria-label={playing ? (isAr ? 'إيقاف مؤقت' : 'Pause') : (isAr ? 'تشغيل' : 'Play')} className="w-11 h-11 rounded-full bg-[var(--mousa-teal)] text-white flex items-center justify-center shadow-md disabled:opacity-40">
