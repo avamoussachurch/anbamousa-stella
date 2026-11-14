@@ -34,6 +34,28 @@ test('one attachment and multiple mixed media types can be represented', () => {
   assert.equal(getPostAttachments({ id: 'post2', mediaType: 'image', mediaUrl: 'https://cdn.example/old.jpg' }).length, 1);
 });
 
+test('ordinary audio attachments stay out of the global player by default', () => {
+  const [row] = buildFeedPostAttachmentRows('post-audio', 'student-a', [
+    { mediaType: 'audio', mediaUrl: 'https://cdn.example/voice.webm', mimeType: 'audio/webm' }
+  ]);
+  assert.equal(row.include_in_global_player, false);
+  assert.equal(row.global_audio_title, null);
+});
+
+test('a voice recording enters the global player only with explicit opt-in and a title', () => {
+  const [row] = buildFeedPostAttachmentRows('post-audio-opt-in', 'student-a', [
+    {
+      mediaType: 'audio',
+      mediaUrl: 'https://cdn.example/hymn.m4a',
+      mimeType: 'audio/mp4',
+      includeInGlobalPlayer: true,
+      globalAudioTitle: 'My recorded hymn'
+    }
+  ]);
+  assert.equal(row.include_in_global_player, true);
+  assert.equal(row.global_audio_title, 'My recorded hymn');
+});
+
 test('attachment limit allows exactly ten and rejects an eleventh', () => {
   assert.equal(MAX_FEED_ATTACHMENTS, 10);
   assert.equal(canAddFeedAttachments(0, 1), true);
