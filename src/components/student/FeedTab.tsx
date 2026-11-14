@@ -174,9 +174,13 @@ export function FeedTab({ lang }: { lang: Language }) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingStreamRef = useRef<MediaStream | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
+  const waveformContextRef = useRef<AudioContext | null>(null);
+  const waveformAnalyserRef = useRef<AnalyserNode | null>(null);
+  const waveformFrameRef = useRef<number | null>(null);
   const isUnmountingRef = useRef(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [isVoiceRecordingPaused, setIsVoiceRecordingPaused] = useState(false);
+  const [waveformLevels, setWaveformLevels] = useState<number[]>(() => Array(32).fill(0.08));
 
   useEffect(() => {
     composerAttachmentsRef.current = composerAttachments;
@@ -190,6 +194,8 @@ export function FeedTab({ lang }: { lang: Language }) {
 
   useEffect(() => () => {
     isUnmountingRef.current = true;
+    if (waveformFrameRef.current !== null) cancelAnimationFrame(waveformFrameRef.current);
+    if (waveformContextRef.current) void waveformContextRef.current.close();
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop();
     recordingStreamRef.current?.getTracks().forEach(track => track.stop());
   }, []);
@@ -547,6 +553,54 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   };
 
+  const stopVoiceWaveform = () => {
+    if (waveformFrameRef.current !== null) cancelAnimationFrame(waveformFrameRef.current);
+    waveformFrameRef.current = null;
+    waveformAnalyserRef.current = null;
+    const context = waveformContextRef.current;
+    waveformContextRef.current = null;
+    if (context && context.state !== 'closed') void context.close();
+    setWaveformLevels(Array(32).fill(0.08));
+  };
+
+  const startVoiceWaveform = (stream: MediaStream) => {
+    if (typeof AudioContext === 'undefined') return;
+    const context = new AudioContext();
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.72;
+    context.createMediaStreamSource(stream).connect(analyser);
+    // Keep the analyser graph alive without monitoring microphone audio through speakers.
+    const silentOutput = context.createGain();
+    silentOutput.gain.value = 0;
+    analyser.connect(silentOutput);
+    silentOutput.connect(context.destination);
+    waveformContextRef.current = context;
+    waveformAnalyserRef.current = analyser;
+    void context.resume().catch(() => undefined);
+    const bins = new Uint8Array(analyser.frequencyBinCount);
+    let frame = 0;
+    const draw = () => {
+      if (waveformAnalyserRef.current !== analyser) return;
+      if (mediaRecorderRef.current?.state === 'paused') {
+        setWaveformLevels(Array(32).fill(0.08));
+        waveformFrameRef.current = requestAnimationFrame(draw);
+        return;
+      }
+      analyser.getByteFrequencyData(bins);
+      frame += 1;
+      if (frame % 3 === 0) {
+        const levels = Array.from({ length: 32 }, (_, index) => {
+          const value = bins[Math.min(bins.length - 1, Math.floor(index * bins.length / 32))] / 255;
+          return Math.max(0.08, Math.min(1, value * 2.8));
+        });
+        setWaveformLevels(levels);
+      }
+      waveformFrameRef.current = requestAnimationFrame(draw);
+    };
+    waveformFrameRef.current = requestAnimationFrame(draw);
+  };
+
   const startVoiceRecording = async () => {
     if (!userData) {
       setMediaError(lang === 'ar' ? 'سجّل دخولك الأول عشان تسجّل وتنشر صوتك.' : 'Sign in before recording and publishing audio.');
@@ -571,7 +625,10 @@ export function FeedTab({ lang }: { lang: Language }) {
         if (event.data && event.data.size > 0) recordingChunks.push(event.data);
       };
       recorder.onerror = () => setMediaError(lang === 'ar' ? 'حصلت مشكلة أثناء التسجيل.' : 'The recording encountered an error.');
+      recorder.onpause = () => setIsVoiceRecordingPaused(true);
+      recorder.onresume = () => setIsVoiceRecordingPaused(false);
       recorder.onstop = () => {
+        stopVoiceWaveform();
         stream.getTracks().forEach(track => track.stop());
         recordingStreamRef.current = null;
         setIsRecordingVoice(false);
@@ -587,7 +644,9 @@ export function FeedTab({ lang }: { lang: Language }) {
         const extension = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
         void uploadVoiceRecording(new File([blob], `voice-recording-${Date.now()}.${extension}`, { type }));
       };
-      // Emit short chunks while recording, then explicitly flush the final chunk on stop.\n      recorder.start(250);
+      // IMPORTANT: start() must be executable code, not part of this comment.
+      recorder.start(250);
+      startVoiceWaveform(stream);
       setMediaError(null);
       setIsVoiceRecordingPaused(false);
       setIsRecordingVoice(true);
@@ -600,15 +659,14 @@ export function FeedTab({ lang }: { lang: Language }) {
 
   const pauseOrResumeVoiceRecording = () => {
     const recorder = mediaRecorderRef.current;
-    if (!recorder || recorder.state === 'inactive') return;
+    if (!recorder || recorder.state === 'inactive') {
+      setMediaError(lang === 'ar' ? 'لا يوجد تسجيل نشط لإيقافه مؤقتًا.' : 'There is no active recording to pause or resume.');
+      return;
+    }
     try {
-      if (recorder.state === 'recording' && typeof recorder.pause === 'function') {
-        recorder.pause();
-        setIsVoiceRecordingPaused(true);
-      } else if (recorder.state === 'paused' && typeof recorder.resume === 'function') {
-        recorder.resume();
-        setIsVoiceRecordingPaused(false);
-      }
+      if (recorder.state === 'recording') recorder.pause();
+      else if (recorder.state === 'paused') recorder.resume();
+      else setMediaError(lang === 'ar' ? 'انتظر لحظة حتى يبدأ التسجيل.' : 'Please wait for recording to become ready.');
     } catch (error) {
       setMediaError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر إيقاف التسجيل مؤقتًا.' : 'Could not pause or resume the recording.'));
     }
@@ -616,10 +674,13 @@ export function FeedTab({ lang }: { lang: Language }) {
 
   const stopVoiceRecording = () => {
     const recorder = mediaRecorderRef.current;
-    if (!recorder || recorder.state === 'inactive') return;
+    if (!recorder || recorder.state === 'inactive') {
+      setMediaError(lang === 'ar' ? 'لا يوجد تسجيل نشط لإنهائه.' : 'There is no active recording to finish.');
+      return;
+    }
     try {
-      // requestData queues the final non-empty chunk before the stop event.
-      if (recorder.state === 'recording' && typeof recorder.requestData === 'function') recorder.requestData();
+      // MediaRecorder.stop() dispatches the final dataavailable event before onstop,
+      // including when the recorder is paused. Do not requestData() while paused.
       recorder.stop();
     } catch (error) {
       setMediaError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر إنهاء التسجيل.' : 'Could not finish the recording.'));
@@ -1081,25 +1142,30 @@ export function FeedTab({ lang }: { lang: Language }) {
                   </button>
 
                   {isRecordingVoice && (
-                    <button
-                      type="button"
-                      onClick={pauseOrResumeVoiceRecording}
+                    <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2" role="status" aria-live="polite">
+                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isVoiceRecordingPaused ? 'bg-amber-500' : 'animate-pulse bg-rose-600'}`} />
+                      <div className="flex h-9 min-w-0 flex-1 items-center justify-center gap-[3px] overflow-hidden" aria-label={isVoiceRecordingPaused ? 'Recording paused' : 'Live microphone waveform'}>
+                        {waveformLevels.map((level, index) => (
+                          <span key={index} className="w-[3px] shrink-0 rounded-full bg-rose-500 transition-[height] duration-100"
+                            style={{ height: `${Math.max(4, level * 34)}px`, opacity: isVoiceRecordingPaused ? 0.45 : 0.9 }} />
+                        ))}
+                      </div>
+                      <span className="shrink-0 text-[10px] font-bold text-rose-800">{isVoiceRecordingPaused ? (lang === 'ar' ? 'متوقف مؤقتًا' : 'Paused') : (lang === 'ar' ? 'يسجل' : 'Recording')}</span>
+                    </div>
+                  )}
+                  {isRecordingVoice && (
+                    <button type="button" onClick={pauseOrResumeVoiceRecording}
                       aria-label={isVoiceRecordingPaused ? (lang === 'ar' ? 'استئناف التسجيل' : 'Resume recording') : (lang === 'ar' ? 'إيقاف التسجيل مؤقتًا' : 'Pause recording')}
                       title={isVoiceRecordingPaused ? (lang === 'ar' ? 'استئناف التسجيل' : 'Resume recording') : (lang === 'ar' ? 'إيقاف التسجيل مؤقتًا' : 'Pause recording')}
-                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300 bg-violet-100 text-violet-900 transition-colors hover:bg-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-                    >
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300 bg-violet-100 text-violet-900 transition-colors hover:bg-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
                       {isVoiceRecordingPaused ? <Play size={17} fill="currentColor" /> : <Pause size={17} fill="currentColor" />}
                     </button>
                   )}
-
-                  <button
-                    type="button"
-                    onClick={isRecordingVoice ? stopVoiceRecording : () => void startVoiceRecording()}
+                  <button type="button" onClick={isRecordingVoice ? stopVoiceRecording : () => void startVoiceRecording()}
                     disabled={!userData || isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
                     aria-label={isRecordingVoice ? (lang === 'ar' ? 'إنهاء التسجيل' : 'Finish recording') : (lang === 'ar' ? 'بدء تسجيل صوتي' : 'Start voice recording')}
                     title={isRecordingVoice ? (lang === 'ar' ? 'إنهاء التسجيل' : 'Finish recording') : (lang === 'ar' ? 'بدء تسجيل صوتي' : 'Start voice recording')}
-                    className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 ${isRecordingVoice ? 'border-rose-700 bg-rose-600 text-white hover:bg-rose-700' : 'border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100'}`}
-                  >
+                    className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 ${isRecordingVoice ? 'border-rose-700 bg-rose-600 text-white hover:bg-rose-700' : 'border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100'}`}>
                     {isRecordingVoice ? <Square size={16} fill="currentColor" /> : <Mic size={17} />}
                   </button>
 

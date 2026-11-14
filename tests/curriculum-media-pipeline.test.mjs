@@ -135,10 +135,13 @@ test('feed voice recording is microphone-captured and excluded from global audio
   assert.match(feed, /Pause recording/);
   assert.match(feed, /Resume recording/);
   assert.match(feed, /setIsVoiceRecordingPaused\(false\)/);
-  assert.match(feed, /recorder\.requestData\(\)/, 'stop flushes the final MediaRecorder chunk before stopping');
+  assert.match(feed, /recorder\.stop\(\)/, 'MediaRecorder.stop flushes the final dataavailable event, including from paused state');
+  assert.match(feed, /recorder\.onstop = \(\) => \{[\s\S]*?new Blob\(recordingChunks, \{ type \}\)/, 'the final dataavailable chunks are assembled after stop');
   assert.match(feed, /recorder\.start\(250\)/, 'recording emits short chunks instead of relying only on the stop event');
   assert.match(feed, /const recordingChunks: Blob\[\] = \[\]/, 'each recording owns its own chunk buffer');
   assert.match(feed, /new Blob\(recordingChunks, \{ type \}\)/);
+  assert.match(feed, /getByteFrequencyData\(bins\)/, 'live waveform is measured from microphone input');
+  assert.match(feed, /silentOutput\.gain\.value = 0/, 'waveform analyser is silent and cannot feed microphone audio back to speakers');
   assert.match(feed, /h-10 w-10 shrink-0 items-center justify-center rounded-full/, 'record, pause, resume, and finish controls use compact icon buttons');
   assert.match(feed, /title=\{isVoiceRecordingPaused \?/, 'icon-only pause/resume controls retain accessible labels and tooltips');
   assert.match(feed, /Also add this recording to the global audio player/);
@@ -154,4 +157,22 @@ test('mobile audio and PDF controls remain within viewport and viewer content ca
   assert.match(pdf, /h-\[100dvh\]/);
   assert.match(pdf, /min-h-0 min-w-0/);
   assert.match(pdf, /w-full min-h-0 min-w-0 flex-1/);
+});
+
+
+test('feed recorder start is executable and not swallowed by a malformed comment', () => {
+  const feed = read('../src/components/student/FeedTab.tsx');
+  const startLine = feed.split(/\r?\n/).find(line => line.includes('recorder.start(250);')) || '';
+  assert.equal(startLine.trim(), 'recorder.start(250);', 'MediaRecorder.start must be a standalone executable statement');
+});
+
+test('feed voice controls use recorder lifecycle events and a live microphone waveform', () => {
+  const feed = read('../src/components/student/FeedTab.tsx');
+  assert.match(feed, /recorder\.onpause = \(\) => setIsVoiceRecordingPaused\(true\)/);
+  assert.match(feed, /recorder\.onresume = \(\) => setIsVoiceRecordingPaused\(false\)/);
+  assert.match(feed, /recorder\.stop\(\);[\s\S]{0,100}\n\s*\} catch/);
+  assert.match(feed, /getByteFrequencyData\(bins\)/);
+  assert.match(feed, /Live microphone waveform/);
+  assert.match(feed, /stopVoiceWaveform\(\)/);
+  assert.match(feed, /Also add this recording to the global audio player/);
 });
