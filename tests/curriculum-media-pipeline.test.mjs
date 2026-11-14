@@ -130,6 +130,11 @@ test('feed voice recording is microphone-captured and excluded from global audio
   assert.match(feed, /navigator\.mediaDevices\?\.getUserMedia/);
   assert.match(feed, /new MediaRecorder/);
   assert.match(feed, /includeInGlobalPlayer: false/);
+  assert.match(feed, /recorder\.pause\(\)/);
+  assert.match(feed, /recorder\.resume\(\)/);
+  assert.match(feed, /Pause recording/);
+  assert.match(feed, /Resume recording/);
+  assert.match(feed, /setIsVoiceRecordingPaused\(false\)/);
   assert.match(feed, /Also add this recording to the global audio player/);
   assert.match(feed, /globalAudioTitle\?\.trim\(\)/);
   assert.match(attachments, /include_in_global_player: Boolean\(attachment\.includeInGlobalPlayer/);
