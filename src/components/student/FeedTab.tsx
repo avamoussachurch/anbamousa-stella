@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
   ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
-  Image as ImageIcon, Video, Link2, Loader2, Play, Info, ExternalLink, AlertCircle, Check, Maximize2,
+  Image as ImageIcon, Video, Link2, Loader2, Play, Info, ExternalLink, AlertCircle, Check, Maximize2, Mic, Square,
   Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -40,6 +40,9 @@ const FEED_STORAGE_KEY = 'orthodox_church_feed_posts_v5';
 type ComposerAttachment = UploadedFeedAttachment & {
   localPreviewUrl?: string;
   isExternal?: boolean;
+  isVoiceRecording?: boolean;
+  includeInGlobalPlayer?: boolean;
+  globalAudioTitle?: string;
 };
 
 export function FeedTab({ lang }: { lang: Language }) {
@@ -168,6 +171,10 @@ export function FeedTab({ lang }: { lang: Language }) {
   const audioInputRef = useRef<HTMLInputElement>(null);
   const postDraftIdRef = useRef<string | null>(null);
   const composerAttachmentsRef = useRef<ComposerAttachment[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
   useEffect(() => {
     composerAttachmentsRef.current = composerAttachments;
@@ -177,6 +184,11 @@ export function FeedTab({ lang }: { lang: Language }) {
     composerAttachmentsRef.current.forEach(attachment => {
       if (attachment.localPreviewUrl) URL.revokeObjectURL(attachment.localPreviewUrl);
     });
+  }, []);
+
+  useEffect(() => () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop();
+    recordingStreamRef.current?.getTracks().forEach(track => track.stop());
   }, []);
 
   const isTeacher = workspace === 'teacher';
@@ -500,6 +512,82 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   };
 
+  const uploadVoiceRecording = async (file: File) => {
+    if (!userData) return;
+    if (!canAddFeedAttachments(composerAttachmentsRef.current.length, 1)) {
+      setMediaError(lang === 'ar' ? `تقدر ترفق ${MAX_FEED_ATTACHMENTS} ملفات بالكتير في المنشور الواحد.` : `You can attach up to ${MAX_FEED_ATTACHMENTS} files to one post.`);
+      return;
+    }
+    const localPreviewUrl = URL.createObjectURL(file);
+    const attachmentId = `voice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const pending: ComposerAttachment = {
+      id: attachmentId, mediaType: 'audio', mediaUrl: localPreviewUrl, localPreviewUrl,
+      originalFilename: file.name, mimeType: file.type, byteSize: file.size, file,
+      status: 'uploading', isVoiceRecording: true, includeInGlobalPlayer: false
+    };
+    setComposerAttachments(previous => [...previous, pending]);
+    setIsUploadingMedia(true);
+    setUploadStatusText(lang === 'ar' ? 'بنرفع التسجيل الصوتي...' : 'Uploading voice recording...');
+    try {
+      const result = await uploadFeedAttachmentFile(file, userData.id, uploadFeedMediaToSupabase);
+      setComposerAttachments(previous => previous.map(current => {
+        if (current.id !== attachmentId) return current;
+        if (result.error || !result.data) {
+          return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'فشل رفع التسجيل.' : 'Recording upload failed.') };
+        }
+        URL.revokeObjectURL(current.localPreviewUrl || '');
+        return { ...result.data, isVoiceRecording: true, includeInGlobalPlayer: false, globalAudioTitle: '', localPreviewUrl: undefined };
+      }));
+    } finally {
+      setIsUploadingMedia(false);
+      setUploadStatusText('');
+    }
+  };
+
+  const startVoiceRecording = async () => {
+    if (isRecordingVoice || isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setMediaError(lang === 'ar' ? 'تسجيل الصوت غير مدعوم في هذا المتصفح.' : 'Voice recording is not supported in this browser.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordingStreamRef.current = stream;
+      recordingChunksRef.current = [];
+      const mimeType = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
+        .find(type => MediaRecorder.isTypeSupported(type));
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = event => { if (event.data.size > 0) recordingChunksRef.current.push(event.data); };
+      recorder.onerror = () => setMediaError(lang === 'ar' ? 'حصلت مشكلة أثناء التسجيل.' : 'The recording encountered an error.');
+      recorder.onstop = () => {
+        stream.getTracks().forEach(track => track.stop());
+        recordingStreamRef.current = null;
+        setIsRecordingVoice(false);
+        const type = recorder.mimeType || 'audio/webm';
+        const blob = new Blob(recordingChunksRef.current, { type });
+        recordingChunksRef.current = [];
+        if (!blob.size) {
+          setMediaError(lang === 'ar' ? 'التسجيل فارغ. جرّب مرة تانية.' : 'The recording was empty. Please try again.');
+          return;
+        }
+        const extension = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+        void uploadVoiceRecording(new File([blob], `voice-recording-${Date.now()}.${extension}`, { type }));
+      };
+      recorder.start(1000);
+      setMediaError(null);
+      setIsRecordingVoice(true);
+    } catch (error) {
+      recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+      recordingStreamRef.current = null;
+      setMediaError(error instanceof Error ? error.message : (lang === 'ar' ? 'مش قادرين نفتح الميكروفون.' : 'Could not access the microphone.'));
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop();
+  };
+
   const retryComposerAttachment = async (id: string) => {
     const item = composerAttachments.find(attachment => attachment.id === id);
     if (!item?.file || !userData || isUploadingMedia) return;
@@ -600,6 +688,10 @@ export function FeedTab({ lang }: { lang: Language }) {
       setMediaError(lang === 'ar' ? 'استنى لحد ما الملفات تترفع، أو جرّب ترفع تاني الملفات اللي حصل فيها مشكلة.' : 'Finish or retry every attachment upload before publishing.');
       return;
     }
+    if (composerAttachments.some(attachment => attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim())) {
+      setMediaError(lang === 'ar' ? 'اكتب اسم التسجيل قبل إضافته للمشغل العام.' : 'Add a title before sending this recording to the global player.');
+      return;
+    }
     setActionError(null);
     const authorName = userData.fullName + (isTeacher ? ` (${lang === 'ar' ? 'خادم' : 'Servant'})` : '');
     const authorAvatar = userData.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + userData.fullName;
@@ -610,7 +702,9 @@ export function FeedTab({ lang }: { lang: Language }) {
       mediaProvider: attachment.mediaProvider,
       originalFilename: attachment.originalFilename,
       mimeType: attachment.mimeType,
-      byteSize: attachment.byteSize
+      byteSize: attachment.byteSize,
+      includeInGlobalPlayer: Boolean(attachment.isVoiceRecording && attachment.includeInGlobalPlayer),
+      globalAudioTitle: attachment.isVoiceRecording && attachment.includeInGlobalPlayer ? attachment.globalAudioTitle?.trim() : undefined
     }));
     const postPinned = isTeacher && isOfficialAnnouncement;
     const postId = postDraftIdRef.current || `post-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -946,6 +1040,16 @@ export function FeedTab({ lang }: { lang: Language }) {
 
                   <button
                     type="button"
+                    onClick={isRecordingVoice ? stopVoiceRecording : () => void startVoiceRecording()}
+                    disabled={isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all disabled:opacity-50 ${isRecordingVoice ? 'bg-rose-600 text-white border-rose-700' : 'bg-violet-50 hover:bg-violet-100 text-violet-800 border-violet-200'}`}
+                  >
+                    {isRecordingVoice ? <Square size={14} fill="currentColor" /> : <Mic size={15} />}
+                    <span>{isRecordingVoice ? (lang === 'ar' ? 'إيقاف التسجيل' : 'Stop recording') : (lang === 'ar' ? 'تسجيل صوتي' : 'Record voice')}</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setShowLinkInput(!showLinkInput)}
                     disabled={isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
                     className={`flex items-center gap-1.5 px-3.5 py-2 border rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -1025,7 +1129,25 @@ export function FeedTab({ lang }: { lang: Language }) {
                           </button>
                         </div>
                         {attachment.mediaType === 'audio' ? (
-                          <div className="p-3"><UniversalAudioPlayer src={attachment.mediaUrl} lang={lang === 'ar' ? 'ar' : 'en'} compact /></div>
+                          <>
+                            <div className="p-3"><UniversalAudioPlayer src={attachment.mediaUrl} lang={lang === 'ar' ? 'ar' : 'en'} compact /></div>
+                            {attachment.isVoiceRecording && (
+                              <div className="mx-3 mb-3 rounded-xl border border-violet-200 bg-violet-50 p-3 space-y-2">
+                                <label className="flex items-start gap-2 text-xs font-bold text-violet-900">
+                                  <input type="checkbox" checked={Boolean(attachment.includeInGlobalPlayer)}
+                                    onChange={event => setComposerAttachments(previous => previous.map(item => item.id === attachment.id ? { ...item, includeInGlobalPlayer: event.target.checked } : item))}
+                                    className="mt-0.5 accent-violet-700" />
+                                  <span>{lang === 'ar' ? 'أضف التسجيل للمشغل الصوتي العام' : 'Also add this recording to the global audio player'}</span>
+                                </label>
+                                {attachment.includeInGlobalPlayer && (
+                                  <input type="text" value={attachment.globalAudioTitle || ''}
+                                    onChange={event => setComposerAttachments(previous => previous.map(item => item.id === attachment.id ? { ...item, globalAudioTitle: event.target.value } : item))}
+                                    placeholder={lang === 'ar' ? 'اسم التسجيل الذي سيظهر في المشغل' : 'Title shown in the global player'}
+                                    className="w-full min-w-0 rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs text-stone-800" maxLength={100} />
+                                )}
+                              </div>
+                            )}
+                          </>
                         ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
                           <iframe src={attachment.mediaUrl} title="Media preview" className="aspect-video w-full bg-black" allowFullScreen />
                         ) : attachment.mediaType === 'video' ? (
@@ -1073,7 +1195,7 @@ export function FeedTab({ lang }: { lang: Language }) {
 
               <button 
                 onClick={handleCreatePost} 
-                disabled={(!newPostText.trim() && composerAttachments.length === 0) || isUploadingMedia || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready')}
+                disabled={(!newPostText.trim() && composerAttachments.length === 0) || isUploadingMedia || isRecordingVoice || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready' || (attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim()))}
                 className={`w-full font-bold py-3.5 rounded-xl transition-colors shadow-md text-sm cursor-pointer flex items-center justify-center gap-2 ${
                   (newPostText.trim() || composerAttachments.length > 0) && !isUploadingMedia && !isCreatingPost && composerAttachments.every(attachment => attachment.status === 'ready')
                     ? 'bg-[var(--mousa-teal-deep)] text-[var(--mousa-gold)] hover:bg-blue-900'
