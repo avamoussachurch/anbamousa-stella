@@ -197,7 +197,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
               <iframe
                 src={embedUrl!}
                 title={documentTitle}
-                className="w-full h-full min-h-0 min-w-0 flex-1 border-0 bg-white"
+                className="w-full min-h-0 min-w-0 flex-1 border-0 bg-white"
                 allow="autoplay"
               />
               <div className="p-2.5 bg-stone-950 border-t border-stone-800 text-center text-xs text-stone-400">
