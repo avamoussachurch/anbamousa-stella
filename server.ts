@@ -9,7 +9,7 @@ import { isValidSundaySchoolGrade, parseHymnsTaxisLevel } from "./src/lib/hymnsT
 import { createStorageReference, parseStorageReference } from "./src/lib/mediaStorageReference";
 import { hymnFromDatabase, hymnToDatabase, taxisFromDatabase, taxisToDatabase } from "./src/lib/hymnsTaxisPersistence";
 import { canEditOwnedTaxisItem, canManageHymnsTaxis, canPublishOwnedTaxisItem, canReadHymnsTaxis, canReviewTaxisItem } from "./src/lib/hymnsTaxisAuthorization";
-import { randomUUID } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { findCanonicalGrade, findClassGroupForGrade } from "./src/lib/classGroups";
 import { mergeStudentLessonProgress } from "./src/lib/teacherProgressSummary";
 
@@ -12363,6 +12363,94 @@ app.get("/api/church/parent/children", async (req, res) => {
   }
 });
 
+async function issueStudentFamilyCode(studentId: string, rotate = false): Promise<string> {
+  const client = getTrustedProgressClient();
+  if (!rotate) {
+    const { data, error } = await client
+      .from('student_family_link_codes')
+      .select('code')
+      .eq('student_id', studentId)
+      .maybeSingle();
+    if (error) throw new Error(`Could not load student family code: ${error.message}`);
+    if (data?.code) return data.code;
+  }
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    // 10 URL-safe random characters (~59 bits of entropy), not derived from a user ID.
+    const suffix = randomBytes(16).toString('base64url')
+      .replace(/[^A-Z0-9]/gi, '')
+      .toUpperCase()
+      .slice(0, 10);
+    if (suffix.length !== 10) continue;
+    const code = `ST-${suffix}`;
+
+    if (rotate) {
+      const { data: updated, error: updateError } = await client
+        .from('student_family_link_codes')
+        .update({ code, updated_at: new Date().toISOString() })
+        .eq('student_id', studentId)
+        .select('code')
+        .maybeSingle();
+      if (!updateError && updated?.code) return updated.code;
+      if (updateError && updateError.code !== '23505') {
+        throw new Error(`Could not rotate student family code: ${updateError.message}`);
+      }
+    }
+
+    const { error: insertError } = await client
+      .from('student_family_link_codes')
+      .insert({ student_id: studentId, code });
+    if (!insertError) return code;
+    if (insertError.code !== '23505') {
+      throw new Error(`Could not create student family code: ${insertError.message}`);
+    }
+
+    // Concurrent first-time requests may have created the code already.
+    if (!rotate) {
+      const { data: existing, error: readError } = await client
+        .from('student_family_link_codes')
+        .select('code')
+        .eq('student_id', studentId)
+        .maybeSingle();
+      if (readError) throw new Error(`Could not reload student family code: ${readError.message}`);
+      if (existing?.code) return existing.code;
+    }
+  }
+  throw new Error('Could not allocate a unique family connection code. Please try again.');
+}
+
+app.get("/api/church/student/family-code", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to view your family code." });
+    }
+    if (!hasServerRole(authContext, 'student')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only student accounts have family connection codes." });
+    }
+    const code = await issueStudentFamilyCode(authContext.userId);
+    return res.json({ success: true, code });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Could not load family connection code." });
+  }
+});
+
+app.post("/api/church/student/family-code/rotate", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to rotate your family code." });
+    }
+    if (!hasServerRole(authContext, 'student')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Only student accounts can rotate family connection codes." });
+    }
+    const code = await issueStudentFamilyCode(authContext.userId, true);
+    return res.json({ success: true, code });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || "Could not rotate family connection code." });
+  }
+});
+
 app.post("/api/church/parent/connect-child", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
@@ -12376,23 +12464,21 @@ app.post("/api/church/parent/connect-child", async (req, res) => {
     const childCode = typeof req.body?.childCode === 'string'
       ? req.body.childCode.trim().toUpperCase()
       : '';
-    if (!/^[A-Z0-9-]{4,64}$/.test(childCode)) {
-      return res.status(400).json({ success: false, error: "INVALID_CHILD_CODE", message: "Enter a valid child connection code." });
+    if (!/^ST-[A-Z0-9]{10}$/.test(childCode)) {
+      return res.status(400).json({ success: false, error: "INVALID_CHILD_CODE", message: "Enter a valid student family code." });
     }
 
     const client = getTrustedProgressClient();
-    const { data: codeMatches, error: codeError } = await client
-      .from('user_relationships')
-      .select('child_id')
-      .eq('child_code', childCode)
-      .in('relationship_type', ['parent_child', 'guardian_student']);
-    if (codeError) throw new Error(`Could not verify child connection code: ${codeError.message}`);
-
-    const childIds = Array.from(new Set((codeMatches || []).map((row: any) => row.child_id).filter(Boolean)));
-    if (childIds.length !== 1) {
+    const { data: codeRecord, error: codeError } = await client
+      .from('student_family_link_codes')
+      .select('student_id')
+      .eq('code', childCode)
+      .maybeSingle();
+    if (codeError) throw new Error(`Could not verify student family code: ${codeError.message}`);
+    if (!codeRecord?.student_id) {
       return res.status(404).json({ success: false, error: "CHILD_CODE_NOT_FOUND", message: "This code could not be verified. Check it and try again." });
     }
-    const childId = childIds[0];
+    const childId = codeRecord.student_id;
     if (childId === authContext.userId) {
       return res.status(400).json({ success: false, error: "INVALID_CHILD", message: "A parent account cannot be linked as its own child." });
     }
