@@ -91,12 +91,16 @@ test('PDF viewer uses the browser PDF renderer and provides a direct open fallba
   assert.match(taxisStudent, /InAppDocumentViewer/);
 });
 
-test('shared audio player provides seek, speed presets, fine speed, and playback errors', () => {
+test('shared audio player provides seek, compact speed presets, and playback errors', () => {
   assert.match(universalAudio, /type="range"/);
   assert.match(universalAudio, /SPEED_PRESETS/);
-  assert.ok(universalAudio.includes('min={0.5}'), 'fine speed slider has a 0.5x minimum');
-  assert.ok(universalAudio.includes('max={2}'), 'fine speed slider has a 2x maximum');
-  assert.ok(universalAudio.includes('step={0.05}'), 'fine speed slider supports precise increments');
+  assert.match(universalAudio, /grid grid-cols-4 sm:flex/);
+  assert.match(universalAudio, /aria-pressed=\{speed === rate\}/);
+  assert.match(hymnStudent, /grid grid-cols-4 sm:flex/);
+  assert.match(hymnStudent, /aria-pressed=\{playbackSpeed === sp\}/);
+  assert.match(hymnStudio, /grid grid-cols-3 sm:flex/);
+  assert.match(hymnStudio, /aria-pressed=\{playbackSpeed === sp\}/);
+  assert.doesNotMatch(hymnStudent, /Fine speed/);
   assert.ok(universalAudio.includes("aria-label={isAr ? 'مستوى الصوت' : 'Volume'}"), 'volume control remains available');
   assert.match(universalAudio, /setMuted\(value => !value\)/);
   assert.match(universalAudio, /audioRef\.current\.playbackRate = next/);
@@ -108,4 +112,40 @@ test('feed audio uses the shared player rather than browser-default controls', (
   const feed = read('../src/components/student/FeedTab.tsx');
   assert.match(feed, /UniversalAudioPlayer/);
   assert.doesNotMatch(feed, /<audio src={attachment\.mediaUrl} controls/);
+});
+
+
+test('global music player resolves private curriculum audio references before playback and includes only opted-in feed tracks', () => {
+  const globalPlayer = read('../src/components/layout/GlobalMusicPlayer.tsx');
+  const feedService = read('../src/lib/feedService.ts');
+  assert.match(globalPlayer, /resolveCurriculumMediaUrl\(hymn\.audioUrl\)/);
+  assert.match(globalPlayer, /playTrack\(hymn\.resolvedAudioUrl\)/);
+  assert.match(globalPlayer, /fetchGlobalFeedAudioTracks/);
+  assert.match(feedService, /include_in_global_player', true/);
+});
+
+test('feed voice recording is microphone-captured and excluded from global audio unless explicitly opted in with a title', () => {
+  const feed = read('../src/components/student/FeedTab.tsx');
+  const attachments = read('../src/lib/feedAttachments.ts');
+  assert.match(feed, /navigator\.mediaDevices\?\.getUserMedia/);
+  assert.match(feed, /new MediaRecorder/);
+  assert.match(feed, /includeInGlobalPlayer: false/);
+  assert.match(feed, /recorder\.pause\(\)/);
+  assert.match(feed, /recorder\.resume\(\)/);
+  assert.match(feed, /Pause recording/);
+  assert.match(feed, /Resume recording/);
+  assert.match(feed, /setIsVoiceRecordingPaused\(false\)/);
+  assert.match(feed, /Also add this recording to the global audio player/);
+  assert.match(feed, /globalAudioTitle\?\.trim\(\)/);
+  assert.match(attachments, /include_in_global_player: Boolean\(attachment\.includeInGlobalPlayer/);
+});
+
+test('mobile audio and PDF controls remain within viewport and viewer content can scroll', () => {
+  const audio = read('../src/components/design-system/UniversalAudioPlayer.tsx');
+  const pdf = read('../src/components/sunday-school/viewers/InAppDocumentViewer.tsx');
+  assert.match(audio, /grid grid-cols-4 sm:flex/);
+  assert.match(audio, /min-w-0 overflow-hidden/);
+  assert.match(pdf, /h-\[100dvh\]/);
+  assert.match(pdf, /min-h-0 min-w-0/);
+  assert.match(pdf, /w-full min-h-0 min-w-0 flex-1/);
 });

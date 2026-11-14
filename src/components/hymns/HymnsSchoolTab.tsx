@@ -18,7 +18,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { COPTIC_HYMNS_COLLECTION, CopticHymnItem, HymnLyricLine } from '../../data/hymnsData';
+import { CopticHymnItem, HymnLyricLine } from '../../data/hymnsData';
 import { useAuth } from '../../context/AuthContext';
 import { awardPoints } from '../../lib/pointsService';
 import { Language } from '../../types';
@@ -37,9 +37,10 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isTeacherOrAdmin = workspace === 'teacher' || workspace === 'admin';
 
   // Live Hymns & Enrollment State
-  const [hymnsList, setHymnsList] = useState<CopticHymnItem[]>(COPTIC_HYMNS_COLLECTION);
+  const [hymnsList, setHymnsList] = useState<CopticHymnItem[]>([]);
+  const [isHymnsLoading, setIsHymnsLoading] = useState(true);
   const [hymnsLoadError, setHymnsLoadError] = useState<string | null>(null);
-  const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem>(COPTIC_HYMNS_COLLECTION[0]);
+  const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem | null>(null);
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
   const [resolvedSheetMusicUrl, setResolvedSheetMusicUrl] = useState('');
   const [audioUrlError, setAudioUrlError] = useState<string | null>(null);
@@ -78,22 +79,33 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     let isMounted = true;
     if (!isTeacherOrAdmin && assignedLevel === null) {
       setHymnsList([]);
+      setSelectedHymn(null);
+      setIsHymnsLoading(false);
       setHymnsLoadError(null);
       return () => { isMounted = false; };
     }
     const reqLevel = isTeacherOrAdmin && levelFilter !== 'all' ? levelFilter : undefined;
+    setIsHymnsLoading(true);
     setHymnsLoadError(null);
     getHymns(reqLevel, seasonFilter, undefined, userData ? { roles: userData.roles, hymnsTaxisLevel: userData.hymnsTaxisLevel } : undefined).then(res => {
       if (!isMounted) return;
       if (res.success && res.items) {
         setHymnsList(res.items);
-        if (!res.items.some(h => h.id === selectedHymn.id)) {
-          if (res.items[0]) setSelectedHymn(res.items[0]);
-        }
+        // Always select the matching record returned by the server, not a local demo object.
+        const serverSelection = res.items.find(h => h.id === selectedHymn?.id) || res.items[0];
+        setSelectedHymn(serverSelection || null);
       } else {
         setHymnsList([]);
+        setSelectedHymn(null);
         setHymnsLoadError(res.error || (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
       }
+      setIsHymnsLoading(false);
+    }).catch(error => {
+      if (!isMounted) return;
+      setHymnsList([]);
+      setSelectedHymn(null);
+      setHymnsLoadError(error instanceof Error ? error.message : (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
+      setIsHymnsLoading(false);
     });
 
     return () => { isMounted = false; };
@@ -172,7 +184,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     const cur = audioRef.current.currentTime;
     setCurrentTime(cur);
 
-    const lines = selectedHymn.lines;
+    const lines = selectedHymn?.lines || [];
     if (lines && lines.length > 0) {
       for (let i = lines.length - 1; i >= 0; i--) {
         if (cur >= (lines[i].startTimeSec || 0)) {
@@ -415,8 +427,16 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           </div>
 
           <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-            {filteredHymns.map((hymn) => {
-              const isSelected = hymn.id === selectedHymn.id;
+            {isHymnsLoading ? (
+              <div role="status" aria-live="polite" className="rounded-2xl border border-[var(--mousa-border-sand)] bg-white/70 dark:bg-slate-900/60 p-5 text-center text-sm font-semibold text-stone-500 dark:text-stone-300">
+                {isAr ? 'بنحمّل الألحان...' : 'Loading hymns...'}
+              </div>
+            ) : filteredHymns.length === 0 ? (
+              <div className="rounded-2xl border border-[var(--mousa-border-sand)] bg-white/70 dark:bg-slate-900/60 p-5 text-center text-sm font-semibold text-stone-500 dark:text-stone-300">
+                {isAr ? 'مفيش ألحان متاحة للمستوى أو المناسبة دي دلوقتي.' : 'No hymns are available for this level or season yet.'}
+              </div>
+            ) : filteredHymns.map((hymn) => {
+              const isSelected = hymn.id === selectedHymn?.id;
               const isMastered = Boolean(masteredHymns[hymn.id]);
 
               return (
@@ -453,7 +473,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         </div>
 
         {/* Right Column: In-Depth Hymn Player & Synced Karaoke Lyrics */}
-        {filteredHymns.some(hymn => hymn.id === selectedHymn.id) && <div className="lg:col-span-2 space-y-6">
+        {selectedHymn && filteredHymns.some(hymn => hymn.id === selectedHymn.id) && <div className="lg:col-span-2 space-y-6">
           {/* Active Hymn Hero Card */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-[var(--mousa-border-sand)] space-y-5 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
@@ -563,37 +583,26 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                   </div>
                 </div>
 
-                {/* Speed Toggle */}
-                <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] text-stone-500 font-bold">{isAr ? 'سرعة اللحن:' : 'Speed:'}</span>
-                  {[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2].map(sp => (
-                    <button
-                      key={sp}
-                      type="button"
-                      onClick={() => setPlaybackSpeed(sp)}
-                      className={`px-2.5 py-1 rounded-xl text-xs font-black transition-colors cursor-pointer ${
-                        playbackSpeed === sp
-                          ? 'bg-amber-500 text-white shadow-2xs'
-                          : 'bg-white dark:bg-stone-700 text-stone-700 dark:text-stone-300'
-                      }`}
-                    >
-                      {sp}x
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 w-full">
-                  <span className="text-[11px] font-bold text-stone-500">{isAr ? 'ضبط السرعة' : 'Fine speed'}</span>
-                  <input
-                    type="range"
-                    min={0.5}
-                    max={2}
-                    step={0.05}
-                    value={playbackSpeed}
-                    onChange={event => setPlaybackSpeed(Number(event.target.value))}
-                    aria-label={isAr ? 'ضبط سرعة اللحن' : 'Fine playback speed'}
-                    className="w-full accent-amber-500"
-                  />
-                  <span className="text-xs font-mono font-bold text-stone-700 dark:text-stone-200 w-12 text-end">{playbackSpeed.toFixed(2)}x</span>
+                {/* Compact speed presets: two rows on phones, one row on wider screens. */}
+                <div className="w-full min-w-0 sm:w-auto space-y-1">
+                  <span className="block text-[11px] text-stone-500 font-bold">{isAr ? 'سرعة اللحن:' : 'Speed:'}</span>
+                  <div className="grid grid-cols-4 sm:flex gap-1.5" role="group" aria-label={isAr ? 'سرعة تشغيل اللحن' : 'Hymn playback speed'}>
+                    {[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2].map(sp => (
+                      <button
+                        key={sp}
+                        type="button"
+                        onClick={() => setPlaybackSpeed(sp)}
+                        aria-pressed={playbackSpeed === sp}
+                        className={`min-w-0 px-2 py-2 rounded-xl text-[11px] font-black transition-colors cursor-pointer ${
+                          playbackSpeed === sp
+                            ? 'bg-amber-500 text-white shadow-2xs'
+                            : 'bg-white dark:bg-stone-700 text-stone-700 dark:text-stone-300'
+                        }`}
+                      >
+                        {sp}x
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

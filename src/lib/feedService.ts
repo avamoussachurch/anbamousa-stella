@@ -11,6 +11,37 @@ export interface ExtendedPost extends Post {
   isAnnouncement?: boolean;
 }
 
+export interface GlobalFeedAudioTrack {
+  id: string;
+  title: string;
+  mediaUrl: string;
+  createdAt: string;
+}
+
+export async function fetchGlobalFeedAudioTracks(): Promise<{ data: GlobalFeedAudioTrack[]; error: Error | null }> {
+  if (!supabase) return { data: [], error: new Error('Supabase client not initialized') };
+  try {
+    const { data, error } = await supabase
+      .from('feed_post_attachments')
+      .select('id, storage_bucket, object_path, external_url, global_audio_title, created_at')
+      .eq('media_type', 'audio')
+      .eq('include_in_global_player', true)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) return { data: [], error: new Error(error.message) };
+    const tracks = (data || []).flatMap(row => {
+      const mediaUrl = row.storage_bucket && row.object_path
+        ? supabase!.storage.from(row.storage_bucket).getPublicUrl(row.object_path).data.publicUrl
+        : row.external_url || '';
+      const title = typeof row.global_audio_title === 'string' ? row.global_audio_title.trim() : '';
+      return mediaUrl && title ? [{ id: row.id, title, mediaUrl, createdAt: row.created_at }] : [];
+    });
+    return { data: tracks, error: null };
+  } catch (error) {
+    return { data: [], error: error instanceof Error ? error : new Error(String(error)) };
+  }
+}
+
 export interface FeedReactionCounts {
   heart: number;
   candle: number;

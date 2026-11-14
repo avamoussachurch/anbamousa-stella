@@ -767,6 +767,8 @@ export interface FeedAttachment {
   mediaProvider?: string;
   originalFilename?: string;
   byteSize?: number;
+  includeInGlobalPlayer?: boolean;
+  globalAudioTitle?: string;
 }
 
 export interface RewardItem {

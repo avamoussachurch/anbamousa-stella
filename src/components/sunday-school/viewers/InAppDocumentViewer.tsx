@@ -82,17 +82,17 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md transition-all`}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md transition-all`}
       dir="rtl"
     >
       <div
-        className={`bg-stone-900 border border-stone-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-all ${
-          isFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-5xl h-[88vh]'
+        className={`bg-stone-900 border border-stone-800 overflow-hidden shadow-2xl flex min-h-0 min-w-0 flex-col transition-all ${
+          isFullscreen ? 'w-full h-[100dvh] min-h-0 rounded-none' : 'w-full max-w-5xl h-[100dvh] sm:h-[88vh] min-h-0 rounded-none sm:rounded-3xl'
         }`}
       >
         {/* Top Header Bar */}
-        <div className="bg-stone-950 px-5 py-3.5 border-b border-stone-800 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
+        <div className="bg-stone-950 px-3 sm:px-5 py-3.5 border-b border-stone-800 flex items-center justify-between gap-3 flex-wrap min-w-0">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
               <Presentation className="w-5 h-5" />
             </div>
@@ -119,7 +119,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
             {/* If we have both structured slides and URL, let user toggle */}
             {hasStructuredSlides && embedUrl && (
               <div className="flex bg-stone-900 rounded-xl border border-stone-800 p-0.5 text-xs">
@@ -190,14 +190,14 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 bg-stone-950 relative overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 min-w-0 bg-stone-950 relative overflow-hidden flex flex-col">
           {/* Mode 1: Embedded In-App Iframe for Documents */}
           {(viewMode === 'embed' || (!hasStructuredSlides && embedUrl)) ? (
-            <div className="w-full h-full relative bg-stone-900 flex flex-col">
+            <div className="w-full h-full min-h-0 min-w-0 relative bg-stone-900 flex flex-col overflow-hidden">
               <iframe
                 src={embedUrl!}
                 title={documentTitle}
-                className="w-full flex-1 border-0 rounded-b-2xl bg-white"
+                className="w-full min-h-0 min-w-0 flex-1 border-0 bg-white"
                 allow="autoplay"
               />
               <div className="p-2.5 bg-stone-950 border-t border-stone-800 text-center text-xs text-stone-400">
@@ -268,7 +268,7 @@ export const InAppDocumentViewer: React.FC<InAppDocumentViewerProps> = ({
 
         {/* Bottom Navigation Toolbar (for slides) */}
         {hasStructuredSlides && viewMode === 'slides' && (
-          <div className="bg-stone-950 px-6 py-3.5 border-t border-stone-800 flex items-center justify-between gap-4">
+          <div className="bg-stone-950 px-3 sm:px-6 py-3.5 border-t border-stone-800 flex items-center justify-between gap-2 sm:gap-4">
             <button
               onClick={handlePrev}
               disabled={currentSlideIndex === 0}

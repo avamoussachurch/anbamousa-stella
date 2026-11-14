@@ -25,6 +25,8 @@ export interface UploadedFeedAttachment {
   originalFilename?: string;
   mimeType?: string;
   byteSize?: number;
+  includeInGlobalPlayer?: boolean;
+  globalAudioTitle?: string;
   file?: File;
   status: 'uploading' | 'ready' | 'error';
   error?: string;
@@ -32,7 +34,7 @@ export interface UploadedFeedAttachment {
 
 export type FeedPostAttachmentInput = Pick<
   UploadedFeedAttachment,
-  'mediaType' | 'mediaUrl' | 'storageReference' | 'mediaThumbnail' | 'mediaProvider' | 'originalFilename' | 'mimeType' | 'byteSize'
+  'mediaType' | 'mediaUrl' | 'storageReference' | 'mediaThumbnail' | 'mediaProvider' | 'originalFilename' | 'mimeType' | 'byteSize' | 'includeInGlobalPlayer' | 'globalAudioTitle'
 >;
 
 export interface FeedPostAttachmentInsertRow {
@@ -48,6 +50,8 @@ export interface FeedPostAttachmentInsertRow {
   original_filename: string | null;
   mime_type: string | null;
   byte_size: number | null;
+  include_in_global_player: boolean;
+  global_audio_title: string | null;
 }
 
 export function canAddFeedAttachments(currentCount: number, incomingCount: number): boolean {
@@ -75,7 +79,9 @@ export function buildFeedPostAttachmentRows(
       media_provider: attachment.mediaProvider || null,
       original_filename: attachment.originalFilename || null,
       mime_type: attachment.mimeType || null,
-      byte_size: attachment.byteSize ?? null
+      byte_size: attachment.byteSize ?? null,
+      include_in_global_player: Boolean(attachment.includeInGlobalPlayer && attachment.mediaType === 'audio'),
+      global_audio_title: attachment.includeInGlobalPlayer && attachment.mediaType === 'audio' ? (attachment.globalAudioTitle?.trim() || null) : null
     };
   });
 }
