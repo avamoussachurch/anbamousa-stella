@@ -40,7 +40,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const [hymnsList, setHymnsList] = useState<CopticHymnItem[]>([]);
   const [isHymnsLoading, setIsHymnsLoading] = useState(true);
   const [hymnsLoadError, setHymnsLoadError] = useState<string | null>(null);
-  const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem>(COPTIC_HYMNS_COLLECTION[0]);
+  const [selectedHymn, setSelectedHymn] = useState<CopticHymnItem | null>(null);
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
   const [resolvedSheetMusicUrl, setResolvedSheetMusicUrl] = useState('');
   const [audioUrlError, setAudioUrlError] = useState<string | null>(null);
@@ -79,6 +79,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     let isMounted = true;
     if (!isTeacherOrAdmin && assignedLevel === null) {
       setHymnsList([]);
+      setSelectedHymn(null);
       setIsHymnsLoading(false);
       setHymnsLoadError(null);
       return () => { isMounted = false; };
@@ -91,10 +92,11 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       if (res.success && res.items) {
         setHymnsList(res.items);
         // Always select the matching record returned by the server, not a local demo object.
-        const serverSelection = res.items.find(h => h.id === selectedHymn.id) || res.items[0];
-        if (serverSelection) setSelectedHymn(serverSelection);
+        const serverSelection = res.items.find(h => h.id === selectedHymn?.id) || res.items[0];
+        setSelectedHymn(serverSelection || null);
       } else {
         setHymnsList([]);
+        setSelectedHymn(null);
         setHymnsLoadError(res.error || (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
       }
       setIsHymnsLoading(false);
@@ -176,7 +178,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     const cur = audioRef.current.currentTime;
     setCurrentTime(cur);
 
-    const lines = selectedHymn.lines;
+    const lines = selectedHymn?.lines || [];
     if (lines && lines.length > 0) {
       for (let i = lines.length - 1; i >= 0; i--) {
         if (cur >= (lines[i].startTimeSec || 0)) {
@@ -428,7 +430,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 {isAr ? 'مفيش ألحان متاحة للمستوى أو المناسبة دي دلوقتي.' : 'No hymns are available for this level or season yet.'}
               </div>
             ) : filteredHymns.map((hymn) => {
-              const isSelected = hymn.id === selectedHymn.id;
+              const isSelected = hymn.id === selectedHymn?.id;
               const isMastered = Boolean(masteredHymns[hymn.id]);
 
               return (
@@ -465,7 +467,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         </div>
 
         {/* Right Column: In-Depth Hymn Player & Synced Karaoke Lyrics */}
-        {filteredHymns.some(hymn => hymn.id === selectedHymn.id) && <div className="lg:col-span-2 space-y-6">
+        {selectedHymn && filteredHymns.some(hymn => hymn.id === selectedHymn.id) && <div className="lg:col-span-2 space-y-6">
           {/* Active Hymn Hero Card */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-[var(--mousa-border-sand)] space-y-5 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
