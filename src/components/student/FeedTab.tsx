@@ -1053,7 +1053,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                   <button
                     type="button"
                     onClick={isRecordingVoice ? stopVoiceRecording : () => void startVoiceRecording()}
-                    disabled={isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
+                    disabled={!userData || isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS}
                     className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all disabled:opacity-50 ${isRecordingVoice ? 'bg-rose-600 text-white border-rose-700' : 'bg-violet-50 hover:bg-violet-100 text-violet-800 border-violet-200'}`}
                   >
                     {isRecordingVoice ? <Square size={14} fill="currentColor" /> : <Mic size={15} />}
