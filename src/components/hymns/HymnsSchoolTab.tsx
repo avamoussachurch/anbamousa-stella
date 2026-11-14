@@ -583,37 +583,26 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                   </div>
                 </div>
 
-                {/* Speed Toggle */}
-                <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] text-stone-500 font-bold">{isAr ? 'سرعة اللحن:' : 'Speed:'}</span>
-                  {[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2].map(sp => (
-                    <button
-                      key={sp}
-                      type="button"
-                      onClick={() => setPlaybackSpeed(sp)}
-                      className={`px-2.5 py-1 rounded-xl text-xs font-black transition-colors cursor-pointer ${
-                        playbackSpeed === sp
-                          ? 'bg-amber-500 text-white shadow-2xs'
-                          : 'bg-white dark:bg-stone-700 text-stone-700 dark:text-stone-300'
-                      }`}
-                    >
-                      {sp}x
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 w-full">
-                  <span className="text-[11px] font-bold text-stone-500">{isAr ? 'ضبط السرعة' : 'Fine speed'}</span>
-                  <input
-                    type="range"
-                    min={0.5}
-                    max={2}
-                    step={0.05}
-                    value={playbackSpeed}
-                    onChange={event => setPlaybackSpeed(Number(event.target.value))}
-                    aria-label={isAr ? 'ضبط سرعة اللحن' : 'Fine playback speed'}
-                    className="w-full accent-amber-500"
-                  />
-                  <span className="text-xs font-mono font-bold text-stone-700 dark:text-stone-200 w-12 text-end">{playbackSpeed.toFixed(2)}x</span>
+                {/* Compact speed presets: two rows on phones, one row on wider screens. */}
+                <div className="w-full min-w-0 sm:w-auto space-y-1">
+                  <span className="block text-[11px] text-stone-500 font-bold">{isAr ? 'سرعة اللحن:' : 'Speed:'}</span>
+                  <div className="grid grid-cols-4 sm:flex gap-1.5" role="group" aria-label={isAr ? 'سرعة تشغيل اللحن' : 'Hymn playback speed'}>
+                    {[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2].map(sp => (
+                      <button
+                        key={sp}
+                        type="button"
+                        onClick={() => setPlaybackSpeed(sp)}
+                        aria-pressed={playbackSpeed === sp}
+                        className={`min-w-0 px-2 py-2 rounded-xl text-[11px] font-black transition-colors cursor-pointer ${
+                          playbackSpeed === sp
+                            ? 'bg-amber-500 text-white shadow-2xs'
+                            : 'bg-white dark:bg-stone-700 text-stone-700 dark:text-stone-300'
+                        }`}
+                      >
+                        {sp}x
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
