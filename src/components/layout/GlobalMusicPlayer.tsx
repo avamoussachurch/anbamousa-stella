@@ -6,6 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 import { getHymns } from '../../lib/hymnsService';
 import type { CopticHymnItem } from '../../data/hymnsData';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
+import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
+import { fetchGlobalFeedAudioTracks, GlobalFeedAudioTrack } from '../../lib/feedService';
 
 export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const { currentTrackUrl, isPlaying, volume, playTrack, togglePlay, setVolume } = useGlobalAudio();
@@ -13,7 +15,8 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const workspace = useActiveWorkspace();
   const [isOpen, setIsOpen] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
-  const [hymns, setHymns] = useState<CopticHymnItem[]>([]);
+  const [hymns, setHymns] = useState<Array<CopticHymnItem & { resolvedAudioUrl: string }>>([]);
+  const [feedTracks, setFeedTracks] = useState<GlobalFeedAudioTrack[]>([]);
   const [isLoadingHymns, setIsLoadingHymns] = useState(false);
   const [hymnsError, setHymnsError] = useState<string | null>(null);
   const hymnRequestId = useRef(0);
@@ -30,17 +33,34 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
             ? { roles: userData.roles.filter(role => role === 'teacher' || role === 'admin'), hymnsTaxisLevel: userData.hymnsTaxisLevel }
             : undefined
         : undefined;
-      const result = await getHymns(undefined, undefined, userData && !isGuest ? 'published' : undefined, viewer);
+      const [result, feedResult] = await Promise.all([
+        getHymns(undefined, undefined, userData && !isGuest ? 'published' : undefined, viewer),
+        fetchGlobalFeedAudioTracks()
+      ]);
       if (requestId !== hymnRequestId.current) return;
       if (!result.success) {
         setHymnsError(result.error || (lang === 'ar' ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Unable to load hymns.'));
         setHymns([]);
-        return;
+      } else {
+        const publishedWithAudio = result.items.filter(hymn =>
+          Boolean(hymn.audioUrl?.trim()) &&
+          (hymn.status === 'published' || ((!userData || isGuest) && hymn.status == null))
+        );
+        const resolved = await Promise.all(publishedWithAudio.map(async hymn => {
+          try {
+            const resolvedAudioUrl = await resolveCurriculumMediaUrl(hymn.audioUrl);
+            return resolvedAudioUrl ? { ...hymn, resolvedAudioUrl } : null;
+          } catch (error) {
+            console.warn('Could not resolve global Hymn audio:', hymn.id, error);
+            return null;
+          }
+        }));
+        if (requestId !== hymnRequestId.current) return;
+        setHymns(resolved.filter((hymn): hymn is CopticHymnItem & { resolvedAudioUrl: string } => Boolean(hymn)));
+        setHymnsError(null);
       }
-      setHymns(result.items.filter(hymn =>
-        Boolean(hymn.audioUrl?.trim()) &&
-        (hymn.status === 'published' || ((!userData || isGuest) && hymn.status == null))
-      ));
+      if (feedResult.error) console.warn('Could not load opted-in feed audio tracks:', feedResult.error.message);
+      setFeedTracks(feedResult.data || []);
     } catch {
       if (requestId !== hymnRequestId.current) return;
       setHymnsError(lang === 'ar' ? 'مش قادرين نحمّل الألحان دلوقتي. حاول مرة أخرى.' : 'Unable to load hymns. Please try again.');
@@ -67,7 +87,10 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
     };
   }, [isOpen, refreshHymns]);
 
-  const currentHymn = hymns.find(h => h.audioUrl === currentTrackUrl);
+  const currentHymn = hymns.find(h => h.resolvedAudioUrl === currentTrackUrl);
+  const currentFeedTrack = feedTracks.find(track => track.mediaUrl === currentTrackUrl);
+  const currentTrackTitle = currentHymn ? (lang === 'ar' ? currentHymn.titleAr : currentHymn.titleEn) : currentFeedTrack?.title;
+  const currentTrackSubtitle = currentHymn ? currentHymn.titleCoptic : (currentFeedTrack ? (lang === 'ar' ? 'تسجيل من المجتمع' : 'Community recording') : '');
 
   return (
     <div className={`fixed bottom-24 z-40 flex flex-col ${lang === 'ar' ? 'left-4 items-start' : 'right-4 items-end'}`}>
@@ -114,9 +137,9 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
                 <button
                   type="button"
                   key={hymn.id}
-                  onClick={() => playTrack(hymn.audioUrl)}
+                  onClick={() => playTrack(hymn.resolvedAudioUrl)}
                   className={`w-full text-left p-3 rounded-xl flex justify-between items-center transition-colors ${
-                    currentTrackUrl === hymn.audioUrl
+                    currentTrackUrl === hymn.resolvedAudioUrl
                       ? 'bg-[var(--color-church-cream)] border border-[var(--color-church-gold)]/50'
                       : 'hover:bg-gray-50 border border-transparent'
                   }`}
@@ -136,6 +159,17 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
               ))}
             </div>
 
+            {feedTracks.length > 0 && (
+              <div className="mt-3 border-t border-gray-100 pt-3 space-y-2">
+                <p className="px-1 text-[11px] font-black uppercase tracking-wide text-gray-500">{lang === 'ar' ? 'تسجيلات المجتمع المضافة للمشغل' : 'Community recordings added to player'}</p>
+                {feedTracks.map(track => (
+                  <button key={track.id} type="button" onClick={() => playTrack(track.mediaUrl)} className={`w-full min-w-0 rounded-xl border p-3 text-left flex items-center justify-between gap-2 ${currentTrackUrl === track.mediaUrl ? 'bg-[var(--color-church-cream)] border-[var(--color-church-gold)]/50' : 'border-transparent hover:bg-gray-50'}`}>
+                    <span className="min-w-0 truncate text-sm font-bold text-gray-800">{track.title}</span>
+                    {currentTrackUrl === track.mediaUrl && isPlaying ? <Pause size={15} /> : <Play size={15} />}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex justify-end -mt-2 mb-3">
               <button
                 type="button"
@@ -148,7 +182,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
               </button>
             </div>
 
-            {currentHymn && (
+            {(currentHymn || currentFeedTrack) && (
               <div className="pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-4">
                   <button
@@ -159,10 +193,10 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
                   </button>
                   <div className="flex-1 overflow-hidden">
                      <p className="text-xs font-bold text-[var(--color-church-blue)] truncate">
-                        {lang === 'ar' ? currentHymn.titleAr : currentHymn.titleEn}
+                        {currentTrackTitle}
                      </p>
                      <p className="text-[10px] text-gray-500 truncate">
-                        {currentHymn.titleCoptic}
+                        {currentTrackSubtitle}
                      </p>
                   </div>
                   <div className="relative flex items-center">
