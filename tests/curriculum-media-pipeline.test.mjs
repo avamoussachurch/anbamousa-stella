@@ -135,10 +135,13 @@ test('feed voice recording is microphone-captured and excluded from global audio
   assert.match(feed, /Pause recording/);
   assert.match(feed, /Resume recording/);
   assert.match(feed, /setIsVoiceRecordingPaused\(false\)/);
-  assert.match(feed, /recorder\.requestData\(\)/, 'stop flushes the final MediaRecorder chunk before stopping');
+  assert.match(feed, /recorder\.stop\(\)/, 'MediaRecorder.stop flushes the final dataavailable event, including from paused state');
+  assert.match(feed, /recorder\.onstop = \(\) => \{[\s\S]*?new Blob\(recordingChunks, \{ type \}\)/, 'the final dataavailable chunks are assembled after stop');
   assert.match(feed, /recorder\.start\(250\)/, 'recording emits short chunks instead of relying only on the stop event');
   assert.match(feed, /const recordingChunks: Blob\[\] = \[\]/, 'each recording owns its own chunk buffer');
   assert.match(feed, /new Blob\(recordingChunks, \{ type \}\)/);
+  assert.match(feed, /getByteFrequencyData\(bins\)/, 'live waveform is measured from microphone input');
+  assert.match(feed, /silentOutput\.gain\.value = 0/, 'waveform analyser is silent and cannot feed microphone audio back to speakers');
   assert.match(feed, /h-10 w-10 shrink-0 items-center justify-center rounded-full/, 'record, pause, resume, and finish controls use compact icon buttons');
   assert.match(feed, /title=\{isVoiceRecordingPaused \?/, 'icon-only pause/resume controls retain accessible labels and tooltips');
   assert.match(feed, /Also add this recording to the global audio player/);
