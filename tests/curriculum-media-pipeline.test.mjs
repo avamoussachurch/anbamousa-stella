@@ -109,3 +109,34 @@ test('feed audio uses the shared player rather than browser-default controls', (
   assert.match(feed, /UniversalAudioPlayer/);
   assert.doesNotMatch(feed, /<audio src={attachment\.mediaUrl} controls/);
 });
+
+
+test('global music player resolves private curriculum audio references before playback and includes only opted-in feed tracks', () => {
+  const globalPlayer = read('../src/components/layout/GlobalMusicPlayer.tsx');
+  const feedService = read('../src/lib/feedService.ts');
+  assert.match(globalPlayer, /resolveCurriculumMediaUrl\(hymn\.audioUrl\)/);
+  assert.match(globalPlayer, /playTrack\(hymn\.resolvedAudioUrl\)/);
+  assert.match(globalPlayer, /fetchGlobalFeedAudioTracks/);
+  assert.match(feedService, /include_in_global_player', true/);
+});
+
+test('feed voice recording is microphone-captured and excluded from global audio unless explicitly opted in with a title', () => {
+  const feed = read('../src/components/student/FeedTab.tsx');
+  const attachments = read('../src/lib/feedAttachments.ts');
+  assert.match(feed, /navigator\.mediaDevices\?\.getUserMedia/);
+  assert.match(feed, /new MediaRecorder/);
+  assert.match(feed, /includeInGlobalPlayer: false/);
+  assert.match(feed, /Also add this recording to the global audio player/);
+  assert.match(feed, /globalAudioTitle\?\.trim\(\)/);
+  assert.match(attachments, /include_in_global_player: Boolean\(attachment\.includeInGlobalPlayer/);
+});
+
+test('mobile audio and PDF controls remain within viewport and viewer content can scroll', () => {
+  const audio = read('../src/components/design-system/UniversalAudioPlayer.tsx');
+  const pdf = read('../src/components/sunday-school/viewers/InAppDocumentViewer.tsx');
+  assert.match(audio, /grid grid-cols-4 sm:flex/);
+  assert.match(audio, /min-w-0 overflow-hidden/);
+  assert.match(pdf, /h-\[100dvh\]/);
+  assert.match(pdf, /min-h-0 min-w-0/);
+  assert.match(pdf, /w-full h-full min-h-0 min-w-0 flex-1/);
+});
