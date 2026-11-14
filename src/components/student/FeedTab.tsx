@@ -547,6 +547,10 @@ export function FeedTab({ lang }: { lang: Language }) {
   };
 
   const startVoiceRecording = async () => {
+    if (!userData) {
+      setMediaError(lang === 'ar' ? 'سجّل دخولك الأول عشان تسجّل وتنشر صوتك.' : 'Sign in before recording and publishing audio.');
+      return;
+    }
     if (isRecordingVoice || isUploadingMedia || composerAttachments.length >= MAX_FEED_ATTACHMENTS) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setMediaError(lang === 'ar' ? 'تسجيل الصوت غير مدعوم في هذا المتصفح.' : 'Voice recording is not supported in this browser.');
