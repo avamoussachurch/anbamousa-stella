@@ -155,3 +155,22 @@ test('mobile audio and PDF controls remain within viewport and viewer content ca
   assert.match(pdf, /min-h-0 min-w-0/);
   assert.match(pdf, /w-full min-h-0 min-w-0 flex-1/);
 });
+
+
+test('feed recorder start is executable and not swallowed by a malformed comment', () => {
+  const feed = read('../src/components/student/FeedTab.tsx');
+  assert.match(feed, /\/\/ IMPORTANT: start\(\) must be executable code, not part of this comment\\n\s*recorder\.start\(250\);/);
+  const startLine = feed.split('\\n').find(line => line.includes('recorder.start(250);')) || '';
+  assert.doesNotMatch(startLine, /^\\s*\/\//, 'MediaRecorder.start must not be commented out');
+});
+
+test('feed voice controls use recorder lifecycle events and a live microphone waveform', () => {
+  const feed = read('../src/components/student/FeedTab.tsx');
+  assert.match(feed, /recorder\.onpause = \(\) => setIsVoiceRecordingPaused\(true\)/);
+  assert.match(feed, /recorder\.onresume = \(\) => setIsVoiceRecordingPaused\(false\)/);
+  assert.match(feed, /recorder\.stop\(\);[\s\S]{0,100}\n\s*\} catch/);
+  assert.match(feed, /getByteFrequencyData\(bins\)/);
+  assert.match(feed, /Live microphone waveform/);
+  assert.match(feed, /stopVoiceWaveform\(\)/);
+  assert.match(feed, /Also add this recording to the global audio player/);
+});
