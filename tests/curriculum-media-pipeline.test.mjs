@@ -96,6 +96,9 @@ test('shared audio player provides seek, compact speed presets, and playback err
   assert.match(universalAudio, /SPEED_PRESETS/);
   assert.match(universalAudio, /grid grid-cols-4 sm:flex/);
   assert.match(universalAudio, /aria-pressed=\{speed === rate\}/);
+  assert.match(hymnStudent, /grid grid-cols-4 sm:flex/);
+  assert.match(hymnStudent, /aria-pressed=\{playbackSpeed === sp\}/);
+  assert.doesNotMatch(hymnStudent, /Fine speed/);
   assert.ok(universalAudio.includes("aria-label={isAr ? 'مستوى الصوت' : 'Volume'}"), 'volume control remains available');
   assert.match(universalAudio, /setMuted\(value => !value\)/);
   assert.match(universalAudio, /audioRef\.current\.playbackRate = next/);
