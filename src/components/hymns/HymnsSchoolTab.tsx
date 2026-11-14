@@ -100,6 +100,12 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         setHymnsLoadError(res.error || (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
       }
       setIsHymnsLoading(false);
+    }).catch(error => {
+      if (!isMounted) return;
+      setHymnsList([]);
+      setSelectedHymn(null);
+      setHymnsLoadError(error instanceof Error ? error.message : (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
+      setIsHymnsLoading(false);
     });
 
     return () => { isMounted = false; };
