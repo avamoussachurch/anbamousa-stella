@@ -25,6 +25,8 @@ export interface UploadedFeedAttachment {
   originalFilename?: string;
   mimeType?: string;
   byteSize?: number;
+  includeInGlobalPlayer?: boolean;
+  globalAudioTitle?: string;
   file?: File;
   status: 'uploading' | 'ready' | 'error';
   error?: string;
