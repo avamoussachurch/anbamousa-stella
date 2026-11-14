@@ -494,7 +494,10 @@ before(async () => {
       }
     }
     if (url.pathname === '/rest/v1/user_relationships') {
-      return respondJson(res, 200, []);
+      if (req.method === 'POST' || req.method === 'PATCH') {
+        return respondJson(res, 201, []);
+      }
+      return respondPostgrestRows(req, res, 200, []);
     }
     if (url.pathname === '/rest/v1/rpc/can_access_student_data') {
       let rawBody = '';
