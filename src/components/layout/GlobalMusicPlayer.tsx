@@ -93,7 +93,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const currentTrackSubtitle = currentHymn ? currentHymn.titleCoptic : (currentFeedTrack ? (lang === 'ar' ? 'تسجيل من المجتمع' : 'Community recording') : '');
 
   return (
-    <div className={`fixed bottom-24 z-40 flex flex-col ${lang === 'ar' ? 'left-4 items-start' : 'right-4 items-end'}`}>
+    <div className={`fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-40 flex max-w-[calc(100vw-1.5rem)] flex-col ${lang === 'ar' ? 'left-3 items-start' : 'right-3 items-end'}`}>
       <AnimatePresence>
         {isOpen && (
           <motion.div
