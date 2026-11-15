@@ -4,6 +4,7 @@ import { BottomNav } from './components/layout/BottomNav';
 import { TopBar } from './components/layout/TopBar';
 import { WorkspaceSidebar } from './components/layout/WorkspaceSidebar';
 import { LoginScreen } from './components/auth/LoginScreen';
+import { StudentWelcomeTour } from './components/auth/StudentWelcomeTour';
 import { OfflineIndicator } from './components/layout/OfflineIndicator';
 import { AnbaMousaSplashScreen } from './components/layout/AnbaMousaSplashScreen';
 import { AmbientWorld } from './components/layout/AmbientWorld';
@@ -93,6 +94,7 @@ function AppContent() {
 
   // On first student login without exact grade, show onboarding modal
   const [showStudentOnboardingModal, setShowStudentOnboardingModal] = useState<boolean>(false);
+  const [showStudentWelcomeTour, setShowStudentWelcomeTour] = useState<boolean>(false);
   useEffect(() => {
     if (userData && hasRole(userData, 'student') && activeWorkspace === 'student') {
       const dismissed = sessionStorage.getItem('dismissed_student_onboarding_' + userData.id);
@@ -131,6 +133,12 @@ function AppContent() {
       setActiveTab('family');
     }
   }, [incomingChildCode, userData?.id, userData?.roles]);
+
+  useEffect(() => {
+    if (!userData || !hasRole(userData, 'student') || activeWorkspace !== 'student' || !userData.grade || showStudentOnboardingModal) return;
+    const key = 'stella_student_welcome_tour_v1_' + userData.id;
+    if (localStorage.getItem(key) !== 'completed') setShowStudentWelcomeTour(true);
+  }, [userData?.id, userData?.roles, userData?.grade, activeWorkspace, showStudentOnboardingModal]);
 
   React.useEffect(() => {
     const handlePopState = () => {
@@ -399,6 +407,16 @@ function AppContent() {
       </div>
       </div>
       </div>
+
+      {showStudentWelcomeTour && activeWorkspace === 'student' && (
+        <StudentWelcomeTour
+          lang={lang}
+          onClose={() => {
+            setShowStudentWelcomeTour(false);
+            if (userData?.id) localStorage.setItem('stella_student_welcome_tour_v1_' + userData.id, 'completed');
+          }}
+        />
+      )}
 
       {/* Student First-Login & Onboarding Modal */}
       <React.Suspense fallback={null}>
