@@ -42,14 +42,26 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return json(405, { error: "Method not allowed" });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEY") || "";
+  const webhookSecret = Deno.env.get("PUSH_WEBHOOK_SECRET") || "";
   const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY") || "";
   const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY") || "";
   const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "";
   if (!supabaseUrl || !serviceKey) return json(503, { error: "Supabase service configuration is missing" });
+  if (!webhookSecret) return json(503, { error: "Push webhook authentication is not configured." });
 
   const authorization = request.headers.get("Authorization") || "";
-  if (authorization !== `Bearer ${serviceKey}`) return json(401, { error: "Unauthorized webhook" });
+  const suppliedSecret = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const encoder = new TextEncoder();
+  const expectedBytes = encoder.encode(webhookSecret);
+  const suppliedBytes = encoder.encode(suppliedSecret);
+  let matches = expectedBytes.length === suppliedBytes.length;
+  if (matches) {
+    let difference = 0;
+    for (let index = 0; index < expectedBytes.length; index += 1) difference |= expectedBytes[index] ^ suppliedBytes[index];
+    matches = difference === 0;
+  }
+  if (!matches) return json(401, { error: "Unauthorized webhook" });
 
   if (!vapidPublic || !vapidPrivate || !vapidSubject) {
     return json(503, { error: "Push delivery is not configured. Set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT." });
