@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { TeacherPublishingHub } from '../teacher/publishing/TeacherPublishingHub';
 import { LessonPublicationManager } from '../teacher/LessonPublicationManager';
 import { HelpRequestsPanel } from '../teacher/HelpRequestsPanel';
+import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
 import { useLessons } from '../../context/LessonsContext';
 import {
   filterAdminAccounts,
@@ -124,6 +125,7 @@ const ADMIN_SECTIONS = [
   ['security', 'Security & audit', 'الأمان والتدقيق', LockKeyhole],
   ['support', 'Support mode', 'وضع الدعم', Activity],
   ['help-requests', 'Student help requests', 'طلبات مساعدة التلاميذ', Shield],
+  ['leaderboard', 'Class leaderboards', 'ترتيب الفصول', Award],
 ] as const;
 
 export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspaceProps) {
@@ -790,6 +792,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       )}
 
       {activeTab === 'help-requests' && <HelpRequestsPanel lang={lang} />}
+      {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} />}
 
       {activeTab === 'profile' && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'تقدر تفتح إعدادات الحساب من قائمة الحساب.' : 'Account settings are available from the account menu.'}</p>}
     </main>
