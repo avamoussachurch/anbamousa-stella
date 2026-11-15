@@ -29,10 +29,11 @@ In Supabase Dashboard → Edge Functions → Secrets, add:
 - `VAPID_PUBLIC_KEY`
 - `VAPID_PRIVATE_KEY`
 - `VAPID_SUBJECT` (a valid contact URI such as `mailto:<your-church-support-email>`)
+- `PUSH_WEBHOOK_SECRET` (a long, randomly generated secret used only between the database webhook and the Edge Function)
 
 The Edge Function uses the platform-provided `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Never put the service-role key or VAPID private key in a Vite variable or browser bundle.
 
-The `push` Edge Function is deployed with JWT verification enabled. It additionally verifies the service-role bearer token expected from the database webhook.
+The `push` Edge Function is deployed with gateway JWT verification disabled because it is called by a database webhook. It performs its own constant-time bearer-secret check against `PUSH_WEBHOOK_SECRET` before reading the notification. Do not expose this secret to the browser.
 
 ## 4. Create the database webhook
 
@@ -43,7 +44,7 @@ In Supabase Dashboard → Database → Webhooks, create a webhook with:
 - Type: Supabase Edge Function
 - Function: `push`
 - Method: `POST`
-- Header: `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
+- Header: `Authorization: Bearer <PUSH_WEBHOOK_SECRET>`
 - Header: `Content-Type: application/json`
 
 Use the service-role key only in the webhook configuration. Do not commit it.
@@ -75,4 +76,4 @@ The database-side notification triggers also cover teacher replies to student po
 
 ## Important
 
-A deployed Edge Function alone does not send push messages. Both VAPID secrets and the database webhook are required. Until the webhook and credentials are configured, the app correctly keeps browser push disabled rather than showing a false “Active” state.
+A deployed Edge Function alone does not send push messages. Both VAPID keys, `VAPID_SUBJECT`, `PUSH_WEBHOOK_SECRET`, the frontend public key and the database webhook are required. Until the webhook and credentials are configured, the app correctly keeps browser push disabled rather than showing a false “Active” state.
