@@ -22,6 +22,7 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
   const [saving, setSaving] = useState(false);
   const [inAppEnabled, setInAppEnabled] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'ar'>(lang === 'ar' ? 'ar' : 'en');
   const [quietStart, setQuietStart] = useState('');
   const [quietEnd, setQuietEnd] = useState('');
   const [categorySettings, setCategorySettings] = useState<Record<string, boolean>>({});
@@ -32,7 +33,7 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
     let active = true;
     setLoading(true);
     supabase.from('notification_preferences')
-      .select('in_app_enabled,push_enabled,category_settings,quiet_hours_start,quiet_hours_end')
+      .select('in_app_enabled,push_enabled,category_settings,quiet_hours_start,quiet_hours_end,language')
       .eq('user_id', userData.id).maybeSingle()
       .then(({ data, error }) => {
         if (!active) return;
@@ -40,6 +41,7 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
         if (data) {
           setInAppEnabled(data.in_app_enabled);
           setPushEnabled(data.push_enabled);
+          setLanguage(data.language === 'ar' ? 'ar' : 'en');
           setQuietStart(data.quiet_hours_start?.slice(0,5) || '');
           setQuietEnd(data.quiet_hours_end?.slice(0,5) || '');
           setCategorySettings(data.category_settings || {});
@@ -81,6 +83,7 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
       in_app_enabled: inAppEnabled,
       push_enabled: pushEnabled,
       category_settings: categorySettings,
+      language,
       quiet_hours_start: quietStart || null,
       quiet_hours_end: quietEnd || null,
       timezone: 'Africa/Cairo',
@@ -110,6 +113,8 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
             </div>
             <h3 className="mt-5 mb-2 text-sm font-black">{isArabic ? 'أنواع الإشعارات' : 'Notification categories'}</h3>
             <div className="grid gap-2 sm:grid-cols-2">{categories.map(([key,en,ar]) => <label key={key} className="flex min-h-11 items-center justify-between rounded-xl bg-[var(--surface-secondary)] px-3 py-2 text-sm"><span>{isArabic ? ar : en}</span><input type="checkbox" checked={categorySettings[key] !== false} onChange={event => setCategory(key,event.target.checked)} /></label>)}</div>
+            <h3 className="mt-5 mb-2 text-sm font-black">{isArabic ? 'لغة الإشعارات' : 'Notification language'}</h3>
+            <select value={language} onChange={event => setLanguage(event.target.value as 'en' | 'ar')} className="min-h-11 w-full rounded-xl border bg-[var(--surface-secondary)] px-3 text-sm"><option value="en">English</option><option value="ar">العربية</option></select>
             <h3 className="mt-5 mb-2 text-sm font-black">{isArabic ? 'ساعات الهدوء (بتوقيت القاهرة)' : 'Quiet hours (Cairo time)'}</h3>
             <div className="grid grid-cols-2 gap-3">
               <label className="text-xs font-bold">{isArabic ? 'من' : 'From'}<input type="time" value={quietStart} onChange={event => setQuietStart(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border bg-[var(--surface-secondary)] px-3 text-sm"/></label>
