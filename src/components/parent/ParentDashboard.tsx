@@ -408,7 +408,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
       )}
 
       {section === 'leaderboard' && (
-        selectedChild ? <ClassLeaderboardPanel lang={lang} childId={selectedChild.id} childName={selectedChild.name} />
+        selectedChild ? <ClassLeaderboardPanel lang={lang} childId={selectedChild.id} childName={selectedChild.name} childOptions={children.map(child => ({ id: child.id, name: child.name }))} />
           : <p className="mousa-card-sand p-6 text-center text-sm">{isArabic ? 'اربط حساب ابنك أو بنتك أولاً علشان تشوف ترتيبهم.' : 'Link a child account first to view their ranking.'}</p>
       )}
 
