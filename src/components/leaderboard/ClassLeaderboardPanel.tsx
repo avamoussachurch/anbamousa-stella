@@ -5,40 +5,45 @@ import type { Language } from '../../types';
 
 type Result = Awaited<ReturnType<typeof getAuthoritativeLeaderboard>>;
 
-export function ClassLeaderboardPanel({ lang, childId, childName }: { lang: Language; childId?: string; childName?: string }) {
+export function ClassLeaderboardPanel({ lang, childId, childName, childOptions }: { lang: Language; childId?: string; childName?: string; childOptions?: Array<{ id: string; name: string }> }) {
   const isArabic = lang === 'ar';
   const [timeframe, setTimeframe] = useState<'weekly' | 'all_time'>('weekly');
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [selectedChildId, setSelectedChildId] = useState(childId || '');
+  useEffect(() => { if (childId && !selectedChildId) setSelectedChildId(childId); }, [childId, selectedChildId]);
+  const effectiveChildId = childOptions?.length ? selectedChildId : childId;
+  const effectiveChildName = childOptions?.find(child => child.id === effectiveChildId)?.name || childName;
 
   useEffect(() => {
     let active = true;
-    if (childId === '') { setResult(null); return; }
+    if (effectiveChildId === '') { setResult(null); return; }
     setLoading(true);
-    getAuthoritativeLeaderboard({ timeframe, studentId: childId }).then(value => {
+    getAuthoritativeLeaderboard({ timeframe, studentId: effectiveChildId }).then(value => {
       if (!active) return;
       setResult(value);
       setLoading(false);
     });
     return () => { active = false; };
-  }, [childId, timeframe, refreshTick]);
+  }, [effectiveChildId, timeframe, refreshTick]);
 
   const entries = result?.leaderboard || [];
   const streaks = result?.streakLeaderboard || [];
-  const currentId = childId || result?.currentUserEntry?.studentId;
+  const currentId = effectiveChildId || result?.currentUserEntry?.studentId;
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-5 px-3 py-5 sm:px-5">
       <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-4">
-        <div className="flex items-center gap-3"><Trophy className="text-amber-500" size={25}/><div><h2 className="font-black">{isArabic ? 'ترتيب الفصل' : 'Class leaderboards'}</h2><p className="text-sm text-[var(--text-secondary)]">{childName ? (isArabic ? `ترتيب ${childName} في فصله` : `${childName}’s class ranking`) : (isArabic ? 'ترتيب النقاط والاستمرارية للفصل المكلّف به.' : 'Points and streak rankings for your assigned class.')}</p></div></div>
+        <div className="flex items-center gap-3"><Trophy className="text-amber-500" size={25}/><div><h2 className="font-black">{isArabic ? 'ترتيب الفصل' : 'Class leaderboards'}</h2><p className="text-sm text-[var(--text-secondary)]">{effectiveChildName ? (isArabic ? `ترتيب ${effectiveChildName} في فصله` : `${effectiveChildName}’s class ranking`) : (isArabic ? 'ترتيب النقاط والاستمرارية للفصل المكلّف به.' : 'Points and streak rankings for your assigned class.')}</p></div></div>
         <div className="flex gap-2">
           <button type="button" onClick={() => setTimeframe('weekly')} aria-pressed={timeframe === 'weekly'} className={`min-h-10 rounded-xl px-3 text-xs font-black ${timeframe === 'weekly' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)]' : 'border'}`}>{isArabic ? 'الأسبوع' : 'Weekly'}</button>
           <button type="button" onClick={() => setTimeframe('all_time')} aria-pressed={timeframe === 'all_time'} className={`min-h-10 rounded-xl px-3 text-xs font-black ${timeframe === 'all_time' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)]' : 'border'}`}>{isArabic ? 'الإجمالي' : 'All-time'}</button>
           <button type="button" onClick={() => setRefreshTick(value => value + 1)} aria-label={isArabic ? 'تحديث الترتيب' : 'Refresh leaderboard'} className="rounded-xl border p-2"><RefreshCw size={16}/></button>
         </div>
       </header>
-      {childId === '' ? <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك أو بنتك أولاً لعرض ترتيبهم.' : 'Link a child account first to view their ranking.'}</p>
+      {childOptions?.length ? <label className="block text-sm font-bold">{isArabic ? 'اختر ابنك أو بنتك' : 'Choose a child'}<select value={selectedChildId} onChange={event => setSelectedChildId(event.target.value)} className="mt-1 min-h-11 w-full max-w-sm rounded-xl border bg-[var(--surface-primary)] px-3">{childOptions.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label> : null}
+      {effectiveChildId === '' ? <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك أو بنتك أولاً لعرض ترتيبهم.' : 'Link a child account first to view their ranking.'}</p>
         : loading ? <p role="status" className="p-8 text-center text-sm">{isArabic ? 'بنحمّل الترتيب الرسمي...' : 'Loading verified rankings...'}</p>
         : result?.error ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{result.error}</p>
         : !result || entries.length === 0 ? <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'الترتيب غير متاح حالياً؛ لازم يكون فيه فصل نشط وتلاميذ مسجلين.' : 'Rankings are not available yet. An active class and enrolled students are required.'}</p>
