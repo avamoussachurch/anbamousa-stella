@@ -5,6 +5,7 @@ import { mockBadges } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { submitRewardRequest } from '../../lib/supabaseDatabase';
+import { shouldLoadCloudRewardPurchases, shouldPersistRewardRequestToCloud } from '../../lib/rewardPersistence';
 import { addRewardRequest } from '../../lib/parentChildService';
 import { 
   getLeaderboard, 
@@ -54,7 +55,7 @@ export function PointsTab({ lang }: { lang: Language }) {
       setPurchases(local);
     }
 
-    if (view === 'bazaar' && supabase) {
+    if (shouldLoadCloudRewardPurchases(isGuest, view === 'bazaar', Boolean(supabase))) {
        const fetchPurchases = async () => {
           try {
             const { data } = await supabase
@@ -79,7 +80,7 @@ export function PointsTab({ lang }: { lang: Language }) {
        };
        fetchPurchases();
     }
-  }, [userData?.id, view, lang]);
+  }, [userData?.id, view, lang, isGuest]);
 
   const executePurchase = async () => {
     if (!userData || !confirmPurchaseItem) return;
@@ -105,9 +106,11 @@ export function PointsTab({ lang }: { lang: Language }) {
        saveRewardPurchaseLocal(userData.id, newPurchase);
        setPurchases(prev => [newPurchase, ...prev]);
 
-       try {
-         await submitRewardRequest(userData.id, rewardId, name, name, cost);
-       } catch (e) {}
+       if (shouldPersistRewardRequestToCloud(isGuest, Boolean(supabase))) {
+         try {
+           await submitRewardRequest(userData.id, rewardId, name, name, cost);
+         } catch (e) {}
+       }
 
        try {
          addRewardRequest({
