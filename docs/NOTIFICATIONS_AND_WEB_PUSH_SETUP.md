@@ -48,7 +48,11 @@ In Supabase Dashboard → Database → Webhooks, create a webhook with:
 
 Use the service-role key only in the webhook configuration. Do not commit it.
 
-## 5. Verify from a real device
+## 5. Allow the password-recovery redirect
+
+In Supabase Dashboard → Authentication → URL Configuration, add the deployed origin with the `/reset-password` path to the allowed Redirect URLs (and the matching localhost URL for development). The sign-in screen sends password-recovery links to this route.
+
+## 6. Verify from a real device
 
 1. Deploy the frontend over HTTPS.
 2. Sign in with a real student, parent, teacher or admin account.
