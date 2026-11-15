@@ -10,7 +10,7 @@ On a trusted developer machine, run:
 npx web-push generate-vapid-keys
 ```
 
-Keep the private key secret. Do not commit either key to GitHub.
+Keep the private key secret. Do not commit either key to GitHub. Generate a separate webhook authentication secret with `openssl rand -hex 32`; do not reuse the VAPID private key or Supabase API key.
 
 ## 2. Configure the frontend
 
@@ -33,7 +33,7 @@ In Supabase Dashboard → Edge Functions → Secrets, add:
 
 The Edge Function uses the platform-provided `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Never put the service-role key or VAPID private key in a Vite variable or browser bundle.
 
-The `push` Edge Function is deployed with gateway JWT verification disabled because it is called by a database webhook. It performs its own constant-time bearer-secret check against `PUSH_WEBHOOK_SECRET` before reading the notification. Do not expose this secret to the browser.
+The `push` Edge Function is deployed with gateway JWT verification disabled because it is called by a database webhook. It performs its own constant-time bearer-secret check against `PUSH_WEBHOOK_SECRET` before reading the notification. Generate a unique value for this secret and use the same value in the Edge Function secret and the webhook's Authorization header. Do not expose it to the browser.
 
 ## 4. Create the database webhook
 
