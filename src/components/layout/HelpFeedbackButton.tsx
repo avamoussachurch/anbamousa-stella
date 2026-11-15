@@ -16,7 +16,7 @@ const categories = [
 
 export function HelpFeedbackButton({ lang, workspace }: { lang: Language; workspace?: Workspace }) {
   const { userData, isGuest } = useAuth();
-  if (workspace !== 'student') return null;
+  const isStudentWorkspace = workspace === 'student';
   const isArabic = lang === 'ar';
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<string>('lesson');
@@ -24,6 +24,8 @@ export function HelpFeedbackButton({ lang, workspace }: { lang: Language; worksp
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  if (!isStudentWorkspace) return null;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
