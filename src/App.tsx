@@ -5,6 +5,7 @@ import { TopBar } from './components/layout/TopBar';
 import { WorkspaceSidebar } from './components/layout/WorkspaceSidebar';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { StudentWelcomeTour } from './components/auth/StudentWelcomeTour';
+import { PasswordRecoveryScreen } from './components/auth/PasswordRecoveryScreen';
 import { OfflineIndicator } from './components/layout/OfflineIndicator';
 import { AnbaMousaSplashScreen } from './components/layout/AnbaMousaSplashScreen';
 import { AmbientWorld } from './components/layout/AmbientWorld';
@@ -165,6 +166,10 @@ function AppContent() {
 
   if (loading) {
     return <AnbaMousaSplashScreen lang={lang} />;
+  }
+
+  if (window.location.pathname === '/reset-password') {
+    return <PasswordRecoveryScreen lang={lang} />;
   }
 
   if (!userData) {
