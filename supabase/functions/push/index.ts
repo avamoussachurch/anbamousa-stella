@@ -71,7 +71,7 @@ Deno.serve(async (request) => {
   });
   const { data: notification, error: notificationError } = await supabase
     .from("notifications")
-    .select("id,recipient_id,category,title_en,body_en,action_tab,push_status,push_attempts")
+    .select("id,recipient_id,category,title_en,title_ar,body_en,body_ar,action_tab,push_status,push_attempts")
     .eq("id", notificationId)
     .maybeSingle();
   if (notificationError || !notification) return json(404, { error: notificationError?.message || "Notification not found" });
@@ -81,10 +81,10 @@ Deno.serve(async (request) => {
 
   const [{ data: preferences }, { data: subscriptions }] = await Promise.all([
     supabase.from("notification_preferences")
-      .select("push_enabled,category_settings,quiet_hours_start,quiet_hours_end,timezone")
+      .select("push_enabled,category_settings,quiet_hours_start,quiet_hours_end,timezone,language")
       .eq("user_id", notification.recipient_id).maybeSingle(),
     supabase.from("push_subscriptions")
-      .select("id,endpoint,p256dh,auth_secret")
+      .select("id,endpoint,p256dh,auth_secret,failure_count")
       .eq("user_id", notification.recipient_id),
   ]);
 
@@ -103,13 +103,14 @@ Deno.serve(async (request) => {
 
   webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
   const message = JSON.stringify({
-    title: notification.title_en,
-    body: notification.body_en,
+    title: preferences.language === 'ar' ? notification.title_ar : notification.title_en,
+    body: preferences.language === 'ar' ? notification.body_ar : notification.body_en,
     notificationId: notification.id,
     tag: notification.id,
     actionTab: notification.action_tab || undefined,
     url: notification.action_tab ? `/?tab=${encodeURIComponent(notification.action_tab)}` : "/",
-    lang: "en",
+    lang: preferences.language === 'ar' ? "ar" : "en",
+    dir: preferences.language === 'ar' ? "rtl" : "ltr",
   });
 
   const outcomes = await Promise.allSettled(subscriptions.map(async (subscription) => {
@@ -128,7 +129,7 @@ Deno.serve(async (request) => {
         await supabase.from("push_subscriptions").delete().eq("id", subscription.id);
       } else {
         await supabase.from("push_subscriptions")
-          .update({ failure_count: 1, updated_at: new Date().toISOString() })
+          .update({ failure_count: Number(subscription.failure_count || 0) + 1, updated_at: new Date().toISOString() })
           .eq("id", subscription.id);
       }
       throw new Error(`Push endpoint failed (${statusCode || "network"}): ${String(error?.message || error).slice(0, 180)}`);
