@@ -3,6 +3,7 @@ import { Award, Bell, Cross, Flame, X, Sun, Moon, CheckCheck } from 'lucide-reac
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { PWAInstallButton } from './PWAInstallButton';
 import { HelpFeedbackButton } from './HelpFeedbackButton';
+import { NotificationPreferencesButton } from './NotificationPreferencesButton';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -196,6 +197,7 @@ export function TopBar({
           </button>
 
           <HelpFeedbackButton lang={lang} workspace={workspace} />
+          <NotificationPreferencesButton lang={lang} />
           <PWAInstallButton />
 
           {/* Real Authorized In-App & Browser Notifications */}
