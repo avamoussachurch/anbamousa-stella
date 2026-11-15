@@ -9,6 +9,7 @@ import {
   FolderOpen,
   Home,
   LockKeyhole,
+  LifeBuoy,
   MessageCircle,
   Settings,
   Shield,
@@ -60,6 +61,7 @@ const navigation: Record<Role, Array<{ id: string; icon: LucideIcon; group: stri
     { id: 'ai', icon: Sparkles, group: 'curriculum', ar: 'توليد الدروس', en: 'Lesson generation' },
     { id: 'feed', icon: MessageCircle, group: 'community', ar: 'المنشورات', en: 'Feed' },
     { id: 'moderation', icon: Shield, group: 'community', ar: 'الإشراف', en: 'Moderation' },
+    { id: 'help-requests', icon: LifeBuoy, group: 'community', ar: 'طلبات مساعدة التلاميذ', en: 'Student help requests' },
     { id: 'profile', icon: User, group: 'account', ar: 'حسابي', en: 'My profile' }
   ],
   admin: [
@@ -71,6 +73,7 @@ const navigation: Record<Role, Array<{ id: string; icon: LucideIcon; group: stri
     { id: 'curriculum', icon: BookOpen, group: 'management', ar: 'المناهج', en: 'Curriculum' },
     { id: 'security', icon: LockKeyhole, group: 'oversight', ar: 'الأمان والتدقيق', en: 'Security & audit' },
     { id: 'support', icon: Activity, group: 'oversight', ar: 'وضع الدعم', en: 'Support mode' },
+    { id: 'help-requests', icon: LifeBuoy, group: 'oversight', ar: 'طلبات مساعدة التلاميذ', en: 'Student help requests' },
     { id: 'profile', icon: Settings, group: 'account', ar: 'إعدادات الحساب', en: 'Account settings' }
   ]
 };
