@@ -195,7 +195,7 @@ export function TopBar({
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
-          <HelpFeedbackButton lang={lang} />
+          <HelpFeedbackButton lang={lang} workspace={workspace} />
           <PWAInstallButton />
 
           {/* Real Authorized In-App & Browser Notifications */}
