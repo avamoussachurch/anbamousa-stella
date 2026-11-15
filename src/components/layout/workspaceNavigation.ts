@@ -84,9 +84,9 @@ const navigation: Record<Role, Array<{ id: string; icon: LucideIcon; group: stri
 
 const primaryIds: Record<Role, readonly string[]> = {
   student: ['home', 'lessons', 'feed', 'points', 'profile'],
-  parent: ['home', 'children', 'journey', 'feed', 'family'],
-  teacher: ['home', 'studio', 'classManagement', 'feed', 'attendance'],
-  admin: ['home', 'accounts', 'roles', 'classes']
+  parent: ['home', 'children', 'journey', 'leaderboard', 'feed', 'family'],
+  teacher: ['home', 'studio', 'classManagement', 'leaderboard', 'feed', 'attendance'],
+  admin: ['home', 'accounts', 'roles', 'classes', 'leaderboard']
 };
 
 const mobileLabels: Partial<Record<Role, Record<string, { ar: string; en: string }>>> = {
