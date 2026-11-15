@@ -57,6 +57,7 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
   const togglePush = async (enabled: boolean) => {
     if (!enabled) {
       setPushEnabled(false);
+      localStorage.setItem('church_browser_notifications_enabled', 'false');
       if (supabase && userData?.id) {
         const registration = await navigator.serviceWorker?.ready.catch(() => null);
         const subscription = await registration?.pushManager.getSubscription();
