@@ -45,6 +45,7 @@ import { StudentExperiencePreview } from './StudentExperiencePreview';
 import { FeedTab } from '../student/FeedTab';
 import { ServantHomeDashboard } from './ServantHomeDashboard';
 import { HelpRequestsPanel } from './HelpRequestsPanel';
+import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
 
 interface TeacherDashboardProps {
   onOpenParentPortal?: () => void;
@@ -53,7 +54,7 @@ interface TeacherDashboardProps {
   onNavigate?: (tab: string) => void;
 }
 
-type TeacherTab = 'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation' | 'helpRequests' | 'preview' | 'communication';
+type TeacherTab = 'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation' | 'helpRequests' | 'leaderboard' | 'preview' | 'communication';
 
 const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
   overview: { en: 'Servant Studio', ar: 'استوديو الخادم' },
@@ -66,6 +67,7 @@ const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
   lessons: { en: 'Lesson library', ar: 'مكتبة الدروس' },
   moderation: { en: 'Moderation', ar: 'الإشراف' },
   helpRequests: { en: 'Student help requests', ar: 'طلبات مساعدة التلاميذ' },
+  leaderboard: { en: 'Class leaderboards', ar: 'ترتيب الفصل' },
   preview: { en: 'Student experience preview', ar: 'معاينة تجربة التلميذ' },
   communication: { en: 'Community feed', ar: 'منشورات المجتمع' }
 };
@@ -83,6 +85,7 @@ const routeToTeacherTab: Record<string, TeacherTab> = {
   lessons: 'lessons',
   moderation: 'moderation',
   'help-requests': 'helpRequests',
+  leaderboard: 'leaderboard',
   preview: 'preview',
   communication: 'communication'
 };
@@ -1099,6 +1102,7 @@ export function TeacherDashboard({
       )}
 
       {activeTab === 'helpRequests' && <HelpRequestsPanel lang={lang} />}
+      {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} />}
 
       {/* Tab 3: Moderation Queue */}
       {activeTab === 'moderation' && (
