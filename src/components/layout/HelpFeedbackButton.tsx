@@ -3,6 +3,7 @@ import { LifeBuoy, Send, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { Language } from '../../types';
+import type { Workspace } from '../../lib/workspaces';
 
 const categories = [
   { id: 'lesson', en: 'A lesson is broken', ar: 'مشكلة في درس' },
@@ -13,8 +14,9 @@ const categories = [
   { id: 'other', en: 'Something else', ar: 'مشكلة أخرى' }
 ] as const;
 
-export function HelpFeedbackButton({ lang }: { lang: Language }) {
+export function HelpFeedbackButton({ lang, workspace }: { lang: Language; workspace?: Workspace }) {
   const { userData, isGuest } = useAuth();
+  if (workspace !== 'student') return null;
   const isArabic = lang === 'ar';
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<string>('lesson');
