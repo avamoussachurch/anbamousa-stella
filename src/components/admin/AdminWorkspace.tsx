@@ -8,6 +8,7 @@ import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { TeacherPublishingHub } from '../teacher/publishing/TeacherPublishingHub';
 import { LessonPublicationManager } from '../teacher/LessonPublicationManager';
+import { HelpRequestsPanel } from '../teacher/HelpRequestsPanel';
 import { useLessons } from '../../context/LessonsContext';
 import {
   filterAdminAccounts,
@@ -786,6 +787,8 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
           </article>}
         </section>
       )}
+
+      {activeTab === 'help-requests' && <HelpRequestsPanel lang={lang} />}
 
       {activeTab === 'profile' && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'تقدر تفتح إعدادات الحساب من قائمة الحساب.' : 'Account settings are available from the account menu.'}</p>}
     </main>
