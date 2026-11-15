@@ -123,6 +123,7 @@ const ADMIN_SECTIONS = [
   ['curriculum', 'Curriculum', 'المناهج', BookOpen],
   ['security', 'Security & audit', 'الأمان والتدقيق', LockKeyhole],
   ['support', 'Support mode', 'وضع الدعم', Activity],
+  ['help-requests', 'Student help requests', 'طلبات مساعدة التلاميذ', Shield],
 ] as const;
 
 export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspaceProps) {
