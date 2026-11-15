@@ -487,6 +487,7 @@ export async function getAuthoritativeLeaderboard(options?: {
     const query = new URLSearchParams();
     if (options?.classGroupId) query.set('classGroupId', options.classGroupId);
     if (options?.timeframe) query.set('timeframe', options.timeframe);
+    if (options?.studentId) query.set('studentId', options.studentId);
 
     const res = await fetch(`/api/church/leaderboard?${query.toString()}`, {
       method: 'GET',
