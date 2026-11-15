@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Award, Bell, Cross, Flame, X, Sun, Moon, CheckCheck } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { PWAInstallButton } from './PWAInstallButton';
+import { HelpFeedbackButton } from './HelpFeedbackButton';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -194,6 +195,7 @@ export function TopBar({
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
+          <HelpFeedbackButton lang={lang} />
           <PWAInstallButton />
 
           {/* Real Authorized In-App & Browser Notifications */}
