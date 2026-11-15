@@ -42,6 +42,13 @@ export async function getLiveNotificationsForUser(
   _workspace?: Workspace | null
 ): Promise<ChurchNotification[]> {
   if (!currentUser || !supabase) return [];
+  const { data: preferences } = await supabase
+    .from('notification_preferences')
+    .select('in_app_enabled,category_settings')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+  if (preferences?.in_app_enabled === false) return [];
+  const categorySettings = preferences?.category_settings || {};
   const { data, error } = await supabase
     .from('notifications')
     .select('id,category,title_en,title_ar,body_en,body_ar,action_tab,created_at,read_at')
@@ -52,7 +59,7 @@ export async function getLiveNotificationsForUser(
     console.warn('Could not load persistent notifications:', error.message);
     return [];
   }
-  return (data || []).map(toChurchNotification);
+  return (data || []).filter((row: any) => categorySettings[row.category] !== false).map(toChurchNotification);
 }
 
 export async function markNotificationAsRead(id: string, userId?: string): Promise<void> {
@@ -88,9 +95,7 @@ function decodeVapidKey(value: string): Uint8Array {
 
 export function isBrowserNotificationEnabled(): boolean {
   if (typeof window === 'undefined' || !('Notification' in window)) return false;
-  return Notification.permission === 'granted' && Boolean(
-    typeof navigator !== 'undefined' && 'serviceWorker' in navigator
-  );
+  return Notification.permission === 'granted' && localStorage.getItem('church_browser_notifications_enabled') === 'true';
 }
 
 /**
@@ -107,6 +112,7 @@ export async function requestBrowserNotificationPermission(userId?: string): Pro
 
     const vapidPublicKey = (import.meta as any).env?.VITE_VAPID_PUBLIC_KEY || '';
     if (!vapidPublicKey) {
+      localStorage.setItem('church_browser_notifications_enabled', 'false');
       console.warn('Browser notification permission was granted, but VITE_VAPID_PUBLIC_KEY is not configured. Push delivery remains disabled.');
       return false;
     }
@@ -142,8 +148,10 @@ export async function requestBrowserNotificationPermission(userId?: string): Pro
       .from('notification_preferences')
       .upsert({ user_id: userId, push_enabled: true, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
     if (preferenceError) throw preferenceError;
+    localStorage.setItem('church_browser_notifications_enabled', 'true');
     return true;
   } catch (error) {
+    if (typeof localStorage !== 'undefined') localStorage.setItem('church_browser_notifications_enabled', 'false');
     console.warn('Could not enable browser push notifications:', error);
     return false;
   }
