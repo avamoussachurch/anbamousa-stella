@@ -10,6 +10,7 @@ export function ClassLeaderboardPanel({ lang, childId, childName }: { lang: Lang
   const [timeframe, setTimeframe] = useState<'weekly' | 'all_time'>('weekly');
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -21,7 +22,7 @@ export function ClassLeaderboardPanel({ lang, childId, childName }: { lang: Lang
       setLoading(false);
     });
     return () => { active = false; };
-  }, [childId, timeframe]);
+  }, [childId, timeframe, refreshTick]);
 
   const entries = result?.leaderboard || [];
   const streaks = result?.streakLeaderboard || [];
@@ -34,7 +35,7 @@ export function ClassLeaderboardPanel({ lang, childId, childName }: { lang: Lang
         <div className="flex gap-2">
           <button type="button" onClick={() => setTimeframe('weekly')} aria-pressed={timeframe === 'weekly'} className={`min-h-10 rounded-xl px-3 text-xs font-black ${timeframe === 'weekly' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)]' : 'border'}`}>{isArabic ? 'الأسبوع' : 'Weekly'}</button>
           <button type="button" onClick={() => setTimeframe('all_time')} aria-pressed={timeframe === 'all_time'} className={`min-h-10 rounded-xl px-3 text-xs font-black ${timeframe === 'all_time' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)]' : 'border'}`}>{isArabic ? 'الإجمالي' : 'All-time'}</button>
-          <button type="button" onClick={() => { setResult(null); setTimeframe(value => value); }} aria-label={isArabic ? 'تحديث الترتيب' : 'Refresh leaderboard'} className="rounded-xl border p-2"><RefreshCw size={16}/></button>
+          <button type="button" onClick={() => setRefreshTick(value => value + 1)} aria-label={isArabic ? 'تحديث الترتيب' : 'Refresh leaderboard'} className="rounded-xl border p-2"><RefreshCw size={16}/></button>
         </div>
       </header>
       {childId === '' ? <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك أو بنتك أولاً لعرض ترتيبهم.' : 'Link a child account first to view their ranking.'}</p>
