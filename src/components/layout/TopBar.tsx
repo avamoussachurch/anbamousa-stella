@@ -17,6 +17,7 @@ import {
   markAllNotificationsAsRead,
   requestBrowserNotificationPermission,
   isBrowserNotificationEnabled,
+  subscribeToNotifications,
   ChurchNotification 
 } from '../../lib/notificationService';
 
@@ -69,6 +70,11 @@ export function TopBar({
     return () => window.removeEventListener('church_notifications_updated', handleUpdate);
   }, [refreshNotifications]);
 
+  useEffect(() => {
+    if (!userData?.id) return;
+    return subscribeToNotifications(userData.id, refreshNotifications);
+  }, [userData?.id, refreshNotifications]);
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Close menus when clicking outside
@@ -104,7 +110,7 @@ export function TopBar({
   });
 
   const handleNotificationClick = (notif: ChurchNotification) => {
-    markNotificationAsRead(notif.id);
+    void markNotificationAsRead(notif.id, userData?.id);
     if (notif.actionTab && onNavigate) {
       onNavigate(notif.actionTab);
     }
@@ -112,12 +118,12 @@ export function TopBar({
   };
 
   const handleMarkAllRead = () => {
-    markAllNotificationsAsRead(notifications.map(n => n.id));
+    void markAllNotificationsAsRead(notifications.map(n => n.id), userData?.id);
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
   const handleToggleBrowserNotif = async () => {
-    const granted = await requestBrowserNotificationPermission();
+    const granted = await requestBrowserNotificationPermission(userData?.id);
     setBrowserNotifActive(granted);
   };
 
