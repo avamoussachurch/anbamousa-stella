@@ -84,7 +84,7 @@ const navigation: Record<Role, Array<{ id: string; icon: LucideIcon; group: stri
 
 const primaryIds: Record<Role, readonly string[]> = {
   student: ['home', 'lessons', 'feed', 'points', 'profile'],
-  parent: ['home', 'children', 'journey', 'leaderboard', 'feed', 'family'],
+  parent: ['home', 'children', 'journey', 'feed', 'family'],
   teacher: ['home', 'studio', 'classManagement', 'leaderboard', 'feed', 'attendance'],
   admin: ['home', 'accounts', 'roles', 'classes', 'leaderboard']
 };
