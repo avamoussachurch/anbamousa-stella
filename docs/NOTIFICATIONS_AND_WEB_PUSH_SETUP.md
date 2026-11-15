@@ -63,6 +63,8 @@ In Supabase Dashboard → Authentication → URL Configuration, add the deployed
 
 ## Delivery behaviour
 
+The database-side notification triggers also cover teacher replies to student posts, verified parent alerts for newly published lessons, and class/admin daily activity summaries. Three hourly scheduled jobs run using Cairo-local time for streak reminders, event reminders, and daily summaries. Weekly leaderboard overtakes are calculated from the same verified lesson-completion points used by the weekly ranking.
+
 - In-app notifications are persisted in `public.notifications` and are scoped by recipient RLS.
 - Push is opt-in per user and device. No browser permission is requested until the user enables it.
 - Category preferences are honoured. Pushes created during quiet hours are skipped; the in-app notification remains available.
