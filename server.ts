@@ -6899,11 +6899,11 @@ app.get("/api/church/leaderboard", async (req, res) => {
     const timeframe = req.query.timeframe === 'all_time' ? 'all_time' : 'weekly';
 
     if (authContext.isAuthenticated && authContext.userId && isUuidStudentId(authContext.userId)) {
-      if (!hasAnyServerRole(authContext, ['student', 'teacher', 'admin'])) {
+      if (!hasAnyServerRole(authContext, ['student', 'teacher', 'admin', 'parent'])) {
         return res.status(403).json({
           success: false,
           error: 'FORBIDDEN',
-          message: 'Only students, assigned servants, and administrators can view class rankings.'
+          message: 'Only students, linked parents, assigned servants, and administrators can view class rankings.'
         });
       }
 
@@ -6939,6 +6939,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
 
       let allInstances: any[] = [];
       let permittedGroupIds: string[] = [];
+      let leaderboardTargetStudentId = authContext.userId;
 
       if (hasServerRole(authContext, 'admin')) {
         const { data, error } = await client
@@ -6948,6 +6949,52 @@ app.get("/api/church/leaderboard", async (req, res) => {
         if (error) {
           console.error('Leaderboard class lookup failed:', error.message);
           return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
+        }
+        allInstances = data || [];
+      } else if (hasServerRole(authContext, 'parent')) {
+        const requestedChildId = String(req.query.studentId || '');
+        if (!requestedChildId || !isUuidStudentId(requestedChildId)) {
+          return res.status(400).json({ success: false, error: 'CHILD_REQUIRED', message: 'Choose one of your linked children to view their class ranking.' });
+        }
+        const { data: verifiedLink, error: linkError } = await client
+          .from('user_relationships')
+          .select('child_id')
+          .eq('parent_id', authContext.userId)
+          .eq('child_id', requestedChildId)
+          .not('verified_at', 'is', null)
+          .in('relationship_type', ['parent_child', 'guardian_student'])
+          .maybeSingle();
+        if (linkError) {
+          console.error('Leaderboard parent-child verification failed:', linkError.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Family rankings are temporarily unavailable.' });
+        }
+        if (!verifiedLink) {
+          return res.status(403).json({ success: false, error: 'FORBIDDEN_CHILD_LEADERBOARD', message: 'You can only view rankings for a verified linked child.' });
+        }
+        leaderboardTargetStudentId = requestedChildId;
+        const { data: childMemberships, error: membershipError } = await client
+          .from('class_memberships')
+          .select('class_instance_id')
+          .eq('student_id', requestedChildId)
+          .eq('church_year_id', activeYear.id)
+          .eq('status', 'active')
+          .is('left_at', null);
+        if (membershipError) {
+          console.error('Leaderboard parent child membership lookup failed:', membershipError.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Family rankings are temporarily unavailable.' });
+        }
+        const childInstanceIds = Array.from(new Set((childMemberships || [])
+          .map((membership: any) => membership.class_instance_id)
+          .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
+        if (childInstanceIds.length === 0) return emptyLeaderboard(null);
+        const { data, error } = await client
+          .from('class_instances')
+          .select('id, class_group_id')
+          .in('id', childInstanceIds)
+          .eq('church_year_id', activeYear.id);
+        if (error) {
+          console.error('Leaderboard parent class lookup failed:', error.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Family rankings are temporarily unavailable.' });
         }
         allInstances = data || [];
       } else if (hasServerRole(authContext, 'student')) {
@@ -7111,7 +7158,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         return left.studentName.localeCompare(right.studentName);
       });
       entries.forEach((entry: any, index: number) => { entry.rank = index + 1; });
-      const currentUserEntry = entries.find((entry: any) => entry.studentId === authContext.userId) || null;
+      const currentUserEntry = entries.find((entry: any) => entry.studentId === leaderboardTargetStudentId) || null;
       const leaderboard = entries.slice(0, 20);
       if (currentUserEntry && !leaderboard.some((entry: any) => entry.studentId === currentUserEntry.studentId)) {
         leaderboard.push(currentUserEntry);
@@ -7124,7 +7171,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         left.studentName.localeCompare(right.studentName)
       );
       streakEntries.forEach((entry: any, index: number) => { entry.rank = index + 1; });
-      const currentUserStreakEntry = streakEntries.find((entry: any) => entry.studentId === authContext.userId) || null;
+      const currentUserStreakEntry = streakEntries.find((entry: any) => entry.studentId === leaderboardTargetStudentId) || null;
       const streakLeaderboard = streakEntries.slice(0, 20);
       if (currentUserStreakEntry && !streakLeaderboard.some((entry: any) => entry.studentId === currentUserStreakEntry.studentId)) {
         streakLeaderboard.push(currentUserStreakEntry);
