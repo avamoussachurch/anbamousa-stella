@@ -18,8 +18,9 @@ import { ParentLearningJourney } from './ParentLearningJourney';
 import { ParentHomeDashboard } from './ParentHomeDashboard';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { supabase } from '../../lib/supabase';
+import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
 
-type ParentSection = 'home' | 'children' | 'journey' | 'family' | 'events';
+type ParentSection = 'home' | 'children' | 'journey' | 'family' | 'events' | 'leaderboard';
 
 interface ParentDashboardProps {
   lang: 'en' | 'ar';
@@ -57,7 +58,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
   const isArabic = lang === 'ar';
   const isParent = hasRole(userData, 'parent');
   const [section, setSection] = useState<ParentSection>(
-    activeTab === 'children' || activeTab === 'journey' || activeTab === 'family' || activeTab === 'events' ? activeTab : 'home'
+    activeTab === 'children' || activeTab === 'journey' || activeTab === 'family' || activeTab === 'events' || activeTab === 'leaderboard' ? activeTab : 'home'
   );
   const [children, setChildren] = useState<ParentChildRecord[]>([]);
   const [selectedChildId, setSelectedChildId] = useState('');
@@ -86,7 +87,8 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     children: { ar: 'أولادي', en: 'My children' },
     journey: { ar: 'رحلة التعلّم', en: 'Learning journey' },
     family: { ar: 'إعدادات العيلة', en: 'Family settings' },
-    events: { ar: 'الأخبار والفعاليات', en: 'News & events' }
+    events: { ar: 'الأخبار والفعاليات', en: 'News & events' },
+    leaderboard: { ar: 'ترتيب أولادي', en: 'Children’s rankings' }
   };
   const navigateSection = (nextSection: ParentSection) => {
     setSection(nextSection);
@@ -94,7 +96,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
   };
 
   useEffect(() => {
-    if (activeTab === 'children' || activeTab === 'journey' || activeTab === 'family' || activeTab === 'events') {
+    if (activeTab === 'children' || activeTab === 'journey' || activeTab === 'family' || activeTab === 'events' || activeTab === 'leaderboard') {
       setSection(activeTab);
     } else if (activeTab === 'home') {
       setSection('home');
@@ -161,7 +163,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
   useEffect(() => {
     // Load only the data needed by the visible section. The overview intentionally
     // receives its full summary; deeper sections fetch their own records on demand.
-    const needsChildren = section === 'home' || section === 'children' || section === 'journey';
+    const needsChildren = section === 'home' || section === 'children' || section === 'journey' || section === 'leaderboard';
     const needsEvents = section === 'home' || section === 'events';
     const needsAnnouncements = section === 'home' || section === 'events';
     const needsRewards = section === 'home' || section === 'family';
@@ -172,7 +174,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     if (isParent && needsRewards) void refreshRewards();
 
     const onChildrenUpdated = () => {
-      if (section === 'home' || section === 'children' || section === 'journey') {
+      if (section === 'home' || section === 'children' || section === 'journey' || section === 'leaderboard') {
         void refreshChildren();
       }
     };
@@ -403,6 +405,11 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
             <p className="mt-4 border-t border-[var(--border-default)] pt-4 text-xs text-[var(--text-secondary)]">{isArabic ? 'إعدادات وقت الشاشة مش متاحة حالياً؛ مش هنظهر أو نغيّر حدود غير محفوظة على الخادم.' : 'Screen-time controls are not available; no unsaved local limits are shown or changed.'}</p>
           </section>
         </div>
+      )}
+
+      {section === 'leaderboard' && (
+        selectedChild ? <ClassLeaderboardPanel lang={lang} childId={selectedChild.id} childName={selectedChild.name} />
+          : <p className="mousa-card-sand p-6 text-center text-sm">{isArabic ? 'اربط حساب ابنك أو بنتك أولاً علشان تشوف ترتيبهم.' : 'Link a child account first to view their ranking.'}</p>
       )}
 
       {section === 'events' && (
