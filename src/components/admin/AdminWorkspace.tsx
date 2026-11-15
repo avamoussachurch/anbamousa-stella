@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Activity, BookOpen, Check, ClipboardList, Home, LoaderCircle, LockKeyhole,
+  Activity, Award, BookOpen, Check, ClipboardList, Home, LoaderCircle, LockKeyhole,
   MailPlus, RefreshCw, ScrollText, Search, Shield, ShieldCheck, Users, UserRoundCog, X
 } from 'lucide-react';
 import type { Language, Role } from '../../types';
