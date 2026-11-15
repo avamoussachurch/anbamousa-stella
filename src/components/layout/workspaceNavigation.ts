@@ -15,6 +15,7 @@ import {
   Shield,
   ShieldCheck,
   Sparkles,
+  Trophy,
   Upload,
   User,
   UserCheck,
@@ -45,6 +46,7 @@ const navigation: Record<Role, Array<{ id: string; icon: LucideIcon; group: stri
     { id: 'journey', icon: BookOpen, group: 'family', ar: 'رحلة أولادي', en: 'Learning journey' },
     { id: 'family', icon: ShieldCheck, group: 'family', ar: 'إعدادات الأسرة', en: 'Family controls' },
     { id: 'events', icon: CalendarDays, group: 'updates', ar: 'الأخبار والفعاليات', en: 'News & events' },
+    { id: 'leaderboard', icon: Award, group: 'updates', ar: 'ترتيب أولادي', en: 'Children’s rankings' },
     { id: 'feed', icon: MessageCircle, group: 'updates', ar: 'المنشورات', en: 'Feed' },
     { id: 'profile', icon: User, group: 'account', ar: 'حسابي', en: 'My profile' }
   ],
@@ -54,6 +56,7 @@ const navigation: Record<Role, Array<{ id: string; icon: LucideIcon; group: stri
     { id: 'classManagement', icon: Users, group: 'classes', ar: 'الفصول والطلاب', en: 'Classes & students' },
     { id: 'attendance', icon: UserCheck, group: 'classes', ar: 'الحضور والافتقاد', en: 'Attendance' },
     { id: 'mastery', icon: Award, group: 'classes', ar: 'تقدم الطلاب والاختبارات', en: 'Student progress & quizzes' },
+    { id: 'leaderboard', icon: Trophy, group: 'classes', ar: 'ترتيب الفصل', en: 'Class leaderboards' },
     { id: 'lessons', icon: FileText, group: 'curriculum', ar: 'مراجعة الدروس', en: 'Lesson review' },
     { id: 'sundaySchool', icon: ClipboardList, group: 'curriculum', ar: 'المناهج والنشر', en: 'Curriculum & publishing' },
     { id: 'sources', icon: FolderOpen, group: 'curriculum', ar: 'مصادر ووسائط الدروس', en: 'Lesson sources & media' },
@@ -74,6 +77,7 @@ const navigation: Record<Role, Array<{ id: string; icon: LucideIcon; group: stri
     { id: 'security', icon: LockKeyhole, group: 'oversight', ar: 'الأمان والتدقيق', en: 'Security & audit' },
     { id: 'support', icon: Activity, group: 'oversight', ar: 'وضع الدعم', en: 'Support mode' },
     { id: 'help-requests', icon: LifeBuoy, group: 'oversight', ar: 'طلبات مساعدة التلاميذ', en: 'Student help requests' },
+    { id: 'leaderboard', icon: Trophy, group: 'oversight', ar: 'ترتيب الفصول', en: 'Class leaderboards' },
     { id: 'profile', icon: Settings, group: 'account', ar: 'إعدادات الحساب', en: 'Account settings' }
   ]
 };
