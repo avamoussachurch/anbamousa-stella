@@ -285,13 +285,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                {isAr ? 'تعديل الصف الدراسي' : 'Change Exact Grade'}
-              </button>
+
               <button
                 type="button"
                 onClick={onClose}
