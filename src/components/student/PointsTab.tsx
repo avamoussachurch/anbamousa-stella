@@ -9,8 +9,7 @@ import { shouldLoadCloudRewardPurchases } from '../../lib/rewardPersistence';
 import { 
   getLeaderboard, 
   getStreakLeaderboard, 
-  StreakLeaderboardEntry,
-  getSavedPurchases 
+  StreakLeaderboardEntry
 } from '../../lib/pointsService';
 import { LeaderboardEntry, Language } from '../../types';
 import { LeaderboardPodium, PodiumItem } from './LeaderboardPodium';
@@ -34,7 +33,7 @@ export function PointsTab({ lang }: { lang: Language }) {
   // 3. Points Leaderboard (ترتيب النقاط)
   // 4. Points Bazaar (متجر المكافآت)
   const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar'>('streak');
-  const [purchases, setPurchases] = useState<any[]>(() => userData ? getSavedPurchases(userData.id) : []);
+  const [purchases, setPurchases] = useState<any[]>([]);
   const [confirmPurchaseItem, setConfirmPurchaseItem] = useState<{ id: string; name: string; cost: number } | null>(null);
   const [feedbackToast, setFeedbackToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -46,37 +45,38 @@ export function PointsTab({ lang }: { lang: Language }) {
   };
 
   useEffect(() => {
-    if (!userData) return;
-    const local = getSavedPurchases(userData.id);
-    if (local && local.length > 0) {
-      setPurchases(local);
+    let active = true;
+    if (!userData || !shouldLoadCloudRewardPurchases(isGuest, view === 'bazaar', Boolean(supabase))) {
+      setPurchases([]);
+      return () => { active = false; };
     }
 
-    if (shouldLoadCloudRewardPurchases(isGuest, view === 'bazaar', Boolean(supabase))) {
-       const fetchPurchases = async () => {
-          try {
-            const { data } = await supabase
-              .from('reward_requests')
-              .select('*')
-              .eq('student_id', userData.id)
-              .order('created_at', { ascending: false });
+    const fetchPurchases = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('reward_requests')
+          .select('*')
+          .eq('student_id', userData.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        if (!active) return;
+        setPurchases((data || []).map(d => ({
+          id: d.id,
+          userId: d.student_id,
+          rewardId: d.reward_id,
+          itemName: lang === 'ar' ? (d.reward_name_ar || d.reward_name_en) : (d.reward_name_en || d.reward_name_ar),
+          cost: d.cost_points,
+          status: d.status,
+          createdAt: d.created_at
+        })));
+      } catch (error) {
+        console.warn('Could not load reward requests from Supabase:', error);
+        if (active) setPurchases([]);
+      }
+    };
 
-            if (data && data.length > 0) {
-              const formatted = data.map(d => ({
-                userId: d.student_id,
-                rewardId: d.reward_id,
-                itemName: lang === 'ar' ? (d.reward_name_ar || d.reward_name_en) : (d.reward_name_en || d.reward_name_ar),
-                cost: d.cost_points,
-                createdAt: d.created_at
-              }));
-              setPurchases(formatted);
-            }
-          } catch (e) {
-            console.warn('Could not load purchases from Supabase:', e);
-          }
-       };
-       fetchPurchases();
-    }
+    void fetchPurchases();
+    return () => { active = false; };
   }, [userData?.id, view, lang, isGuest]);
 
   const executePurchase = async () => {
