@@ -387,12 +387,9 @@ function AppContent() {
                 : `Sunday School activation pending manual approval (${userData.requestedGrade || userData.grade || 'Grade not selected'})`}
             </span>
           </div>
-          <button
-            onClick={() => setShowStudentOnboardingModal(true)}
-            className="bg-amber-300 hover:bg-amber-200 text-amber-950 font-black px-3 py-1 rounded-lg text-xs transition-colors cursor-pointer shadow-xs shrink-0"
-          >
-            {lang === 'ar' ? 'عرض / تحديد الصف' : 'Select / Review Grade'}
-          </button>
+          <span className="rounded-lg bg-amber-300/20 px-3 py-1 text-xs font-bold text-white">
+            {lang === 'ar' ? 'راجع ملفك الشخصي لإدارة بيانات الصف' : 'Manage grade requests from Edit Profile'}
+          </span>
         </div>
       )}
       
