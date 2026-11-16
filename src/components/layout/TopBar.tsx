@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Award, Bell, Cross, Flame, X, Sun, Moon, CheckCheck } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { PWAInstallButton } from './PWAInstallButton';
+import { HelpFeedbackButton } from './HelpFeedbackButton';
+import { NotificationPreferencesButton } from './NotificationPreferencesButton';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -17,6 +19,7 @@ import {
   markAllNotificationsAsRead,
   requestBrowserNotificationPermission,
   isBrowserNotificationEnabled,
+  subscribeToNotifications,
   ChurchNotification 
 } from '../../lib/notificationService';
 
@@ -69,6 +72,11 @@ export function TopBar({
     return () => window.removeEventListener('church_notifications_updated', handleUpdate);
   }, [refreshNotifications]);
 
+  useEffect(() => {
+    if (!userData?.id) return;
+    return subscribeToNotifications(userData.id, refreshNotifications);
+  }, [userData?.id, refreshNotifications]);
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Close menus when clicking outside
@@ -104,7 +112,7 @@ export function TopBar({
   });
 
   const handleNotificationClick = (notif: ChurchNotification) => {
-    markNotificationAsRead(notif.id);
+    void markNotificationAsRead(notif.id, userData?.id);
     if (notif.actionTab && onNavigate) {
       onNavigate(notif.actionTab);
     }
@@ -112,12 +120,12 @@ export function TopBar({
   };
 
   const handleMarkAllRead = () => {
-    markAllNotificationsAsRead(notifications.map(n => n.id));
+    void markAllNotificationsAsRead(notifications.map(n => n.id), userData?.id);
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
   const handleToggleBrowserNotif = async () => {
-    const granted = await requestBrowserNotificationPermission();
+    const granted = await requestBrowserNotificationPermission(userData?.id);
     setBrowserNotifActive(granted);
   };
 
@@ -188,6 +196,8 @@ export function TopBar({
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
+          <HelpFeedbackButton lang={lang} workspace={workspace} />
+          <NotificationPreferencesButton lang={lang} />
           <PWAInstallButton />
 
           {/* Real Authorized In-App & Browser Notifications */}

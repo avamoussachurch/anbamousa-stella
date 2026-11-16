@@ -4,7 +4,7 @@ import { Lock, Mail, User, Check, Moon, Sun, Database, Sparkles, BookOpen } from
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { registerWithSupabase, loginWithSupabase, signInWithGoogleSupabase } from '../../lib/supabaseAuth';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { CLASS_GROUPS } from '../../lib/classGroups';
 import { ClassGroupId, User as AppUser, Language } from '../../types';
 import { requestAccountActivation } from '../../lib/onboardingService';
@@ -32,6 +32,7 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
     return localStorage.getItem('church_remember_me') !== 'false';
   });
   const [error, setError] = useState('');
+  const [recoveryMessage, setRecoveryMessage] = useState('');
 
   const handleRememberMeChange = (checked: boolean) => {
     setRememberMe(checked);
@@ -137,6 +138,31 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
       }
       setLoading(false);
     }
+  };
+
+  const handlePasswordRecovery = async () => {
+    setError('');
+    setRecoveryMessage('');
+    if (!email.trim()) {
+      setError(lang === 'ar' ? 'اكتب بريدك الإلكتروني الأول.' : 'Enter your email address first.');
+      return;
+    }
+    if (!isSupabaseConfigured || !supabase) {
+      setError(lang === 'ar' ? 'استعادة كلمة المرور غير متاحة قبل إعداد الاتصال الآمن. تواصل مع مسؤول الخدمة.' : 'Password recovery is unavailable until secure account services are configured. Contact your church administrator.');
+      return;
+    }
+    setLoading(true);
+    const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    setLoading(false);
+    if (recoveryError) {
+      setError(lang === 'ar' ? 'تعذر إرسال رابط الاستعادة. راجع البريد وحاول مرة أخرى.' : 'Could not send the recovery link. Check the email and try again.');
+      return;
+    }
+    setRecoveryMessage(lang === 'ar'
+      ? 'لو البريد مسجل عندنا، هيوصلك رابط آمن لتغيير كلمة المرور. راجع صندوق الوارد والرسائل غير المرغوب فيها.'
+      : 'If this email belongs to an account, a secure password reset link has been sent. Check your inbox and spam folder.');
   };
 
   const handleGoogleSignIn = async () => {
@@ -441,6 +467,8 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
               </span>
             </label>
           </div>
+          {!isRegister && <div className="flex justify-end"><button type="button" onClick={() => void handlePasswordRecovery()} disabled={loading} className="min-h-9 text-xs font-bold text-[var(--mousa-teal)] underline underline-offset-4 disabled:opacity-50">{lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}</button></div>}
+          {recoveryMessage && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-6 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">{recoveryMessage}</p>}
 
           <button 
             type="submit"

@@ -44,6 +44,8 @@ import { LessonPublicationManager } from './LessonPublicationManager';
 import { StudentExperiencePreview } from './StudentExperiencePreview';
 import { FeedTab } from '../student/FeedTab';
 import { ServantHomeDashboard } from './ServantHomeDashboard';
+import { HelpRequestsPanel } from './HelpRequestsPanel';
+import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
 
 interface TeacherDashboardProps {
   onOpenParentPortal?: () => void;
@@ -52,7 +54,7 @@ interface TeacherDashboardProps {
   onNavigate?: (tab: string) => void;
 }
 
-type TeacherTab = 'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation' | 'preview' | 'communication';
+type TeacherTab = 'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation' | 'helpRequests' | 'leaderboard' | 'preview' | 'communication';
 
 const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
   overview: { en: 'Servant Studio', ar: 'استوديو الخادم' },
@@ -64,6 +66,8 @@ const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
   ai: { en: 'Lesson creator', ar: 'إنشاء درس' },
   lessons: { en: 'Lesson library', ar: 'مكتبة الدروس' },
   moderation: { en: 'Moderation', ar: 'الإشراف' },
+  helpRequests: { en: 'Student help requests', ar: 'طلبات مساعدة التلاميذ' },
+  leaderboard: { en: 'Class leaderboards', ar: 'ترتيب الفصل' },
   preview: { en: 'Student experience preview', ar: 'معاينة تجربة التلميذ' },
   communication: { en: 'Community feed', ar: 'منشورات المجتمع' }
 };
@@ -80,6 +84,8 @@ const routeToTeacherTab: Record<string, TeacherTab> = {
   ai: 'ai',
   lessons: 'lessons',
   moderation: 'moderation',
+  'help-requests': 'helpRequests',
+  leaderboard: 'leaderboard',
   preview: 'preview',
   communication: 'communication'
 };
@@ -132,7 +138,7 @@ export function TeacherDashboard({
       setLocalActiveTab(nextTab);
       return;
     }
-    onNavigate(nextTab === 'overview' ? 'home' : nextTab === 'sundaySchool' ? 'studio' : nextTab);
+    onNavigate(nextTab === 'overview' ? 'home' : nextTab === 'sundaySchool' ? 'studio' : nextTab === 'helpRequests' ? 'help-requests' : nextTab);
   };
   const [previewLessonId, setPreviewLessonId] = useState<string | null>(null);
   const [publishingModeToOpen, setPublishingModeToOpen] = useState<PublishingMode>('sunday_school');
@@ -1094,6 +1100,9 @@ export function TeacherDashboard({
           </div>
         </div>
       )}
+
+      {activeTab === 'helpRequests' && <HelpRequestsPanel lang={lang} />}
+      {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} />}
 
       {/* Tab 3: Moderation Queue */}
       {activeTab === 'moderation' && (
