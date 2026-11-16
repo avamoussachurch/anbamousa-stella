@@ -196,25 +196,18 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
           </div>
         )}
 
-        {/* Student Sunday School Class Selector / Status Pill */}
+        {/* Student class is informational here; grade changes are requested only from Profile > Edit Profile. */}
         {!isTeacher && (
-          <button
-            onClick={() => setShowClassModal(true)}
-            className="px-3.5 py-2 rounded-2xl bg-[var(--mousa-cream-surface)] border border-[var(--mousa-border-sand)] text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] hover:border-[var(--mousa-gold)] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
-            title={lang === 'ar' ? 'غيّر فصلك أو راجع بياناته' : 'Change or review your Sunday School class'}
-          >
+          <div className="px-3.5 py-2 rounded-2xl bg-[var(--mousa-cream-surface)] border border-[var(--mousa-border-sand)] text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] flex items-center gap-1.5 shadow-2xs" aria-live="polite">
             <span>⛪</span>
             <span>
-              {userData?.grade 
-                ? (userData.activationStatus === 'PENDING_APPROVAL' 
-                    ? (lang === 'ar' ? `مستني المراجعة: ${userData.grade}` : `Pending: ${userData.grade}`) 
-                    : (lang === 'ar' ? `فصلي: ${userData.grade}` : `Class: ${userData.grade}`))
-                : (lang === 'ar' ? 'اختار فصل مدارس الأحد' : 'Select Class')}
+              {userData?.grade
+                ? (userData.activationStatus === 'PENDING_APPROVAL'
+                    ? (lang === 'ar' ? `مستني المراجعة: ${userData.grade}` : `Pending approval: ${userData.grade}`)
+                    : (lang === 'ar' ? `فصلي: ${userData.grade}` : `My class: ${userData.grade}`))
+                : (lang === 'ar' ? 'لم يتم تحديد الصف بعد' : 'Grade not set yet')}
             </span>
-            <span className="text-[10px] text-[var(--mousa-coral)] font-bold underline">
-              {lang === 'ar' ? 'تعديل' : 'Change'}
-            </span>
-          </button>
+          </div>
         )}
       </div>
 
