@@ -21,7 +21,7 @@ test('parent-only account opens the family workspace without student actions', (
   assert.equal(canAccessWorkspaceTab([...roles], 'parent', 'leaderboard'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'parent', 'feed'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'student', 'lessons'), false);
-  assert.deepEqual(WORKSPACE_TABS.parent, ['home', 'children', 'journey', 'family', 'events', 'feed', 'profile']);
+  assert.deepEqual(WORKSPACE_TABS.parent, ['home', 'children', 'journey', 'family', 'events', 'leaderboard', 'feed', 'profile']);
 });
 
 test('servant-only account opens the servant workspace without student navigation', () => {
