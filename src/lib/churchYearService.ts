@@ -278,7 +278,24 @@ export async function getCurrentChurchYear(): Promise<{
         .eq('is_active', true)
         .maybeSingle();
 
-      if (!cyError && cy) {
+      if (cyError) {
+        throw cyError;
+      }
+
+      if (cy) {
+        // The direct Supabase path must return the same authoritative class
+        // instances as /api/church/year. Returning [] here hid every real join
+        // code from the teacher class-management screen.
+        const { data: instances, error: instancesError } = await supabase
+          .from('class_instances')
+          .select('id, church_year_id, class_group_id, name_en, name_ar, join_code, created_at, updated_at')
+          .eq('church_year_id', cy.id)
+          .order('class_group_id');
+
+        if (instancesError) {
+          throw instancesError;
+        }
+
         return {
           success: true,
           currentChurchYear: cy.name || cy.id,
@@ -291,7 +308,19 @@ export async function getCurrentChurchYear(): Promise<{
             createdAt: cy.activated_at || new Date().toISOString(),
             createdBy: 'system'
           },
-          classInstances: []
+          classInstances: (instances || []).map(instance => ({
+            id: instance.id,
+            churchYear: instance.church_year_id,
+            classGroupId: instance.class_group_id as ClassGroupId,
+            nameEn: instance.name_en,
+            nameAr: instance.name_ar,
+            code: instance.join_code,
+            servantIds: [],
+            servantNames: [],
+            status: 'ACTIVE' as const,
+            createdAt: instance.created_at,
+            updatedAt: instance.updated_at
+          }))
         };
       }
     } catch (_) {}
