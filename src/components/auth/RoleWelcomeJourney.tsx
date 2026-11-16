@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ArrowLeft, ArrowRight, BookOpen, CalendarCheck, CheckCircle2, ChevronRight, GraduationCap, HeartHandshake, LayoutDashboard, MessageCircle, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, CalendarCheck, CheckCircle2 , GraduationCap, HeartHandshake, LayoutDashboard, MessageCircle, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
 
 type JourneyRole = 'teacher' | 'parent';
 type Language = 'ar' | 'en' | 'cop' | 'copt';
