@@ -17,10 +17,11 @@ import {
   ArrowRight,
   Info
 } from 'lucide-react';
-import { CLASS_GROUPS, CANONICAL_GRADE_LIST, getClassGroupForGrade, CANONICAL_GRADES } from '../../lib/classGroups';
+import { CLASS_GROUPS, CANONICAL_GRADE_LIST, getClassGroupForGrade, CANONICAL_GRADES, findCanonicalGrade } from '../../lib/classGroups';
 import { ClassGroupId, Language, OnboardingActivationRequest } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { requestAccountActivation, getMyActivationStatus } from '../../lib/onboardingService';
+import { getStudentActiveMembership } from '../../lib/churchYearService';
 
 interface StudentOnboardingModalProps {
   isOpen: boolean;
@@ -93,11 +94,30 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
 
     try {
       const submittedName = fullName.trim() || userData.fullName || 'Student';
-      if (submittedName !== userData.fullName) {
-        const profileResult = await updateUserProfile({ fullName: submittedName });
+      const profileUpdates: { fullName?: string; phone?: string } = {};
+      if (submittedName !== userData.fullName) profileUpdates.fullName = submittedName;
+      if (phone.trim() !== (userData.phone || '').trim()) profileUpdates.phone = phone.trim();
+      if (Object.keys(profileUpdates).length > 0) {
+        const profileResult = await updateUserProfile(profileUpdates);
         if (!profileResult.success) {
           setErrorMessage(profileResult.error || (isAr ? 'مش قادرين نحفظ الاسم.' : 'Could not save your name.'));
           setSubmitting(false);
+          return;
+        }
+      }
+
+      const currentGrade = findCanonicalGrade(userData.grade);
+      const requestedGrade = findCanonicalGrade(selectedGradeCode);
+      const gradeUnchanged = Boolean(currentGrade && requestedGrade && currentGrade.id === requestedGrade.id);
+      if (gradeUnchanged) {
+        const membership = await getStudentActiveMembership(userData.id);
+        if (membership.error && !membership.isEnrolled) {
+          setErrorMessage(membership.error);
+          return;
+        }
+        if (membership.isEnrolled) {
+          setSuccessMessage(isAr ? 'تم حفظ بيانات حسابك بنجاح. فصلك الدراسي مسجل بالفعل.' : 'Your account details were saved. Your class enrollment is already active.');
+          onSuccess?.();
           return;
         }
       }
