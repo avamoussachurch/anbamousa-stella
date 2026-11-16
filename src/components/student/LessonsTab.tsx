@@ -27,7 +27,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
   const isOnlineCurriculumLoading = !isGuest && isSupabaseConfigured && (curriculumLoading || !isOnlineCurriculumReady);
   const isOnlineCurriculumFailed = !isGuest && isSupabaseConfigured && isOnlineCurriculumReady && Boolean(curriculumError);
   const [selectedSchool, setSelectedSchool] = useState<'sunday_school' | 'hymns' | 'taxis'>('sunday_school');
-  const [displayMode, setDisplayMode] = useState<'roadmap' | 'cards'>('roadmap');
+  const [displayMode, setDisplayMode] = useState<'roadmap' | 'cards'>('cards');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'published' | 'drafts'>('all');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -149,7 +149,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
             <div className="text-xs sm:text-sm text-stone-800 dark:text-stone-200 font-bold">
               <span>
                 {lang === 'ar' 
-                  ? '📅 الخدام بيجهّزوا منهج مدارس الأحد لكل الفصول. الدروس الدروس المنشورة لمرحلتك هتلاقيها تحت، تقدر تفتحها وتذاكرها.' 
+                  ? '📅 الخدام بيجهّزوا منهج مدارس الأحد لكل الفصول. الدروس المنشورة لمرحلتك هتلاقيها تحت، تقدر تفتحها وتذاكرها.' 
                   : '📅 The Sunday School weekly curriculum for each class is being finalized by servants — published lessons for your class are available below.'}
               </span>
             </div>
@@ -163,10 +163,10 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
               </div>
               <div>
                 <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] md:text-3xl">
-                  {lang === 'copt' ? 'Ⲛⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲉⲕⲕⲗⲏⲥⲓⲁ' : lang === 'ar' ? 'محطات رحلة مدارس الأحد' : 'Sunday School Milestones'}
+                  {lang === 'copt' ? 'Ⲛⲓⲥⲃⲱ ⲛ̀ⲧⲉ ϯⲉⲕⲕⲗⲏⲥⲓⲁ' : lang === 'ar' ? 'دروس مدارس الأحد' : 'Sunday School Lessons'}
                 </h1>
                 <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)]">
-                  {lang === 'copt' ? 'Ϩⲁⲛⲥⲃⲱ ⲙ̀ⲡⲛⲉⲩⲙⲁⲧⲓⲕⲟⲛ ⲛⲉⲙ ⲛⲓⲇⲟⲕⲓⲙⲏ' : lang === 'ar' ? 'رحلة الأنبا موسى، وقصص من الكتاب المقدس، واختبارات تفاعلية' : 'Journey of Moses spiritual trail, Bible stories & interactive quizzes'}
+                  {lang === 'copt' ? 'Ϩⲁⲛⲥⲃⲱ ⲙ̀ⲡⲛⲉⲩⲙⲁⲧⲓⲕⲟⲛ ⲛⲉⲙ ⲛⲓⲇⲟⲕⲓⲙⲏ' : lang === 'ar' ? 'دروس كتابية وقصص من الإيمان واختبارات تفاعلية' : 'Journey of Moses spiritual trail, Bible stories & interactive quizzes'}
                 </p>
               </div>
             </div>
@@ -217,7 +217,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
           </div>
           <input
             type="text"
-            placeholder={lang === 'copt' ? 'Ⲕⲱϯ ⲛ̀ⲥⲁ ⲟⲩⲥⲃⲱ...' : lang === 'ar' ? 'دوّر على محطة أو درس في رحلتك...' : 'Search desert milestones or Bible stories...'}
+            placeholder={lang === 'copt' ? 'Ⲕⲱϯ ⲛ̀ⲥⲁ ⲟⲩⲥⲃⲱ...' : lang === 'ar' ? 'دوّر على درس أو قصة من الكتاب المقدس...' : 'Search lessons and Bible stories...'}
             className={`block w-full rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] py-2.5 ${lang === 'ar' ? 'pr-9 pl-4' : 'pl-9 pr-4'} text-xs sm:text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] placeholder-[var(--mousa-sand-500)] focus:border-[var(--mousa-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--mousa-gold)] transition-colors shadow-2xs`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
