@@ -252,8 +252,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     if (updates.phone !== undefined) {
       const phone = updates.phone.trim();
-      const digits = phone.replace(/\\D/g, '');
-      if (phone && (digits.length < 7 || digits.length > 15 || !/^[+0-9().\\s-]+$/.test(phone))) {
+      const digits = phone.replace(/\D/g, '');
+      if (phone && (digits.length < 7 || digits.length > 15 || !/^[+0-9().\s-]+$/.test(phone))) {
         return { success: false, error: 'Enter a valid phone number, including country code if needed.' };
       }
     }
