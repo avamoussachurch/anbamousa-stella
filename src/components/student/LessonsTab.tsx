@@ -149,8 +149,8 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
             <div className="text-xs sm:text-sm text-stone-800 dark:text-stone-200 font-bold">
               <span>
                 {lang === 'ar' 
-                  ? '📅 الخدام بيجهّزوا منهج مدارس الأحد لكل الفصول. الدروس المنشورة لمرحلتك هتلاقيها تحت، تقدر تفتحها وتذاكرها.' 
-                  : '📅 The Sunday School weekly curriculum for each class is being finalized by servants — published lessons for your class are available below.'}
+                  ? '📅 الدروس المنشورة لفصلك موجودة تحت. اختار درس وابدأ رحلتك في التعلّم.' 
+                  : '📅 Your published Sunday School lessons are ready below. Choose a lesson and continue learning.'}
               </span>
             </div>
           </div>
@@ -410,7 +410,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
                           ? (lang === 'copt' ? 'Ⲟⲩⲁϩⲙⲉϥ' : lang === 'ar' ? 'مراجعة' : 'Review') 
                           : (isTeacher 
                               ? (lang === 'copt' ? 'Ⲛⲁⲩ' : lang === 'ar' ? 'معاينة' : 'Preview') 
-                              : (lang === 'copt' ? 'Ⲁⲣⲓϩⲏⲧⲥ' : lang === 'ar' ? 'ابدأ المحطة' : 'Begin Milestone'))}
+                              : (lang === 'copt' ? 'Ⲁⲣⲓϩⲏⲧⲥ' : lang === 'ar' ? 'ابدأ الدرس' : 'Start Lesson'))}
                       </span>
                     </button>
                   </div>
@@ -426,7 +426,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
             >
               <div className="text-3xl mb-2">🏜️</div>
               <h3 className="text-base font-bold text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">
-                {lang === 'copt' ? 'Ⲙ̀ⲙⲟⲛ ϩⲁⲛⲥⲃⲱ ⲉⲩϣⲱⲡ' : lang === 'ar' ? 'لا توجد دروس أو محطات مطابقة' : 'No milestones found'}
+                {lang === 'copt' ? 'Ⲙ̀ⲙⲟⲛ ϩⲁⲛⲥⲃⲱ ⲉⲩϣⲱⲡ' : lang === 'ar' ? 'لا توجد دروس مطابقة' : 'No lessons found'}
               </h3>
               <p className="text-xs text-[var(--mousa-sand-500)]">
                 {lang === 'copt' ? 'Ⲕⲱϯ ϧⲉⲛ ϩⲁⲛⲥⲁϫⲓ ⲕⲉⲭⲱⲟⲩⲛⲓ.' : lang === 'ar' ? 'جرب البحث بكلمات أخرى أو تغيير الفلتر.' : 'Try adjusting your search terms or filter mode.'}
