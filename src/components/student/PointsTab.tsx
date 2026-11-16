@@ -5,7 +5,7 @@ import { mockBadges } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { submitRewardRequest } from '../../lib/supabaseDatabase';
-import { shouldLoadCloudRewardPurchases, shouldPersistRewardRequestToCloud } from '../../lib/rewardPersistence';
+import { shouldLoadCloudRewardPurchases } from '../../lib/rewardPersistence';
 import { 
   getLeaderboard, 
   getStreakLeaderboard, 
@@ -34,7 +34,6 @@ export function PointsTab({ lang }: { lang: Language }) {
   // 3. Points Leaderboard (ترتيب النقاط)
   // 4. Points Bazaar (متجر المكافآت)
   const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar'>('streak');
-  const [showStore, setShowStore] = useState(false);
   const [purchases, setPurchases] = useState<any[]>(() => userData ? getSavedPurchases(userData.id) : []);
   const [confirmPurchaseItem, setConfirmPurchaseItem] = useState<{ id: string; name: string; cost: number } | null>(null);
   const [feedbackToast, setFeedbackToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
