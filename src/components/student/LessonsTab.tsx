@@ -8,7 +8,6 @@ import { Lesson, Language } from '../../types';
 import { LessonEditModal } from '../teacher/LessonEditModal';
 import { ExpressLessonPublishModal } from '../teacher/ExpressLessonPublishModal';
 import { formatStudentClassDisplay, getClassGroupForGrade } from '../../lib/classGroups';
-import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { HymnsSchoolTab } from '../hymns/HymnsSchoolTab';
 import { CopticTaxisTab } from '../taxis/CopticTaxisTab';
 import { StudentRoadmapView } from './StudentRoadmapView';
@@ -32,7 +31,6 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'published' | 'drafts'>('all');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
-  const [showClassModal, setShowClassModal] = useState<boolean>(false);
   const [showExpressPublishModal, setShowExpressPublishModal] = useState<boolean>(false);
 
   const isTeacher = workspace === 'teacher';
@@ -455,18 +453,6 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
             }
           }}
           lang={lang}
-        />
-      )}
-
-      {/* Student Onboarding & Class Selection Modal */}
-      {!isTeacher && (
-        <StudentOnboardingModal
-          isOpen={showClassModal}
-          onClose={() => setShowClassModal(false)}
-          lang={lang}
-          onSuccess={() => {
-            setShowClassModal(false);
-          }}
         />
       )}
 
