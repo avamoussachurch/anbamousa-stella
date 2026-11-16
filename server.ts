@@ -368,7 +368,7 @@ app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
     });
   }
 
-  const profileUpdates: Record<string, string | boolean> = {};
+  const profileUpdates: Record<string, string | boolean | null> = {};
   if (Object.prototype.hasOwnProperty.call(body, 'name')) {
     if (typeof body.name !== 'string' || body.name.trim().length < 2 || body.name.trim().length > 100) {
       return res.status(400).json({ success: false, error: 'INVALID_NAME', message: 'Name must contain 2 to 100 characters.' });
