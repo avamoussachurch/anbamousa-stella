@@ -6,13 +6,11 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { submitRewardRequest } from '../../lib/supabaseDatabase';
 import { shouldLoadCloudRewardPurchases, shouldPersistRewardRequestToCloud } from '../../lib/rewardPersistence';
-import { addRewardRequest } from '../../lib/parentChildService';
 import { 
   getLeaderboard, 
   getStreakLeaderboard, 
   StreakLeaderboardEntry,
-  getSavedPurchases, 
-  saveRewardPurchaseLocal 
+  getSavedPurchases 
 } from '../../lib/pointsService';
 import { LeaderboardEntry, Language } from '../../types';
 import { LeaderboardPodium, PodiumItem } from './LeaderboardPodium';
@@ -85,53 +83,53 @@ export function PointsTab({ lang }: { lang: Language }) {
   const executePurchase = async () => {
     if (!userData || !confirmPurchaseItem) return;
     const { id: rewardId, cost, name } = confirmPurchaseItem;
-    
+
+    if (isGuest) {
+      showNotification('error', lang === 'ar'
+        ? 'سجّل الدخول بحسابك الحقيقي لإرسال طلب مكافأة.'
+        : 'Sign in with your account to submit a real reward request.');
+      setConfirmPurchaseItem(null);
+      return;
+    }
+
     if (userData.points < cost) {
-       showNotification('error', lang === 'ar' ? 'نقاطك مش كفاية عشان تطلب المكافأة دي!' : 'Not enough points for this reward!');
-       setConfirmPurchaseItem(null);
-       return;
+      showNotification('error', lang === 'ar'
+        ? 'نقاطك مش كفاية لطلب المكافأة دي.'
+        : 'You do not have enough points to request this reward.');
+      setConfirmPurchaseItem(null);
+      return;
     }
 
     try {
-       await addPoints(-cost);
+      const result = await submitRewardRequest(
+        userData.id,
+        rewardId,
+        name,
+        name,
+        cost,
+        userData.parentId
+      );
+      if (!result || result.error) {
+        throw new Error(result?.error?.message || 'The reward request could not be saved.');
+      }
 
-       const newPurchase = {
-          userId: userData.id,
-          rewardId,
-          itemName: name,
-          cost,
-          createdAt: new Date().toISOString()
-       };
-
-       saveRewardPurchaseLocal(userData.id, newPurchase);
-       setPurchases(prev => [newPurchase, ...prev]);
-
-       if (shouldPersistRewardRequestToCloud(isGuest, Boolean(supabase))) {
-         try {
-           await submitRewardRequest(userData.id, rewardId, name, name, cost);
-         } catch (e) {}
-       }
-
-       try {
-         addRewardRequest({
-           childId: userData.id,
-           childNameEn: userData.fullName || 'Student',
-           childNameAr: userData.fullName || 'تلميذ',
-           rewardTitleEn: name,
-           rewardTitleAr: name,
-           pointsCost: cost,
-           icon: '🎁',
-           parentId: userData.parentId
-         });
-       } catch (e) {}
-
-       setConfirmPurchaseItem(null);
-       setShowStore(false);
-       showNotification('success', lang === 'ar' ? 'طلب المكافأة اتبعت بنجاح! تقدر تستلمها من خادم فصلك يوم الأحد.' : 'Request submitted successfully! Claim your reward from your servant on Sunday.');
-    } catch(err: any) {
-       console.error(err);
-       showNotification('error', lang === 'ar' ? 'حصلت مشكلة وإحنا بننفّذ الطلب. جرّب تاني.' : 'Error during purchase.');
-       setConfirmPurchaseItem(null);
+      const newPurchase = {
+        userId: userData.id,
+        rewardId,
+        itemName: name,
+        cost,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
+      setPurchases(prev => [newPurchase, ...prev]);
+      setConfirmPurchaseItem(null);
+      showNotification('success', lang === 'ar'
+        ? 'طلب المكافأة اتحفظ وبقى مستني موافقة ولي الأمر أو الخادم. نقاطك لسه زي ما هي.'
+        : 'Reward request saved. It is awaiting parent or servant approval; your points have not been deducted.');
+    } catch (err: any) {
+      showNotification('error', err?.message || (lang === 'ar'
+        ? 'مش قادرين نحفظ طلب المكافأة. نقاطك لم تتغير، جرّب تاني.'
+        : 'Could not save the reward request. Your points were not changed; please try again.'));
     }
   };
 
@@ -530,66 +528,91 @@ export function PointsTab({ lang }: { lang: Language }) {
         )}
 
         {/* =========================================================================
-            SECTION 4: POINTS BAZAAR (متجر المكافآت) — BLURRED WITH COMING SOON OVERLAY
+            SECTION 4: POINTS BAZAAR — LIVE REWARD REQUESTS
            ========================================================================= */}
         {view === 'bazaar' && (
-          <motion.div 
+          <motion.div
             key="bazaar"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
-            className="relative md:max-w-4xl md:mx-auto"
+            className="space-y-6 md:max-w-4xl md:mx-auto"
           >
-            {/* The Blurred Underlying Treasury Content */}
-            <div className="filter blur-md select-none pointer-events-none opacity-40 space-y-6">
-              <div className="bg-gradient-to-br from-[var(--mousa-teal-deep)] via-[#144E5B] to-[#103D46] rounded-3xl p-6 md:p-8 text-white">
-                <div className="flex items-center gap-3 mb-4">
-                  <Landmark size={28} />
-                  <h2 className="text-xl md:text-2xl font-black">{lang === 'ar' ? 'خزينة بركة الأنبا موسى' : 'Points Treasury'}</h2>
+            <section className="rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-gradient-to-br from-[var(--mousa-teal-deep)] via-[#144E5B] to-[#103D46] p-6 text-white shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-200/40 bg-white/10 px-3 py-1 text-xs font-bold text-amber-100">
+                    <Gift size={14} /> {lang === 'ar' ? 'بازار المكافآت' : 'Rewards Bazaar'}
+                  </div>
+                  <h2 className="text-2xl font-black">{lang === 'ar' ? 'اختار مكافأتك' : 'Choose a reward'}</h2>
+                  <p className="mt-1 text-sm text-white/80">
+                    {lang === 'ar'
+                      ? 'ابعت طلب المكافأة للمراجعة. النقاط لا تُخصم إلا بعد الموافقة.'
+                      : 'Submit a request for review. Points are not deducted when you submit it.'}
+                  </p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {REWARD_PRODUCTS.map(prod => (
-                    <div key={prod.id} className="p-4 bg-white/10 rounded-2xl">
-                      <div className="text-2xl">{prod.icon}</div>
-                      <div className="font-bold mt-2">{prod.titleAr}</div>
-                      <div className="text-xs mt-1">+{prod.cost} pts</div>
+                <div className="rounded-2xl border border-amber-200/30 bg-white/10 px-5 py-3 text-center">
+                  <div className="text-xs font-bold text-amber-100">{lang === 'ar' ? 'رصيدك الحالي' : 'Your balance'}</div>
+                  <div className="mt-1 text-3xl font-black">{userData.points} ✨</div>
+                </div>
+              </div>
+            </section>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {REWARD_PRODUCTS.map(prod => {
+                const canRequest = userData.points >= prod.cost && !isGuest;
+                return (
+                  <article key={prod.id} className="rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-5 shadow-sm dark:bg-[#1E1914]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-3xl dark:bg-amber-950/50">{prod.icon}</div>
+                      <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-black text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">{prod.cost} pts</span>
+                    </div>
+                    <h3 className="mt-4 text-base font-black text-[var(--mousa-teal-deep)] dark:text-amber-200">{lang === 'ar' ? prod.titleAr : prod.title}</h3>
+                    <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                      {lang === 'ar' ? 'طلب المكافأة يحتاج موافقة قبل التسليم.' : 'A request must be approved before the reward is issued.'}
+                    </p>
+                    <button
+                      type="button"
+                      disabled={!canRequest}
+                      onClick={() => setConfirmPurchaseItem({ id: prod.id, name: lang === 'ar' ? prod.titleAr : prod.title, cost: prod.cost })}
+                      className="mt-4 w-full rounded-xl bg-[var(--mousa-teal)] px-4 py-3 text-sm font-black text-white transition hover:bg-[var(--mousa-teal-deep)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isGuest
+                        ? (lang === 'ar' ? 'سجّل الدخول لطلب المكافأة' : 'Sign in to request')
+                        : userData.points < prod.cost
+                          ? (lang === 'ar' ? 'نقاط غير كافية' : 'Not enough points')
+                          : (lang === 'ar' ? 'اطلب المكافأة' : 'Request reward')}
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+
+            <section className="rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-5 dark:bg-[#1E1914]">
+              <div className="flex items-center gap-2">
+                <History size={18} className="text-[var(--mousa-teal)]" />
+                <h3 className="font-black text-[var(--text-primary)]">{lang === 'ar' ? 'طلباتك السابقة' : 'Your reward requests'}</h3>
+              </div>
+              {purchases.length === 0 ? (
+                <p className="mt-3 rounded-xl bg-[var(--surface-secondary)] p-4 text-sm text-[var(--text-secondary)]">
+                  {lang === 'ar' ? 'لسه ما بعتّش طلبات مكافآت.' : 'You have not submitted any reward requests yet.'}
+                </p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {purchases.map((purchase, index) => (
+                    <div key={purchase.id || purchase.createdAt || index} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-default)] p-3">
+                      <div>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">{purchase.itemName || purchase.reward_name_en || purchase.reward_name_ar}</p>
+                        <p className="text-xs text-[var(--text-secondary)]">{purchase.cost ?? purchase.cost_points} pts · {new Date(purchase.createdAt || purchase.created_at).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-EG')}</p>
+                      </div>
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                        {purchase.status === 'approved' ? (lang === 'ar' ? 'موافق عليه' : 'Approved') : purchase.status === 'rejected' ? (lang === 'ar' ? 'مرفوض' : 'Rejected') : (lang === 'ar' ? 'بانتظار الموافقة' : 'Pending approval')}
+                      </span>
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            {/* Clearly Visible Brand-Consistent Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center p-4 z-20">
-              <motion.div 
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="bg-white/95 dark:bg-[#1E1914]/95 backdrop-blur-md rounded-3xl p-8 max-w-md w-full text-center space-y-4 border-2 border-[var(--mousa-gold)] shadow-2xl"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border-2 border-amber-300 dark:border-amber-700 flex items-center justify-center mx-auto text-3xl shadow-sm">
-                  🎁
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-stone-900 dark:text-stone-50">
-                    حجات جديدة قريبا!!
-                  </h3>
-                  <h4 className="text-lg font-black text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)] mt-1 tracking-wide">
-                    Coming Soon!!
-                  </h4>
-                </div>
-                <p className="text-xs sm:text-sm font-bold text-stone-700 dark:text-stone-300 leading-relaxed">
-                  {lang === 'ar'
-                    ? 'يقوم الخدام بتجهيز بازار هدايا وأيقونات وبركات الأنبا موسى الكنسية قريباً لتكريم الطلاب المتميزين.'
-                    : 'Our Sunday School servants are currently preparing the rewards bazaar with blessed church icons and gifts.'}
-                </p>
-                <div className="pt-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 text-xs font-black border border-amber-200 dark:border-stone-700">
-                    <Sparkles size={14} className="text-amber-500" />
-                    <span>{lang === 'ar' ? 'حافظ على نقاطك واستمر في التعلم' : 'Keep earning points & stay tuned'}</span>
-                  </span>
-                </div>
-              </motion.div>
-            </div>
+              )}
+            </section>
           </motion.div>
         )}
       </AnimatePresence>
