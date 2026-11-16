@@ -96,26 +96,25 @@ function AppContent() {
   });
 
   useEffect(() => {
-    if (!userData || activeWorkspace !== 'teacher' && activeWorkspace !== 'parent') return;
+    if (!userData || !['teacher', 'parent', 'admin'].includes(activeWorkspace || '')) return;
     const role = activeWorkspace;
     const key = 'stella_' + role + '_account_setup_v1_' + userData.id;
     if (localStorage.getItem(key) !== 'completed') setAccountSetupRole(role);
   }, [userData?.id, userData?.roles, activeWorkspace]);
 
-  // On first student login without exact grade, show onboarding modal
+  // On first student login, collect account and class information even when a legacy grade is already present.
   const [showStudentOnboardingModal, setShowStudentOnboardingModal] = useState<boolean>(false);
   const [showStudentWelcomeTour, setShowStudentWelcomeTour] = useState<boolean>(false);
   const [roleWelcomeJourney, setRoleWelcomeJourney] = useState<'teacher' | 'parent' | null>(null);
-  const [accountSetupRole, setAccountSetupRole] = useState<'teacher' | 'parent' | null>(null);
+  const [accountSetupRole, setAccountSetupRole] = useState<'teacher' | 'parent' | 'admin' | null>(null);
   // Account setup is intentionally separate from the optional feature walkthroughs.
   useEffect(() => {
     if (userData && hasRole(userData, 'student') && activeWorkspace === 'student') {
-      const dismissed = sessionStorage.getItem('dismissed_student_onboarding_' + userData.id);
-      if (!userData.grade && !dismissed) {
-        setShowStudentOnboardingModal(true);
-      }
+      const completed = localStorage.getItem('stella_student_account_setup_v1_' + userData.id) === 'completed';
+      const dismissed = sessionStorage.getItem('dismissed_student_onboarding_' + userData.id) === 'true';
+      if (!completed && !dismissed) setShowStudentOnboardingModal(true);
     }
-  }, [userData?.id, userData?.roles, userData?.grade, activeWorkspace]);
+  }, [userData?.id, userData?.roles, activeWorkspace]);
 
   React.useEffect(() => {
     if (!userData) return;
@@ -460,6 +459,7 @@ function AppContent() {
           onSuccess={() => {
             setShowStudentOnboardingModal(false);
             if (userData?.id) {
+              localStorage.setItem('stella_student_account_setup_v1_' + userData.id, 'completed');
               sessionStorage.setItem('dismissed_student_onboarding_' + userData.id, 'true');
             }
           }}

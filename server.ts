@@ -352,6 +352,7 @@ app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
 
   const allowedFields = new Set([
     'name',
+    'contact_phone',
     'avatar',
     'push_notifications_enabled',
     'notify_lesson_completion',
@@ -367,12 +368,18 @@ app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
     });
   }
 
-  const profileUpdates: Record<string, string | boolean> = {};
+  const profileUpdates: Record<string, string | boolean | null> = {};
   if (Object.prototype.hasOwnProperty.call(body, 'name')) {
     if (typeof body.name !== 'string' || body.name.trim().length < 2 || body.name.trim().length > 100) {
       return res.status(400).json({ success: false, error: 'INVALID_NAME', message: 'Name must contain 2 to 100 characters.' });
     }
     profileUpdates.name = body.name.trim();
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'contact_phone')) {
+    if (body.contact_phone !== null && (typeof body.contact_phone !== 'string' || body.contact_phone.trim().length > 32 || (body.contact_phone.trim() && (!/^[+0-9().\s-]+$/.test(body.contact_phone.trim()) || body.contact_phone.replace(/\D/g, '').length < 7 || body.contact_phone.replace(/\D/g, '').length > 15)))) {
+      return res.status(400).json({ success: false, error: 'INVALID_PHONE', message: 'Enter a valid phone number or leave this field blank.' });
+    }
+    profileUpdates.contact_phone = typeof body.contact_phone === 'string' && body.contact_phone.trim() ? body.contact_phone.trim() : null;
   }
   if (Object.prototype.hasOwnProperty.call(body, 'avatar')) {
     if (typeof body.avatar !== 'string' || body.avatar.length > 1_000_000) {
@@ -414,7 +421,7 @@ app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
       .from('profiles')
       .update(profileUpdates)
       .eq('id', authContext.userId)
-      .select('id, name, avatar, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, require_reward_approval')
+      .select('id, name, avatar, contact_phone, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, require_reward_approval')
       .maybeSingle();
     if (error) throw new Error(`Could not save your profile: ${error.message}`);
     if (!data) {
