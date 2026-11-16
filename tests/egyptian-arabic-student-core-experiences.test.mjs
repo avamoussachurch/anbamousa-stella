@@ -16,7 +16,7 @@ test('login and student lesson experiences use friendly Egyptian Arabic', async 
   assert.match(lesson, /لازم تسجّل دخولك وتكون متصل بالإنترنت عشان نحفظ إنك خلّصت الدرس/);
   assert.match(lesson, /يلا ابدأ اختبار المراجعة/);
   assert.match(lessons, /الخدام بيجهّزوا منهج مدارس الأحد/);
-  assert.match(lessons, /دوّر على محطة أو درس في رحلتك/);
+  assert.match(lessons, /دوّر على درس أو قصة من الكتاب المقدس/);
 });
 
 test('student points and community feed actions use conversational Arabic', async () => {
