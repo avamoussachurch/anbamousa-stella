@@ -19,3 +19,10 @@ test('student lesson list waits for the authoritative online curriculum snapshot
 test('online Home lessons trust membership-scoped curriculum results instead of stale profile grades', () => {
   assert.match(homeTab, /if \(isOnlineAuth\) return true/);
 });
+
+
+test('student and teacher Lessons tab opens with the familiar lesson-card library by default', () => {
+  assert.match(lessonsTab, /const \[displayMode, setDisplayMode\] = useState<'roadmap' \| 'cards'>\('cards'\)/);
+  assert.match(lessonsTab, /displayMode === 'roadmap' \?/);
+  assert.match(lessonsTab, /Lesson Cards Grid/);
+});
