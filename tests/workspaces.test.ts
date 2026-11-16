@@ -18,6 +18,7 @@ test('parent-only account opens the family workspace without student actions', (
   assert.equal(canAccessWorkspaceTab([...roles], 'parent', 'children'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'parent', 'journey'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'parent', 'events'), true);
+  assert.equal(canAccessWorkspaceTab([...roles], 'parent', 'leaderboard'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'parent', 'feed'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'student', 'lessons'), false);
   assert.deepEqual(WORKSPACE_TABS.parent, ['home', 'children', 'journey', 'family', 'events', 'feed', 'profile']);
@@ -29,6 +30,7 @@ test('servant-only account opens the servant workspace without student navigatio
   assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'studio'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'lessons'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'feed'), true);
+  assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'leaderboard'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'student', 'lessons'), false);
 });
 
@@ -38,6 +40,7 @@ test('admin-only account opens the admin workspace', () => {
   assert.equal(canAccessWorkspaceTab([...roles], 'admin', 'role-requests'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'admin', 'accounts'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'admin', 'support'), true);
+  assert.equal(canAccessWorkspaceTab([...roles], 'admin', 'leaderboard'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'student', 'home'), false);
 });
 
