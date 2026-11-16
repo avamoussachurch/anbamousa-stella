@@ -36,6 +36,7 @@ const AgpeyaPrayerTab = React.lazy(() => import('./components/agpeya/AgpeyaPraye
 const StudentOnboardingModal = React.lazy(() => import('./components/auth/StudentOnboardingModal').then(module => ({ default: module.StudentOnboardingModal })));
 const AdminWorkspace = React.lazy(() => import('./components/admin/AdminWorkspace').then(module => ({ default: module.AdminWorkspace })));
 const RoleAccountProfile = React.lazy(() => import('./components/profile/RoleAccountProfile').then(module => ({ default: module.RoleAccountProfile })));
+const AccountSetupWizard = React.lazy(() => import('./components/auth/AccountSetupWizard').then(module => ({ default: module.AccountSetupWizard })));
 
 function WorkspaceLoadingFallback({ lang }: { lang: Language }) {
   return (
@@ -94,10 +95,18 @@ function AppContent() {
     return null;
   });
 
+  useEffect(() => {
+    if (!userData || activeWorkspace !== 'teacher' && activeWorkspace !== 'parent') return;
+    const role = activeWorkspace;
+    const key = 'stella_' + role + '_account_setup_v1_' + userData.id;
+    if (localStorage.getItem(key) !== 'completed') setAccountSetupRole(role);
+  }, [userData?.id, userData?.roles, activeWorkspace]);
+
   // On first student login without exact grade, show onboarding modal
   const [showStudentOnboardingModal, setShowStudentOnboardingModal] = useState<boolean>(false);
   const [showStudentWelcomeTour, setShowStudentWelcomeTour] = useState<boolean>(false);
   const [roleWelcomeJourney, setRoleWelcomeJourney] = useState<'teacher' | 'parent' | null>(null);
+  const [accountSetupRole, setAccountSetupRole] = useState<'teacher' | 'parent' | null>(null);
   useEffect(() => {
     if (userData && hasRole(userData, 'student') && activeWorkspace === 'student') {
       const dismissed = sessionStorage.getItem('dismissed_student_onboarding_' + userData.id);
@@ -456,6 +465,21 @@ function AppContent() {
         />
       )}
       </React.Suspense>
+
+      {accountSetupRole && activeWorkspace === accountSetupRole && (
+        <React.Suspense fallback={null}>
+          <AccountSetupWizard
+            role={accountSetupRole}
+            lang={lang}
+            onNavigate={navigate}
+            onComplete={() => {
+              const key = 'stella_' + accountSetupRole + '_account_setup_v1_' + userData.id;
+              localStorage.setItem(key, 'completed');
+              setAccountSetupRole(null);
+            }}
+          />
+        </React.Suspense>
+      )}
 
       {/* Unified Bottom Nav: Always accessible across all tabs, hidden during active full-screen lesson */}
       {!activeLessonId && (
