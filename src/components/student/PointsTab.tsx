@@ -93,7 +93,7 @@ export function PointsTab({ lang }: { lang: Language }) {
 
     if (userData.points < cost) {
       showNotification('error', lang === 'ar'
-        ? 'نقاطك مش كفاية لطلب المكافأة دي.'
+        ? 'نقاطك مش كفاية عشان تطلب المكافأة دي.'
         : 'You do not have enough points to request this reward.');
       setConfirmPurchaseItem(null);
       return;
