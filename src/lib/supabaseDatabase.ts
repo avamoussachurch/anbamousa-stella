@@ -4,6 +4,7 @@ import { parsePersistentMediaUploadResponse } from './mediaUploadResponse';
 
 export interface OwnAccountProfileUpdates {
   name?: string;
+  contact_phone?: string | null;
   avatar?: string;
   push_notifications_enabled?: boolean;
   notify_lesson_completion?: boolean;
