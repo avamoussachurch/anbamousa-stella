@@ -234,6 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const editableFields = new Set([
       'fullName',
+      'phone',
       'avatarUrl',
       'pushNotificationsEnabled',
       'notifyLessonCompletion',
@@ -249,6 +250,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (typeof updates.fullName !== 'string' || updates.fullName.trim().length < 2 || updates.fullName.trim().length > 100)) {
       return { success: false, error: 'Name must contain 2 to 100 characters.' };
     }
+    if (updates.phone !== undefined) {
+      const phone = updates.phone.trim();
+      const digits = phone.replace(/\\D/g, '');
+      if (phone && (digits.length < 7 || digits.length > 15 || !/^[+0-9().\\s-]+$/.test(phone))) {
+        return { success: false, error: 'Enter a valid phone number, including country code if needed.' };
+      }
+    }
     if (updates.avatarUrl !== undefined && typeof updates.avatarUrl !== 'string') {
       return { success: false, error: 'Avatar must be a valid image.' };
     }
@@ -260,6 +268,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const editableUpdates: Partial<User> = {};
     if (updates.fullName !== undefined) editableUpdates.fullName = updates.fullName.trim();
+    if (updates.phone !== undefined) editableUpdates.phone = updates.phone.trim();
     if (updates.avatarUrl !== undefined) editableUpdates.avatarUrl = updates.avatarUrl;
     if (updates.pushNotificationsEnabled !== undefined) editableUpdates.pushNotificationsEnabled = updates.pushNotificationsEnabled;
     if (updates.notifyLessonCompletion !== undefined) editableUpdates.notifyLessonCompletion = updates.notifyLessonCompletion;
@@ -277,6 +286,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { error } = await updateOwnAccountProfile({
           name: editableUpdates.fullName,
+          contact_phone: editableUpdates.phone?.trim() || null,
           avatar: editableUpdates.avatarUrl,
           push_notifications_enabled: editableUpdates.pushNotificationsEnabled,
           notify_lesson_completion: editableUpdates.notifyLessonCompletion,
@@ -512,7 +522,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const uid = session.user.id;
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, name, email, avatar, points, current_streak, longest_streak, grade, hymns_taxis_level, require_reward_approval, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, screen_time_seconds')
+        .select('id, name, email, avatar, points, current_streak, longest_streak, grade, contact_phone, hymns_taxis_level, require_reward_approval, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, screen_time_seconds')
         .eq('id', uid)
         .single();
 
@@ -553,7 +563,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         longestStreak: Number.isFinite(profile?.longest_streak) ? profile.longest_streak : 0,
         progressKnown: !profileError && Number.isFinite(profile?.points) && Number.isFinite(profile?.current_streak),
         parentEmail: cachedAuthUser.parentEmail || profile?.email || session.user.email,
-        phone: cachedAuthUser.phone,
+        phone: profile?.contact_phone || cachedAuthUser.phone,
         grade: profile?.grade || cachedAuthUser.grade,
         hymnsTaxisLevel: parseHymnsTaxisLevel(profile?.hymns_taxis_level) || undefined,
         parentPin: cachedAuthUser.parentPin,
