@@ -77,6 +77,7 @@ export function AccountSetupWizard({ role, lang, onComplete, onNavigate }: Accou
               : (admin
                 ? (isAr ? 'أكّد بيانات مسؤول النظام. صلاحيات الإدارة مرتبطة بالدور الممنوح لحسابك، ولا يمكن تعديلها من هذه الخطوة.' : 'Confirm your administrator contact details. Administrative access is determined by your assigned role, not by this setup form.')
                 : (isAr ? 'أكّد بياناتك. الفصول والصلاحيات تُحدّد من إدارة الكنيسة، ولا يمكن تغييرها من إعداد الحساب.' : 'Confirm your details. Class assignments and permissions are managed by church administrators, not changed in account setup.'))}
+          </p>
           <form onSubmit={submit} className="mt-7 space-y-4">
             <label className="block text-sm font-bold">{isAr ? 'الاسم بالكامل' : 'Full name'}
               <span className="relative mt-2 block"><UserRound className="absolute start-3 top-3.5 text-stone-400" size={18}/><input required minLength={2} maxLength={100} value={fullName} onChange={e=>setFullName(e.target.value)} className="w-full rounded-xl border border-stone-300 bg-white px-10 py-3 text-sm text-stone-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900 dark:text-white" placeholder={isAr ? 'الاسم كما تحب أن يظهر' : 'Name shown on your account'}/></span>
