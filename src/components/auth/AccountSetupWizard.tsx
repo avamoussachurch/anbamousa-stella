@@ -53,6 +53,7 @@ export function AccountSetupWizard({ role, lang, onComplete, onNavigate }: Accou
     }
   };
 
+  // The parent flow continues to secure family linking after profile details are saved.
   const parent = role === 'parent';
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} className="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-slate-950/80 p-3 backdrop-blur-md sm:p-6">
