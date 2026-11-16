@@ -376,7 +376,7 @@ app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
     profileUpdates.name = body.name.trim();
   }
   if (Object.prototype.hasOwnProperty.call(body, 'contact_phone')) {
-    if (body.contact_phone !== null && (typeof body.contact_phone !== 'string' || body.contact_phone.trim().length > 32 || (body.contact_phone.trim() && (!/^[+0-9().\\s-]+$/.test(body.contact_phone.trim()) || body.contact_phone.replace(/\\D/g, '').length < 7 || body.contact_phone.replace(/\\D/g, '').length > 15)))) {
+    if (body.contact_phone !== null && (typeof body.contact_phone !== 'string' || body.contact_phone.trim().length > 32 || (body.contact_phone.trim() && (!/^[+0-9().\s-]+$/.test(body.contact_phone.trim()) || body.contact_phone.replace(/\D/g, '').length < 7 || body.contact_phone.replace(/\D/g, '').length > 15)))) {
       return res.status(400).json({ success: false, error: 'INVALID_PHONE', message: 'Enter a valid phone number or leave this field blank.' });
     }
     profileUpdates.contact_phone = typeof body.contact_phone === 'string' && body.contact_phone.trim() ? body.contact_phone.trim() : null;
