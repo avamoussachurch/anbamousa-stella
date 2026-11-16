@@ -63,7 +63,6 @@ export function AccountSetupWizard({ role, lang, onComplete, onNavigate }: Accou
         initial={{ opacity: 0, y: 24, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
         className="relative my-auto w-full max-w-xl overflow-hidden rounded-[2rem] border border-amber-200/70 bg-[#fffaf0] text-stone-900 shadow-2xl dark:bg-[#211a14] dark:text-stone-50">
         <div className="h-2 bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400" />
-        <button type="button" onClick={onComplete} aria-label={isAr ? 'إغلاق' : 'Close'} className="absolute end-4 top-4 rounded-full p-2 hover:bg-black/5 dark:hover:bg-white/10"><X size={18}/></button>
         <div className="p-6 sm:p-8">
           <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
             {parent ? <HeartHandshake size={32}/> : <ShieldCheck size={32}/>}
