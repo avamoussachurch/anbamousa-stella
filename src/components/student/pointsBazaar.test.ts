@@ -6,7 +6,7 @@ const pointsTab = readFileSync(new URL('./PointsTab.tsx', import.meta.url), 'utf
 
 test('Points Bazaar submits an approval request without deducting points up front', () => {
   assert.match(pointsTab, /submitRewardRequest\(/);
-  assert.match(pointsTab, /awaiting parent or servant approval/i);
+  assert.match(pointsTab, /awaiting parent approval/i);
   assert.doesNotMatch(pointsTab, /addPoints\(-cost\)/);
 });
 
