@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { CheckCircle2, HeartHandshake, ShieldCheck, UserRound, Users, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Language } from '../../types';
