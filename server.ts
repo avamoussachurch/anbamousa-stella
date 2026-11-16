@@ -12630,38 +12630,32 @@ app.post("/api/church/parent/reward-requests/:requestId/review", async (req, res
     }
 
     const client = getTrustedProgressClient();
-    const { data: rewardRequest, error: requestError } = await client
-      .from('reward_requests')
-      .select('id, student_id, status')
-      .eq('id', req.params.requestId)
-      .maybeSingle();
-    if (requestError) throw new Error(`Could not load reward request: ${requestError.message}`);
-    if (!rewardRequest) return res.status(404).json({ success: false, error: "REQUEST_NOT_FOUND", message: "This reward request could not be found." });
+    const { data, error } = await client.rpc('review_parent_reward_request', {
+      p_parent_id: authContext.userId,
+      p_request_id: req.params.requestId,
+      p_decision: decision
+    }).maybeSingle();
 
-    const childIds = await getAuthorizedChildrenForParent(authContext.userId, req);
-    if (!childIds.includes(rewardRequest.student_id)) {
-      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "This request does not belong to a child connected to your family." });
+    if (error) {
+      const message = error.message || "Could not review reward request.";
+      if (message.includes('REQUEST_NOT_FOUND')) {
+        return res.status(404).json({ success: false, error: "REQUEST_NOT_FOUND", message: "This reward request could not be found." });
+      }
+      if (message.includes('FORBIDDEN')) {
+        return res.status(403).json({ success: false, error: "FORBIDDEN", message: "This request does not belong to a child connected to your family." });
+      }
+      if (message.includes('REQUEST_ALREADY_REVIEWED')) {
+        return res.status(409).json({ success: false, error: "REQUEST_ALREADY_REVIEWED", message: "This reward request has already been reviewed." });
+      }
+      if (message.includes('INSUFFICIENT_POINTS')) {
+        return res.status(409).json({ success: false, error: "INSUFFICIENT_POINTS", message: "The student no longer has enough points for this reward." });
+      }
+      throw new Error(message);
     }
-    if (rewardRequest.status !== 'pending') {
+    if (!data) {
       return res.status(409).json({ success: false, error: "REQUEST_ALREADY_REVIEWED", message: "This reward request has already been reviewed." });
     }
-
-    const { data: updatedRequest, error: updateError } = await client
-      .from('reward_requests')
-      .update({
-        status: decision,
-        parent_id: authContext.userId,
-        decided_at: new Date().toISOString()
-      })
-      .eq('id', rewardRequest.id)
-      .eq('status', 'pending')
-      .select('id, student_id, reward_id, reward_name_en, reward_name_ar, cost_points, status, created_at, decided_at')
-      .maybeSingle();
-    if (updateError) throw new Error(`Could not save reward request decision: ${updateError.message}`);
-    if (!updatedRequest) {
-      return res.status(409).json({ success: false, error: "REQUEST_ALREADY_REVIEWED", message: "This reward request has already been reviewed." });
-    }
-    return res.json({ success: true, request: updatedRequest });
+    return res.json({ success: true, request: data });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || "Server error" });
   }
