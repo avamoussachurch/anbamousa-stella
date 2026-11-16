@@ -459,6 +459,7 @@ function AppContent() {
           onSuccess={() => {
             setShowStudentOnboardingModal(false);
             if (userData?.id) {
+              localStorage.setItem('stella_student_account_setup_v1_' + userData.id, 'completed');
               sessionStorage.setItem('dismissed_student_onboarding_' + userData.id, 'true');
             }
           }}
