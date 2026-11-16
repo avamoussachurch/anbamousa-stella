@@ -107,6 +107,7 @@ function AppContent() {
   const [showStudentWelcomeTour, setShowStudentWelcomeTour] = useState<boolean>(false);
   const [roleWelcomeJourney, setRoleWelcomeJourney] = useState<'teacher' | 'parent' | null>(null);
   const [accountSetupRole, setAccountSetupRole] = useState<'teacher' | 'parent' | null>(null);
+  // Account setup is intentionally separate from the optional feature walkthroughs.
   useEffect(() => {
     if (userData && hasRole(userData, 'student') && activeWorkspace === 'student') {
       const dismissed = sessionStorage.getItem('dismissed_student_onboarding_' + userData.id);
