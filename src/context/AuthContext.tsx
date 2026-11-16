@@ -286,7 +286,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { error } = await updateOwnAccountProfile({
           name: editableUpdates.fullName,
-          contact_phone: editableUpdates.phone?.trim() || null,
+          ...(editableUpdates.phone !== undefined ? { contact_phone: editableUpdates.phone.trim() || null } : {}),
           avatar: editableUpdates.avatarUrl,
           push_notifications_enabled: editableUpdates.pushNotificationsEnabled,
           notify_lesson_completion: editableUpdates.notifyLessonCompletion,
