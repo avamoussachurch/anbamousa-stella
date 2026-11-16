@@ -123,7 +123,7 @@ export function PointsTab({ lang }: { lang: Language }) {
       setPurchases(prev => [newPurchase, ...prev]);
       setConfirmPurchaseItem(null);
       showNotification('success', lang === 'ar'
-        ? 'طلب المكافأة اتحفظ وبقى مستني موافقة ولي الأمر أو الخادم. نقاطك لسه زي ما هي.'
+        ? 'طلب المكافأة اتبعت بنجاح للمراجعة، وبقى مستني موافقة ولي الأمر أو الخادم. نقاطك لسه زي ما هي.'
         : 'Reward request saved. It is awaiting parent or servant approval; your points have not been deducted.');
     } catch (err: any) {
       showNotification('error', err?.message || (lang === 'ar'
