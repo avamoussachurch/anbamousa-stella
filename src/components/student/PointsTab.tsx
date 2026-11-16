@@ -26,7 +26,7 @@ import { usePoints } from '../../context/PointsContext';
 
 export function PointsTab({ lang }: { lang: Language }) {
   const { userData, isGuest } = useAuth();
-  const { points, currentStreak, longestStreak, leaderboard: displayLeaderboard, streakLeaderboard: displayStreaks } = usePoints();
+  const { leaderboard: displayLeaderboard, streakLeaderboard: displayStreaks } = usePoints();
   
   // Section order:
   // 1. Streak Stars (نجوم المواظبة) — DEFAULT
