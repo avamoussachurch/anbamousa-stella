@@ -5,6 +5,7 @@ import { TopBar } from './components/layout/TopBar';
 import { WorkspaceSidebar } from './components/layout/WorkspaceSidebar';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { StudentWelcomeTour } from './components/auth/StudentWelcomeTour';
+import { RoleWelcomeJourney } from './components/auth/RoleWelcomeJourney';
 import { PasswordRecoveryScreen } from './components/auth/PasswordRecoveryScreen';
 import { OfflineIndicator } from './components/layout/OfflineIndicator';
 import { AnbaMousaSplashScreen } from './components/layout/AnbaMousaSplashScreen';
@@ -47,7 +48,7 @@ function WorkspaceLoadingFallback({ lang }: { lang: Language }) {
 
 
 function AppContent() {
-  const { userData, loading, logout } = useAuth();
+  const { userData, loading, logout, isGuest } = useAuth();
   const reduceMotion = useReducedMotion();
   const [tabTransitionTick, setTabTransitionTick] = useState(0);
   const [lang, setLangState] = useState<Language>(() => {
@@ -96,6 +97,7 @@ function AppContent() {
   // On first student login without exact grade, show onboarding modal
   const [showStudentOnboardingModal, setShowStudentOnboardingModal] = useState<boolean>(false);
   const [showStudentWelcomeTour, setShowStudentWelcomeTour] = useState<boolean>(false);
+  const [roleWelcomeJourney, setRoleWelcomeJourney] = useState<'teacher' | 'parent' | null>(null);
   useEffect(() => {
     if (userData && hasRole(userData, 'student') && activeWorkspace === 'student') {
       const dismissed = sessionStorage.getItem('dismissed_student_onboarding_' + userData.id);
@@ -419,6 +421,19 @@ function AppContent() {
           onClose={() => {
             setShowStudentWelcomeTour(false);
             if (userData?.id) localStorage.setItem('stella_student_welcome_tour_v1_' + userData.id, 'completed');
+          }}
+        />
+      )}
+
+      {roleWelcomeJourney && activeWorkspace === roleWelcomeJourney && (
+        <RoleWelcomeJourney
+          role={roleWelcomeJourney}
+          lang={lang}
+          onNavigate={navigate}
+          onClose={() => {
+            const key = 'stella_' + roleWelcomeJourney + '_welcome_v1_' + userData.id;
+            localStorage.setItem(key, 'completed');
+            setRoleWelcomeJourney(null);
           }}
         />
       )}
