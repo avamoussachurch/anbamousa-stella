@@ -22,6 +22,7 @@ import { ClassGroupId, Language, OnboardingActivationRequest } from '../../types
 import { useAuth } from '../../context/AuthContext';
 import { requestAccountActivation, getMyActivationStatus } from '../../lib/onboardingService';
 import { getStudentActiveMembership } from '../../lib/churchYearService';
+import { completeAccountSetup } from '../../lib/onboardingService';
 
 interface StudentOnboardingModalProps {
   isOpen: boolean;
@@ -116,6 +117,11 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
           return;
         }
         if (membership.isEnrolled) {
+          const setupResult = await completeAccountSetup('student');
+          if (!setupResult.success) {
+            setErrorMessage(setupResult.error || (isAr ? 'تم حفظ بياناتك، لكن تعذر حفظ حالة الإعداد. جرّب تاني.' : 'Your details were saved, but setup completion could not be confirmed. Please retry.'));
+            return;
+          }
           setSuccessMessage(isAr ? 'تم حفظ بيانات حسابك بنجاح. فصلك الدراسي مسجل بالفعل.' : 'Your account details were saved. Your class enrollment is already active.');
           onSuccess?.();
           return;
@@ -135,6 +141,12 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
       if (!res.success || !res.request) {
         setErrorMessage(res.error || (isAr ? 'مش قادرين نبعت طلب تفعيل الحساب.' : 'Failed to submit activation request'));
         setSubmitting(false);
+        return;
+      }
+
+      const setupResult = await completeAccountSetup('student');
+      if (!setupResult.success) {
+        setErrorMessage(setupResult.error || (isAr ? 'تم إرسال الطلب، لكن تعذر حفظ حالة الإعداد. اضغط إرسال مرة أخرى للمحاولة.' : 'Your request was submitted, but setup completion could not be saved. Submit again to retry.'));
         return;
       }
 

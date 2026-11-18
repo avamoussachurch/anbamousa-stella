@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { CheckCircle2, HeartHandshake, ShieldCheck, UserRound, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Language } from '../../types';
+import { completeAccountSetup } from '../../lib/onboardingService';
 
 type SetupRole = 'teacher' | 'parent' | 'admin';
 
@@ -41,6 +42,11 @@ export function AccountSetupWizard({ role, lang, onComplete, onNavigate }: Accou
       const result = await updateUserProfile({ fullName: name, phone: phone.trim() || undefined });
       if (!result.success) {
         setError(result.error || (isAr ? 'تعذر حفظ بيانات الحساب.' : 'Could not save account details.'));
+        return;
+      }
+      const setupResult = await completeAccountSetup(role);
+      if (!setupResult.success) {
+        setError(setupResult.error || (isAr ? 'تعذر حفظ اكتمال إعداد الحساب.' : 'Could not save account setup completion.'));
         return;
       }
       onComplete();

@@ -1,5 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { OnboardingActivationRequest, ClassGroupId } from '../types';
+
+export type AccountSetupRole = 'student' | 'teacher' | 'parent' | 'admin';
 import { findClassGroupForGrade, getClassGroupForGrade } from './classGroups';
 
 async function getAuthHeader(): Promise<Record<string, string>> {
@@ -43,6 +45,44 @@ async function getActiveChurchYearId(): Promise<{ id: string | null; error: stri
     .maybeSingle();
   if (error) return { id: null, error: error.message };
   return { id: data?.id || null, error: data ? null : 'No active church year is configured.' };
+}
+
+
+export async function getAccountSetupStatus(): Promise<{ success: boolean; completedRoles: AccountSetupRole[]; error?: string }> {
+  try {
+    const response = await fetch('/api/account/setup-status', {
+      method: 'GET',
+      headers: await getAuthHeader()
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.success || !Array.isArray(payload.completedRoles)) {
+      return { success: false, completedRoles: [], error: payload?.message || payload?.error || `HTTP ${response.status}: Could not verify account setup.` };
+    }
+    const allowed = new Set<AccountSetupRole>(['student', 'teacher', 'parent', 'admin']);
+    return {
+      success: true,
+      completedRoles: payload.completedRoles.filter((role: unknown): role is AccountSetupRole => typeof role === 'string' && allowed.has(role as AccountSetupRole))
+    };
+  } catch (error) {
+    return { success: false, completedRoles: [], error: error instanceof Error ? error.message : 'Could not verify account setup.' };
+  }
+}
+
+export async function completeAccountSetup(role: AccountSetupRole): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/account/setup-complete', {
+      method: 'POST',
+      headers: await getAuthHeader(),
+      body: JSON.stringify({ role })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.success || payload.role !== role) {
+      return { success: false, error: payload?.message || payload?.error || `HTTP ${response.status}: Could not save account setup.` };
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Could not save account setup.' };
+  }
 }
 
 export interface RequestActivationParams {
@@ -144,20 +184,10 @@ export async function requestAccountActivation(
     }
     return { success: true, request: json.request };
   } catch (err: any) {
-    const fallbackReq: OnboardingActivationRequest = {
-      id: `req-offline-${Date.now()}`,
-      studentId: params.studentId,
-      studentName: params.studentName,
-      email: params.email,
-      phone: params.phone,
-      requestedClassGroupId: params.requestedClassGroupId,
-      requestedGrade: params.requestedGrade,
-      notes: params.notes,
-      status: 'PENDING_APPROVAL',
-      requestedAt: new Date().toISOString()
+    return {
+      success: false,
+      error: err?.message || 'The activation request could not be confirmed by the server. Check your connection and retry.'
     };
-    try { localStorage.setItem('church_pending_activation', JSON.stringify(fallbackReq)); } catch (_) {}
-    return { success: true, request: fallbackReq };
   }
 }
 
@@ -219,12 +249,11 @@ export async function getMyActivationStatus(
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.success) return { success: false, error: json?.message || json?.error || `HTTP ${res.status}: Failed to fetch status` };
     return { success: true, request: json.request || null, isEnrolled: json.isEnrolled, studentClass: json.studentClass };
-  } catch (_) {
-    try {
-      const cached = localStorage.getItem('church_pending_activation');
-      if (cached) return { success: true, request: JSON.parse(cached), isEnrolled: false };
-    } catch (_) {}
-    return { success: true, request: null, isEnrolled: false };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Could not verify class status because the server is unavailable.'
+    };
   }
 }
 

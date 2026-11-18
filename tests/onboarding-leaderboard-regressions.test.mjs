@@ -6,17 +6,20 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('first-login student setup is independent from the feature walkthrough and also runs for existing grades', async () => {
   const app = await read('../src/App.tsx');
-  assert.match(app, /stella_student_account_setup_v1_/);
-  assert.match(app, /if \(!completed && !dismissed\) setShowStudentOnboardingModal\(true\)/);
-  assert.match(app, /localStorage\.setItem\('stella_student_account_setup_v1_' \+ userData\.id, 'completed'\)/);
+  assert.match(app, /getAccountSetupStatus\(\)/);
+  assert.match(app, /status\.completedRoles\.includes\(role\)/);
+  assert.match(app, /setShowStudentOnboardingModal\(!completed && !dismissed\)/);
+  assert.match(app, /localStorage\.setItem\('stella_' \+ role \+ '_account_setup_v1_' \+ userData\.id, 'completed'\)/);
 });
 
 test('teacher, parent, and administrator accounts each receive role-specific setup', async () => {
   const app = await read('../src/App.tsx');
   const wizard = await read('../src/components/auth/AccountSetupWizard.tsx');
-  assert.match(app, /\['teacher', 'parent', 'admin'\]/);
+  assert.match(app, /\['student', 'teacher', 'parent', 'admin'\]/);
+  assert.match(app, /getAccountSetupStatus\(\)/);
   assert.match(wizard, /type SetupRole = 'teacher' \| 'parent' \| 'admin'/);
   assert.match(wizard, /Phone number \(optional\)/);
+  assert.match(wizard, /await completeAccountSetup\(role\)/);
   assert.match(wizard, /Let’s set up your administrator account/);
   assert.doesNotMatch(wizard, /onClick=\{onComplete\}[^>]*aria-label=.*Close/);
 });
