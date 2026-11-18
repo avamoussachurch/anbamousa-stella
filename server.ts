@@ -9048,6 +9048,251 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
   }
 });
 
+
+// Authoritative attendance and visitation for the teacher's currently assigned classes.
+app.get("/api/church/servant/attendance", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId) {
+      return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to manage class attendance." });
+    }
+    if (!hasServerRole(authContext, 'teacher')) {
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "A teacher role is required to manage class attendance." });
+    }
+
+    const date = typeof req.query.date === 'string' ? req.query.date : new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00.000Z`)) || new Date(`${date}T00:00:00.000Z`).toISOString().slice(0, 10) !== date) {
+      return res.status(400).json({ success: false, error: "INVALID_ATTENDANCE_DATE", message: "Use a valid YYYY-MM-DD attendance date." });
+    }
+
+    const client = getTrustedProgressClient();
+    const { data: activeYear, error: yearError } = await client
+      .from('church_years').select('id, name').eq('is_active', true).maybeSingle();
+    if (yearError) throw new Error(`Could not load active church year: ${yearError.message}`);
+    if (!activeYear) return res.json({ success: true, churchYear: null, classes: [], selectedClassId: null, date, sessionExists: false, savedAt: null, students: [] });
+
+    const { data: assignments, error: assignmentError } = await client
+      .from('servant_class_assignments')
+      .select('class_instance_id')
+      .eq('servant_id', authContext.userId)
+      .eq('church_year_id', activeYear.id)
+      .eq('is_active', true);
+    if (assignmentError) throw new Error(`Could not load assigned classes: ${assignmentError.message}`);
+    const assignedIds = [...new Set((assignments || []).map(row => row.class_instance_id).filter(Boolean))];
+    const { data: classRows, error: classError } = assignedIds.length
+      ? await client.from('class_instances').select('id, class_group_id, name_en, name_ar').in('id', assignedIds).eq('church_year_id', activeYear.id)
+      : { data: [], error: null };
+    if (classError) throw new Error(`Could not load assigned class details: ${classError.message}`);
+    const classes = (classRows || []).map(row => ({ id: row.id, classGroupId: row.class_group_id, name: row.name_en, nameAr: row.name_ar }));
+    const requestedClassId = typeof req.query.classId === 'string' ? req.query.classId : null;
+    if (requestedClassId && !assignedIds.includes(requestedClassId)) {
+      return res.status(403).json({ success: false, error: "CLASS_NOT_ASSIGNED", message: "You can only view attendance for your currently assigned classes." });
+    }
+    if (!requestedClassId) {
+      return res.json({ success: true, churchYear: activeYear.name, classes, selectedClassId: null, date, sessionExists: false, savedAt: null, students: [] });
+    }
+
+    const { data: memberships, error: membershipError } = await client
+      .from('class_memberships')
+      .select('student_id, exact_grade')
+      .eq('class_instance_id', requestedClassId)
+      .eq('church_year_id', activeYear.id)
+      .eq('status', 'active');
+    if (membershipError) throw new Error(`Could not load the active class roster: ${membershipError.message}`);
+    const roster = memberships || [];
+    const studentIds = [...new Set(roster.map(row => row.student_id).filter(Boolean))];
+    const { data: profiles, error: profileError } = studentIds.length
+      ? await client.from('profiles').select('id, name, grade').in('id', studentIds)
+      : { data: [], error: null };
+    if (profileError) throw new Error(`Could not load student names: ${profileError.message}`);
+
+    const { data: session, error: sessionError } = await client
+      .from('class_attendance_sessions')
+      .select('id, updated_at')
+      .eq('class_instance_id', requestedClassId)
+      .eq('attendance_date', date)
+      .maybeSingle();
+    if (sessionError) throw new Error(`Could not load attendance session: ${sessionError.message}`);
+
+    const { data: currentRecords, error: currentRecordsError } = session
+      ? await client.from('class_attendance_records').select('student_id, status, marked_at').eq('attendance_session_id', session.id)
+      : { data: [], error: null };
+    if (currentRecordsError) throw new Error(`Could not load attendance records: ${currentRecordsError.message}`);
+
+    const { data: historySessions, error: historySessionError } = studentIds.length
+      ? await client.from('class_attendance_sessions').select('id, attendance_date').eq('class_instance_id', requestedClassId).lte('attendance_date', date).order('attendance_date', { ascending: false }).limit(12)
+      : { data: [], error: null };
+    if (historySessionError) throw new Error(`Could not load attendance history: ${historySessionError.message}`);
+    const historySessionIds = (historySessions || []).map(row => row.id);
+    const { data: historyRecords, error: historyRecordsError } = historySessionIds.length
+      ? await client.from('class_attendance_records').select('attendance_session_id, student_id, status').in('attendance_session_id', historySessionIds).in('student_id', studentIds)
+      : { data: [], error: null };
+    if (historyRecordsError) throw new Error(`Could not load attendance history records: ${historyRecordsError.message}`);
+
+    const { data: visits, error: visitsError } = studentIds.length
+      ? await client.from('class_visitation_logs').select('id, student_id, visit_date, method, notes').eq('class_instance_id', requestedClassId).in('student_id', studentIds).order('visit_date', { ascending: false }).limit(100)
+      : { data: [], error: null };
+    if (visitsError) throw new Error(`Could not load visitation history: ${visitsError.message}`);
+
+    const profileById = new Map((profiles || []).map(row => [row.id, row]));
+    const currentStatus = new Map((currentRecords || []).map(row => [row.student_id, row.status]));
+    const currentSavedAt = (currentRecords || []).map(row => row.marked_at).filter(Boolean).sort().at(-1) || session?.updated_at || null;
+    const historyByStudent = new Map<string, Array<{ date: string; status: string }>>();
+    for (const record of historyRecords || []) {
+      const historySession = (historySessions || []).find(row => row.id === record.attendance_session_id);
+      if (!historySession) continue;
+      const current = historyByStudent.get(record.student_id) || [];
+      current.push({ date: historySession.attendance_date, status: record.status });
+      historyByStudent.set(record.student_id, current);
+    }
+    const visitsByStudent = new Map<string, typeof visits>();
+    for (const visit of visits || []) {
+      const current = visitsByStudent.get(visit.student_id) || [];
+      current.push(visit);
+      visitsByStudent.set(visit.student_id, current);
+    }
+
+    const students = roster.map(member => {
+      const profile = profileById.get(member.student_id);
+      const history = (historyByStudent.get(member.student_id) || []).sort((a, b) => b.date.localeCompare(a.date));
+      let consecutiveAbsences = 0;
+      for (const item of history) {
+        if (item.status === 'absent') consecutiveAbsences += 1;
+        else break;
+      }
+      const lastAttendedDate = history.find(item => item.status === 'present' || item.status === 'late')?.date || null;
+      return {
+        id: member.student_id,
+        name: profile?.name || 'Student',
+        grade: member.exact_grade || profile?.grade || '',
+        status: currentStatus.get(member.student_id) || null,
+        consecutiveAbsences,
+        lastAttendedDate,
+        visitations: (visitsByStudent.get(member.student_id) || []).slice(0, 3).map(visit => ({
+          id: visit.id,
+          date: visit.visit_date,
+          type: visit.method,
+          notes: visit.notes
+        }))
+      };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+
+    return res.json({
+      success: true,
+      churchYear: activeYear.name,
+      classes,
+      selectedClassId: requestedClassId,
+      date,
+      sessionExists: Boolean(session),
+      savedAt: currentSavedAt,
+      students
+    });
+  } catch (error: any) {
+    console.error("Teacher attendance lookup failed:", error?.message || error);
+    return res.status(500).json({ success: false, error: "TEACHER_ATTENDANCE_FAILED", message: error instanceof Error ? error.message : "Could not load class attendance." });
+  }
+});
+
+app.post("/api/church/servant/attendance", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId) return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to save attendance." });
+    if (!hasServerRole(authContext, 'teacher')) return res.status(403).json({ success: false, error: "FORBIDDEN", message: "A teacher role is required to save attendance." });
+
+    const classId = typeof req.body?.classInstanceId === 'string' ? req.body.classInstanceId : '';
+    const date = typeof req.body?.date === 'string' ? req.body.date : '';
+    const records = Array.isArray(req.body?.records) ? req.body.records : [];
+    if (!classId || !/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00.000Z`)) || new Date(`${date}T00:00:00.000Z`).toISOString().slice(0, 10) !== date) {
+      return res.status(400).json({ success: false, error: "INVALID_ATTENDANCE_INPUT", message: "A class and valid YYYY-MM-DD date are required." });
+    }
+    if (records.length < 1 || records.length > 500) return res.status(400).json({ success: false, error: "INVALID_ATTENDANCE_RECORDS", message: "Select at least one student status before saving." });
+    const allowedStatuses = new Set(['present', 'late', 'excused', 'absent']);
+    const studentIds = records.map((row: any) => row?.studentId);
+    if (studentIds.some((id: unknown) => typeof id !== 'string') || new Set(studentIds).size !== studentIds.length || records.some((row: any) => !allowedStatuses.has(row?.status))) {
+      return res.status(400).json({ success: false, error: "INVALID_ATTENDANCE_RECORDS", message: "Attendance contains duplicate students or an invalid status." });
+    }
+
+    const client = getTrustedProgressClient();
+    const { data: activeYear, error: yearError } = await client.from('church_years').select('id').eq('is_active', true).maybeSingle();
+    if (yearError) throw new Error(`Could not load active church year: ${yearError.message}`);
+    if (!activeYear) return res.status(409).json({ success: false, error: "NO_ACTIVE_CHURCH_YEAR", message: "There is no active church year." });
+    const { data: assignment, error: assignmentError } = await client.from('servant_class_assignments')
+      .select('class_instance_id').eq('servant_id', authContext.userId).eq('church_year_id', activeYear.id).eq('class_instance_id', classId).eq('is_active', true).maybeSingle();
+    if (assignmentError) throw new Error(`Could not verify class assignment: ${assignmentError.message}`);
+    if (!assignment) return res.status(403).json({ success: false, error: "CLASS_NOT_ASSIGNED", message: "You can only save attendance for your assigned classes." });
+
+    const { data: memberships, error: membershipError } = await client.from('class_memberships')
+      .select('student_id').eq('class_instance_id', classId).eq('church_year_id', activeYear.id).eq('status', 'active').in('student_id', studentIds);
+    if (membershipError) throw new Error(`Could not verify the active class roster: ${membershipError.message}`);
+    const validIds = new Set((memberships || []).map(row => row.student_id));
+    if (studentIds.some((id: string) => !validIds.has(id))) return res.status(403).json({ success: false, error: "STUDENT_NOT_IN_ASSIGNED_CLASS", message: "Attendance can only be saved for active students in your assigned class." });
+
+    const now = new Date().toISOString();
+    const { data: session, error: sessionError } = await client.from('class_attendance_sessions')
+      .upsert({ church_year_id: activeYear.id, class_instance_id: classId, attendance_date: date, created_by: authContext.userId, updated_at: now }, { onConflict: 'class_instance_id,attendance_date' })
+      .select('id').single();
+    if (sessionError || !session) throw new Error(`Could not save attendance session: ${sessionError?.message || 'No session returned'}`);
+    const rows = records.map((row: any) => ({
+      attendance_session_id: session.id,
+      student_id: row.studentId,
+      status: row.status,
+      marked_by: authContext.userId,
+      marked_at: now
+    }));
+    const { error: recordsError } = await client.from('class_attendance_records')
+      .upsert(rows, { onConflict: 'attendance_session_id,student_id' });
+    if (recordsError) throw new Error(`Could not save attendance records: ${recordsError.message}`);
+    return res.json({ success: true, sessionId: session.id, savedCount: rows.length, savedAt: now });
+  } catch (error: any) {
+    console.error("Teacher attendance save failed:", error?.message || error);
+    return res.status(500).json({ success: false, error: "TEACHER_ATTENDANCE_SAVE_FAILED", message: error instanceof Error ? error.message : "Could not save attendance." });
+  }
+});
+
+app.post("/api/church/servant/visitations", async (req, res) => {
+  try {
+    const authContext = await verifyServerRequestAuth(req);
+    if (!authContext.isAuthenticated || !authContext.userId) return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Sign in to save a visitation record." });
+    if (!hasServerRole(authContext, 'teacher')) return res.status(403).json({ success: false, error: "FORBIDDEN", message: "A teacher role is required to save visitation records." });
+
+    const classId = typeof req.body?.classInstanceId === 'string' ? req.body.classInstanceId : '';
+    const studentId = typeof req.body?.studentId === 'string' ? req.body.studentId : '';
+    const date = typeof req.body?.date === 'string' ? req.body.date : '';
+    const method = req.body?.method;
+    const notes = typeof req.body?.notes === 'string' ? req.body.notes.trim() : '';
+    if (!classId || !studentId || !/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00.000Z`)) || new Date(`${date}T00:00:00.000Z`).toISOString().slice(0, 10) !== date || !['call', 'visit', 'whatsapp'].includes(method) || notes.length > 1500) {
+      return res.status(400).json({ success: false, error: "INVALID_VISITATION_INPUT", message: "A valid class, student, date, contact method, and note (maximum 1500 characters) are required." });
+    }
+
+    const client = getTrustedProgressClient();
+    const { data: activeYear, error: yearError } = await client.from('church_years').select('id').eq('is_active', true).maybeSingle();
+    if (yearError) throw new Error(`Could not load active church year: ${yearError.message}`);
+    if (!activeYear) return res.status(409).json({ success: false, error: "NO_ACTIVE_CHURCH_YEAR", message: "There is no active church year." });
+    const { data: assignment, error: assignmentError } = await client.from('servant_class_assignments')
+      .select('class_instance_id').eq('servant_id', authContext.userId).eq('church_year_id', activeYear.id).eq('class_instance_id', classId).eq('is_active', true).maybeSingle();
+    if (assignmentError) throw new Error(`Could not verify class assignment: ${assignmentError.message}`);
+    if (!assignment) return res.status(403).json({ success: false, error: "CLASS_NOT_ASSIGNED", message: "You can only record visitations for your assigned classes." });
+    const { data: membership, error: membershipError } = await client.from('class_memberships')
+      .select('student_id').eq('class_instance_id', classId).eq('church_year_id', activeYear.id).eq('student_id', studentId).eq('status', 'active').maybeSingle();
+    if (membershipError) throw new Error(`Could not verify student class membership: ${membershipError.message}`);
+    if (!membership) return res.status(403).json({ success: false, error: "STUDENT_NOT_IN_ASSIGNED_CLASS", message: "You can only record visitations for active students in your assigned class." });
+
+    const { data, error } = await client.from('class_visitation_logs').insert({
+      class_instance_id: classId,
+      student_id: studentId,
+      visit_date: date,
+      method,
+      notes,
+      created_by: authContext.userId
+    }).select('id, visit_date, method, notes').single();
+    if (error || !data) throw new Error(`Could not save visitation record: ${error?.message || 'No record returned'}`);
+    return res.json({ success: true, visitation: data });
+  } catch (error: any) {
+    console.error("Teacher visitation save failed:", error?.message || error);
+    return res.status(500).json({ success: false, error: "TEACHER_VISITATION_SAVE_FAILED", message: error instanceof Error ? error.message : "Could not save visitation." });
+  }
+});
+
 app.get("/api/church/my-class", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
