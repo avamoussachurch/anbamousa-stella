@@ -18,6 +18,7 @@ export interface ServantStudentProgressReport {
   avatar: string | null;
   grade: string;
   classNames: string[];
+  classNamesAr: string[];
   completedLessons: number;
   progressRecords: number;
   quizAttempts: number;
