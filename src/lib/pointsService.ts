@@ -234,8 +234,8 @@ export function getStreakLeaderboard(currentUser?: User | null): StreakLeaderboa
 
   if (currentUser) {
     const isGuest = currentUser.id.startsWith('guest_');
-    const userStreak = Math.max(1, currentUser.currentStreak ?? 1);
-    const userLongest = Math.max(userStreak, currentUser.longestStreak ?? userStreak);
+    const userStreak = Math.max(0, currentUser.currentStreak ?? 0);
+    const userLongest = Math.max(userStreak, currentUser.longestStreak ?? 0);
 
     const existingIdx = list.findIndex(
       (e) => e.studentId === currentUser.id || 
