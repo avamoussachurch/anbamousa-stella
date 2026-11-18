@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.student_activity_days_activity_date_idx;
