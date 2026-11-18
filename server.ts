@@ -9082,7 +9082,7 @@ app.get("/api/church/servant/attendance", async (req, res) => {
       ? await client.from('class_instances').select('id, class_group_id, name_en, name_ar').in('id', assignedIds).eq('church_year_id', activeYear.id)
       : { data: [], error: null };
     if (classError) throw new Error(`Could not load assigned class details: ${classError.message}`);
-    const classes = (classRows || []).map(row => ({ id: row.id, classGroupId: row.class_group_id, name: row.name_en, nameAr: row.name_ar }));
+    const classes = (classRows || []).map(row => ({ id: row.id, classGroupId: row.class_group_id, name: row.name_en || row.class_group_id || 'Class', nameAr: row.name_ar || row.name_en || row.class_group_id || 'الفصل' }));
     const requestedClassId = typeof req.query.classId === 'string' ? req.query.classId : null;
     if (requestedClassId && !assignedIds.includes(requestedClassId)) {
       return res.status(403).json({ success: false, error: "CLASS_NOT_ASSIGNED", message: "You can only view attendance for your currently assigned classes." });
