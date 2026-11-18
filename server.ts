@@ -7951,6 +7951,15 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     });
 
     if (durableDuplicate) {
+      try {
+        await persistStudentActivityDay(
+          targetStudentId,
+          typeof durableDuplicate.attemptedAt === 'string' ? durableDuplicate.attemptedAt : new Date().toISOString()
+        );
+      } catch (error: any) {
+        console.error('Could not repair quiz activity-day persistence for duplicate attempt:', error);
+        return res.status(502).json({ success: false, error: 'STREAK_PERSISTENCE_FAILED', message: 'The previous quiz is saved, but its learning streak could not be synchronized. Please retry.' });
+      }
       const { streakRecord, currentPoints } = await currentRewardState();
       return res.json({
         success: true,
@@ -8021,6 +8030,15 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
         }
         if (conflictRows?.[0]) {
           const recovered = mapDbToAttempt(conflictRows[0]);
+          try {
+            await persistStudentActivityDay(
+              targetStudentId,
+              typeof recovered.attemptedAt === 'string' ? recovered.attemptedAt : new Date().toISOString()
+            );
+          } catch (error: any) {
+            console.error('Could not repair quiz activity-day persistence after unique conflict:', error);
+            return res.status(502).json({ success: false, error: 'STREAK_PERSISTENCE_FAILED', message: 'The previous quiz is saved, but its learning streak could not be synchronized. Please retry.' });
+          }
           const { streakRecord, currentPoints } = await currentRewardState();
           return res.json({
             success: true,
