@@ -16,6 +16,7 @@ import { LessonsProvider } from './context/LessonsContext';
 import { PointsProvider } from './context/PointsContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { Language } from './types';
+import { getAccountSetupStatus } from './lib/onboardingService';
 import { applyLanguagePreference } from './lib/uiPreferences';
 import { canAccessWorkspace, canAccessWorkspaceTab, hasRole, resolveWorkspace, type Workspace } from './lib/workspaces';
 
@@ -95,26 +96,46 @@ function AppContent() {
     return null;
   });
 
-  useEffect(() => {
-    if (!userData || !['teacher', 'parent', 'admin'].includes(activeWorkspace || '')) return;
-    const role = activeWorkspace;
-    const key = 'stella_' + role + '_account_setup_v1_' + userData.id;
-    if (localStorage.getItem(key) !== 'completed') setAccountSetupRole(role);
-  }, [userData?.id, userData?.roles, activeWorkspace]);
-
-  // On first student login, collect account and class information even when a legacy grade is already present.
+  // Account setup completion is stored server-side so it follows the user across devices.
   const [showStudentOnboardingModal, setShowStudentOnboardingModal] = useState<boolean>(false);
   const [showStudentWelcomeTour, setShowStudentWelcomeTour] = useState<boolean>(false);
   const [roleWelcomeJourney, setRoleWelcomeJourney] = useState<'teacher' | 'parent' | null>(null);
   const [accountSetupRole, setAccountSetupRole] = useState<'teacher' | 'parent' | 'admin' | null>(null);
-  // Account setup is intentionally separate from the optional feature walkthroughs.
+
   useEffect(() => {
-    if (userData && hasRole(userData, 'student') && activeWorkspace === 'student') {
-      const completed = localStorage.getItem('stella_student_account_setup_v1_' + userData.id) === 'completed';
-      const dismissed = sessionStorage.getItem('dismissed_student_onboarding_' + userData.id) === 'true';
-      if (!completed && !dismissed) setShowStudentOnboardingModal(true);
+    if (!userData || isGuest || !activeWorkspace || !['student', 'teacher', 'parent', 'admin'].includes(activeWorkspace)) {
+      setShowStudentOnboardingModal(false);
+      setAccountSetupRole(null);
+      return;
     }
-  }, [userData?.id, userData?.roles, activeWorkspace]);
+    let cancelled = false;
+    const role = activeWorkspace as 'student' | 'teacher' | 'parent' | 'admin';
+    getAccountSetupStatus().then(status => {
+      if (cancelled) return;
+      if (!status.success) {
+        if (role === 'student') setShowStudentOnboardingModal(true);
+        else setAccountSetupRole(role);
+        return;
+      }
+      const completed = status.completedRoles.includes(role);
+      if (role === 'student') {
+        const dismissed = sessionStorage.getItem('dismissed_student_onboarding_' + userData.id) === 'true';
+        setShowStudentOnboardingModal(!completed && !dismissed);
+      } else {
+        setAccountSetupRole(completed ? null : role);
+      }
+      if (completed) {
+        localStorage.setItem('stella_' + role + '_account_setup_v1_' + userData.id, 'completed');
+      } else {
+        localStorage.removeItem('stella_' + role + '_account_setup_v1_' + userData.id);
+      }
+    }).catch(() => {
+      if (cancelled) return;
+      if (role === 'student') setShowStudentOnboardingModal(true);
+      else setAccountSetupRole(role);
+    });
+    return () => { cancelled = true; };
+  }, [userData?.id, isGuest, activeWorkspace]);
 
   React.useEffect(() => {
     if (!userData) return;
