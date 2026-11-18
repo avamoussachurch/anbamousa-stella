@@ -327,8 +327,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isGuest) {
       throw new Error('Streaks can only be changed by a server-verified activity.');
     }
-    const nextCurrent = Math.max(1, currentStreak);
-    const nextLongest = Math.max(nextCurrent, longestStreak ?? userData.longestStreak ?? nextCurrent);
+    const nextCurrent = Math.max(0, currentStreak);
+    const nextLongest = Math.max(nextCurrent, userData.longestStreak ?? 0, longestStreak ?? 0);
 
     const updatedUser: User = {
       ...userData,
