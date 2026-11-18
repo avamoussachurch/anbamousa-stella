@@ -13,7 +13,7 @@ test('account setup completion is stored and read from a server-owned table', as
   assert.match(migration, /REVOKE ALL ON TABLE public\.account_setup_completions FROM PUBLIC, anon, authenticated/);
   assert.match(server, /app\.get\('\/api\/account\/setup-status'/);
   assert.match(server, /app\.post\('\/api\/account\/setup-complete'/);
-  assert.match(server, /authContext\.roles\.includes\(role as ServerRole\)/);
+  assert.match(server, /authContext\.roles\.some\(assignedRole => assignedRole === role\)/);
   assert.match(service, /export async function getAccountSetupStatus/);
   assert.match(service, /export async function completeAccountSetup/);
 });
