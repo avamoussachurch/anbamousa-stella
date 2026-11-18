@@ -63,7 +63,7 @@ test('the activity-day ledger is server-only and longest streak is monotonic', a
   assert.match(migration, /longest_streak = GREATEST\(COALESCE\(longest_streak, 0\), v_longest, v_current, 0\)/);
   assert.match(migration, /cron\.schedule/);
 
-  const indexCleanup = await read('../supabase/migrations/20261118164000_drop_redundant_student_activity_days_date_index.sql');
+  const indexCleanup = await read('../supabase/migrations/20261118163623_drop_redundant_student_activity_days_date_index.sql');
   assert.match(indexCleanup, /DROP INDEX IF EXISTS public\.student_activity_days_activity_date_idx/);
 });
 
