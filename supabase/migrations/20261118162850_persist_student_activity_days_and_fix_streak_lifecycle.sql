@@ -7,9 +7,6 @@ CREATE TABLE IF NOT EXISTS public.student_activity_days (
   CONSTRAINT student_activity_days_pkey PRIMARY KEY (student_id, activity_date)
 );
 
-CREATE INDEX IF NOT EXISTS student_activity_days_activity_date_idx
-  ON public.student_activity_days (activity_date DESC);
-
 ALTER TABLE public.student_activity_days ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.student_activity_days FROM PUBLIC, anon, authenticated;
 GRANT ALL ON TABLE public.student_activity_days TO service_role;
