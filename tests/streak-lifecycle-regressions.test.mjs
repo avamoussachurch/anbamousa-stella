@@ -49,6 +49,9 @@ test('server summaries derive current streak from durable activity dates, not st
   assert.match(server, /const longestStreak = Math\.max\([\s\S]*?profile\.longest_streak/);
   assert.doesNotMatch(server, /Math\.max\(streak\.currentStreak,[\s\S]{0,180}profile\.current_streak/);
   assert.match(server, /persistStudentActivityDay\(targetStudentId/);
+  assert.match(server, /persistStudentActivityDay\(targetStudentId, newAttempt\.submittedAt\)/);
+  assert.match(server, /loadPersistedStudentStreak\(targetStudentId\)/);
+  assert.doesNotMatch(server, /Math\.max\(calc\.currentStreak, streakRecord\.currentStreak\)/);
 });
 
 test('the activity-day ledger is server-only and longest streak is monotonic', async () => {
@@ -59,6 +62,9 @@ test('the activity-day ledger is server-only and longest streak is monotonic', a
   assert.match(migration, /GRANT ALL ON TABLE public\.student_activity_days TO service_role/);
   assert.match(migration, /longest_streak = GREATEST\(COALESCE\(longest_streak, 0\), v_longest, v_current, 0\)/);
   assert.match(migration, /cron\.schedule/);
+
+  const indexCleanup = await read('../supabase/migrations/20261118164000_drop_redundant_student_activity_days_date_index.sql');
+  assert.match(indexCleanup, /DROP INDEX IF EXISTS public\.student_activity_days_activity_date_idx/);
 });
 
 test('guest streak state allows a zero current streak while retaining longest streak', async () => {
