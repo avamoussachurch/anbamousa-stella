@@ -343,6 +343,60 @@ app.get('/api/church/me/roles', requireAssignedRoles(), async (req, res) => {
   return res.json({ success: true, roles: authContext.roles });
 });
 
+
+app.get('/api/account/setup-status', requireAssignedRoles(), async (req, res) => {
+  const authContext = (req as any).verifiedAuth as ServerAuthContext;
+  try {
+    const trustedClient = getTrustedRoleClient();
+    const { data, error } = await trustedClient
+      .from('account_setup_completions')
+      .select('role')
+      .eq('user_id', authContext.userId);
+    if (error) throw new Error(error.message);
+    return res.json({
+      success: true,
+      completedRoles: (data || []).map((row: { role: string }) => row.role)
+    });
+  } catch (error: any) {
+    console.error('Account setup status lookup failed:', error?.message || error);
+    return res.status(500).json({
+      success: false,
+      error: 'ACCOUNT_SETUP_STATUS_FAILED',
+      message: 'Could not verify account setup status.'
+    });
+  }
+});
+
+app.post('/api/account/setup-complete', requireAssignedRoles(), async (req, res) => {
+  const authContext = (req as any).verifiedAuth as ServerAuthContext;
+  const role = req.body?.role;
+  if (!['student', 'teacher', 'parent', 'admin'].includes(role)) {
+    return res.status(400).json({ success: false, error: 'INVALID_SETUP_ROLE', message: 'A valid account role is required.' });
+  }
+  if (!authContext.roles.includes(role as ServerRole)) {
+    return res.status(403).json({ success: false, error: 'ROLE_NOT_ASSIGNED', message: 'You cannot complete setup for a role that is not assigned to your account.' });
+  }
+  try {
+    const trustedClient = getTrustedRoleClient();
+    const { error } = await trustedClient
+      .from('account_setup_completions')
+      .upsert({
+        user_id: authContext.userId,
+        role,
+        completed_at: new Date().toISOString()
+      }, { onConflict: 'user_id,role' });
+    if (error) throw new Error(error.message);
+    return res.json({ success: true, role });
+  } catch (error: any) {
+    console.error('Account setup completion failed:', error?.message || error);
+    return res.status(500).json({
+      success: false,
+      error: 'ACCOUNT_SETUP_COMPLETION_FAILED',
+      message: 'Could not save account setup completion.'
+    });
+  }
+});
+
 app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
   const authContext = (req as any).verifiedAuth as ServerAuthContext;
   const body = req.body;
