@@ -301,7 +301,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioContextConstructor) {
         const context: AudioContext = new AudioContextConstructor();
-        await context.resume();
+        void context.resume().catch(() => {});
         const analyser = context.createAnalyser();
         analyser.fftSize = 64;
         const source = context.createMediaStreamSource(stream);
@@ -309,13 +309,17 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         waveformContextRef.current = context;
         waveformAnalyserRef.current = analyser;
         const bins = new Uint8Array(analyser.frequencyBinCount);
+        let waveformFrame = 0;
         const drawWaveform = () => {
           if (waveformAnalyserRef.current !== analyser) return;
-          if (recorder.state === 'paused') {
-            setPracticeWaveform(Array(32).fill(0.08));
-          } else {
-            analyser.getByteFrequencyData(bins);
-            setPracticeWaveform(Array.from(bins, value => Math.max(0.06, value / 255)));
+          waveformFrame += 1;
+          if (waveformFrame % 3 === 0) {
+            if (recorder.state === 'paused') {
+              setPracticeWaveform(Array(32).fill(0.08));
+            } else {
+              analyser.getByteFrequencyData(bins);
+              setPracticeWaveform(Array.from(bins, value => Math.max(0.06, value / 255)));
+            }
           }
           waveformFrameRef.current = requestAnimationFrame(drawWaveform);
         };
