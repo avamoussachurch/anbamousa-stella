@@ -53,6 +53,7 @@ const persistedClassMemberships = [];
 const persistedClassInstances = new Map();
 const persistedSectionProgress = new Map();
 const persistedLessonProgress = new Map();
+const persistedStudentActivityDays = new Map();
 let sectionProgressWriteFailure = false;
 const quizAttemptWrites = [];
 const profilePatchWrites = [];
@@ -115,6 +116,7 @@ function persistedProgressRows(tableName) {
   if (tableName === 'class_instances') return [...persistedClassInstances.values()];
   if (tableName === 'lesson_section_progress') return [...persistedSectionProgress.values()];
   if (tableName === 'lesson_progress') return [...persistedLessonProgress.values()];
+  if (tableName === 'student_activity_days') return [...persistedStudentActivityDays.values()];
   return [];
 }
 
@@ -425,6 +427,32 @@ before(async () => {
       const requestedClassInstanceIds = classInstanceFilter.startsWith('eq.')
         ? [classInstanceFilter.slice(3)]
         : classInstanceFilter.match(/^in\.\((.*)\)$/)?.[1].split(',') || [];
+
+      if (tableName === 'student_activity_days') {
+        if (req.method === 'GET') {
+          return respondPostgrestRows(req, res, 200, filterPostgrestRows([...persistedStudentActivityDays.values()], url));
+        }
+        if (req.method === 'POST') {
+          let rawBody = '';
+          req.on('data', chunk => { rawBody += chunk; });
+          req.on('end', () => {
+            const payload = JSON.parse(rawBody || '{}');
+            const rows = Array.isArray(payload) ? payload : [payload];
+            for (const row of rows) {
+              const key = `${row.student_id}:${row.activity_date}`;
+              const previous = persistedStudentActivityDays.get(key);
+              persistedStudentActivityDays.set(key, {
+                ...previous,
+                ...row,
+                last_activity_at: row.last_activity_at || previous?.last_activity_at || new Date().toISOString()
+              });
+            }
+            return respondJson(res, 201, []);
+          });
+          return;
+        }
+      }
+
       const usePersistedFixture =
         tableName === 'lessons' && (persistedLessons.has(requestedId) || persistedLessons.size > 0) ||
         tableName === 'lesson_versions' &&
