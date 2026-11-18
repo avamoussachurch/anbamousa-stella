@@ -5,7 +5,7 @@ import test from 'node:test';
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('account setup completion is stored and read from a server-owned table', async () => {
-  const migration = await read('../supabase/migrations/20261118173000_persist_account_setup_completion.sql');
+  const migration = await read('../supabase/migrations/20261118171517_persist_account_setup_completion.sql');
   const server = await read('../server.ts');
   const service = await read('../src/lib/onboardingService.ts');
   assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.account_setup_completions/);
