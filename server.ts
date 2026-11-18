@@ -5831,11 +5831,22 @@ function getTrustedProgressClient() {
 async function persistStudentActivityDay(
   studentId: string,
   activityAt: string
-): Promise<{ currentStreak: number; longestStreak: number; lastActiveCairoDate: string; isActiveToday: boolean } | null> {
+): Promise<{ currentStreak: number; longestStreak: number; lastActiveCairoDate: string; isActiveToday: boolean; isNewActivityDay: boolean } | null> {
   if (!isUuidStudentId(studentId)) return null;
 
   const client = getTrustedProgressClient();
   const activityDate = getCairoDateString(activityAt);
+  const { data: existingActivityDay, error: existingActivityError } = await client
+    .from('student_activity_days')
+    .select('activity_date')
+    .eq('student_id', studentId)
+    .eq('activity_date', activityDate)
+    .maybeSingle();
+
+  if (existingActivityError) {
+    throw new Error(`Could not check the student's activity day: ${existingActivityError.message}`);
+  }
+
   const { error: activityError } = await client
     .from('student_activity_days')
     .upsert({
@@ -5862,7 +5873,36 @@ async function persistStudentActivityDay(
     currentStreak: Math.max(0, Number(profile.current_streak) || 0),
     longestStreak: Math.max(0, Number(profile.longest_streak) || 0),
     lastActiveCairoDate: activityDate,
-    isActiveToday: activityDate === getCairoDateString()
+    isActiveToday: activityDate === getCairoDateString(),
+    isNewActivityDay: !existingActivityDay
+  };
+}
+
+async function loadPersistedStudentStreak(
+  studentId: string
+): Promise<{ currentStreak: number; longestStreak: number; lastActiveCairoDate: string; isActiveToday: boolean; activeCairoDays: string[] } | null> {
+  if (!isUuidStudentId(studentId)) return null;
+
+  const client = getTrustedProgressClient();
+  const [
+    { data: activityRows, error: activityError },
+    { data: profile, error: profileError }
+  ] = await Promise.all([
+    client.from('student_activity_days').select('activity_date').eq('student_id', studentId),
+    client.from('profiles').select('longest_streak').eq('id', studentId).single()
+  ]);
+
+  if (activityError) throw new Error(`Could not load student activity history: ${activityError.message}`);
+  if (profileError || !profile) throw new Error(`Could not load student streak record: ${profileError?.message || 'Profile not found'}`);
+
+  const activeCairoDays = (activityRows || []).map((row: any) => row.activity_date);
+  const calculated = calculateCairoStreakForStudent(activeCairoDays);
+  return {
+    currentStreak: calculated.currentStreak,
+    longestStreak: Math.max(calculated.longestStreak, Number(profile.longest_streak) || 0, calculated.currentStreak),
+    lastActiveCairoDate: calculated.lastActiveCairoDate,
+    isActiveToday: calculated.isActiveToday,
+    activeCairoDays
   };
 }
 
@@ -7856,18 +7896,28 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       serverReviewState.attempts[key] = [];
     }
 
-    const currentRewardState = () => {
+    const currentRewardState = async () => {
       const todayCairo = getCairoDateString();
-      const currentPoints = serverReviewState.userPoints[targetStudentId] ?? 
+      const currentPoints = serverReviewState.userPoints[targetStudentId] ??
         (targetStudentId.startsWith('guest_') ? 120 : (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0));
       let streakRecord = serverReviewState.userStreaks[targetStudentId];
-      if (!streakRecord) {
-        const fallbackStreak = targetStudentId.startsWith('guest_') ? 3 : 1;
+      const persistedStreak = await loadPersistedStudentStreak(targetStudentId);
+      if (persistedStreak) {
+        streakRecord = {
+          ...(streakRecord || {}),
+          currentStreak: persistedStreak.currentStreak,
+          longestStreak: persistedStreak.longestStreak,
+          lastActiveCairoDate: persistedStreak.lastActiveCairoDate,
+          activeCairoDays: persistedStreak.activeCairoDays
+        };
+        serverReviewState.userStreaks[targetStudentId] = streakRecord;
+      } else if (!streakRecord) {
+        const fallbackStreak = targetStudentId.startsWith('guest_') ? 3 : (isUuidStudentId(targetStudentId) ? 0 : 1);
         streakRecord = {
           currentStreak: fallbackStreak,
-          longestStreak: Math.max(fallbackStreak, targetStudentId.startsWith('guest_') ? 5 : fallbackStreak),
+          longestStreak: Math.max(fallbackStreak, targetStudentId.startsWith('guest_') ? 5 : 0),
           lastActiveCairoDate: todayCairo,
-          activeCairoDays: [todayCairo]
+          activeCairoDays: fallbackStreak > 0 ? [todayCairo] : []
         };
       }
       return { todayCairo, currentPoints, streakRecord };
@@ -7901,7 +7951,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
     });
 
     if (durableDuplicate) {
-      const { streakRecord, currentPoints } = currentRewardState();
+      const { streakRecord, currentPoints } = await currentRewardState();
       return res.json({
         success: true,
         attempt: durableDuplicate,
@@ -7971,7 +8021,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
         }
         if (conflictRows?.[0]) {
           const recovered = mapDbToAttempt(conflictRows[0]);
-          const { streakRecord, currentPoints } = currentRewardState();
+          const { streakRecord, currentPoints } = await currentRewardState();
           return res.json({
             success: true,
             attempt: recovered,
@@ -8024,34 +8074,52 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
 
     let streakRecord = serverReviewState.userStreaks[targetStudentId];
     if (!streakRecord) {
-      const fallbackStreak = targetStudentId.startsWith('guest_') ? 3 : 1;
+      const fallbackStreak = targetStudentId.startsWith('guest_') ? 3 : (isUuidStudentId(targetStudentId) ? 0 : 1);
       streakRecord = {
         currentStreak: fallbackStreak,
-        longestStreak: Math.max(fallbackStreak, targetStudentId.startsWith('guest_') ? 5 : fallbackStreak),
+        longestStreak: Math.max(fallbackStreak, targetStudentId.startsWith('guest_') ? 5 : 0),
         lastActiveCairoDate: '',
-        activeCairoDays: []
+        activeCairoDays: fallbackStreak > 0 ? [getCairoDateString()] : []
       };
     }
+
+    // A successfully saved quiz attempt is a qualifying learning day, even if
+    // it is not the student's first passing attempt. Duplicate retries are
+    // handled above and do not create a second activity event.
+    const todayCairo = getCairoDateString(newAttempt.submittedAt);
+    if (!Array.isArray(streakRecord.activeCairoDays)) {
+      streakRecord.activeCairoDays = streakRecord.lastActiveCairoDate ? [streakRecord.lastActiveCairoDate] : [];
+    }
+    const alreadyActiveToday = streakRecord.activeCairoDays.includes(todayCairo);
+    if (!alreadyActiveToday) streakRecord.activeCairoDays.push(todayCairo);
+    const calculatedQuizStreak = calculateCairoStreakForStudent(streakRecord.activeCairoDays);
+    let persistedQuizStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> = null;
+    try {
+      persistedQuizStreak = await persistStudentActivityDay(targetStudentId, newAttempt.submittedAt);
+    } catch (error: any) {
+      console.error('Could not persist quiz activity day:', error);
+      return res.status(502).json({
+        success: false,
+        error: 'STREAK_PERSISTENCE_FAILED',
+        message: 'Your quiz was saved, but your learning streak could not be synchronized. Please retry.'
+      });
+    }
+    streakRecord.currentStreak = persistedQuizStreak?.currentStreak ?? calculatedQuizStreak.currentStreak;
+    streakRecord.longestStreak = Math.max(
+      persistedQuizStreak?.longestStreak ?? 0,
+      streakRecord.longestStreak || 0,
+      calculatedQuizStreak.longestStreak,
+      streakRecord.currentStreak
+    );
+    streakRecord.lastActiveCairoDate = persistedQuizStreak?.lastActiveCairoDate ?? todayCairo;
+    streakRecord.activeCairoDays = Array.from(new Set(streakRecord.activeCairoDays));
+    streakGained = persistedQuizStreak?.isNewActivityDay ?? !alreadyActiveToday;
+    serverReviewState.userStreaks[targetStudentId] = streakRecord;
 
     if (isFirstCompletion) {
       pointsEarned = 50;
       newTotalPoints += pointsEarned;
       serverReviewState.userPoints[targetStudentId] = newTotalPoints;
-
-      const todayCairo = getCairoDateString();
-      if (!Array.isArray(streakRecord.activeCairoDays)) {
-        streakRecord.activeCairoDays = streakRecord.lastActiveCairoDate ? [streakRecord.lastActiveCairoDate] : [];
-      }
-      const alreadyActiveToday = streakRecord.activeCairoDays.includes(todayCairo);
-      if (!alreadyActiveToday) {
-        streakRecord.activeCairoDays.push(todayCairo);
-        const calc = calculateCairoStreakForStudent(streakRecord.activeCairoDays);
-        streakRecord.currentStreak = Math.max(calc.currentStreak, streakRecord.currentStreak);
-        streakRecord.longestStreak = Math.max(calc.longestStreak, streakRecord.longestStreak, streakRecord.currentStreak);
-        streakRecord.lastActiveCairoDate = todayCairo;
-        streakGained = true;
-      }
-      serverReviewState.userStreaks[targetStudentId] = streakRecord;
 
       if (!serverReviewState.completionHistory[targetStudentId]) {
         serverReviewState.completionHistory[targetStudentId] = [];
