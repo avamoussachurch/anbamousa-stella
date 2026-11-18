@@ -7954,7 +7954,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       try {
         await persistStudentActivityDay(
           targetStudentId,
-          typeof durableDuplicate.attemptedAt === 'string' ? durableDuplicate.attemptedAt : new Date().toISOString()
+          typeof durableDuplicate.submittedAt === 'string' ? durableDuplicate.submittedAt : new Date().toISOString()
         );
       } catch (error: any) {
         console.error('Could not repair quiz activity-day persistence for duplicate attempt:', error);
@@ -8033,7 +8033,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
           try {
             await persistStudentActivityDay(
               targetStudentId,
-              typeof recovered.attemptedAt === 'string' ? recovered.attemptedAt : new Date().toISOString()
+              typeof recovered.submittedAt === 'string' ? recovered.submittedAt : new Date().toISOString()
             );
           } catch (error: any) {
             console.error('Could not repair quiz activity-day persistence after unique conflict:', error);
