@@ -8079,7 +8079,7 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
         currentStreak: fallbackStreak,
         longestStreak: Math.max(fallbackStreak, targetStudentId.startsWith('guest_') ? 5 : 0),
         lastActiveCairoDate: '',
-        activeCairoDays: fallbackStreak > 0 ? [getCairoDateString()] : []
+        activeCairoDays: []
       };
     }
 
