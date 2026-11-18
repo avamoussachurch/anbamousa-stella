@@ -1,5 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { OnboardingActivationRequest, ClassGroupId } from '../types';
+
+export type AccountSetupRole = 'student' | 'teacher' | 'parent' | 'admin';
 import { findClassGroupForGrade, getClassGroupForGrade } from './classGroups';
 
 async function getAuthHeader(): Promise<Record<string, string>> {
@@ -43,6 +45,44 @@ async function getActiveChurchYearId(): Promise<{ id: string | null; error: stri
     .maybeSingle();
   if (error) return { id: null, error: error.message };
   return { id: data?.id || null, error: data ? null : 'No active church year is configured.' };
+}
+
+
+export async function getAccountSetupStatus(): Promise<{ success: boolean; completedRoles: AccountSetupRole[]; error?: string }> {
+  try {
+    const response = await fetch('/api/account/setup-status', {
+      method: 'GET',
+      headers: await getAuthHeader()
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.success || !Array.isArray(payload.completedRoles)) {
+      return { success: false, completedRoles: [], error: payload?.message || payload?.error || `HTTP ${response.status}: Could not verify account setup.` };
+    }
+    const allowed = new Set<AccountSetupRole>(['student', 'teacher', 'parent', 'admin']);
+    return {
+      success: true,
+      completedRoles: payload.completedRoles.filter((role: unknown): role is AccountSetupRole => typeof role === 'string' && allowed.has(role as AccountSetupRole))
+    };
+  } catch (error) {
+    return { success: false, completedRoles: [], error: error instanceof Error ? error.message : 'Could not verify account setup.' };
+  }
+}
+
+export async function completeAccountSetup(role: AccountSetupRole): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/account/setup-complete', {
+      method: 'POST',
+      headers: await getAuthHeader(),
+      body: JSON.stringify({ role })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.success || payload.role !== role) {
+      return { success: false, error: payload?.message || payload?.error || `HTTP ${response.status}: Could not save account setup.` };
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Could not save account setup.' };
+  }
 }
 
 export interface RequestActivationParams {
