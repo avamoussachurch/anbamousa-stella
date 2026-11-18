@@ -8759,6 +8759,7 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
     let lessonsAwaitingReview = 0;
     let totals = { students: 0, completedLessons: 0, progressRecords: 0, curriculumCount: 0 };
     let studentsWithoutProgress = 0;
+    let studentReports: Array<{ id: string; name: string; avatar: string | null; grade: string; classNames: string[]; completedLessons: number; progressRecords: number; quizAttempts: number; averageQuizPercentage: number | null; latestQuizPercentage: number | null; latestQuizAt: string | null; currentStreak: number; longestStreak: number; lastActivityAt: string | null }> = [];
 
     if (instanceIds.length > 0) {
       const { data: instances, error: instanceError } = await client
@@ -8835,6 +8836,66 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
         activeVersionByLesson
       );
       const classesById = new Map(activeInstances.map(instance => [instance.id, instance]));
+
+      // The teacher report is restricted to students in this teacher's active assigned rosters.
+      const { data: studentProfiles, error: profileError } = await client
+        .from('profiles')
+        .select('id, name, avatar, grade, current_streak, longest_streak')
+        .in('id', studentIds);
+      if (profileError) throw new Error(`Could not load assigned student profiles: ${profileError.message}`);
+
+      const quizAttemptRows: Array<{ student_id: string; lesson_id: string; score: number; total_score: number; percentage: number; passed: boolean; submitted_at: string }> = [];
+      for (let offset = 0; studentIds.length > 0; offset += 1000) {
+        const { data, error } = await client
+          .from('quiz_attempts')
+          .select('student_id, lesson_id, score, total_score, percentage, passed, submitted_at')
+          .in('student_id', studentIds)
+          .order('submitted_at', { ascending: false })
+          .range(offset, offset + 999);
+        if (error) throw new Error(`Could not load assigned students' quiz attempts: ${error.message}`);
+        const page = data || [];
+        quizAttemptRows.push(...page);
+        if (page.length < 1000) break;
+      }
+
+      const profileById = new Map((studentProfiles || []).map(profile => [profile.id, profile]));
+      const membershipByStudent = new Map<string, typeof roster>();
+      for (const member of roster) {
+        const current = membershipByStudent.get(member.student_id) || [];
+        current.push(member);
+        membershipByStudent.set(member.student_id, current);
+      }
+      studentReports = studentIds.map(studentId => {
+        const profile = profileById.get(studentId);
+        const membershipsForStudent = membershipByStudent.get(studentId) || [];
+        const progressForStudent = authoritativeProgressRows.filter(row => row.student_id === studentId);
+        const attemptsForStudent = quizAttemptRows.filter(row => row.student_id === studentId);
+        const percentages = attemptsForStudent.map(row => Number(row.percentage)).filter(value => Number.isFinite(value));
+        const classNames = [...new Set(membershipsForStudent.map(member => {
+          const instance = classesById.get(member.class_instance_id);
+          return instance?.name_en || instance?.class_group_id || '';
+        }).filter(Boolean))];
+        const activityDates = progressForStudent
+          .map(row => row.completed_at)
+          .filter((value): value is string => Boolean(value))
+          .sort((a, b) => Date.parse(b) - Date.parse(a));
+        return {
+          id: studentId,
+          name: profile?.name || 'Student',
+          avatar: profile?.avatar || null,
+          grade: membershipsForStudent[0]?.exact_grade || profile?.grade || '',
+          classNames,
+          completedLessons: progressForStudent.filter(row => row.completed).length,
+          progressRecords: progressForStudent.length,
+          quizAttempts: attemptsForStudent.length,
+          averageQuizPercentage: percentages.length ? Math.round(percentages.reduce((sum, value) => sum + value, 0) / percentages.length) : null,
+          latestQuizPercentage: attemptsForStudent[0] ? Number(attemptsForStudent[0].percentage) : null,
+          latestQuizAt: attemptsForStudent[0]?.submitted_at || null,
+          currentStreak: Number(profile?.current_streak || 0),
+          longestStreak: Number(profile?.longest_streak || 0),
+          lastActivityAt: activityDates[0] || null
+        };
+      }).sort((a, b) => a.name.localeCompare(b.name));
 
       const { data: curriculum, error: curriculumError } = await client
         .from('lessons')
@@ -8960,6 +9021,7 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
       classes,
       totals,
       studentsWithoutProgress,
+      studentReports,
       lessonsAwaitingReview,
       recentActivity,
       upcomingEvents,
