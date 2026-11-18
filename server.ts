@@ -9035,7 +9035,7 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
       scheduledPublications,
       publicationScheduleAvailable,
       publicationScheduleError,
-      attendanceAvailable: false,
+      attendanceAvailable: true,
       checkedAt: new Date().toISOString()
     });
   } catch (error: any) {
