@@ -47,6 +47,7 @@ import { ServantHomeDashboard } from './ServantHomeDashboard';
 import { HelpRequestsPanel } from './HelpRequestsPanel';
 import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
 import { TeacherProgressReport } from './TeacherProgressReport';
+import { TeacherAttendanceWorkspace } from './TeacherAttendanceWorkspace';
 
 interface TeacherDashboardProps {
   onOpenParentPortal?: () => void;
@@ -617,16 +618,14 @@ export function TeacherDashboard({
       {/* Tab 0: Attendance & Visitation Tracker */}
       {activeTab === 'attendance' && (
         isOnlineAuth ? (
-          <section role="status" className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-            <h2 className="font-black">{lang === 'ar' ? 'الحضور والافتقاد مش متاحين للحسابات المتصلة' : 'Attendance is unavailable for online accounts'}</h2>
-            <p className="mt-2 text-sm leading-relaxed">
-              {lang === 'ar'
-                ? 'المتابعة الحالية بتستخدم أسماء تجريبية، والتغييرات بتتحفظ على المتصفح بس من غير حفظ موثوق على الخادم. عشان كده مش هنعرضها كبيانات فصل حقيقية.'
-                : 'The current tracker uses sample names and stores changes only in this browser, with no trusted server persistence. It is not shown as real class attendance.'}
-            </p>
-          </section>
+          <TeacherAttendanceWorkspace lang={lang} />
         ) : (
-          <AttendanceVisitationTracker lang={lang} />
+          <>
+            <p role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+              {lang === 'ar' ? 'وضع تجريبي: البيانات المعروضة أمثلة ولا يتم حفظها على الخادم.' : 'Demo mode: the displayed roster is sample data and is not saved to the server.'}
+            </p>
+            <AttendanceVisitationTracker lang={lang} />
+          </>
         )
       )}
 
