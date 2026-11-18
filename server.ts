@@ -373,7 +373,7 @@ app.post('/api/account/setup-complete', requireAssignedRoles(), async (req, res)
   if (!['student', 'teacher', 'parent', 'admin'].includes(role)) {
     return res.status(400).json({ success: false, error: 'INVALID_SETUP_ROLE', message: 'A valid account role is required.' });
   }
-  if (!authContext.roles.includes(role as ServerRole)) {
+  if (!authContext.roles.some(assignedRole => assignedRole === role)) {
     return res.status(403).json({ success: false, error: 'ROLE_NOT_ASSIGNED', message: 'You cannot complete setup for a role that is not assigned to your account.' });
   }
   try {
