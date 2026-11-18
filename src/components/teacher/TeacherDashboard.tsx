@@ -46,6 +46,7 @@ import { FeedTab } from '../student/FeedTab';
 import { ServantHomeDashboard } from './ServantHomeDashboard';
 import { HelpRequestsPanel } from './HelpRequestsPanel';
 import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
+import { TeacherProgressReport } from './TeacherProgressReport';
 
 interface TeacherDashboardProps {
   onOpenParentPortal?: () => void;
@@ -577,19 +578,7 @@ export function TeacherDashboard({
       {/* Tab: Student Mastery Evaluation */}
       {activeTab === 'mastery' && (
         isOnlineAuth ? (
-          <section role="status" className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-            <div className="flex items-start gap-3">
-              <Award className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
-              <div>
-                <h2 className="font-black">{lang === 'ar' ? 'تقارير تقدم التلاميذ والاختبارات مش متاحة' : 'Progress and quiz reports are unavailable'}</h2>
-                <p className="mt-2 text-sm leading-relaxed">
-                  {lang === 'ar'
-                    ? 'مش هنعرض بيانات محفوظة على المتصفح على إنها نتائج مؤكدة. التقرير ده مفيهوش قراءة مباشرة وموثوقة من سجلات التلاميذ والاختبارات في قاعدة البيانات.'
-                    : 'Browser-cached values are not shown as confirmed results. This report does not yet read student progress and quiz attempts from an authoritative database-backed Servant endpoint.'}
-                </p>
-              </div>
-            </div>
-          </section>
+          <TeacherProgressReport lang={lang} />
         ) : (
           <>
             <p role="note" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
