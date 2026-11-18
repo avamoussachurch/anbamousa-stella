@@ -90,7 +90,7 @@ export function TeacherAttendanceWorkspace({ lang }: { lang: 'en' | 'ar' }) {
 
   const saveAttendance = async () => {
     if (!selectedClassId) return;
-    const records = Object.entries(statusMap).map(([studentId, status]) => ({ studentId, status }));
+    const records = (Object.entries(statusMap) as Array<[string, AttendanceStatus]>).map(([studentId, status]) => ({ studentId, status }));
     if (records.length === 0) {
       setError(isArabic ? 'حدد حالة تلميذ واحد على الأقل قبل الحفظ.' : 'Mark at least one student before saving.');
       return;
