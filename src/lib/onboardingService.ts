@@ -144,20 +144,10 @@ export async function requestAccountActivation(
     }
     return { success: true, request: json.request };
   } catch (err: any) {
-    const fallbackReq: OnboardingActivationRequest = {
-      id: `req-offline-${Date.now()}`,
-      studentId: params.studentId,
-      studentName: params.studentName,
-      email: params.email,
-      phone: params.phone,
-      requestedClassGroupId: params.requestedClassGroupId,
-      requestedGrade: params.requestedGrade,
-      notes: params.notes,
-      status: 'PENDING_APPROVAL',
-      requestedAt: new Date().toISOString()
+    return {
+      success: false,
+      error: err?.message || 'The activation request could not be confirmed by the server. Check your connection and retry.'
     };
-    try { localStorage.setItem('church_pending_activation', JSON.stringify(fallbackReq)); } catch (_) {}
-    return { success: true, request: fallbackReq };
   }
 }
 
@@ -219,12 +209,11 @@ export async function getMyActivationStatus(
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.success) return { success: false, error: json?.message || json?.error || `HTTP ${res.status}: Failed to fetch status` };
     return { success: true, request: json.request || null, isEnrolled: json.isEnrolled, studentClass: json.studentClass };
-  } catch (_) {
-    try {
-      const cached = localStorage.getItem('church_pending_activation');
-      if (cached) return { success: true, request: JSON.parse(cached), isEnrolled: false };
-    } catch (_) {}
-    return { success: true, request: null, isEnrolled: false };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Could not verify class status because the server is unavailable.'
+    };
   }
 }
 
