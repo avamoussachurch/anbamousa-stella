@@ -10,7 +10,7 @@ test('Hymns rehearsal recorder supports pause, resume, stop, and microphone-driv
   assert.match(source, /recorder\.resume\(\)/);
   assert.match(source, /recorder\.stop\(\)/);
   assert.match(source, /analyser\.getByteFrequencyData\(bins\)/);
-  assert.match(source, /new MediaStream/);
+  assert.match(source, /createMediaStreamSource\(stream\)/);
   assert.match(source, /role="img"/);
   assert.match(source, /Live microphone waveform/);
   assert.match(source, /aria-label=\{isPracticeRecordingPaused/);
