@@ -12,9 +12,27 @@ export interface ServantHomeClass {
   lastActivityAt: string | null;
 }
 
+export interface ServantStudentProgressReport {
+  id: string;
+  name: string;
+  avatar: string | null;
+  grade: string;
+  classNames: string[];
+  completedLessons: number;
+  progressRecords: number;
+  quizAttempts: number;
+  averageQuizPercentage: number | null;
+  latestQuizPercentage: number | null;
+  latestQuizAt: string | null;
+  currentStreak: number;
+  longestStreak: number;
+  lastActivityAt: string | null;
+}
+
 export interface ServantHomeSummary {
   churchYear: string | null;
   classes: ServantHomeClass[];
+  students: ServantStudentProgressReport[];
   totals: {
     students: number;
     completedLessons: number;
@@ -73,11 +91,11 @@ export async function getServantHomeSummary(): Promise<{
     if (!response.ok || !payload?.success) {
       throw new Error(payload?.message || payload?.error || `Could not load servant dashboard (HTTP ${response.status}).`);
     }
-    if (!Array.isArray(payload.classes) || !payload.totals || !Array.isArray(payload.upcomingEvents) || !Array.isArray(payload.recentActivity) || !Array.isArray(payload.scheduledPublications)) {
+    if (!Array.isArray(payload.classes) || !payload.totals || !Array.isArray(payload.upcomingEvents) || !Array.isArray(payload.recentActivity) || !Array.isArray(payload.scheduledPublications) || !Array.isArray(payload.studentReports)) {
       throw new Error('The server returned an incomplete servant dashboard summary.');
     }
 
-    return { data: payload as ServantHomeSummary, error: null };
+    return { data: { ...payload, students: payload.studentReports } as ServantHomeSummary, error: null };
   } catch (error) {
     return {
       data: null,
