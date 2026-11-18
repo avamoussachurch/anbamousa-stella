@@ -69,7 +69,7 @@ export async function saveTeacherAttendance(
   date: string,
   records: Array<{ studentId: string; status: AttendanceStatus }>
 ): Promise<{ savedCount: number; savedAt: string }> {
-  return authenticatedRequest('/api/church/servant/attendance', 'POST', { classInstanceId, date, records });
+  return authenticatedRequest<{ savedCount: number; savedAt: string }>('/api/church/servant/attendance', 'POST', { classInstanceId, date, records });
 }
 
 export async function logTeacherVisitation(input: {
@@ -79,5 +79,5 @@ export async function logTeacherVisitation(input: {
   method: VisitationMethod;
   notes: string;
 }): Promise<{ visitation: { id: string; visit_date: string; method: VisitationMethod; notes: string } }> {
-  return authenticatedRequest('/api/church/servant/visitations', 'POST', input);
+  return authenticatedRequest<{ visitation: { id: string; visit_date: string; method: VisitationMethod; notes: string } }>('/api/church/servant/visitations', 'POST', input);
 }
