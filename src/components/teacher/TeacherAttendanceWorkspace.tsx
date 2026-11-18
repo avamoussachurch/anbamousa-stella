@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CalendarDays, Check, CheckCircle2, Clock3, HeartHandshake, Loader2, MessageCircle, Phone, RefreshCw, Save, Search, Users, X } from 'lucide-react';
+import { AlertCircle, CalendarDays, HeartHandshake, Loader2, RefreshCw, Save, Search, Users, X } from 'lucide-react';
 import { getTeacherAttendance, logTeacherVisitation, saveTeacherAttendance, type AttendanceStatus, type TeacherAttendanceClass, type TeacherAttendanceStudent, type VisitationMethod } from '../../lib/teacherAttendanceService';
 
 const todayLocal = () => {
