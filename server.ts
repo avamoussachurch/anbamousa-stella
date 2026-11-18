@@ -5823,6 +5823,49 @@ function getTrustedProgressClient() {
   return getTrustedServiceClient('Trusted Supabase configuration is required to persist lesson section progress.');
 }
 
+/**
+ * Record one qualifying learning day across Sunday School, Hymns, and Taxis.
+ * The database trigger serializes updates and recalculates current/longest
+ * streaks from the durable Cairo-local activity-day ledger.
+ */
+async function persistStudentActivityDay(
+  studentId: string,
+  activityAt: string
+): Promise<{ currentStreak: number; longestStreak: number; lastActiveCairoDate: string; isActiveToday: boolean } | null> {
+  if (!isUuidStudentId(studentId)) return null;
+
+  const client = getTrustedProgressClient();
+  const activityDate = getCairoDateString(activityAt);
+  const { error: activityError } = await client
+    .from('student_activity_days')
+    .upsert({
+      student_id: studentId,
+      activity_date: activityDate,
+      last_activity_at: activityAt
+    }, { onConflict: 'student_id,activity_date' });
+
+  if (activityError) {
+    throw new Error(`Could not persist the student's activity day: ${activityError.message}`);
+  }
+
+  const { data: profile, error: profileError } = await client
+    .from('profiles')
+    .select('current_streak, longest_streak')
+    .eq('id', studentId)
+    .single();
+
+  if (profileError || !profile) {
+    throw new Error(`Could not load the recalculated student streak: ${profileError?.message || 'Profile not found'}`);
+  }
+
+  return {
+    currentStreak: Math.max(0, Number(profile.current_streak) || 0),
+    longestStreak: Math.max(0, Number(profile.longest_streak) || 0),
+    lastActiveCairoDate: activityDate,
+    isActiveToday: activityDate === getCairoDateString()
+  };
+}
+
 async function loadPersistedLessonSections(
   studentId: string,
   lessonId: string,
@@ -6189,25 +6232,38 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
     const newTotalPoints = persistedCompletion.totalPoints;
     serverReviewState.userPoints[targetStudentId] = newTotalPoints;
 
-    // Authoritative Cairo-Local Streak Calculation
+    // Authoritative cross-school streak calculation. UUID-backed students use
+    // the durable Supabase activity ledger; local IDs remain test/demo-only.
     const todayCairo = getCairoDateString(new Date(prog.completedAt));
-    let streakInfo = serverReviewState.userStreaks[targetStudentId];
-    if (!streakInfo) {
-      streakInfo = {
-        currentStreak: 1,
-        longestStreak: 1,
-        lastActiveCairoDate: todayCairo,
-        activeCairoDays: [todayCairo]
-      };
-    } else {
-      if (!streakInfo.activeCairoDays.includes(todayCairo)) {
-        streakInfo.activeCairoDays.push(todayCairo);
-      }
-      const calc = calculateCairoStreakForStudent(streakInfo.activeCairoDays);
-      streakInfo.currentStreak = calc.currentStreak;
-      streakInfo.longestStreak = calc.longestStreak;
-      streakInfo.lastActiveCairoDate = todayCairo;
+    let persistedStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> = null;
+    try {
+      persistedStreak = await persistStudentActivityDay(targetStudentId, prog.completedAt);
+    } catch (error: any) {
+      console.error('Could not persist lesson activity day:', error);
+      return res.status(502).json({
+        success: false,
+        error: 'STREAK_PERSISTENCE_FAILED',
+        message: 'Lesson progress was saved, but the learning streak could not be synchronized. Please retry.'
+      });
     }
+
+    const previousStreak = serverReviewState.userStreaks[targetStudentId];
+    const activeCairoDays = Array.from(new Set([
+      ...(Array.isArray(previousStreak?.activeCairoDays) ? previousStreak.activeCairoDays : []),
+      todayCairo
+    ]));
+    const calculatedStreak = calculateCairoStreakForStudent(activeCairoDays);
+    const streakInfo = {
+      currentStreak: persistedStreak?.currentStreak ?? calculatedStreak.currentStreak,
+      longestStreak: Math.max(
+        persistedStreak?.longestStreak ?? 0,
+        previousStreak?.longestStreak ?? 0,
+        calculatedStreak.longestStreak,
+        persistedStreak?.currentStreak ?? calculatedStreak.currentStreak
+      ),
+      lastActiveCairoDate: persistedStreak?.lastActiveCairoDate ?? todayCairo,
+      activeCairoDays
+    };
     serverReviewState.userStreaks[targetStudentId] = streakInfo;
 
     // Authoritative Completion History (Deduplicated Activity Logging)
@@ -6264,8 +6320,8 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
       streak: {
         currentStreak: streakInfo.currentStreak,
         longestStreak: streakInfo.longestStreak,
-        lastActiveCairoDate: todayCairo,
-        isActiveToday: true
+        lastActiveCairoDate: streakInfo.lastActiveCairoDate,
+        isActiveToday: persistedStreak?.isActiveToday ?? true
       },
       completionHistory: serverReviewState.completionHistory[targetStudentId] || []
     });
@@ -6380,21 +6436,21 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       });
     }
 
-    savePersistentClassState();
-
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
-    if (supabaseUrl && supabaseAnonKey) {
-      try {
-        const client = createClient(supabaseUrl, supabaseAnonKey);
-        await client.from('profiles').update({
-          current_streak: streakRecord.currentStreak,
-          longest_streak: streakRecord.longestStreak,
-          points: newTotalPoints,
-          last_active: nowIso
-        }).eq('id', targetStudentId);
-      } catch (e) {}
+    // Persist the learning day with trusted server credentials. Never report
+    // success while silently dropping a Supabase streak/profile write.
+    const persistedStreak = await persistStudentActivityDay(targetStudentId, nowIso);
+    if (persistedStreak) {
+      streakRecord.currentStreak = persistedStreak.currentStreak;
+      streakRecord.longestStreak = Math.max(
+        persistedStreak.longestStreak,
+        streakRecord.longestStreak || 0,
+        persistedStreak.currentStreak
+      );
+      streakRecord.lastActiveCairoDate = persistedStreak.lastActiveCairoDate;
+      serverReviewState.userStreaks[targetStudentId] = streakRecord;
     }
+
+    savePersistentClassState();
 
     return res.json({
       success: true,
@@ -6406,8 +6462,8 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       streak: {
         currentStreak: streakRecord.currentStreak,
         longestStreak: streakRecord.longestStreak,
-        lastActiveCairoDate: todayCairo,
-        isActiveToday: true
+        lastActiveCairoDate: persistedStreak?.lastActiveCairoDate ?? todayCairo,
+        isActiveToday: persistedStreak?.isActiveToday ?? true
       },
       completionHistory: serverReviewState.completionHistory[targetStudentId]
     });
@@ -6423,6 +6479,7 @@ async function loadPersistedStudentProgressSummary(studentId: string) {
     { data: profile, error: profileError },
     { data: completionRows, error: completionError },
     { data: sectionRows, error: sectionError },
+    { data: activityDayRows, error: activityDayError },
     { data: publishedLessons, error: lessonsError },
     { data: activeYear, error: yearError }
   ] = await Promise.all([
@@ -6433,6 +6490,9 @@ async function loadPersistedStudentProgressSummary(studentId: string) {
     client.from('lesson_section_progress')
       .select('lesson_id, version_id, sections_completed, total_sections, updated_at')
       .eq('student_id', studentId),
+    client.from('student_activity_days')
+      .select('activity_date')
+      .eq('student_id', studentId),
     client.from('lessons')
       .select('id, active_version_id, grade_level, status')
       .eq('status', 'published'),
@@ -6442,6 +6502,7 @@ async function loadPersistedStudentProgressSummary(studentId: string) {
   if (!profile) throw new Error('Student profile was not found.');
   if (completionError) throw new Error(`Could not load persisted lesson completions: ${completionError.message}`);
   if (sectionError) throw new Error(`Could not load persisted lesson sections: ${sectionError.message}`);
+  if (activityDayError) throw new Error(`Could not load persisted student activity days: ${activityDayError.message}`);
   if (lessonsError) throw new Error(`Could not load published lessons: ${lessonsError.message}`);
   if (yearError) throw new Error(`Could not load the active church year: ${yearError.message}`);
 
@@ -6558,14 +6619,22 @@ async function loadPersistedStudentProgressSummary(studentId: string) {
   const completedLessonIds = completedRows.map((row: any) => row.lesson_id);
   const rememberedStreak = serverReviewState.userStreaks[studentId];
   const streak = calculateCairoStreakForStudent([
+    ...(activityDayRows || []).map((row: any) => row.activity_date),
     ...completedRows.map((row: any) => row.completed_at),
     ...(Array.isArray(rememberedStreak?.activeCairoDays) ? rememberedStreak.activeCairoDays : [])
   ]);
   const storedLastActive = profile.last_active ? getCairoDateString(profile.last_active) : '';
-  const latestCairoDate = rememberedStreak?.lastActiveCairoDate || streak.lastActiveCairoDate || storedLastActive;
+  const latestCairoDate = streak.lastActiveCairoDate || rememberedStreak?.lastActiveCairoDate || storedLastActive;
   const todayCairo = getCairoDateString();
-  const currentStreak = Math.max(streak.currentStreak, Number(rememberedStreak?.currentStreak) || 0, Number(profile.current_streak) || 0);
-  const longestStreak = Math.max(streak.longestStreak, Number(rememberedStreak?.longestStreak) || 0, Number(profile.longest_streak) || 0, currentStreak);
+  // Current streak is derived only from dated activity; a stored current value
+  // must never prevent it from resetting after a missed Cairo-local day.
+  const currentStreak = streak.currentStreak;
+  const longestStreak = Math.max(
+    streak.longestStreak,
+    Number(rememberedStreak?.longestStreak) || 0,
+    Number(profile.longest_streak) || 0,
+    currentStreak
+  );
   const history = [...(serverReviewState.completionHistory[studentId] || [])];
   const persistedHistory = [...completedRows]
     .sort((left: any, right: any) => Date.parse(right.completed_at) - Date.parse(left.completed_at))
@@ -6609,7 +6678,7 @@ async function loadPersistedStudentProgressSummary(studentId: string) {
       currentStreak,
       longestStreak,
       lastActiveCairoDate: latestCairoDate,
-      isActiveToday: latestCairoDate === todayCairo
+      isActiveToday: streak.isActiveToday
     },
     completionHistory: history,
     serverCairoDate: getCairoDateString(),
@@ -6708,8 +6777,8 @@ app.get("/api/church/student-progress/summary", async (req, res) => {
     if (streakRecord && Array.isArray(streakRecord.activeCairoDays) && streakRecord.activeCairoDays.length > 0) {
       const calc = calculateCairoStreakForStudent(streakRecord.activeCairoDays);
       streakInfo = {
-        currentStreak: Math.max(calc.currentStreak, streakRecord.currentStreak || 0),
-        longestStreak: Math.max(calc.longestStreak, streakRecord.longestStreak || 0),
+        currentStreak: calc.currentStreak,
+        longestStreak: Math.max(calc.longestStreak, streakRecord.longestStreak || 0, calc.currentStreak),
         lastActiveCairoDate: streakRecord.lastActiveCairoDate || calc.lastActiveCairoDate,
         isActiveToday: calc.isActiveToday
       };
@@ -6721,8 +6790,8 @@ app.get("/api/church/student-progress/summary", async (req, res) => {
       });
       const calc = calculateCairoStreakForStudent(completedDates);
       streakInfo = {
-        currentStreak: Math.max(calc.currentStreak, streakRecord?.currentStreak || 0),
-        longestStreak: Math.max(calc.longestStreak, streakRecord?.longestStreak || 0),
+        currentStreak: calc.currentStreak,
+        longestStreak: Math.max(calc.longestStreak, streakRecord?.longestStreak || 0, calc.currentStreak),
         lastActiveCairoDate: calc.lastActiveCairoDate,
         isActiveToday: calc.isActiveToday
       };
