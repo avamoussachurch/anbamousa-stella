@@ -18,7 +18,9 @@ test('teacher dashboard explains demo, offline, and unavailable states in Egypti
   const teacher = await read('../src/components/teacher/TeacherDashboard.tsx');
   assert.match(teacher, /الوضع الحالي تجريبي أو مش متصل/);
   assert.match(teacher, /مش قادرين نحدّث المنهج من الخادم/);
-  assert.match(teacher, /تقارير تقدم التلاميذ والاختبارات مش متاحة/);
+  const report = await read('../src/components/teacher/TeacherProgressReport.tsx');
+  assert.match(report, /تقدم التلاميذ والاختبارات/);
+  assert.match(report, /ملخص كل تلميذ/);
   assert.match(teacher, /الحضور والافتقاد مش متاحين للحسابات المتصلة/);
   assert.match(teacher, /راجع وسجّل التلاميذ/);
 });
