@@ -378,10 +378,14 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
             // Authoritative streak and points synchronization across all screens
             if (userData) {
               const nextPoints = typeof res.totalPoints === 'number' && res.totalPoints > 0 ? res.totalPoints : userData.points;
-              const nextStreak = res.streak?.currentStreak && res.streak.currentStreak > 0 ? res.streak.currentStreak : (userData.currentStreak ?? 1);
-              const nextLongest = res.streak?.longestStreak && res.streak.longestStreak > 0
-                ? res.streak.longestStreak
-                : Math.max(userData.longestStreak ?? 1, nextStreak);
+              const nextStreak = Number.isFinite(res.streak?.currentStreak)
+                ? Math.max(0, res.streak.currentStreak)
+                : Math.max(0, userData.currentStreak ?? 0);
+              const nextLongest = Math.max(
+                nextStreak,
+                Number.isFinite(res.streak?.longestStreak) ? Math.max(0, res.streak.longestStreak) : 0,
+                userData.longestStreak ?? 0
+              );
 
               const updatedUser = {
                 ...userData,
