@@ -68,4 +68,8 @@ test('guest streak state allows a zero current streak while retaining longest st
   assert.match(auth, /const nextCurrent = Math\.max\(0, currentStreak\)/);
   assert.match(auth, /Math\.max\(nextCurrent, userData\.longestStreak \?\? 0, longestStreak \?\? 0\)/);
   assert.match(points, /const userStreak = Math\.max\(0, currentUser\.currentStreak \?\? 0\)/);
+
+  const lessonView = await read('../src/components/student/LessonView.tsx');
+  assert.match(lessonView, /Number\.isFinite\(res\.streak\?\.currentStreak\)[\s\S]*?Math\.max\(0, res\.streak\.currentStreak\)/);
+  assert.doesNotMatch(lessonView, /res\.streak\?\.currentStreak && res\.streak\.currentStreak > 0/);
 });
