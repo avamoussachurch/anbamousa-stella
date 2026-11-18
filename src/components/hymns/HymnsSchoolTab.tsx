@@ -74,15 +74,23 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const waveformContextRef = useRef<AudioContext | null>(null);
   const waveformAnalyserRef = useRef<AnalyserNode | null>(null);
   const waveformFrameRef = useRef<number | null>(null);
+  const isUnmountingRef = useRef(false);
+
+  useEffect(() => {
+    isUnmountingRef.current = false;
+    return () => {
+      isUnmountingRef.current = true;
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') {
+        try { recorder.stop(); } catch (_) {}
+      }
+      recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+      if (waveformFrameRef.current !== null) cancelAnimationFrame(waveformFrameRef.current);
+      if (waveformContextRef.current) void waveformContextRef.current.close().catch(() => {});
+    };
+  }, []);
 
   useEffect(() => () => {
-    const recorder = mediaRecorderRef.current;
-    if (recorder && recorder.state !== 'inactive') {
-      try { recorder.stop(); } catch (_) {}
-    }
-    recordingStreamRef.current?.getTracks().forEach(track => track.stop());
-    if (waveformFrameRef.current !== null) cancelAnimationFrame(waveformFrameRef.current);
-    if (waveformContextRef.current) void waveformContextRef.current.close().catch(() => {});
     if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
   }, [recordedAudioUrl]);
 
@@ -277,6 +285,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       recorder.onpause = () => setIsPracticeRecordingPaused(true);
       recorder.onresume = () => setIsPracticeRecordingPaused(false);
       recorder.onstop = () => {
+        if (isUnmountingRef.current) return;
         const mimeType = recorder.mimeType || audioChunksRef.current[0]?.type || 'audio/webm';
         const blob = new Blob(audioChunksRef.current, { type: mimeType });
         if (blob.size > 0) {
