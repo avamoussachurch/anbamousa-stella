@@ -21,6 +21,10 @@ test('teacher dashboard explains demo, offline, and unavailable states in Egypti
   const report = await read('../src/components/teacher/TeacherProgressReport.tsx');
   assert.match(report, /تقدم التلاميذ والاختبارات/);
   assert.match(report, /ملخص كل تلميذ/);
-  assert.match(teacher, /الحضور والافتقاد مش متاحين للحسابات المتصلة/);
-  assert.match(teacher, /راجع وسجّل التلاميذ/);
+  assert.match(teacher, /TeacherAttendanceWorkspace/);
+  assert.match(teacher, /وضع تجريبي/);
+  const attendance = await read('../src/components/teacher/TeacherAttendanceWorkspace.tsx');
+  assert.match(attendance, /الحضور والافتقاد/);
+  assert.match(attendance, /حفظ الحضور/);
+  assert.match(attendance, /تسجيل متابعة/);
 });

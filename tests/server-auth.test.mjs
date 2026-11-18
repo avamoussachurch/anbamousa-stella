@@ -2064,7 +2064,7 @@ test('Servant Home summary requires an assigned teacher role and returns an auth
     curriculumCount: 0
   });
   assert.deepEqual(summary.upcomingEvents, []);
-  assert.equal(summary.attendanceAvailable, false);
+  assert.equal(summary.attendanceAvailable, true);
 });
 
 test('Servant profile classes are scoped to assigned teacher accounts', async () => {
