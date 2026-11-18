@@ -34,5 +34,5 @@ test('authenticated teacher attendance UI uses server APIs rather than demo loca
   assert.match(component, /logTeacherVisitation\(/);
   assert.match(component, /No active class assignments/);
   assert.doesNotMatch(component, /localStorage/);
-  assert.match(service, /Bearer ${session\.access_token}/);
+  assert.match(service, /Bearer \$\{session\.access_token\}/);
 });
