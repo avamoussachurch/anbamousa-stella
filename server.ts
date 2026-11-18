@@ -8759,7 +8759,7 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
     let lessonsAwaitingReview = 0;
     let totals = { students: 0, completedLessons: 0, progressRecords: 0, curriculumCount: 0 };
     let studentsWithoutProgress = 0;
-    let studentReports: Array<{ id: string; name: string; avatar: string | null; grade: string; classNames: string[]; completedLessons: number; progressRecords: number; quizAttempts: number; averageQuizPercentage: number | null; latestQuizPercentage: number | null; latestQuizAt: string | null; currentStreak: number; longestStreak: number; lastActivityAt: string | null }> = [];
+    let studentReports: Array<{ id: string; name: string; avatar: string | null; grade: string; classNames: string[]; classNamesAr: string[]; completedLessons: number; progressRecords: number; quizAttempts: number; averageQuizPercentage: number | null; latestQuizPercentage: number | null; latestQuizAt: string | null; currentStreak: number; longestStreak: number; lastActivityAt: string | null }> = [];
 
     if (instanceIds.length > 0) {
       const { data: instances, error: instanceError } = await client
@@ -8838,10 +8838,12 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
       const classesById = new Map(activeInstances.map(instance => [instance.id, instance]));
 
       // The teacher report is restricted to students in this teacher's active assigned rosters.
-      const { data: studentProfiles, error: profileError } = await client
-        .from('profiles')
-        .select('id, name, avatar, grade, current_streak, longest_streak')
-        .in('id', studentIds);
+      const { data: studentProfiles, error: profileError } = studentIds.length > 0
+        ? await client
+          .from('profiles')
+          .select('id, name, avatar, grade, current_streak, longest_streak')
+          .in('id', studentIds)
+        : { data: [], error: null };
       if (profileError) throw new Error(`Could not load assigned student profiles: ${profileError.message}`);
 
       const quizAttemptRows: Array<{ student_id: string; lesson_id: string; score: number; total_score: number; percentage: number; passed: boolean; submitted_at: string }> = [];
@@ -8875,6 +8877,10 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
           const instance = classesById.get(member.class_instance_id);
           return instance?.name_en || instance?.class_group_id || '';
         }).filter(Boolean))];
+        const classNamesAr = [...new Set(membershipsForStudent.map(member => {
+          const instance = classesById.get(member.class_instance_id);
+          return instance?.name_ar || instance?.class_group_id || '';
+        }).filter(Boolean))];
         const activityDates = progressForStudent
           .map(row => row.completed_at)
           .filter((value): value is string => Boolean(value))
@@ -8885,6 +8891,7 @@ app.get("/api/church/servant/home-summary", async (req, res) => {
           avatar: profile?.avatar || null,
           grade: membershipsForStudent[0]?.exact_grade || profile?.grade || '',
           classNames,
+          classNamesAr,
           completedLessons: progressForStudent.filter(row => row.completed).length,
           progressRecords: progressForStudent.length,
           quizAttempts: attemptsForStudent.length,
