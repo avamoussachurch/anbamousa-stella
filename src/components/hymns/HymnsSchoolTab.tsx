@@ -61,12 +61,30 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
 
   // Voice Recording Practice
   const [isRecordingPractice, setIsRecordingPractice] = useState(false);
+  const [isPracticeRecordingPaused, setIsPracticeRecordingPaused] = useState(false);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const [practiceRecordingError, setPracticeRecordingError] = useState<string | null>(null);
+  const [practiceWaveform, setPracticeWaveform] = useState<number[]>(() => Array(32).fill(0.08));
   const [masteredHymns, setMasteredHymns] = useState<Record<string, boolean>>({});
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const waveformContextRef = useRef<AudioContext | null>(null);
+  const waveformAnalyserRef = useRef<AnalyserNode | null>(null);
+  const waveformFrameRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      try { recorder.stop(); } catch (_) {}
+    }
+    recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+    if (waveformFrameRef.current !== null) cancelAnimationFrame(waveformFrameRef.current);
+    if (waveformContextRef.current) void waveformContextRef.current.close().catch(() => {});
+    if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
+  }, [recordedAudioUrl]);
 
   const assignedLevel = parseHymnsTaxisLevel(userData?.hymnsTaxisLevel);
 
@@ -223,37 +241,129 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     setRecordedAudioUrl(null);
   };
 
-  // Voice recording alongside hymn
+  // Voice recording alongside hymn. The waveform is measured from the microphone
+  // analyser and is never connected to speakers, preventing audio feedback.
   const startPracticeRecording = async () => {
+    if (isRecordingPractice) return;
+    setPracticeRecordingError(null);
+    setRecordedAudioUrl(null);
+    audioChunksRef.current = [];
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setPracticeRecordingError(isAr
+        ? 'التسجيل الصوتي غير مدعوم في المتصفح ده.'
+        : 'Voice recording is not supported in this browser.');
+      return;
+    }
+
     try {
-      setRecordedAudioUrl(null);
-      audioChunksRef.current = [];
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      recordingStreamRef.current = stream;
+      const supportedMimeType = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus'
+      ].find(type => MediaRecorder.isTypeSupported?.(type));
+      const recorder = new MediaRecorder(stream, supportedMimeType ? { mimeType: supportedMimeType } : undefined);
       mediaRecorderRef.current = recorder;
 
-      recorder.ondataavailable = (ev) => {
-        if (ev.data.size > 0) audioChunksRef.current.push(ev.data);
+      recorder.ondataavailable = event => {
+        if (event.data && event.data.size > 0) audioChunksRef.current.push(event.data);
       };
-
+      recorder.onerror = () => {
+        setPracticeRecordingError(isAr ? 'حصلت مشكلة أثناء التسجيل. جرّب تاني.' : 'The recording encountered an error. Please try again.');
+      };
+      recorder.onpause = () => setIsPracticeRecordingPaused(true);
+      recorder.onresume = () => setIsPracticeRecordingPaused(false);
       recorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const url = URL.createObjectURL(blob);
-        setRecordedAudioUrl(url);
-        stream.getTracks().forEach(t => t.stop());
+        const mimeType = recorder.mimeType || audioChunksRef.current[0]?.type || 'audio/webm';
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        if (blob.size > 0) {
+          setRecordedAudioUrl(URL.createObjectURL(blob));
+        } else {
+          setPracticeRecordingError(isAr ? 'التسجيل فاضي. اتأكد إن الميكروفون شغال وجرّب تاني.' : 'The recording is empty. Check your microphone and try again.');
+        }
+        recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+        recordingStreamRef.current = null;
+        if (waveformFrameRef.current !== null) cancelAnimationFrame(waveformFrameRef.current);
+        waveformFrameRef.current = null;
+        waveformAnalyserRef.current = null;
+        if (waveformContextRef.current) {
+          void waveformContextRef.current.close().catch(() => {});
+          waveformContextRef.current = null;
+        }
+        setPracticeWaveform(Array(32).fill(0.08));
+        setIsRecordingPractice(false);
+        setIsPracticeRecordingPaused(false);
       };
 
-      recorder.start();
+      const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextConstructor) {
+        const context: AudioContext = new AudioContextConstructor();
+        await context.resume();
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 64;
+        const source = context.createMediaStreamSource(stream);
+        source.connect(analyser);
+        waveformContextRef.current = context;
+        waveformAnalyserRef.current = analyser;
+        const bins = new Uint8Array(analyser.frequencyBinCount);
+        const drawWaveform = () => {
+          if (waveformAnalyserRef.current !== analyser) return;
+          if (recorder.state === 'paused') {
+            setPracticeWaveform(Array(32).fill(0.08));
+          } else {
+            analyser.getByteFrequencyData(bins);
+            setPracticeWaveform(Array.from(bins, value => Math.max(0.06, value / 255)));
+          }
+          waveformFrameRef.current = requestAnimationFrame(drawWaveform);
+        };
+        drawWaveform();
+      }
+
+      recorder.start(250);
       setIsRecordingPractice(true);
+      setIsPracticeRecordingPaused(false);
     } catch (err) {
-      console.warn("Could not start microphone for hymn practice:", err);
+      recordingStreamRef.current?.getTracks().forEach(track => track.stop());
+      recordingStreamRef.current = null;
+      if (waveformContextRef.current) {
+        void waveformContextRef.current.close().catch(() => {});
+        waveformContextRef.current = null;
+      }
+      setIsRecordingPractice(false);
+      setPracticeRecordingError(err instanceof Error
+        ? err.message
+        : (isAr ? 'تعذر تشغيل الميكروفون. راجع صلاحيات المتصفح.' : 'Could not access the microphone. Check browser permissions.'));
+    }
+  };
+
+  const pauseOrResumePracticeRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') {
+      setPracticeRecordingError(isAr ? 'مفيش تسجيل نشط.' : 'There is no active recording.');
+      return;
+    }
+    try {
+      if (recorder.state === 'recording') recorder.pause();
+      else if (recorder.state === 'paused') recorder.resume();
+    } catch (err) {
+      setPracticeRecordingError(err instanceof Error ? err.message : (isAr ? 'تعذر إيقاف أو استكمال التسجيل.' : 'Could not pause or resume the recording.'));
     }
   };
 
   const stopPracticeRecording = () => {
-    if (mediaRecorderRef.current && isRecordingPractice) {
-      mediaRecorderRef.current.stop();
-      setIsRecordingPractice(false);
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') {
+      setPracticeRecordingError(isAr ? 'مفيش تسجيل نشط لإنهائه.' : 'There is no active recording to stop.');
+      return;
+    }
+    try {
+      // stop() flushes the final dataavailable event before onstop, even when paused.
+      recorder.stop();
+    } catch (err) {
+      setPracticeRecordingError(err instanceof Error ? err.message : (isAr ? 'تعذر إنهاء التسجيل.' : 'Could not stop the recording.'));
     }
   };
 
@@ -657,32 +767,63 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 {isAr ? 'شغّل اللحن وردّد وراه، وبعدها اسمع تسجيلك وقارن نغماتك وهزاتك بالمرتل.' : 'Chant alongside the cantor, then replay your voice to verify your pitch and rhythm.'}
               </p>
 
-              <div className="flex flex-wrap items-center gap-3">
-                {isRecordingPractice ? (
-                  <button
-                    type="button"
-                    onClick={stopPracticeRecording}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white font-bold text-xs shadow-md animate-pulse cursor-pointer"
-                  >
-                    <Square size={16} />
-                    <span>{isAr ? 'إيقاف التسجيل' : 'Stop Recording'}</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={startPracticeRecording}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--color-church-burgundy)] hover:bg-[#6e1623] text-white font-bold text-xs shadow-md cursor-pointer"
-                  >
-                    <Mic size={16} />
-                    <span>{isAr ? 'ابدأ تسجيل صوتي للتدريب' : 'Start Recording Voice'}</span>
-                  </button>
-                )}
+              <div className="space-y-3">
+                <div
+                  className="flex h-14 items-center justify-center gap-1 overflow-hidden rounded-2xl border border-amber-200/70 bg-white/80 px-3 dark:border-slate-700 dark:bg-slate-950/60"
+                  role="img"
+                  aria-label={isAr ? 'موجات صوت الميكروفون المباشرة' : 'Live microphone waveform'}
+                >
+                  {practiceWaveform.map((level, index) => (
+                    <span
+                      key={index}
+                      className="w-1.5 shrink-0 rounded-full bg-amber-600 transition-[height] duration-75 dark:bg-amber-400"
+                      style={{ height: `${Math.max(3, Math.min(1, level) * 38)}px`, opacity: isRecordingPractice ? 0.55 + Math.min(1, level) * 0.45 : 0.45 }}
+                    />
+                  ))}
+                </div>
 
+                <div className="flex flex-wrap items-center gap-2">
+                  {!isRecordingPractice ? (
+                    <button
+                      type="button"
+                      onClick={startPracticeRecording}
+                      className="flex items-center gap-2 rounded-xl bg-[var(--color-church-burgundy)] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#6e1623] disabled:opacity-50"
+                    >
+                      <Mic size={16} />
+                      <span>{isAr ? 'ابدأ التسجيل' : 'Start recording'}</span>
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={pauseOrResumePracticeRecording}
+                        aria-label={isPracticeRecordingPaused ? (isAr ? 'استكمال التسجيل' : 'Resume recording') : (isAr ? 'إيقاف التسجيل مؤقتاً' : 'Pause recording')}
+                        className="flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-md"
+                      >
+                        {isPracticeRecordingPaused ? <Play size={16} /> : <Pause size={16} />}
+                        <span>{isPracticeRecordingPaused ? (isAr ? 'استكمال' : 'Resume') : (isAr ? 'إيقاف مؤقت' : 'Pause')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={stopPracticeRecording}
+                        className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white shadow-md"
+                      >
+                        <Square size={16} />
+                        <span>{isAr ? 'إنهاء التسجيل' : 'Finish recording'}</span>
+                      </button>
+                      <span className="text-xs font-semibold text-amber-800 dark:text-amber-200" aria-live="polite">
+                        {isPracticeRecordingPaused ? (isAr ? 'التسجيل متوقف مؤقتاً' : 'Recording paused') : (isAr ? 'جاري التسجيل…' : 'Recording…')}
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                {practiceRecordingError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800 dark:bg-red-950/40 dark:text-red-200">{practiceRecordingError}</p>}
                 {recordedAudioUrl && (
-                  <div className="flex items-center gap-2">
-                    <audio controls src={recordedAudioUrl} className="h-9 w-60 sm:w-72" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <audio controls src={recordedAudioUrl} className="h-10 w-full max-w-sm" />
                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      ✓ {isAr ? 'تم حفظ التسجيل' : 'Recorded'}
+                      ✓ {isAr ? 'التسجيل جاهز للاستماع' : 'Recording ready to replay'}
                     </span>
                   </div>
                 )}
