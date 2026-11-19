@@ -6495,8 +6495,11 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
         Object.values(serverReviewState.hymnsCollection).find((h: any) => h.id === activityId || h.id === cleanHymnId) ||
         (cleanHymnId === 'ep_oro' ? { id: 'ep_oro', level: 1 } : (cleanHymnId === 'agios' ? { id: 'agios', level: 2 } : null));
       if (activityType === 'CONTENT_OPENED') {
-        if (!hymn || hymn.status !== 'published') {
-          return res.status(404).json({ success: false, error: "HYMN_NOT_FOUND", message: "This published hymn is not available to open." });
+        if (!hymn) {
+          return res.status(404).json({ success: false, error: "HYMN_NOT_FOUND", message: "This hymn is not available to open." });
+        }
+        if (hymn.status !== 'published') {
+          return res.status(403).json({ success: false, error: "HYMN_NOT_PUBLISHED", message: "Only published hymns count toward the learning streak." });
         }
         const studentProfile = await getSharedHymnsTaxisProfile(targetStudentId);
         const assignedLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level);
