@@ -29,7 +29,7 @@ test('role workspaces and feature tabs are split into on-demand chunks', () => {
 
   assert.match(app, /<React\.Suspense fallback=\{<WorkspaceLoadingFallback lang=\{lang\} \/>\}>/);
   assert.match(app, /<React\.Suspense fallback=\{null\}>/);
-  assert.match(app, /import \{ LoginScreen \} from '\.\/components\/auth\/LoginScreen';/);
+  assert.match(app, /const LoginScreen = React\.lazy\(\(\) => import\('\.\/components\/auth\/LoginScreen'\)/);
 });
 
 test('lazy screen fallback stays localized and accessible', () => {
