@@ -6482,6 +6482,11 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       });
     }
 
+    // A content-open event must name an item in one of the supported schools.
+    if (activityType === 'CONTENT_OPENED' && !['hymns', 'taxis'].includes(school)) {
+      return res.status(400).json({ success: false, error: "INVALID_SCHOOL", message: "Only Hymns and Taxis item opens are accepted here." });
+    }
+
     // School-specific validation
     if (school === 'hymns') {
       const cleanHymnId = String(activityId).replace(/^hymn-/, '').replace(/-/g, '_');
@@ -6489,8 +6494,15 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
         serverReviewState.hymnsCollection[cleanHymnId] ||
         Object.values(serverReviewState.hymnsCollection).find((h: any) => h.id === activityId || h.id === cleanHymnId) ||
         (cleanHymnId === 'ep_oro' ? { id: 'ep_oro', level: 1 } : (cleanHymnId === 'agios' ? { id: 'agios', level: 2 } : null));
-      if (activityType === 'CONTENT_OPENED' && !hymn) {
-        return res.status(404).json({ success: false, error: "HYMN_NOT_FOUND", message: "This hymn is not available to open." });
+      if (activityType === 'CONTENT_OPENED') {
+        if (!hymn || hymn.status !== 'published') {
+          return res.status(404).json({ success: false, error: "HYMN_NOT_FOUND", message: "This published hymn is not available to open." });
+        }
+        const studentProfile = await getSharedHymnsTaxisProfile(targetStudentId);
+        const assignedLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level);
+        if (assignedLevel === null || hymn.level !== assignedLevel) {
+          return res.status(403).json({ success: false, error: "HYMN_LEVEL_ACCESS_DENIED", message: "This hymn is not assigned to your level." });
+        }
       }
       if (hymn && hymn.level > 1) {
         const studentEnrollment = getStudentHymnsMembership(targetStudentId);
@@ -6504,8 +6516,27 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       }
     } else if (school === 'taxis') {
       const ritual = serverReviewState.taxisCollection[activityId];
-      if (activityType === 'CONTENT_OPENED' && !ritual) {
-        return res.status(404).json({ success: false, error: "TAXIS_ITEM_NOT_FOUND", message: "This Taxis item is not available to open." });
+      if (activityType === 'CONTENT_OPENED') {
+        const authContext = await verifyServerRequestAuth(req);
+        const permissions = evaluateServerTaxisPermissions(authContext, ritual);
+        if (!ritual || ritual.status !== 'published' || !permissions.canView) {
+          return res.status(403).json({ success: false, error: "TAXIS_ACCESS_DENIED", message: "This published Taxis item is not available to open." });
+        }
+        const studentProfile = await getSharedHymnsTaxisProfile(targetStudentId);
+        const assignedLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level);
+        if (assignedLevel === null || ritual.level !== assignedLevel) {
+          return res.status(403).json({ success: false, error: "TAXIS_LEVEL_ACCESS_DENIED", message: "This Taxis item is not assigned to your level." });
+        }
+        if (ritual.audience === 'preparatory') {
+          const userClass = serverReviewState.studentClasses?.[targetStudentId];
+          const grade = studentProfile?.grade || userClass?.grade || '';
+          if (!(grade.toLowerCase().includes('prep') || userClass?.classGroupId === 'preparatory')) {
+            return res.status(403).json({ success: false, error: "TAXIS_AUDIENCE_DENIED", message: "This Taxis item is not assigned to your class." });
+          }
+        }
+        if (ritual.audience === 'deacons' && assignedLevel < 2) {
+          return res.status(403).json({ success: false, error: "TAXIS_AUDIENCE_DENIED", message: "This Taxis item is reserved for deacons." });
+        }
       }
       if (ritual && ritual.status === 'draft') {
         return res.status(403).json({
