@@ -6106,6 +6106,23 @@ app.post("/api/church/student-progress/start", async (req, res) => {
     const resolved = await resolveStudentProgressLesson(targetStudentId, lessonId, versionId);
     const { targetVersion } = resolved;
 
+    // Opening an authorized, published Sunday School lesson qualifies for the
+    // independent learning streak. A streak-sync outage must never block reading.
+    let openedLessonStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> = null;
+    let streakSyncError: string | undefined;
+    try {
+      openedLessonStreak = await persistStudentActivityDay(targetStudentId, new Date().toISOString());
+    } catch (error: any) {
+      streakSyncError = error?.message || 'Could not synchronize the learning streak.';
+      console.error('Could not persist lesson-open learning day:', error);
+    }
+    const openStreakPayload = openedLessonStreak ? {
+      currentStreak: openedLessonStreak.currentStreak,
+      longestStreak: openedLessonStreak.longestStreak,
+      lastActiveCairoDate: openedLessonStreak.lastActiveCairoDate,
+      isActiveToday: openedLessonStreak.isActiveToday
+    } : null;
+
     const key = `${targetStudentId}_${lessonId}`;
     const existing = serverReviewState.progress[key];
     const totalSections = resolved.sectionIds.length;
@@ -6117,7 +6134,9 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       return res.json({
         success: true,
         progress: persistedProgress,
-        isNew: !existing
+        isNew: !existing,
+        streak: openStreakPayload,
+        streakSyncError
       });
     }
 
@@ -6126,7 +6145,7 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       existing.versionId = versionId;
       existing.totalSections = totalSections;
       existing.completionPercent = Math.min(100, Math.round((existing.sectionsCompleted.length / totalSections) * 100));
-      return res.json({ success: true, progress: existing, isNew: false });
+      return res.json({ success: true, progress: existing, isNew: false, streak: openStreakPayload, streakSyncError });
     }
 
     const newProgress = {
@@ -6146,7 +6165,9 @@ app.post("/api/church/student-progress/start", async (req, res) => {
     return res.json({
       success: true,
       progress: newProgress,
-      isNew: true
+      isNew: true,
+      streak: openStreakPayload,
+      streakSyncError
     });
   } catch (err: any) {
     return res.status(err?.status || 500).json({
