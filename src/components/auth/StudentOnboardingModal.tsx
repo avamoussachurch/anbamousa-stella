@@ -101,9 +101,12 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
 
     try {
       const submittedName = fullName.trim() || userData.fullName || 'Student';
+      const normalizedPhone = phone.trim()
+        .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 0x0660))
+        .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 0x06f0));
       const profileUpdates: { fullName?: string; phone?: string } = {};
       if (submittedName !== userData.fullName) profileUpdates.fullName = submittedName;
-      if (phone.trim() !== (userData.phone || '').trim()) profileUpdates.phone = phone.trim();
+      if (normalizedPhone !== (userData.phone || '').trim()) profileUpdates.phone = normalizedPhone;
       if (Object.keys(profileUpdates).length > 0) {
         const profileResult = await updateUserProfile(profileUpdates);
         if (!profileResult.success) {
@@ -138,7 +141,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
         studentId: userData.id,
         studentName: submittedName,
         email: userData.parentEmail || (userData as any).email || '',
-        phone: phone.trim(),
+        phone: normalizedPhone,
         requestedClassGroupId: derivedClassGroupId,
         requestedGrade: selectedGradeCode,
         notes: notes.trim()
