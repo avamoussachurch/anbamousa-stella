@@ -2139,15 +2139,15 @@
   position: absolute;
   right: 5%;
   bottom: 8%;
-  width: 31px;
-  height: 28px;
+  width: 44px;
+  height: 40px;
   border: 3px solid #75502b;
   border-radius: 8px 8px 5px 5px;
   background: #f3d28a;
   box-shadow: 4px 4px 0 rgba(65, 52, 37, .18), inset 0 -5px 0 rgba(191, 133, 52, .22);
   image-rendering: pixelated;
-  opacity: .56;
-  animation: ambient-companion-hop 5.2s steps(2, end) infinite;
+  opacity: .88;
+  animation: ambient-companion-hop 3.4s steps(2, end) infinite;
 }
 .ambient-world__companion::before,
 .ambient-world__companion::after {
@@ -2189,13 +2189,16 @@
 }
 @keyframes ambient-companion-hop {
   0%, 78%, 100% { translate: 0 0; }
-  84% { translate: 0 -7px; }
-  90% { translate: 0 0; }
+  82% { translate: 0 -15px; }
+  87% { translate: 12px -18px; }
+  93% { translate: 12px 0; }
 }
 @media (max-width: 640px) {
-  .ambient-world__cloud { opacity: .25; }
-  .ambient-world__companion { right: 2%; bottom: 12%; opacity: .28; scale: .78; }
-  .ambient-world__spark { opacity: .42; }
+  .ambient-world--app { opacity: .68; }
+  .ambient-world__cloud { opacity: .42; animation-duration: 24s; }
+  .ambient-world__companion { right: 4%; bottom: 15%; opacity: .82; scale: .9; }
+  .ambient-world__spark { opacity: .78; font-size: 1.45rem; animation-duration: 2.3s; }
+  .ambient-world__lantern { transform: scale(.95); }
 }
 @media (prefers-reduced-motion: reduce) {
   .ambient-world__cloud,
@@ -2380,4 +2383,18 @@ button, a, input, select, textarea { max-width: 100%; }
 }
 .app-bottom-nav-item {
   min-height: 4.25rem;
+}
+
+
+/* A visibly living church-world on phones and desktop: larger, deliberate motion without layout shifts. */
+@media (prefers-reduced-motion: no-preference) {
+  .ambient-world__cloud { animation-duration: 25s; }
+  .ambient-world__spark { animation-duration: 2.4s; }
+  .ambient-world__lantern { animation-duration: 3.2s; }
+  .ambient-world__companion { animation-duration: 3.4s; }
+  main { animation: anba-page-arrive 680ms cubic-bezier(.18,.8,.24,1) both; }
+}
+@keyframes anba-page-arrive {
+  from { opacity: .35; translate: 0 22px; scale: .985; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
 }
