@@ -29,13 +29,16 @@ export function HelpRequestsPanel({ lang }: { lang: Language }) {
     const rows = (data || []) as HelpRequest[];
     const ids = [...new Set(rows.map(row => row.student_id))];
     const profiles = ids.length ? await supabase.from('profiles').select('id,name,grade').in('id', ids) : { data: [], error: null };
+    if (profiles.error) {
+      setError(isArabic ? 'تم تحميل الطلبات، لكن تعذر تحميل أسماء التلاميذ.' : 'Requests loaded, but student names could not be loaded.');
+    }
     const profileMap = new Map((profiles.data || []).map((profile: any) => [profile.id, profile]));
     setItems(rows.map(row => {
       const profile = profileMap.get(row.student_id) as any;
       return { ...row, studentName: profile?.name || (isArabic ? 'تلميذ' : 'Student'), grade: profile?.grade };
     }));
     setNotes(Object.fromEntries(rows.map(row => [row.id, row.resolution_note || ''])));
-    setError(null);
+    if (!profiles.error) setError(null);
     setLoading(false);
   }, [isArabic]);
 
@@ -44,12 +47,13 @@ export function HelpRequestsPanel({ lang }: { lang: Language }) {
   const updateRequest = async (item: HelpRequest, status: HelpRequest['status']) => {
     if (!supabase || !userData?.id) return;
     setSavingId(item.id);
-    const { error: updateError } = await supabase.from('student_help_requests').update({
+    const { data: updated, error: updateError } = await supabase.from('student_help_requests').update({
       status, assigned_to: userData.id, resolution_note: notes[item.id]?.trim() || null,
       updated_at: new Date().toISOString()
-    }).eq('id', item.id);
+    }).eq('id', item.id).select('id').maybeSingle();
     setSavingId(null);
     if (updateError) { setError(updateError.message); return; }
+    if (!updated?.id) { setError(isArabic ? 'الطلب لم يتغير. تأكد من تكليفك بالفصل وصلاحياتك.' : 'The request was not updated. Check your class assignment and permissions.'); return; }
     await refresh();
   };
 
