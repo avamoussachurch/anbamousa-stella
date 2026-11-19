@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { ChevronRight, motion, AnimatePresence } from 'motion/react';
 import { 
   GraduationCap, 
   CheckCircle2, 
@@ -44,9 +44,10 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
   const [selectedGradeCode, setSelectedGradeCode] = useState<string>(() => {
     if (userData?.requestedGrade) return userData.requestedGrade;
     if (userData?.grade) return userData.grade;
-    return 'Grade 4';
+    return '';
   });
 
+  const [step, setStep] = useState<1 | 2>(1);
   const [fullName, setFullName] = useState(userData?.fullName || '');
   const [phone, setPhone] = useState(userData?.phone || '');
   const [notes, setNotes] = useState('');
@@ -58,6 +59,10 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
   const [existingRequest, setExistingRequest] = useState<OnboardingActivationRequest | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<boolean>(true);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isOpen) setStep(1);
+  }, [isOpen, userData?.id]);
 
   // Fetch status of current request
   useEffect(() => {
@@ -329,6 +334,16 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmitRequest} className="space-y-5">
+            <div className="rounded-2xl border border-sky-200/70 bg-sky-50/80 p-4 dark:border-sky-900/50 dark:bg-sky-950/20">
+              <p className="text-sm font-black text-sky-950 dark:text-sky-100">{isAr ? 'خلّينا نجهّز مكانك في رحلة التعلّم' : 'Let’s get your learning space ready'}</p>
+              <p className="mt-1 text-xs leading-6 text-sky-900/80 dark:text-sky-200">{isAr ? 'خطوتين بسيطتين، ومفيش إجابة تقلق منها. لو مش متأكد من صفك، اختار الأقرب والخادم يقدر يساعدك.' : 'Just two small steps. There are no trick questions. If you are unsure about your grade, choose your best guess and your teacher can help confirm it.'}</p>
+              <div className="mt-3 flex items-center gap-2 text-[11px] font-bold">
+                <span className={step === 1 ? 'rounded-full bg-sky-800 px-3 py-1.5 text-white' : 'rounded-full bg-white px-3 py-1.5 text-sky-900 dark:bg-slate-800 dark:text-sky-200'}>{isAr ? '١ · الصف' : '1 · Grade'}</span>
+                <span className="h-px flex-1 bg-sky-200 dark:bg-sky-800" />
+                <span className={step === 2 ? 'rounded-full bg-sky-800 px-3 py-1.5 text-white' : 'rounded-full bg-white px-3 py-1.5 text-sky-900 dark:bg-slate-800 dark:text-sky-200'}>{isAr ? '٢ · بياناتك' : '2 · About you'}</span>
+              </div>
+            </div>
+            {step === 1 && (<>
             {/* Core Question: Exact Grade */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -391,6 +406,8 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               </div>
             </div>
 
+            </>)}
+            {step === 2 && (<>
             {/* Student Full Name & Contact Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -461,33 +478,22 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               </span>
             </div>
 
+            </>)}
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={submitting}
-                className="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                {isAr ? 'إلغاء' : 'Cancel'}
-              </button>
-              <button
-                type="submit"
-                disabled={submitting || !selectedGradeCode}
-                className="px-5 py-2.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--color-church-blue-light)] text-white text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {submitting ? (
-                  <>
-                    <RefreshCw size={14} className="animate-spin" />
-                    <span>{isAr ? 'جاري الإرسال...' : 'Submitting...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Send size={14} />
-                    <span>{isAr ? 'إرسال طلب التفعيل والتسكين' : 'Submit Activation Request'}</span>
-                  </>
-                )}
-              </button>
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                {step === 2 && <button type="button" onClick={() => setStep(1)} disabled={submitting} className="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800">{isAr ? 'رجوع' : 'Back'}</button>}
+                <button type="button" onClick={onClose} disabled={submitting} className="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">{isAr ? 'إلغاء' : 'Cancel'}</button>
+              </div>
+              {step === 1 ? (
+                <button type="button" onClick={() => setStep(2)} disabled={!selectedGradeCode} className="px-5 py-2.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--color-church-blue-light)] text-white text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50">
+                  {isAr ? 'متابعة' : 'Continue'} <ChevronRight size={15} />
+                </button>
+              ) : (
+                <button type="submit" disabled={submitting || !selectedGradeCode} className="px-5 py-2.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--color-church-blue-light)] text-white text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50">
+                  {submitting ? <><RefreshCw size={14} className="animate-spin" /><span>{isAr ? 'جاري الإرسال...' : 'Submitting...'}</span></> : <><Send size={14} /><span>{isAr ? 'إرسال طلب التفعيل والتسكين' : 'Send my setup request'}</span></>}
+                </button>
+              )}
             </div>
           </form>
         )}
