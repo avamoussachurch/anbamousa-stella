@@ -29,9 +29,11 @@ test('optional contact phone is accepted, validated only when supplied, and pers
   const server = await read('../server.ts');
   const migration = await read('../supabase/migrations/202611170001_add_profile_contact_phone.sql');
   assert.match(auth, /'phone'/);
-  assert.match(auth, /if \(updates\.phone !== undefined\)/);
+  assert.match(auth, /if \(normalizedPhone !== undefined\)/);
+  assert.match(auth, /normalizedPhone/);
   assert.match(server, /'contact_phone'/);
-  assert.match(server, /body\.contact_phone !== null/);
+  assert.match(server, /contactPhone !== null/);
+  assert.match(server, /replace\(\/\[٠-٩\]\/g/);
   assert.match(server, /leave this field blank/);
   assert.match(migration, /ADD COLUMN IF NOT EXISTS contact_phone text/);
 });
