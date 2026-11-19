@@ -135,6 +135,13 @@ test('feed media viewer supports swipe browsing, zoom, close, and device save ac
   assert.match(component, /saveLightboxMedia/);
   assert.match(component, /shareNavigator\.share/);
   assert.match(component, /Close media viewer/);
+  assert.match(component, /pauseOrResumeVoiceRecording/);
+  assert.match(component, /stopVoiceRecording/);
+  assert.match(component, /recorder\.pause\(\)/);
+  assert.match(component, /recorder\.resume\(\)/);
+  assert.match(component, /recorder\.stop\(\)/);
+  assert.match(component, /waveformLevels\.map/);
+  assert.match(component, /<audio[\s\S]*?controls/);
 });
 
 
