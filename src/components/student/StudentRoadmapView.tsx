@@ -172,7 +172,7 @@ export function StudentRoadmapView({
   }
 
   return (
-    <div className={`relative w-full max-w-2xl mx-auto pb-12 ${className}`} dir="rtl">
+    <div className={`relative w-full max-w-2xl mx-auto pb-12 ${className}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* 1. Header Progress Bar & Current Position Banner */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }}
