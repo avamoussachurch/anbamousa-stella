@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle2, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { Language, Role, User } from '../../types';
 import { LanguageSettings } from '../shared/LanguageSettings';
+import { getLanguageDirection } from '../../lib/uiPreferences';
 
 export type AccountPreference =
   | 'pushNotificationsEnabled'
@@ -90,7 +91,7 @@ export function ProfilePageFrame({
 }) {
   const isArabic = lang === 'ar';
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-5 px-4 pb-28 pt-5 sm:px-6 lg:px-8" dir="rtl">
+    <main className="mx-auto w-full max-w-6xl space-y-5 px-4 pb-28 pt-5 sm:px-6 lg:px-8" dir={getLanguageDirection(lang)}>
       <header className="relative isolate overflow-hidden rounded-[2rem] bg-[linear-gradient(120deg,#102d3a,#1b5558_58%,#286b68)] p-6 text-white shadow-[var(--shadow-card)] sm:p-8">
         <div aria-hidden="true" className="absolute -end-24 -top-32 -z-10 h-80 w-80 rounded-full bg-[#f0c77c]/10 blur-3xl" />
         <div className="flex flex-wrap items-center justify-between gap-5">
@@ -159,7 +160,7 @@ export function ProfileSettingsCard({
 export function ProfileUnavailable({ lang }: { lang: Language }) {
   const isArabic = lang === 'ar';
   return (
-    <main className="mx-auto max-w-3xl p-6" dir="rtl">
+    <main className="mx-auto max-w-3xl p-6" dir={getLanguageDirection(lang)}>
       <section role="alert" className="rounded-2xl border border-[var(--feedback-error)]/30 bg-[var(--surface-primary)] p-6 text-center">
         <AlertCircle className="mx-auto mb-3 text-[var(--feedback-error)]" size={28} />
         <h1 className="text-xl font-black text-[var(--text-primary)]">{isArabic ? 'الملف الشخصي مش متاح' : 'Profile unavailable'}</h1>
