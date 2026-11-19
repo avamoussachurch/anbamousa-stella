@@ -9,36 +9,29 @@ export interface CopticAvatarPreset {
 
 // Generate sharp, beautiful SVG data URIs with rich gradients, halos, and Coptic motifs
 function createSvgAvatar(bgGradient: [string, string], haloColor: string, iconEmoji: string, accessoryEmoji: string, crossColor: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" shape-rendering="crispEdges">
     <defs>
-      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="${bgGradient[0]}" />
-        <stop offset="100%" stop-color="${bgGradient[1]}" />
-      </linearGradient>
-      <radialGradient id="halo" cx="50%" cy="45%" r="40%">
-        <stop offset="0%" stop-color="${haloColor}" stop-opacity="0.85" />
-        <stop offset="70%" stop-color="${haloColor}" stop-opacity="0.35" />
-        <stop offset="100%" stop-color="${haloColor}" stop-opacity="0" />
-      </radialGradient>
-      <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25" />
-      </filter>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${bgGradient[0]}"/><stop offset="1" stop-color="${bgGradient[1]}"/></linearGradient>
+      <radialGradient id="light"><stop offset="0" stop-color="${haloColor}" stop-opacity=".8"/><stop offset="1" stop-color="${haloColor}" stop-opacity="0"/></radialGradient>
+      <pattern id="tiles" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M0 6H12M6 0V12" stroke="#fff" stroke-opacity=".07" stroke-width="1"/></pattern>
     </defs>
-    <!-- Background circle -->
-    <circle cx="60" cy="60" r="58" fill="url(#bg)" stroke="${crossColor}" stroke-width="2.5" />
-    <!-- Divine Light Halo -->
-    <circle cx="60" cy="52" r="36" fill="url(#halo)" />
-    <!-- Inner Accent Ring -->
-    <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.25)" stroke-dasharray="3,3" stroke-width="1.5" />
-    <!-- Center Character Emoji / Symbol -->
-    <text x="60" y="66" font-size="44" text-anchor="middle" dominant-baseline="middle" filter="url(#shadow)">${iconEmoji}</text>
-    <!-- Accessory badge at bottom right -->
-    <circle cx="86" cy="86" r="16" fill="#ffffff" stroke="${crossColor}" stroke-width="2" filter="url(#shadow)" />
-    <text x="86" y="89" font-size="16" text-anchor="middle" dominant-baseline="middle">${accessoryEmoji}</text>
-    <!-- Coptic cross accent at top -->
-    <g transform="translate(60, 16) scale(0.65)" text-anchor="middle" fill="${crossColor}">
-      <text x="0" y="4" font-size="16" font-family="sans-serif" font-weight="bold">☩</text>
-    </g>
+    <rect x="3" y="3" width="114" height="114" rx="25" fill="url(#bg)" stroke="${crossColor}" stroke-width="4"/>
+    <rect x="9" y="9" width="102" height="102" rx="19" fill="url(#tiles)"/>
+    <path d="M18 94V54a42 42 0 0 1 84 0v40" fill="none" stroke="${crossColor}" stroke-opacity=".28" stroke-width="5"/>
+    <circle cx="60" cy="43" r="33" fill="url(#light)"/>
+    <circle cx="60" cy="39" r="25" fill="none" stroke="${haloColor}" stroke-width="3" stroke-opacity=".9"/>
+    <circle cx="60" cy="39" r="20" fill="#f4d7ad" stroke="#553c35" stroke-width="3"/>
+    <path d="M39 37Q37 14 60 15Q83 14 81 39L75 31 69 27 60 30 49 26Z" fill="#352b2b" stroke="#241f25" stroke-width="3"/>
+    <rect x="47" y="39" width="5" height="5" fill="#342b2a"/><rect x="68" y="39" width="5" height="5" fill="#342b2a"/>
+    <path d="M54 51Q60 56 66 51" fill="none" stroke="#9d5548" stroke-width="3" stroke-linecap="square"/>
+    <path d="M28 106Q31 68 49 64L60 72 71 64Q89 68 92 106Z" fill="${crossColor}" stroke="#292b31" stroke-width="4"/>
+    <path d="M49 65L60 78 71 65" fill="#f7ead3" stroke="#292b31" stroke-width="3"/>
+    <path d="M60 79V99M53 86H67" stroke="#f8df9b" stroke-width="4" stroke-linecap="square"/>
+    <rect x="9" y="9" width="20" height="20" rx="5" fill="#fff" fill-opacity=".92" stroke="${crossColor}" stroke-width="2"/>
+    <text x="19" y="24" text-anchor="middle" font-size="13">${iconEmoji}</text>
+    <rect x="82" y="82" width="28" height="28" rx="8" fill="#fff" stroke="${crossColor}" stroke-width="3"/>
+    <text x="96" y="102" text-anchor="middle" font-size="16">${accessoryEmoji}</text>
+    <path d="M60 5v9m-5-5h10" stroke="${crossColor}" stroke-width="3" stroke-linecap="square"/>
   </svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }

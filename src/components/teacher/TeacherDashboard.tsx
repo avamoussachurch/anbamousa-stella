@@ -531,6 +531,26 @@ export function TeacherDashboard({
 
       {/* Tab: Multi-Mode Publishing Hub (Sunday School, Hymns School, Coptic Rituals / Taxis) */}
       {activeTab === 'sundaySchool' && (
+        <div className="mb-5 space-y-2 rounded-2xl border-2 border-[var(--mousa-gold)]/60 bg-[var(--surface-primary)] p-4 shadow-md">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-black text-[var(--text-primary)]">{lang === 'ar' ? 'نشر دروسك المعتمدة' : 'Publish your approved lessons'}</h2>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{lang === 'ar' ? 'يستطيع الخادم نشر النسخ التي أنشأها بنفسه بعد اعتمادها ومراجعتها.' : 'Teachers can publish their own lessons after the version has completed the approval review.'}</p>
+            </div>
+            <span className="rounded-full border border-emerald-700/30 bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{lang === 'ar' ? 'النشر متاح بعد الاعتماد' : 'Publishing enabled after approval'}</span>
+          </div>
+          <LessonPublicationManager
+            lessons={filteredTeacherLessons}
+            lessonVersions={lessonVersions || {}}
+            lang={lang}
+            canManage={isOnlineAuth && (hasRole(userData, 'teacher') || hasRole(userData, 'admin'))}
+            role={hasRole(userData, 'admin') ? 'admin' : hasRole(userData, 'teacher') ? 'teacher' : undefined}
+            userId={userData?.id}
+            onRefresh={refreshCurriculum}
+          />
+        </div>
+      )}
+      {activeTab === 'sundaySchool' && (
         <TeacherPublishingHub
           lang={lang}
           initialMode={publishingModeToOpen}

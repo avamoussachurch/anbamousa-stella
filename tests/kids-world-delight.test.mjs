@@ -30,6 +30,24 @@ test('shared world has visible playful decorations and keeps motion accessible',
   assert.match(css, /Higher-contrast defaults/);
 });
 
+test('Coptic avatar studio uses illustrated portraits and strong selected-state contrast', async () => {
+  const profile = await read('../src/components/student/ProfileTab.tsx');
+  const avatars = await read('../src/data/copticAvatars.ts');
+  assert.match(profile, /COPTIC AVATAR ATELIER/);
+  assert.match(profile, /border-2 p-3 text-center/);
+  assert.match(profile, /Choose your Anba Mousa character/);
+  assert.match(avatars, /shape-rendering="crispEdges"/);
+  assert.match(avatars, /Coptic/);
+});
+
+test('mobile world motion remains visible without animating heavy blur layers', async () => {
+  const css = await read('../src/index.css');
+  assert.match(css, /ambient-world__companion \{ right: 4%; bottom: 15%; opacity: \.82/);
+  assert.match(css, /ambient-world__spark \{ opacity: \.78/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /anba-page-arrive/);
+});
+
 test('quiz answers play one specific result sound without a generic click sound', async () => {
   const quiz = await read('../src/components/sunday-school/student/SundaySchoolQuizView.tsx');
   assert.match(quiz, /playSound\(index === currentQuestion\.correctIndex \? 'correct' : 'incorrect'\)/);
