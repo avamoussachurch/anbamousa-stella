@@ -350,7 +350,7 @@ function AppContent() {
     <LessonsProvider>
     <PointsProvider>
     <div 
-      dir="rtl"
+      dir={getLanguageDirection(lang)}
       className="min-h-screen relative isolate bg-[var(--color-church-cream)] pb-safe overflow-x-hidden selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
     >
       <AmbientWorld variant="app" />
