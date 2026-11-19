@@ -1076,65 +1076,53 @@ export function ProfileTab({
                    </p>
                  )}
                  
-                 {/* Avatar Studio: choose a Coptic portrait or upload a personal photo. */}
-                 <div className="mt-5">
-                    <div className="flex items-center justify-between mb-2.5 px-2">
-                      <p className="text-xs md:text-sm font-bold text-gray-700 flex items-center gap-1.5">
-                        <Sparkles size={14} className="text-[var(--mousa-gold)]" />
-                        {lang === 'ar' ? 'استوديو الصورة الشخصية' : 'Avatar Studio'}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="text-xs text-[var(--mousa-teal-deep)] font-bold hover:underline flex items-center gap-1"
-                      >
-                        <Upload size={12} />
-                        {lang === 'ar' ? 'أو ارفع صورتك الخاصة' : 'Or upload custom'}
-                      </button>
-                    </div>
-
-                    <p className="mb-3 text-[11px] text-[var(--text-secondary)]">{lang === 'ar' ? 'اختار الشخصية الأقرب ليك، أو ارفع صورة من جهازك. تقدر تغيّر اختيارك في أي وقت.' : 'Choose a portrait that feels like you, or upload your own photo. You can change it whenever you like.'}</p>
-                    <div className="mb-3 flex flex-wrap justify-center gap-2">
-                      {([
-                        { id: 'all', en: 'All', ar: 'الكل' },
-                        { id: 'saints', en: 'Saints', ar: 'قديسون' },
-                        { id: 'students', en: 'Students', ar: 'طلاب' },
-                        { id: 'deacons', en: 'Deacons', ar: 'شمامسة' }
-                      ] as const).map(category => (
-                        <button key={category.id} type="button" onClick={() => setAvatarCategory(category.id)} aria-pressed={avatarCategory === category.id}
-                          className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors ${avatarCategory === category.id ? 'border-[var(--mousa-teal-deep)] bg-[var(--mousa-teal-deep)] text-white' : 'border-[var(--mousa-border-sand)] bg-white/70 text-[var(--text-secondary)] hover:bg-white'}`}>
-                          {lang === 'ar' ? category.ar : category.en}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5 max-w-2xl mx-auto p-3 bg-[var(--color-church-cream)]/40 rounded-2xl border border-[var(--mousa-border-sand)]">
-                       {COPTIC_AVATARS.filter(preset => avatarCategory === 'all' || preset.category === avatarCategory).map((preset) => (
-                          <button 
-                            key={preset.id} 
-                            type="button"
-                            onClick={() => setAvatar(preset.svgDataUri)} 
-                            className={`group relative flex flex-col items-center gap-1 p-1.5 rounded-xl border-2 transition-all cursor-pointer ${
-                              avatar === preset.svgDataUri 
-                                ? 'border-[var(--mousa-teal-deep)] bg-white shadow-sm scale-105 ring-2 ring-blue-200' 
-                                : 'border-transparent bg-white/60 hover:bg-white hover:border-gray-200 hover:scale-102'
-                            }`}
-                            title={lang === 'ar' ? preset.nameAr : preset.nameEn}
-                          >
-                             <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden shadow-2xs">
-                               <img src={preset.svgDataUri} alt={lang === 'ar' ? preset.nameAr : preset.nameEn} className="w-full h-full object-cover" />
-                             </div>
-                             <span className="text-[10px] font-bold text-gray-700 dark:text-[var(--text-secondary)] truncate max-w-[64px] text-center leading-tight">
-                               {lang === 'ar' ? preset.nameAr : preset.nameEn}
-                             </span>
-                             {avatar === preset.svgDataUri && (
-                               <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--mousa-teal-deep)] text-white flex items-center justify-center text-[10px]">
-                                 <Check size={10} strokeWidth={3} />
-                               </div>
-                             )}
-                          </button>
+                 {/* Coptic avatar atelier: bold, high-contrast portrait selection. */}
+                 <section className="mt-6 overflow-hidden rounded-[1.75rem] border-2 border-[var(--mousa-gold)]/55 bg-[linear-gradient(145deg,var(--surface-primary),var(--surface-secondary))] shadow-[0_18px_50px_rgba(25,50,48,.14)]">
+                   <div className="relative flex flex-col gap-4 bg-[linear-gradient(115deg,#123b40,#1c5960_58%,#7a5428)] p-4 text-white sm:flex-row sm:items-center">
+                     <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 15% 20%,#f8d88b 1px,transparent 2px),radial-gradient(circle at 80% 65%,#f8d88b 1px,transparent 2px)', backgroundSize: '22px 22px' }} />
+                     <div className="relative mx-auto h-28 w-28 shrink-0 rounded-[1.5rem] border-4 border-[#f1cc7c] bg-[#f8edda] p-1 shadow-[0_10px_30px_rgba(0,0,0,.35)] sm:mx-0">
+                       <img src={avatar} alt={lang === 'ar' ? 'الصورة المختارة' : 'Selected avatar'} className="h-full w-full rounded-[1.1rem] object-cover" />
+                       <span className="absolute -bottom-2 -right-2 grid h-8 w-8 place-items-center rounded-xl border-2 border-[#173f42] bg-[#f1cc7c] text-[#173f42] shadow-lg"><Check size={17} strokeWidth={3}/></span>
+                     </div>
+                     <div className="relative min-w-0 flex-1 text-center sm:text-start">
+                       <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#f6d98f]">{lang === 'ar' ? 'ورشة الأيقونات القبطية' : 'COPTIC AVATAR ATELIER'}</p>
+                       <h3 className="mt-1 text-xl font-black">{lang === 'ar' ? 'اختر شخصيتك في عالم أنبا موسى' : 'Choose your Anba Mousa character'}</h3>
+                       <p className="mt-1 text-xs leading-5 text-white/85">{lang === 'ar' ? 'شخصيات مرسومة بروح الفن القبطي، مع رموز وملابس وألوان مميزة.' : 'Illustrated church-inspired portraits with distinctive robes, symbols and colors.'}</p>
+                       <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploadingAvatar} className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border-2 border-[#f4d58b] bg-[#f4d58b] px-4 py-2 text-xs font-black text-[#173b3e] shadow-md transition hover:bg-white disabled:opacity-60">
+                         <Upload size={15}/>{lang === 'ar' ? 'ارفع صورتك الخاصة' : 'Upload your own photo'}
+                       </button>
+                     </div>
+                   </div>
+                   <div className="p-4 sm:p-5">
+                     <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={lang === 'ar' ? 'تصنيفات الصور' : 'Avatar categories'}>
+                       {([
+                         { id: 'all', en: 'All characters', ar: 'كل الشخصيات' },
+                         { id: 'saints', en: 'Saints & symbols', ar: 'قديسون ورموز' },
+                         { id: 'students', en: 'Students', ar: 'طلاب' },
+                         { id: 'deacons', en: 'Deacons', ar: 'شمامسة' }
+                       ] as const).map(category => (
+                         <button key={category.id} type="button" onClick={() => setAvatarCategory(category.id)} aria-pressed={avatarCategory === category.id}
+                           className={`min-h-10 rounded-xl border-2 px-3.5 py-2 text-xs font-extrabold transition-all ${avatarCategory === category.id ? 'border-[#173f42] bg-[#173f42] text-white shadow-[0_4px_0_#a97834]' : 'border-[var(--border-strong)] bg-[var(--surface-primary)] text-[var(--text-primary)] hover:border-[#a97834] hover:bg-[var(--surface-secondary)]'}`}>
+                           {lang === 'ar' ? category.ar : category.en}
+                         </button>
                        ))}
-                    </div>
-                 </div>
+                     </div>
+                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                       {COPTIC_AVATARS.filter(preset => avatarCategory === 'all' || preset.category === avatarCategory).map((preset, index) => {
+                         const selected = avatar === preset.svgDataUri;
+                         return <button key={preset.id} type="button" onClick={() => setAvatar(preset.svgDataUri)} aria-pressed={selected}
+                           className={`group relative flex min-h-[142px] flex-col items-center justify-center gap-2 rounded-2xl border-2 p-3 text-center transition-all duration-200 ${selected ? 'border-[#b47a2c] bg-[#fff5dc] text-[#183f40] shadow-[0_8px_0_#b47a2c,0_14px_24px_rgba(25,50,48,.18)] -translate-y-1' : 'border-[var(--border-strong)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-sm hover:-translate-y-1 hover:border-[#b47a2c] hover:shadow-lg'}`}>
+                           <span className="absolute left-2 top-2 text-[9px] font-black tabular-nums text-current/45">{String(index + 1).padStart(2,'0')}</span>
+                           <span className="h-[76px] w-[76px] overflow-hidden rounded-2xl border-2 border-current/15 bg-[#f4e6c8] shadow-inner transition-transform duration-300 group-hover:scale-105">
+                             <img src={preset.svgDataUri} alt="" className="h-full w-full object-cover" />
+                           </span>
+                           <span className="max-w-full text-xs font-black leading-snug">{lang === 'ar' ? preset.nameAr : preset.nameEn}</span>
+                           {selected && <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full border-2 border-white bg-[#173f42] text-white shadow"><Check size={13} strokeWidth={3}/></span>}
+                         </button>;
+                       })}
+                     </div>
+                   </div>
+                 </section>
                </div>
 
                <div className="space-y-4 pt-2">
