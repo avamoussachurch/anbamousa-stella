@@ -109,7 +109,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
       } else {
         setPrayerSyncError(saveResult.error || 'Could not save prayer progress.');
       }
-      setLastSyncedTime(new Date().toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' }));
+      if (saveResult.success) setLastSyncedTime(new Date().toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' }));
       setIsSyncing(false);
     }
 
@@ -121,7 +121,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
   };
 
   const savePersonalPrayer = async () => {
-    setIsSavedPersonal(Boolean(personalPrayer.trim()));
+    setIsSavedPersonal(false);
     if (userData?.id) {
       setIsSyncing(true);
       const record: AgpeyaProgressRecord = {
@@ -133,6 +133,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
       };
       const saveResult = await saveAgpeyaProgressToSupabase(userData.id, record);
       if (saveResult.success) {
+        setIsSavedPersonal(Boolean(personalPrayer.trim()));
         setSavedPersonalPrayer(personalPrayer.trim() ? personalPrayer : '');
         setPrayerSyncError(null);
       } else {
