@@ -17,7 +17,7 @@ import { PointsProvider } from './context/PointsContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { Language } from './types';
 import { getAccountSetupStatus } from './lib/onboardingService';
-import { applyLanguagePreference } from './lib/uiPreferences';
+import { applyLanguagePreference, getLanguageDirection } from './lib/uiPreferences';
 import { canAccessWorkspace, canAccessWorkspaceTab, hasRole, resolveWorkspace, type Workspace } from './lib/workspaces';
 
 // Keep the entry bundle focused on authentication and shared navigation.
