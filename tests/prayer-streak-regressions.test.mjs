@@ -49,6 +49,7 @@ test('Agpeya writes require Supabase confirmation before caching or awarding pra
 
   assert.match(database, /if \(prayerErr\) \{\s*return \{ success: false/);
   assert.match(database, /if \(prayerErr\)[\s\S]*?cacheConfirmedRecord\(\);\s*return \{ success: true/);
+  assert.match(database, /Supabase is configured but its client is unavailable/);
   assert.match(agpeya, /setCompletedHoursToday\(previousHours\)/);
   assert.match(agpeya, /isNowCompleted && userData && saveConfirmed/);
   assert.match(migration, /enable row level security/);
