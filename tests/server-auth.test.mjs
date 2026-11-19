@@ -2644,7 +2644,40 @@ test('opening published Hymn and Taxis items records a learning day without comp
   roleAssignments.set(studentId, ['student']);
   profileHymnsTaxisLevels.set(studentId, 1);
 
+  const adminId = 'learning-content-open-admin';
+  roleAssignments.set(adminId, ['admin']);
+  const hymnId = `hymn-learning-open-${Date.now()}`;
+  const taxisId = `taxis-learning-open-${Date.now()}`;
+
   try {
+    const createHymn = await request('/api/church/hymns', {
+      method: 'POST',
+      role: 'admin',
+      userId: adminId,
+      body: { id: hymnId, titleAr: 'لحن اختبار فتح المحتوى', titleEn: 'Learning Open Test Hymn', level: 1, status: 'published' }
+    });
+    assert.equal(createHymn.status, 201, await createHymn.text());
+
+    const createTaxis = await request('/api/church/taxis', {
+      method: 'POST',
+      role: 'admin',
+      userId: adminId,
+      body: { id: taxisId, titleAr: 'طقس اختبار فتح المحتوى', titleEn: 'Learning Open Test Taxis', level: 1, audience: 'all' }
+    });
+    assert.equal(createTaxis.status, 201, await createTaxis.text());
+    const submitTaxis = await request(`/api/church/taxis/${taxisId}/submit-review`, {
+      method: 'POST', role: 'admin', userId: adminId, body: {}
+    });
+    assert.equal(submitTaxis.status, 200, await submitTaxis.text());
+    const approveTaxis = await request(`/api/church/taxis/${taxisId}/review`, {
+      method: 'POST', role: 'admin', userId: adminId, body: { action: 'APPROVE' }
+    });
+    assert.equal(approveTaxis.status, 200, await approveTaxis.text());
+    const publishTaxis = await request(`/api/church/taxis/${taxisId}/publish`, {
+      method: 'POST', role: 'admin', userId: adminId, body: {}
+    });
+    assert.equal(publishTaxis.status, 200, await publishTaxis.text());
+
     const hymnsResponse = await request('/api/church/hymns', {
       role: 'student',
       userId: studentId
@@ -2700,6 +2733,7 @@ test('opening published Hymn and Taxis items records a learning day without comp
     assert.equal(taxisResult.completionHistory, undefined);
   } finally {
     roleAssignments.delete(studentId);
+    roleAssignments.delete(adminId);
     profileHymnsTaxisLevels.delete(studentId);
   }
 });
