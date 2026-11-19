@@ -144,7 +144,9 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
         if (!prayerStreak.error) setStreakDays(prayerStreak.currentStreak);
         else setPrayerSyncError(prayerStreak.error);
       }
-      setLastSyncedTime(new Date().toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' }));
+      if (saveResult.success) {
+        setLastSyncedTime(new Date().toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' }));
+      }
       setIsSyncing(false);
     } else if (typeof window !== 'undefined') {
       localStorage.setItem('agpeya_personal_intentions', personalPrayer);
