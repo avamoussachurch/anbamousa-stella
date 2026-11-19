@@ -61,7 +61,7 @@ export function ParentAccountProfile({ lang, setLang, onNavigate, onLogout }: Ro
       icon={<Heart size={28} />}
       onLogout={onLogout}
     >
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-5 xl:grid-cols-3 lg:grid-cols-2">
         <RoleAvatarStudio lang={lang} user={account.userData} role="parent" />
         <ParentProfileForm
           user={account.userData}
