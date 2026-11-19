@@ -3,7 +3,7 @@ import {
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
   ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
   Image as ImageIcon, Video, Link2, Loader2, Play, Info, ExternalLink, AlertCircle, Check, Maximize2, Mic, Square, Pause,
-  Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning
+  Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
@@ -165,6 +165,10 @@ export function FeedTab({ lang }: { lang: Language }) {
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkInputValue, setLinkInputValue] = useState('');
   const [lightboxAttachment, setLightboxAttachment] = useState<FeedAttachment | null>(null);
+  const [lightboxGallery, setLightboxGallery] = useState<FeedAttachment[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxScale, setLightboxScale] = useState(1);
+  const lightboxTouchStartRef = useRef<number | null>(null);
   const [missingMediaIds, setMissingMediaIds] = useState<Set<string>>(() => new Set());
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -199,6 +203,51 @@ export function FeedTab({ lang }: { lang: Language }) {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop();
     recordingStreamRef.current?.getTracks().forEach(track => track.stop());
   }, []);
+
+  const openPostMedia = (post: ExtendedPost, attachment: FeedAttachment) => {
+    const gallery = getPostAttachments(post).filter(item => item.mediaType === 'image' || item.mediaType === 'video');
+    const index = gallery.findIndex(item => item.id === attachment.id);
+    setLightboxGallery(gallery.length ? gallery : [attachment]);
+    setLightboxIndex(Math.max(0, index));
+    setLightboxScale(1);
+    setLightboxAttachment(attachment);
+  };
+
+  const navigateLightbox = (direction: -1 | 1) => {
+    if (lightboxGallery.length < 2) return;
+    const nextIndex = (lightboxIndex + direction + lightboxGallery.length) % lightboxGallery.length;
+    setLightboxIndex(nextIndex);
+    setLightboxAttachment(lightboxGallery[nextIndex]);
+    setLightboxScale(1);
+  };
+
+  const saveLightboxMedia = async () => {
+    if (!lightboxAttachment) return;
+    const media = lightboxAttachment;
+    try {
+      const response = await fetch(media.mediaUrl);
+      if (!response.ok) throw new Error('Media download failed');
+      const blob = await response.blob();
+      const filename = media.originalFilename || `anba-mousa-${Date.now()}.${media.mediaType === 'video' ? 'mp4' : 'jpg'}`;
+      const file = new File([blob], filename, { type: blob.type || (media.mediaType === 'video' ? 'video/mp4' : 'image/jpeg') });
+      const shareNavigator = navigator as Navigator & { canShare?: (data: ShareData) => boolean; share?: (data: ShareData) => Promise<void> };
+      if (shareNavigator.share && shareNavigator.canShare?.({ files: [file] })) {
+        await shareNavigator.share({ files: [file], title: filename });
+        return;
+      }
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
+      window.open(media.mediaUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   const isTeacher = workspace === 'teacher';
 
@@ -1488,7 +1537,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                           />
                           <button
                             type="button"
-                            onClick={() => setLightboxAttachment(attachment)}
+                            onClick={() => openPostMedia(post, attachment)}
                             aria-label={lang === 'ar' ? 'عرض الفيديو بالحجم الكامل' : 'View video full size'}
                             className="absolute right-2 top-2 rounded-full bg-black/70 p-2 text-white hover:bg-black"
                           >
@@ -1728,46 +1777,70 @@ export function FeedTab({ lang }: { lang: Language }) {
       </div>
       )}
 
-      {/* Full-Screen Media Lightbox Modal */}
+      {/* Full-screen media viewer: swipe between a post's media, zoom photos, and save to device. */}
       <AnimatePresence>
         {lightboxAttachment && (
-          <div 
+          <div
             onClick={() => setLightboxAttachment(null)}
-            className="fixed inset-0 z-[80] flex cursor-zoom-out items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 p-3 backdrop-blur-sm sm:p-5"
             role="dialog"
             aria-modal="true"
             aria-label={lang === 'ar' ? 'عارض الوسائط' : 'Media viewer'}
             tabIndex={-1}
+            onTouchStart={event => { lightboxTouchStartRef.current = event.changedTouches[0]?.clientX ?? null; }}
+            onTouchEnd={event => {
+              const start = lightboxTouchStartRef.current;
+              const end = event.changedTouches[0]?.clientX;
+              lightboxTouchStartRef.current = null;
+              if (start === null || end === undefined || Math.abs(end - start) < 55) return;
+              navigateLightbox(end < start ? 1 : -1);
+            }}
           >
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="relative max-h-[90vh] max-w-5xl overflow-hidden rounded-3xl"
-              onClick={e => e.stopPropagation()}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              className="relative flex max-h-[92dvh] max-w-6xl flex-col items-center gap-3"
+              onClick={event => event.stopPropagation()}
             >
-              <button 
-                onClick={() => setLightboxAttachment(null)}
-                aria-label={lang === 'ar' ? 'إغلاق عارض الوسائط' : 'Close media viewer'}
-                className="absolute right-4 top-4 z-10 cursor-pointer rounded-full bg-black/70 p-2.5 text-white transition-colors hover:bg-black"
-              >
-                <X size={20} />
-              </button>
+              <div className="absolute -top-1 end-0 z-20 flex items-center gap-2">
+                <button type="button" onClick={() => void saveLightboxMedia()} aria-label={lang === 'ar' ? 'حفظ الوسائط على الجهاز' : 'Save media to device'} title={lang === 'ar' ? 'حفظ على الجهاز' : 'Save to device'} className="rounded-full bg-black/70 p-2.5 text-white hover:bg-black">
+                  <Download size={19} />
+                </button>
+                <button type="button" onClick={() => setLightboxAttachment(null)} aria-label={lang === 'ar' ? 'إغلاق عارض الوسائط' : 'Close media viewer'} className="rounded-full bg-black/70 p-2.5 text-white hover:bg-black">
+                  <X size={20} />
+                </button>
+              </div>
+              {lightboxGallery.length > 1 && (
+                <>
+                  <button type="button" onClick={() => navigateLightbox(-1)} aria-label={lang === 'ar' ? 'الوسائط السابقة' : 'Previous media'} className="absolute start-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/65 p-3 text-white hover:bg-black">
+                    <ChevronLeft size={22} />
+                  </button>
+                  <button type="button" onClick={() => navigateLightbox(1)} aria-label={lang === 'ar' ? 'الوسائط التالية' : 'Next media'} className="absolute end-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/65 p-3 text-white hover:bg-black">
+                    <ChevronRight size={22} />
+                  </button>
+                </>
+              )}
               {lightboxAttachment.mediaType === 'video' ? (
-                <video
-                  src={lightboxAttachment.mediaUrl}
-                  controls
-                  autoPlay
-                  playsInline
-                  className="max-h-[85vh] max-w-full rounded-2xl object-contain"
-                />
+                <video src={lightboxAttachment.mediaUrl} controls autoPlay playsInline className="max-h-[82dvh] max-w-full rounded-2xl object-contain" />
               ) : (
                 <img
                   src={lightboxAttachment.mediaUrl}
                   alt={lightboxAttachment.originalFilename || 'Enlarged church photo'}
-                  className="max-h-[85vh] max-w-full rounded-2xl object-contain"
+                  onDoubleClick={() => setLightboxScale(value => value > 1 ? 1 : 2)}
+                  style={{ transform: `scale(${lightboxScale})` }}
+                  className="max-h-[78dvh] max-w-full rounded-2xl object-contain transition-transform duration-200"
                 />
               )}
+              {lightboxAttachment.mediaType !== 'video' && (
+                <div className="flex items-center gap-2 rounded-full bg-black/65 px-3 py-2 text-white">
+                  <button type="button" onClick={() => setLightboxScale(value => Math.max(1, Number((value - 0.25).toFixed(2))))} disabled={lightboxScale <= 1} aria-label={lang === 'ar' ? 'تصغير الصورة' : 'Zoom out'} className="rounded-full p-1.5 disabled:opacity-35"><ZoomOut size={19} /></button>
+                  <span className="min-w-12 text-center text-xs font-bold tabular-nums">{Math.round(lightboxScale * 100)}%</span>
+                  <button type="button" onClick={() => setLightboxScale(value => Math.min(4, Number((value + 0.25).toFixed(2))))} disabled={lightboxScale >= 4} aria-label={lang === 'ar' ? 'تكبير الصورة' : 'Zoom in'} className="rounded-full p-1.5 disabled:opacity-35"><ZoomIn size={19} /></button>
+                  <button type="button" onClick={() => setLightboxScale(1)} aria-label={lang === 'ar' ? 'إعادة ضبط التكبير' : 'Reset zoom'} className="ms-1 rounded-full border-s border-white/25 ps-3 text-xs font-bold">{lang === 'ar' ? 'إعادة' : 'Reset'}</button>
+                </div>
+              )}
+              {lightboxGallery.length > 1 && <p className="text-xs font-semibold text-white/75">{lightboxIndex + 1} / {lightboxGallery.length} · {lang === 'ar' ? 'اسحب للتنقل' : 'Swipe to browse'}</p>}
             </motion.div>
           </div>
         )}
