@@ -15,6 +15,7 @@ import {
   School,
   Sparkles,
   ArrowRight,
+  ChevronRight,
   Info
 } from 'lucide-react';
 import { CLASS_GROUPS, CANONICAL_GRADE_LIST, getClassGroupForGrade, CANONICAL_GRADES, findCanonicalGrade } from '../../lib/classGroups';
