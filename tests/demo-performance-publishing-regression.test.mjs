@@ -68,6 +68,20 @@ test('curriculum loading avoids duplicate progress-summary requests and serial p
   assert.match(authoringService, /Promise\.all\(lessonsForUser\.slice/);
 });
 
+test('teachers have an in-workspace control to publish their own approved lesson versions', async () => {
+  const dashboard = read('../src/components/teacher/TeacherDashboard.tsx');
+  const manager = read('../src/components/teacher/LessonPublicationManager.tsx');
+  const authoring = read('../src/lib/lessonAuthoringService.ts');
+  const studio = read('../src/components/sunday-school/teacher/ManualLessonStudio.tsx');
+  assert.match(dashboard, /Publish your approved lessons/);
+  assert.match(dashboard, /role=\{hasRole\(userData, 'admin'\) \? 'admin' : hasRole\(userData, 'teacher'\) \? 'teacher' : undefined\}/);
+  assert.match(manager, /canManageLessonVersion\(role, userId, version\)/);
+  assert.match(manager, /publishLessonVersion/);
+  assert.match(authoring, /Teachers must submit the lesson for review before it can be published/);
+  assert.match(studio, /publishDirectly: canDirectPublish/);
+  assert.match(studio, /After it is reviewed and approved/);
+});
+
 test('publishing returns before its background curriculum refresh completes', () => {
   assert.match(lessonsContext, /void loadOnlineCurriculum\(\)\.catch/);
   assert.doesNotMatch(lessonsContext, /await loadOnlineCurriculum\(\);/);
