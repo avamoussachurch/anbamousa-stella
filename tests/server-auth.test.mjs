@@ -1807,6 +1807,11 @@ test('UUID-backed student completion persists real section UUIDs and is returned
     method: 'POST', role: 'student', userId: studentId, body: { lessonId, versionId }
   });
   assert.equal(start.status, 200, await start.text());
+  assert.equal(
+    [...persistedStudentActivityDays.values()].some(row => row.student_id === studentId),
+    true,
+    'opening a published lesson must persist a learning activity day'
+  );
   for (const sectionId of sectionIds) {
     const section = await request('/api/church/student-progress/complete-section', {
       method: 'POST', role: 'student', userId: studentId, body: { lessonId, versionId, sectionId }
@@ -2632,4 +2637,69 @@ test('admin class assignment preserves role authority and records the verified a
   assert.equal(event.operation, 'servant_class_assigned');
   assert.equal(event.actor_id, adminId);
   assert.equal(event.target_user_id, servantId);
+});
+
+test('opening published Hymn and Taxis items records a learning day without completion points', async () => {
+  const studentId = 'learning-content-open-student';
+  roleAssignments.set(studentId, ['student']);
+  profileHymnsTaxisLevels.set(studentId, 1);
+
+  try {
+    const hymnsResponse = await request('/api/church/hymns', {
+      role: 'student',
+      userId: studentId
+    });
+    assert.equal(hymnsResponse.status, 200);
+    const hymns = await hymnsResponse.json();
+    const hymn = hymns.items.find(item => item.level === 1 && item.status === 'published');
+    assert.ok(hymn, 'a published level-one Hymn should be available in the test fixture');
+
+    const hymnOpen = await request('/api/church/student-progress/record-activity', {
+      method: 'POST',
+      role: 'student',
+      userId: studentId,
+      body: {
+        studentId,
+        school: 'hymns',
+        activityId: hymn.id,
+        activityType: 'CONTENT_OPENED'
+      }
+    });
+    const hymnResult = await hymnOpen.json();
+    assert.equal(hymnOpen.status, 200, JSON.stringify(hymnResult));
+    assert.equal(hymnResult.pointsEarned, 0);
+    assert.equal(hymnResult.totalPoints, 0);
+    assert.equal(hymnResult.streak.currentStreak, 1);
+    assert.equal(hymnResult.completionHistory, undefined);
+
+    const taxisResponse = await request('/api/church/taxis', {
+      role: 'student',
+      userId: studentId
+    });
+    assert.equal(taxisResponse.status, 200);
+    const taxis = await taxisResponse.json();
+    const ritual = taxis.items.find(item => item.level === 1 && item.status === 'published');
+    assert.ok(ritual, 'a published level-one Taxis item should be available in the test fixture');
+
+    const taxisOpen = await request('/api/church/student-progress/record-activity', {
+      method: 'POST',
+      role: 'student',
+      userId: studentId,
+      body: {
+        studentId,
+        school: 'taxis',
+        activityId: ritual.id,
+        activityType: 'CONTENT_OPENED'
+      }
+    });
+    const taxisResult = await taxisOpen.json();
+    assert.equal(taxisOpen.status, 200, JSON.stringify(taxisResult));
+    assert.equal(taxisResult.pointsEarned, 0);
+    assert.equal(taxisResult.totalPoints, 0);
+    assert.equal(taxisResult.streak.currentStreak, 1, 'same-day opens must not increment the streak twice');
+    assert.equal(taxisResult.completionHistory, undefined);
+  } finally {
+    roleAssignments.delete(studentId);
+    profileHymnsTaxisLevels.delete(studentId);
+  }
 });
