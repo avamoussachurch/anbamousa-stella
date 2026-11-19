@@ -31,8 +31,8 @@ test('servant-only account opens the servant workspace without student navigatio
   assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'lessons'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'feed'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'leaderboard'), true);
-  assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'helpRequests'), true);
-  assert.equal(getWorkspaceNavigation('teacher', 'en').some(item => item.id === 'helpRequests'), true);
+  assert.equal(canAccessWorkspaceTab([...roles], 'teacher', 'help-requests'), true);
+  assert.equal(getWorkspaceNavigation('teacher', 'en').some(item => item.id === 'help-requests'), true);
   assert.equal(canAccessWorkspaceTab([...roles], 'student', 'lessons'), false);
 });
 
