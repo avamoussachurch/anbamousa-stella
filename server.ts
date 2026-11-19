@@ -6106,6 +6106,23 @@ app.post("/api/church/student-progress/start", async (req, res) => {
     const resolved = await resolveStudentProgressLesson(targetStudentId, lessonId, versionId);
     const { targetVersion } = resolved;
 
+    // Opening an authorized, published Sunday School lesson qualifies for the
+    // independent learning streak. A streak-sync outage must never block reading.
+    let openedLessonStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> = null;
+    let streakSyncError: string | undefined;
+    try {
+      openedLessonStreak = await persistStudentActivityDay(targetStudentId, new Date().toISOString());
+    } catch (error: any) {
+      streakSyncError = error?.message || 'Could not synchronize the learning streak.';
+      console.error('Could not persist lesson-open learning day:', error);
+    }
+    const openStreakPayload = openedLessonStreak ? {
+      currentStreak: openedLessonStreak.currentStreak,
+      longestStreak: openedLessonStreak.longestStreak,
+      lastActiveCairoDate: openedLessonStreak.lastActiveCairoDate,
+      isActiveToday: openedLessonStreak.isActiveToday
+    } : null;
+
     const key = `${targetStudentId}_${lessonId}`;
     const existing = serverReviewState.progress[key];
     const totalSections = resolved.sectionIds.length;
@@ -6117,7 +6134,9 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       return res.json({
         success: true,
         progress: persistedProgress,
-        isNew: !existing
+        isNew: !existing,
+        streak: openStreakPayload,
+        streakSyncError
       });
     }
 
@@ -6126,7 +6145,7 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       existing.versionId = versionId;
       existing.totalSections = totalSections;
       existing.completionPercent = Math.min(100, Math.round((existing.sectionsCompleted.length / totalSections) * 100));
-      return res.json({ success: true, progress: existing, isNew: false });
+      return res.json({ success: true, progress: existing, isNew: false, streak: openStreakPayload, streakSyncError });
     }
 
     const newProgress = {
@@ -6146,7 +6165,9 @@ app.post("/api/church/student-progress/start", async (req, res) => {
     return res.json({
       success: true,
       progress: newProgress,
-      isNew: true
+      isNew: true,
+      streak: openStreakPayload,
+      streakSyncError
     });
   } catch (err: any) {
     return res.status(err?.status || 500).json({
@@ -6461,14 +6482,46 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       });
     }
 
-    // School-specific validation
-    if (school === 'hymns') {
+    // A content-open event must name an item in one of the supported schools.
+    if (activityType === 'CONTENT_OPENED' && !['hymns', 'taxis'].includes(school)) {
+      return res.status(400).json({ success: false, error: "INVALID_SCHOOL", message: "Only Hymns and Taxis item opens are accepted here." });
+    }
+
+    // Validate against the same authoritative Supabase curriculum tables used by the
+    // Hymns and Taxis publishing APIs. The legacy JSON collections are not populated
+    // by the Supabase-backed authoring workflow and must not be the only source here.
+    if (activityType === 'CONTENT_OPENED' && school === 'hymns') {
+      const trustedClient = getRoleRequestClient(req);
+      const { data: hymnRow, error: hymnReadError } = await trustedClient
+        .from('hymns')
+        .select('id, status, level')
+        .eq('id', activityId)
+        .maybeSingle();
+      if (hymnReadError) {
+        console.error('Learning activity Hymn lookup failed:', hymnReadError.message);
+        return res.status(503).json({ success: false, error: 'HYMN_LOOKUP_FAILED', message: 'Hymn access could not be verified. Please try again.' });
+      }
       const cleanHymnId = String(activityId).replace(/^hymn-/, '').replace(/-/g, '_');
-      const hymn = serverReviewState.hymnsCollection[activityId] || 
+      const legacyHymn = serverReviewState.hymnsCollection[activityId] ||
         serverReviewState.hymnsCollection[cleanHymnId] ||
-        Object.values(serverReviewState.hymnsCollection).find((h: any) => h.id === activityId || h.id === cleanHymnId) ||
-        (cleanHymnId === 'ep_oro' ? { id: 'ep_oro', level: 1 } : (cleanHymnId === 'agios' ? { id: 'agios', level: 2 } : null));
-      if (hymn && hymn.level > 1) {
+        Object.values(serverReviewState.hymnsCollection).find((entry: any) => entry.id === activityId || entry.id === cleanHymnId) ||
+        (cleanHymnId === 'ep_oro' ? { id: 'ep_oro', level: 1, status: 'published' } :
+          cleanHymnId === 'agios' ? { id: 'agios', level: 2, status: 'published' } : null);
+      const hymn = hymnRow
+        ? { id: hymnRow.id, status: hymnRow.status, level: Number(hymnRow.level) }
+        : legacyHymn;
+      if (!hymn) {
+        return res.status(404).json({ success: false, error: "HYMN_NOT_FOUND", message: "This hymn is not available to open." });
+      }
+      if (hymn.status !== 'published') {
+        return res.status(403).json({ success: false, error: "HYMN_NOT_PUBLISHED", message: "Only published hymns count toward the learning streak." });
+      }
+      const studentProfile = await getSharedHymnsTaxisProfile(targetStudentId);
+      const assignedLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level);
+      if (assignedLevel === null || hymn.level !== assignedLevel) {
+        return res.status(403).json({ success: false, error: "HYMN_LEVEL_ACCESS_DENIED", message: "This hymn is not assigned to your level." });
+      }
+      if (hymn.level > 1) {
         const studentEnrollment = getStudentHymnsMembership(targetStudentId);
         if (!studentEnrollment || studentEnrollment.status !== 'approved' || studentEnrollment.level < hymn.level) {
           return res.status(403).json({
@@ -6478,19 +6531,101 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
           });
         }
       }
-    } else if (school === 'taxis') {
-      const ritual = serverReviewState.taxisCollection[activityId];
-      if (ritual && ritual.status === 'draft') {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN_DRAFT",
-          message: "Students cannot access draft liturgical rituals."
-        });
+    } else if (activityType === 'CONTENT_OPENED' && school === 'taxis') {
+      const trustedClient = getRoleRequestClient(req);
+      const { data: taxisRow, error: taxisReadError } = await trustedClient
+        .from('coptic_taxis_items')
+        .select('id, status, level, target_audience, audience_detail, audience')
+        .eq('id', activityId)
+        .maybeSingle();
+      if (taxisReadError) {
+        console.error('Learning activity Taxis lookup failed:', taxisReadError.message);
+        return res.status(503).json({ success: false, error: 'TAXIS_LOOKUP_FAILED', message: 'Taxis access could not be verified. Please try again.' });
+      }
+      const legacyRitual = serverReviewState.taxisCollection[activityId];
+      const ritual = taxisRow ? {
+        id: taxisRow.id,
+        status: taxisRow.status,
+        level: Number(taxisRow.level),
+        audience: taxisRow.audience ||
+          (String(taxisRow.target_audience || '').toUpperCase() === 'DEACONS' ? 'deacons' :
+            String(taxisRow.audience_detail || '').toLowerCase() === 'preparatory' ? 'preparatory' : 'all')
+      } : legacyRitual;
+      const authContext = await verifyServerRequestAuth(req);
+      const permissions = evaluateServerTaxisPermissions(authContext, ritual);
+      if (!ritual || ritual.status !== 'published' || !permissions.canView) {
+        return res.status(403).json({ success: false, error: "TAXIS_ACCESS_DENIED", message: "This published Taxis item is not available to open." });
+      }
+      const studentProfile = await getSharedHymnsTaxisProfile(targetStudentId);
+      const assignedLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level);
+      if (assignedLevel === null || ritual.level !== assignedLevel) {
+        return res.status(403).json({ success: false, error: "TAXIS_LEVEL_ACCESS_DENIED", message: "This Taxis item is not assigned to your level." });
+      }
+      if (ritual.audience === 'preparatory') {
+        const userClass = serverReviewState.studentClasses?.[targetStudentId];
+        const grade = studentProfile?.grade || userClass?.grade || '';
+        if (!(grade.toLowerCase().includes('prep') || userClass?.classGroupId === 'preparatory')) {
+          return res.status(403).json({ success: false, error: "TAXIS_AUDIENCE_DENIED", message: "This Taxis item is not assigned to your class." });
+        }
+      }
+      if (ritual.audience === 'deacons' && assignedLevel < 2) {
+        return res.status(403).json({ success: false, error: "TAXIS_AUDIENCE_DENIED", message: "This Taxis item is reserved for deacons." });
+      }
+      if (ritual.audience && !['all', 'preparatory', 'deacons'].includes(ritual.audience)) {
+        return res.status(403).json({ success: false, error: "TAXIS_AUDIENCE_DENIED", message: "This Taxis item is not assigned to your audience." });
       }
     }
 
     const todayCairo = getCairoDateString();
     const nowIso = new Date().toISOString();
+
+    // Opening approved curriculum is a qualifying learning day, but it is
+    // deliberately not a completion, mastery event, or points award.
+    if (activityType === 'CONTENT_OPENED') {
+      const previous = serverReviewState.userStreaks[targetStudentId];
+      let persistedStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> = null;
+      try {
+        persistedStreak = await persistStudentActivityDay(targetStudentId, nowIso);
+      } catch (error: any) {
+        console.error('Could not persist content-open learning day:', error);
+        return res.status(502).json({
+          success: false,
+          error: 'STREAK_PERSISTENCE_FAILED',
+          message: 'The content opened, but the learning streak could not be synchronized. Please retry.'
+        });
+      }
+      const activeCairoDays = Array.from(new Set([
+        ...(Array.isArray(previous?.activeCairoDays) ? previous.activeCairoDays : []),
+        todayCairo
+      ]));
+      const calculated = calculateCairoStreakForStudent(activeCairoDays);
+      const streakRecord = {
+        currentStreak: persistedStreak?.currentStreak ?? calculated.currentStreak,
+        longestStreak: Math.max(
+          persistedStreak?.longestStreak ?? 0,
+          previous?.longestStreak ?? 0,
+          calculated.longestStreak,
+          persistedStreak?.currentStreak ?? calculated.currentStreak
+        ),
+        lastActiveCairoDate: persistedStreak?.lastActiveCairoDate ?? todayCairo,
+        activeCairoDays
+      };
+      serverReviewState.userStreaks[targetStudentId] = streakRecord;
+      return res.json({
+        success: true,
+        school,
+        activityId,
+        activityType: 'CONTENT_OPENED',
+        pointsEarned: 0,
+        totalPoints: serverReviewState.userPoints[targetStudentId] ?? 0,
+        streak: {
+          currentStreak: streakRecord.currentStreak,
+          longestStreak: streakRecord.longestStreak,
+          lastActiveCairoDate: streakRecord.lastActiveCairoDate,
+          isActiveToday: persistedStreak?.isActiveToday ?? true
+        }
+      });
+    }
 
     // Check if this specific activity was already completed
     if (!serverReviewState.completionHistory[targetStudentId]) {

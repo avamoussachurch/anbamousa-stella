@@ -3,14 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { BottomNav } from './components/layout/BottomNav';
 import { TopBar } from './components/layout/TopBar';
 import { WorkspaceSidebar } from './components/layout/WorkspaceSidebar';
-import { LoginScreen } from './components/auth/LoginScreen';
-import { StudentWelcomeTour } from './components/auth/StudentWelcomeTour';
-import { RoleWelcomeJourney } from './components/auth/RoleWelcomeJourney';
-import { PasswordRecoveryScreen } from './components/auth/PasswordRecoveryScreen';
-import { OfflineIndicator } from './components/layout/OfflineIndicator';
 import { AnbaMousaSplashScreen } from './components/layout/AnbaMousaSplashScreen';
-import { AmbientWorld } from './components/layout/AmbientWorld';
-import { GlobalMusicPlayer } from './components/layout/GlobalMusicPlayer';
 import { useAuth } from './context/AuthContext';
 import { LessonsProvider } from './context/LessonsContext';
 import { PointsProvider } from './context/PointsContext';
@@ -22,6 +15,14 @@ import { canAccessWorkspace, canAccessWorkspaceTab, hasRole, resolveWorkspace, t
 
 // Keep the entry bundle focused on authentication and shared navigation.
 // Role workspaces and feature tabs are downloaded only when the user opens them.
+const LoginScreen = React.lazy(() => import('./components/auth/LoginScreen').then(module => ({ default: module.LoginScreen })));
+const StudentWelcomeTour = React.lazy(() => import('./components/auth/StudentWelcomeTour').then(module => ({ default: module.StudentWelcomeTour })));
+const RoleWelcomeJourney = React.lazy(() => import('./components/auth/RoleWelcomeJourney').then(module => ({ default: module.RoleWelcomeJourney })));
+const PasswordRecoveryScreen = React.lazy(() => import('./components/auth/PasswordRecoveryScreen').then(module => ({ default: module.PasswordRecoveryScreen })));
+const OfflineIndicator = React.lazy(() => import('./components/layout/OfflineIndicator').then(module => ({ default: module.OfflineIndicator })));
+const AmbientWorld = React.lazy(() => import('./components/layout/AmbientWorld').then(module => ({ default: module.AmbientWorld })));
+const GlobalMusicPlayer = React.lazy(() => import('./components/layout/GlobalMusicPlayer').then(module => ({ default: module.GlobalMusicPlayer })));
+
 const HomeTab = React.lazy(() => import('./components/student/HomeTab').then(module => ({ default: module.HomeTab })));
 const LessonsTab = React.lazy(() => import('./components/student/LessonsTab').then(module => ({ default: module.LessonsTab })));
 const PointsTab = React.lazy(() => import('./components/student/PointsTab').then(module => ({ default: module.PointsTab })));
@@ -201,12 +202,18 @@ function AppContent() {
   }
 
   if (window.location.pathname === '/reset-password') {
-    return <PasswordRecoveryScreen lang={lang} />;
+    return (
+      <React.Suspense fallback={<AnbaMousaSplashScreen lang={lang} />}>
+        <PasswordRecoveryScreen lang={lang} />
+      </React.Suspense>
+    );
   }
 
   if (!userData) {
     return (
-      <LoginScreen lang={lang} setLang={setLang} />
+      <React.Suspense fallback={<AnbaMousaSplashScreen lang={lang} />}>
+        <LoginScreen lang={lang} setLang={setLang} />
+      </React.Suspense>
     );
   }
 
@@ -353,7 +360,11 @@ function AppContent() {
       dir={getLanguageDirection(lang)}
       className="min-h-screen relative isolate bg-[var(--color-church-cream)] pb-safe overflow-x-clip selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
     >
-      <AmbientWorld variant="app" />
+      <React.Suspense fallback={null}>
+        <AmbientWorld variant="app" />
+        <GlobalMusicPlayer lang={lang} />
+        <OfflineIndicator />
+      </React.Suspense>
       <div className="relative z-10 min-h-screen">
       <TopBar 
         lang={lang} 
@@ -363,8 +374,6 @@ function AppContent() {
         workspace={activeWorkspace}
         onWorkspaceChange={switchWorkspace}
       />
-      <OfflineIndicator />
-      <GlobalMusicPlayer lang={lang} />
       <div className="flex min-h-[calc(100dvh-4rem)] items-start">
       {!activeLessonId && (
         <WorkspaceSidebar
@@ -429,9 +438,15 @@ function AppContent() {
         <motion.div
           initial={false}
           animate={reduceMotion
-            ? { opacity: 1, y: 0 }
-            : { opacity: [0.94, 1], y: [tabTransitionTick % 2 === 0 ? 7 : -7, 0] }}
-          transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
+            ? { opacity: 1, y: 0, scale: 1 }
+            : {
+                opacity: [0.9, 1],
+                y: [tabTransitionTick % 2 === 0 ? 18 : -18, 0],
+                scale: [0.985, 1]
+              }}
+          transition={reduceMotion
+            ? { duration: 0 }
+            : { type: 'spring', stiffness: 280, damping: 28, mass: 0.72 }}
           className="min-w-0"
         >
           <React.Suspense fallback={<WorkspaceLoadingFallback lang={lang} />}>
@@ -443,26 +458,30 @@ function AppContent() {
       </div>
 
       {showStudentWelcomeTour && activeWorkspace === 'student' && (
-        <StudentWelcomeTour
-          lang={lang}
-          onClose={() => {
-            setShowStudentWelcomeTour(false);
-            if (userData?.id) localStorage.setItem('stella_student_welcome_tour_v1_' + userData.id, 'completed');
-          }}
-        />
+        <React.Suspense fallback={null}>
+          <StudentWelcomeTour
+            lang={lang}
+            onClose={() => {
+              setShowStudentWelcomeTour(false);
+              if (userData?.id) localStorage.setItem('stella_student_welcome_tour_v1_' + userData.id, 'completed');
+            }}
+          />
+        </React.Suspense>
       )}
 
       {roleWelcomeJourney && activeWorkspace === roleWelcomeJourney && (
-        <RoleWelcomeJourney
-          role={roleWelcomeJourney}
-          lang={lang}
-          onNavigate={navigate}
-          onClose={() => {
-            const key = 'stella_' + roleWelcomeJourney + '_welcome_v1_' + userData.id;
-            localStorage.setItem(key, 'completed');
-            setRoleWelcomeJourney(null);
-          }}
-        />
+        <React.Suspense fallback={null}>
+          <RoleWelcomeJourney
+            role={roleWelcomeJourney}
+            lang={lang}
+            onNavigate={navigate}
+            onClose={() => {
+              const key = 'stella_' + roleWelcomeJourney + '_welcome_v1_' + userData.id;
+              localStorage.setItem(key, 'completed');
+              setRoleWelcomeJourney(null);
+            }}
+          />
+        </React.Suspense>
       )}
 
       {/* Student First-Login & Onboarding Modal */}

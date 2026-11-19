@@ -243,6 +243,26 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     }
     setIsPlaying(false);
     setSelectedHymn(hymn);
+    if (userData && !isTeacherOrAdmin) {
+      void recordStudentSchoolActivity({
+        school: 'hymns',
+        activityId: hymn.id,
+        activityType: 'CONTENT_OPENED',
+        titleAr: hymn.titleAr || 'لحن كنسي',
+        titleEn: hymn.titleEn || 'Church Hymn',
+        studentId: userData.id
+      }).then(result => {
+        if (result.success && setUserDirectly) {
+          setUserDirectly({
+            ...userData,
+            currentStreak: result.streak.currentStreak,
+            longestStreak: Math.max(userData.longestStreak || 0, result.streak.longestStreak)
+          });
+        } else if (!result.success) {
+          console.warn('Could not sync Hymn-open learning activity:', result.error);
+        }
+      });
+    }
     setAudioPlaybackError(null);
     setActiveLineId(1);
     setCurrentTime(0);

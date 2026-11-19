@@ -143,7 +143,12 @@ export async function getStudentProgress(
  */
 export async function startLessonProgress(
   input: StartLessonProgressInput
-): Promise<{ data: StudentContentProgress | null; error: Error | null }> {
+): Promise<{
+  data: StudentContentProgress | null;
+  error: Error | null;
+  streak?: { currentStreak: number; longestStreak: number; lastActiveCairoDate: string; isActiveToday: boolean } | null;
+  streakSyncError?: string;
+}> {
   const { lessonId, versionId, studentId } = input;
   if (!lessonId || !versionId) {
     return { data: null, error: new Error('lessonId and versionId are required') };
@@ -167,7 +172,12 @@ export async function startLessonProgress(
     }
     const confirmed = storeServerProgress(json.progress);
 
-    return { data: confirmed, error: null };
+    return {
+      data: confirmed,
+      error: null,
+      streak: json.streak || null,
+      streakSyncError: json.streakSyncError
+    };
   } catch (err: any) {
     return { data: null, error: new Error(err?.message || 'Could not start lesson progress.') };
   }
@@ -284,7 +294,7 @@ export async function completeLessonProgress(
 export interface RecordSchoolActivityInput {
   school: 'sunday_school' | 'hymns' | 'taxis';
   activityId: string;
-  activityType?: 'LESSON_COMPLETED' | 'HYMN_MASTERED' | 'TAXIS_COMPLETED';
+  activityType?: 'LESSON_COMPLETED' | 'HYMN_MASTERED' | 'TAXIS_COMPLETED' | 'CONTENT_OPENED';
   titleAr?: string;
   titleEn?: string;
   studentId?: string;

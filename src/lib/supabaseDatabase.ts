@@ -1,6 +1,7 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import { User } from '../types';
 import { parsePersistentMediaUploadResponse } from './mediaUploadResponse';
+import { calculateCairoStreak } from './cairoTime';
 
 export interface OwnAccountProfileUpdates {
   name?: string;
@@ -578,22 +579,29 @@ export async function saveAgpeyaProgressToSupabase(
   userId: string,
   record: AgpeyaProgressRecord
 ): Promise<{ success: boolean; error?: string }> {
-  // Always update resilient local cache
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(`agpeya_checks_${record.date}`, JSON.stringify(record.completedHours));
-    localStorage.setItem(`agpeya_streak_days`, record.streakDays.toString());
-    if (record.personalPrayer !== undefined) {
-      localStorage.setItem('agpeya_personal_intentions', record.personalPrayer);
+  const cacheConfirmedRecord = () => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(`agpeya_checks_${record.date}`, JSON.stringify(record.completedHours));
+      localStorage.setItem('agpeya_streak_days', record.streakDays.toString());
+      if (record.personalPrayer !== undefined) {
+        localStorage.setItem('agpeya_personal_intentions', record.personalPrayer);
+      }
+      localStorage.setItem(`agpeya_full_record_${userId}_${record.date}`, JSON.stringify(record));
+    } catch (error) {
+      console.warn('Could not cache confirmed Agpeya progress:', error);
     }
-    localStorage.setItem(`agpeya_full_record_${userId}_${record.date}`, JSON.stringify(record));
-  }
+  };
 
   if (!supabase) {
+    if (isSupabaseConfigured) {
+      return { success: false, error: 'Supabase is configured but its client is unavailable.' };
+    }
+    cacheConfirmedRecord();
     return { success: true };
   }
 
   try {
-    // Attempt upsert into 'agpeya_prayers'
     const { error: prayerErr } = await supabase
       .from('agpeya_prayers')
       .upsert({
@@ -605,23 +613,59 @@ export async function saveAgpeyaProgressToSupabase(
         updated_at: record.lastUpdated
       }, { onConflict: 'user_id,date' });
 
-    if (!prayerErr) {
-      return { success: true };
+    if (prayerErr) {
+      return { success: false, error: prayerErr.message };
     }
 
-    // Secondary fallback: update profile's last_active
-    await supabase
-      .from('profiles')
-      .update({
-        last_active: new Date().toISOString()
-      })
-      .eq('id', userId);
-
+    cacheConfirmedRecord();
     return { success: true };
   } catch (err: any) {
-    console.warn('Supabase Agpeya sync fallback:', err?.message);
-    return { success: true, error: err?.message };
+    console.warn('Supabase Agpeya sync failed:', err?.message);
+    return { success: false, error: err?.message || 'Could not save prayer progress.' };
   }
+}
+
+/**
+ * Calculate the independent prayer streak from persisted prayer days.
+ * A day qualifies when at least one Agpeya hour is checked or a non-empty
+ * personal prayer is saved. This never reads or mutates the learning streak.
+ */
+export async function getPrayerStreakFromSupabase(
+  userId: string
+): Promise<{ currentStreak: number; longestStreak: number; isActiveToday: boolean; error?: string }> {
+  if (!supabase) {
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      isActiveToday: false,
+      ...(isSupabaseConfigured ? { error: 'Supabase is configured but its client is unavailable.' } : {})
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('agpeya_prayers')
+    .select('date, completed_hours, personal_prayer')
+    .eq('user_id', userId)
+    .order('date', { ascending: true });
+
+  if (error) {
+    return { currentStreak: 0, longestStreak: 0, isActiveToday: false, error: error.message };
+  }
+
+  const qualifyingDays = (data || []).filter((row: any) => {
+    const completedHours = row.completed_hours && typeof row.completed_hours === 'object'
+      ? Object.values(row.completed_hours).some(Boolean)
+      : false;
+    const hasPersonalPrayer = typeof row.personal_prayer === 'string' && row.personal_prayer.trim().length > 0;
+    return completedHours || hasPersonalPrayer;
+  }).map((row: any) => String(row.date).slice(0, 10));
+
+  const streak = calculateCairoStreak(qualifyingDays);
+  return {
+    currentStreak: streak.currentStreak,
+    longestStreak: streak.longestStreak,
+    isActiveToday: streak.isActiveToday
+  };
 }
 
 export async function getAgpeyaProgressFromSupabase(
@@ -640,6 +684,9 @@ export async function getAgpeyaProgressFromSupabase(
   }
 
   if (!supabase) {
+    if (isSupabaseConfigured) {
+      return { success: false, error: 'Supabase is configured but its client is unavailable.' };
+    }
     return { success: true, data: localData || undefined };
   }
 
