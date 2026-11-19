@@ -6491,7 +6491,7 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
     // Hymns and Taxis publishing APIs. The legacy JSON collections are not populated
     // by the Supabase-backed authoring workflow and must not be the only source here.
     if (activityType === 'CONTENT_OPENED' && school === 'hymns') {
-      const trustedClient = getTrustedProgressClient();
+      const trustedClient = getRoleRequestClient(req);
       const { data: hymnRow, error: hymnReadError } = await trustedClient
         .from('hymns')
         .select('id, status, level')
@@ -6532,7 +6532,7 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
         }
       }
     } else if (activityType === 'CONTENT_OPENED' && school === 'taxis') {
-      const trustedClient = getTrustedProgressClient();
+      const trustedClient = getRoleRequestClient(req);
       const { data: taxisRow, error: taxisReadError } = await trustedClient
         .from('coptic_taxis_items')
         .select('id, status, level, target_audience, audience_detail, audience')
