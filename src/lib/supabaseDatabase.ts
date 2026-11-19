@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import { User } from '../types';
 import { parsePersistentMediaUploadResponse } from './mediaUploadResponse';
 import { calculateCairoStreak } from './cairoTime';
@@ -594,6 +594,9 @@ export async function saveAgpeyaProgressToSupabase(
   };
 
   if (!supabase) {
+    if (isSupabaseConfigured) {
+      return { success: false, error: 'Supabase is configured but its client is unavailable.' };
+    }
     cacheConfirmedRecord();
     return { success: true };
   }
@@ -630,7 +633,14 @@ export async function saveAgpeyaProgressToSupabase(
 export async function getPrayerStreakFromSupabase(
   userId: string
 ): Promise<{ currentStreak: number; longestStreak: number; isActiveToday: boolean; error?: string }> {
-  if (!supabase) return { currentStreak: 0, longestStreak: 0, isActiveToday: false };
+  if (!supabase) {
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      isActiveToday: false,
+      ...(isSupabaseConfigured ? { error: 'Supabase is configured but its client is unavailable.' } : {})
+    };
+  }
 
   const { data, error } = await supabase
     .from('agpeya_prayers')
@@ -674,6 +684,9 @@ export async function getAgpeyaProgressFromSupabase(
   }
 
   if (!supabase) {
+    if (isSupabaseConfigured) {
+      return { success: false, error: 'Supabase is configured but its client is unavailable.' };
+    }
     return { success: true, data: localData || undefined };
   }
 
