@@ -830,9 +830,13 @@ export function TeacherDashboard({
           </div>
 
           <div role="status" className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
-            {lang === 'ar'
-              ? 'ملخص تقدم الطلاب ونتائج الاختبارات مش متاح هنا لحد ما يتوصل بقراءة موثوقة من قاعدة البيانات. مش هنعرض أرقام تجريبية أو محفوظة محلياً على إنها نتائج حقيقية.'
-              : 'Student progress and quiz summaries are unavailable here until a trusted database read path is connected. Demo or browser-cached values are not presented as real results.'}
+            {isOnlineAuth
+              ? (lang === 'ar'
+                ? 'تقارير تقدم التلاميذ ونتائج الاختبارات الموثّقة متاحة في تبويب «تقييم التقدم». مساحة العمل دي مخصصة لإعداد الدروس ونشرها.'
+                : 'Verified student progress and quiz reports are available in the Mastery & Reports tab. This workspace is for preparing and publishing lessons.')
+              : (lang === 'ar'
+                ? 'في الوضع التجريبي، لا نعرض نتائج تقدم أو اختبارات على أنها بيانات مؤكدة. سجّل الدخول بحساب خادم موثّق لعرض التقارير الحقيقية.'
+                : 'In demo mode, progress and quiz results are not presented as confirmed data. Sign in with a verified teacher account to access authoritative reports.')}
           </div>
 
           <LessonPublicationManager
