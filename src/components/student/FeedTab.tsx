@@ -3,7 +3,7 @@ import {
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
   ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
   Image as ImageIcon, Video, Link2, Loader2, Play, Info, ExternalLink, AlertCircle, Check, Maximize2, Mic, Square, Pause,
-  Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight
+  Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning, Flag, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
@@ -11,6 +11,7 @@ import { UniversalAudioPlayer } from '../design-system/UniversalAudioPlayer';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
+import { supabase } from '../../lib/supabase';
 import { getFeedDisplayState } from '../../lib/feedDisplayState';
 import { uploadFeedMediaToSupabase, extractEmbedMedia, checkStorageBackendStatus } from '../../lib/supabaseDatabase';
 import {
@@ -68,6 +69,11 @@ export function FeedTab({ lang }: { lang: Language }) {
   // Server state & notifications
   const [syncStatusText, setSyncStatusText] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reportingPostId, setReportingPostId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState<'spam' | 'harassment' | 'inappropriate' | 'privacy' | 'other'>('inappropriate');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportBusy, setReportBusy] = useState(false);
+  const reportingPost = posts.find(post => post.id === reportingPostId) || null;
   const [isLoadingServerPosts, setIsLoadingServerPosts] = useState(true);
   const [feedLoadError, setFeedLoadError] = useState<string | null>(null);
 
@@ -289,6 +295,37 @@ export function FeedTab({ lang }: { lang: Language }) {
         });
     }
   }, [posts, sortBy]);
+
+  const submitPostReport = async () => {
+    if (!supabase || !userData?.id || !reportingPost) {
+      setActionError(lang === 'ar' ? 'سجّل الدخول لإرسال البلاغ.' : 'Sign in to submit a report.');
+      return;
+    }
+    if (reportingPost.authorId === userData.id) {
+      setActionError(lang === 'ar' ? 'لا يمكنك الإبلاغ عن منشورك.' : 'You cannot report your own post.');
+      return;
+    }
+    setReportBusy(true);
+    setActionError(null);
+    const { error } = await supabase.from('feed_post_reports').insert({
+      post_id: reportingPost.id,
+      reporter_id: userData.id,
+      reported_user_id: reportingPost.authorId,
+      reason: reportReason,
+      details: reportDetails.trim() || null
+    });
+    setReportBusy(false);
+    if (error) {
+      setActionError(error.code === '23505'
+        ? (lang === 'ar' ? 'أرسلت بلاغاً عن المنشور ده بالفعل.' : 'You have already reported this post.')
+        : (lang === 'ar' ? 'تعذر إرسال البلاغ. حاول مرة أخرى.' : 'The report could not be submitted. Please try again.'));
+      return;
+    }
+    setReportingPostId(null);
+    setReportDetails('');
+    setSyncStatusText(lang === 'ar' ? 'تم إرسال البلاغ بسرية إلى فريق الخدمة للمراجعة.' : 'Your report was privately sent to the church team for review.');
+    window.setTimeout(() => setSyncStatusText(null), 5000);
+  };
 
   // 4. Post Reactions (Optimistic update with Supabase persistence & rollback)
   const handleReactPost = async (postId: string, reactionType: 'heart' | 'candle' | 'cross') => {
@@ -1611,6 +1648,11 @@ export function FeedTab({ lang }: { lang: Language }) {
                     {post.comments.reduce((total, c) => total + 1 + (c.replies?.length || 0), 0)} {lang === 'ar' ? 'تعليقات وردود' : 'Comments'}
                   </span>
                 </button>
+                {workspace === 'student' && post.authorId !== userData?.id && (
+                  <button type="button" onClick={() => { setReportingPostId(post.id); setReportReason('inappropriate'); setReportDetails(''); }} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold text-gray-400 transition-colors hover:bg-amber-50 hover:text-amber-700" aria-label={lang === 'ar' ? 'الإبلاغ عن المنشور' : 'Report post'}>
+                    <Flag size={13} /> {lang === 'ar' ? 'إبلاغ' : 'Report'}
+                  </button>
+                )}
               </div>
 
               {/* Comments and Nested Replies Section */}
@@ -1775,6 +1817,33 @@ export function FeedTab({ lang }: { lang: Language }) {
           ))}
         </AnimatePresence>
       </div>
+      )}
+
+      {reportingPost && (
+        <div className="fixed inset-0 z-[85] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={lang === 'ar' ? 'الإبلاغ عن منشور' : 'Report a post'} onClick={() => !reportBusy && setReportingPostId(null)}>
+          <motion.form initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} onSubmit={event => { event.preventDefault(); void submitPostReport(); }} onClick={event => event.stopPropagation()} className="w-full max-w-md space-y-4 rounded-3xl bg-white p-5 shadow-2xl dark:bg-slate-900">
+            <div className="flex items-start justify-between gap-3">
+              <div><h2 className="text-lg font-black text-slate-900 dark:text-white">{lang === 'ar' ? 'إبلاغ عن منشور' : 'Report this post'}</h2><p className="mt-1 text-xs leading-5 text-slate-500">{lang === 'ar' ? 'البلاغ سري، وفريق الخدمة المخوّل فقط يقدر يراجعه.' : 'Reports are private and can only be reviewed by authorized church staff.'}</p></div>
+              <button type="button" onClick={() => setReportingPostId(null)} disabled={reportBusy} aria-label={lang === 'ar' ? 'إغلاق' : 'Close'} className="rounded-full p-2 text-slate-500 hover:bg-slate-100"><X size={18} /></button>
+            </div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">{lang === 'ar' ? 'سبب البلاغ' : 'Why are you reporting this?' }
+              <select value={reportReason} onChange={event => setReportReason(event.target.value as typeof reportReason)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm dark:border-slate-700 dark:bg-slate-800">
+                <option value="inappropriate">{lang === 'ar' ? 'محتوى غير مناسب' : 'Inappropriate content'}</option>
+                <option value="harassment">{lang === 'ar' ? 'تنمّر أو مضايقة' : 'Bullying or harassment'}</option>
+                <option value="privacy">{lang === 'ar' ? 'معلومات شخصية أو خصوصية' : 'Personal information or privacy'}</option>
+                <option value="spam">{lang === 'ar' ? 'رسائل مزعجة أو تكرار' : 'Spam or repeated content'}</option>
+                <option value="other">{lang === 'ar' ? 'سبب آخر' : 'Something else'}</option>
+              </select>
+            </label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">{lang === 'ar' ? 'تفاصيل إضافية (اختياري)' : 'Additional details (optional)'}
+              <textarea value={reportDetails} onChange={event => setReportDetails(event.target.value.slice(0, 1000))} rows={3} placeholder={lang === 'ar' ? 'شارك أي تفاصيل تساعد فريق الخدمة...' : 'Share any details that may help the team...'} className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm dark:border-slate-700 dark:bg-slate-800" />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setReportingPostId(null)} disabled={reportBusy} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 dark:border-slate-700 dark:text-slate-200">{lang === 'ar' ? 'إلغاء' : 'Cancel'}</button>
+              <button type="submit" disabled={reportBusy} className="inline-flex items-center gap-2 rounded-xl bg-amber-700 px-4 py-2.5 text-xs font-black text-white disabled:opacity-50">{reportBusy ? <Loader2 size={14} className="animate-spin" /> : <Flag size={14} />}{lang === 'ar' ? 'إرسال البلاغ' : 'Submit report'}</button>
+            </div>
+          </motion.form>
+        </div>
       )}
 
       {/* Full-screen media viewer: swipe between a post's media, zoom photos, and save to device. */}
