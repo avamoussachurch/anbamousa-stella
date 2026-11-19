@@ -1094,7 +1094,7 @@ export function TeacherDashboard({
       )}
 
       {activeTab === 'helpRequests' && <HelpRequestsPanel lang={lang} />}
-      {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} />}
+      {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} audience="staff" />}
 
       {activeTab === 'moderation' && <TeacherModerationQueue lang={lang} />}
 
