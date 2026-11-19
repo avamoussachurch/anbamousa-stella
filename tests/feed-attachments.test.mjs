@@ -149,9 +149,10 @@ test('community reports are private, staff-scoped, actionable, and hidden posts 
   assert.match(migration, /review_feed_post_report/);
   assert.match(migration, /is_hidden = true/);
   assert.match(feedService, /\.eq\('is_hidden', false\)/);
+  assert.match(feedService, /feed_posts!inner\(is_hidden\)/);
   assert.match(submitMigration, /public\.has_role\('student'\)/);
   assert.match(submitMigration, /REVOKE INSERT ON public\.feed_post_reports/);
   assert.match(feed, /submit_feed_post_report/);
-  assert.match(queue, /review_feed_post_report/);
+  assert.match(queue, /supabase\.rpc\('review_feed_post_report'/);
   assert.match(queue, /Hide post & resolve/);
 });
