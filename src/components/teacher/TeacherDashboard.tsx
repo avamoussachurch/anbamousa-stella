@@ -98,8 +98,8 @@ export function TeacherDashboard({
   activeTab: routeTab,
   onNavigate
 }: TeacherDashboardProps) {
-  const { userData, isGuest } = useAuth();
-  const isOnlineAuth = !isGuest && Boolean(userData) && isSupabaseConfigured;
+  const { userData, isGuest, currentUser } = useAuth();
+  const isOnlineAuth = !isGuest && Boolean(currentUser?.uid) && Boolean(userData) && isSupabaseConfigured;
   const { 
     lessons, 
     addLesson, 
