@@ -30,3 +30,13 @@ test('prayer activity only qualifies from a completed hour or a non-empty saved 
   assert.match(database, /row\.personal_prayer\.trim\(\)\.length > 0/);
   assert.match(database, /return completedHours \|\| hasPersonalPrayer/);
 });
+
+test('workspace transitions are perceptible without overriding reduced-motion preferences', async () => {
+  const app = await read('../src/App.tsx');
+
+  assert.match(app, /useReducedMotion/);
+  assert.match(app, /y: \[tabTransitionTick % 2 === 0 \? 18 : -18, 0\]/);
+  assert.match(app, /scale: \[0\.985, 1\]/);
+  assert.match(app, /stiffness: 280, damping: 28/);
+  assert.match(app, /reduceMotion\s*\?\s*\{ duration: 0 \}/);
+});
