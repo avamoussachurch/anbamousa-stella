@@ -5,7 +5,7 @@ import type { Language } from '../../types';
 
 type Result = Awaited<ReturnType<typeof getAuthoritativeLeaderboard>>;
 
-export function ClassLeaderboardPanel({ lang, childId, childName, childOptions }: { lang: Language; childId?: string; childName?: string; childOptions?: Array<{ id: string; name: string }> }) {
+export function ClassLeaderboardPanel({ lang, audience = 'parent', childId, childName, childOptions }: { lang: Language; audience?: 'parent' | 'staff'; childId?: string; childName?: string; childOptions?: Array<{ id: string; name: string }> }) {
   const isArabic = lang === 'ar';
   const [timeframe, setTimeframe] = useState<'weekly' | 'all_time'>('weekly');
   const [result, setResult] = useState<Result | null>(null);
@@ -15,22 +15,25 @@ export function ClassLeaderboardPanel({ lang, childId, childName, childOptions }
   useEffect(() => { if (childId && !selectedChildId) setSelectedChildId(childId); }, [childId, selectedChildId]);
   const effectiveChildId = childOptions?.length ? selectedChildId : childId;
   const effectiveChildName = childOptions?.find(child => child.id === effectiveChildId)?.name || childName;
+  const isParentView = audience === 'parent';
+  const canLoadLeaderboard = !isParentView || Boolean(effectiveChildId);
 
   useEffect(() => {
     let active = true;
-    if (effectiveChildId === '') { setResult(null); return; }
+    if (!canLoadLeaderboard) { setResult(null); setLoading(false); return; }
     setLoading(true);
-    getAuthoritativeLeaderboard({ timeframe, studentId: effectiveChildId }).then(value => {
+    setResult(null);
+    getAuthoritativeLeaderboard({ timeframe, ...(isParentView ? { studentId: effectiveChildId } : {}) }).then(value => {
       if (!active) return;
       setResult(value);
       setLoading(false);
     });
     return () => { active = false; };
-  }, [effectiveChildId, timeframe, refreshTick]);
+  }, [canLoadLeaderboard, effectiveChildId, isParentView, timeframe, refreshTick]);
 
   const entries = result?.leaderboard || [];
   const streaks = result?.streakLeaderboard || [];
-  const currentId = effectiveChildId || result?.currentUserEntry?.studentId;
+  const currentId = isParentView ? effectiveChildId : undefined;
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-5 px-3 py-5 sm:px-5">
@@ -42,8 +45,8 @@ export function ClassLeaderboardPanel({ lang, childId, childName, childOptions }
           <button type="button" onClick={() => setRefreshTick(value => value + 1)} aria-label={isArabic ? 'تحديث الترتيب' : 'Refresh leaderboard'} className="rounded-xl border p-2"><RefreshCw size={16}/></button>
         </div>
       </header>
-      {childOptions?.length ? <label className="block text-sm font-bold">{isArabic ? 'اختر ابنك أو بنتك' : 'Choose a child'}<select value={selectedChildId} onChange={event => setSelectedChildId(event.target.value)} className="mt-1 min-h-11 w-full max-w-sm rounded-xl border bg-[var(--surface-primary)] px-3">{childOptions.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label> : null}
-      {effectiveChildId === '' ? <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك أو بنتك أولاً لعرض ترتيبهم.' : 'Link a child account first to view their ranking.'}</p>
+      {isParentView && childOptions?.length ? <label className="block text-sm font-bold">{isArabic ? 'اختر ابنك أو بنتك' : 'Choose a child'}<select value={selectedChildId} onChange={event => setSelectedChildId(event.target.value)} className="mt-1 min-h-11 w-full max-w-sm rounded-xl border bg-[var(--surface-primary)] px-3">{childOptions.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label> : null}
+      {!canLoadLeaderboard ? <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك أو بنتك أولاً لعرض ترتيبهم.' : 'Link a child account first to view their ranking.'}</p>
         : loading ? <p role="status" className="p-8 text-center text-sm">{isArabic ? 'بنحمّل الترتيب الرسمي...' : 'Loading verified rankings...'}</p>
         : result?.error ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{result.error}</p>
         : !result || entries.length === 0 ? <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'الترتيب غير متاح حالياً؛ لازم يكون فيه فصل نشط وتلاميذ مسجلين.' : 'Rankings are not available yet. An active class and enrolled students are required.'}</p>
@@ -65,7 +68,7 @@ export function ClassLeaderboardPanel({ lang, childId, childName, childOptions }
             </li>)}</ol>
           </section>
         </div>}
-      <p className="text-xs text-[var(--text-secondary)]">{isArabic ? 'البيانات من نقاط وإنجازات موثقة على الخادم، والوصول محكوم بصلاحيات الفصل أو علاقة الأسرة الموثقة.' : 'Rankings use server-verified points and completions. Access is limited to assigned classes or verified family links.'}</p>
+      <p className="text-xs text-[var(--text-secondary)]">{isArabic ? 'البيانات من نقاط وإنجازات موثقة على الخادم؛ الخادمون يرون الفصول المكلّفين بها فقط، وأولياء الأمور يرون الأبناء المرتبطين بشكل موثّق.' : 'Rankings use server-verified points and completions. Staff see only assigned classes; parents see only verified linked children.'}</p>
     </section>
   );
 }
