@@ -429,9 +429,15 @@ function AppContent() {
         <motion.div
           initial={false}
           animate={reduceMotion
-            ? { opacity: 1, y: 0 }
-            : { opacity: [0.94, 1], y: [tabTransitionTick % 2 === 0 ? 7 : -7, 0] }}
-          transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
+            ? { opacity: 1, y: 0, scale: 1 }
+            : {
+                opacity: [0.9, 1],
+                y: [tabTransitionTick % 2 === 0 ? 18 : -18, 0],
+                scale: [0.985, 1]
+              }}
+          transition={reduceMotion
+            ? { duration: 0 }
+            : { type: 'spring', stiffness: 280, damping: 28, mass: 0.72 }}
           className="min-w-0"
         >
           <React.Suspense fallback={<WorkspaceLoadingFallback lang={lang} />}>
