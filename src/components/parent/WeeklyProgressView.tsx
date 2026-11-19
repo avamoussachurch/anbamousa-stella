@@ -64,7 +64,7 @@ export function WeeklyProgressView({
 
   if (!childrenProfiles.length) {
     return (
-      <div className="mousa-card-sand p-8 text-center space-y-4" dir="rtl">
+      <div className="mousa-card-sand p-8 text-center space-y-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <UsersIcon />
         <h3 className="text-lg font-bold text-[var(--text-primary)]">
           {lang === 'ar' ? 'لسه مفيش أولاد مرتبطين بالحساب' : 'No children linked yet'}
