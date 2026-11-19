@@ -29,6 +29,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { Lesson, ClassSession, QuizQuestion, QuestionDifficulty, PresentationSlide } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
+import { hasRole } from '../../../lib/workspaces';
 import { isSupabaseConfigured } from '../../../lib/supabase';
 import { publishExpressLesson } from '../../../lib/lessonAuthoringService';
 import { getAuthorizedSourceUrl, uploadSourceMedia } from '../../../lib/lessonSourceService';
@@ -64,6 +65,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
   const isAr = lang === 'ar';
   const { userData, isGuest } = useAuth();
   const isOnlineAuth = !isGuest && Boolean(userData) && isSupabaseConfigured;
+  const canDirectPublish = hasRole(userData, 'admin');
 
   // Active session resolution
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
@@ -500,34 +502,50 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
           slidesUrl: lessonPayload.slidesUrl,
           audioUrl: lessonPayload.audioUrl,
           teacherNotes: lessonPayload.teacherNotes,
-          publishDirectly: true,
+          publishDirectly: canDirectPublish,
           quiz: lessonPayload.quiz || []
       });
-      if (result.error || !result.data?.lesson || result.data.lesson.status !== 'published') {
-        throw result.error || new Error('The database did not confirm lesson publication.');
+      if (result.error || !result.data?.lesson || (canDirectPublish && result.data.lesson.status !== 'published') || (!canDirectPublish && result.data.lesson.status !== 'draft')) {
+        throw result.error || new Error(canDirectPublish ? 'The database did not confirm lesson publication.' : 'The database did not confirm saving the teacher draft.');
       }
       lessonPayload = result.data.lesson;
 
-      // Link directly to current active session
-      if (activeSession) {
-        onUpdateSession(activeSession.id, {
-          activeLessonId: lessonPayload.id,
-          title: lessonPayload.title,
-          topic: lessonPayload.titleAr ? `${lessonPayload.title} (${lessonPayload.titleAr})` : lessonPayload.title,
-          grade: lessonPayload.grade || activeSession.grade,
-          status: 'PUBLISHED'
+      if (canDirectPublish) {
+        // Administrators may publish directly; teacher accounts must use the review gate.
+        if (activeSession) {
+          onUpdateSession(activeSession.id, {
+            activeLessonId: lessonPayload.id,
+            title: lessonPayload.title,
+            topic: lessonPayload.titleAr ? `${lessonPayload.title} (${lessonPayload.titleAr})` : lessonPayload.title,
+            grade: lessonPayload.grade || activeSession.grade,
+            status: 'PUBLISHED'
+          });
+        }
+        await onPublishLesson(lessonPayload, activeSession?.id);
+        setFeedbackMessage({
+          type: 'success',
+          text: isAr
+            ? `🎉 تم نشر الدرس وربطه بحصة الأحد (${activeSession?.date || 'اليوم'})!`
+            : `🎉 Lesson published and assigned to the Sunday session (${activeSession?.date || 'Today'})!`
+        });
+      } else {
+        onSaveLesson(lessonPayload);
+        if (activeSession) {
+          onUpdateSession(activeSession.id, {
+            activeLessonId: lessonPayload.id,
+            title: lessonPayload.title,
+            topic: lessonPayload.titleAr ? `${lessonPayload.title} (${lessonPayload.titleAr})` : lessonPayload.title,
+            grade: lessonPayload.grade || activeSession.grade,
+            status: 'DRAFT'
+          });
+        }
+        setFeedbackMessage({
+          type: 'success',
+          text: isAr
+            ? 'تم حفظ المسودة. بعد مراجعتها واعتمادها، يمكنك نشر نسختك من لوحة «نشر دروسك المعتمدة».'
+            : 'Draft saved. After it is reviewed and approved, publish your own version from the “Publish your approved lessons” panel.'
         });
       }
-
-      // Broadcast and persist in curriculum
-      await onPublishLesson(lessonPayload, activeSession?.id);
-
-      setFeedbackMessage({
-        type: 'success',
-        text: isAr
-          ? `🎉 تم نشر الدرس بنجاح وربطه بحصة الأحد (${activeSession?.date || 'اليوم'}) وجاهز لجميع الطلاب!`
-          : `🎉 Lesson published successfully & directly assigned to Sunday Session (${activeSession?.date || 'Today'})!`
-      });
     } catch (err: any) {
       console.error('Publish error:', err);
       setFeedbackMessage({
