@@ -427,6 +427,13 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               </div>
             </div>
 
+            <div className="rounded-xl border border-sky-200/70 bg-sky-50/70 p-3 text-[11px] leading-6 text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-200">
+              <Info size={15} className="me-2 inline-block align-text-bottom" />
+              {isAr
+                ? 'بيانات الفصل ورقم التواصل تُستخدم داخل الكنيسة فقط بواسطة خدام فصلك والإدارة المختصة لتنظيم الفصل وتسجيل الحضور والاطمئنان عليك عند الحاجة. لن تظهر في منشورات المجتمع.'
+                : 'Your class details and contact number stay within the church account. Your assigned teachers and authorized church administrators use them for class organization, attendance, and checking in when needed. They are not shown in community posts.'}
+            </div>
+
             {/* Note to Servant */}
             <div>
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
