@@ -6,6 +6,7 @@ import { ParentProfileForm } from './ParentProfileForm';
 import {
   ProfilePageFrame,
   ProfileSettingsCard,
+  RoleAvatarStudio,
   ProfileUnavailable,
   useRoleProfileAccount,
   type RoleProfileProps,
@@ -60,7 +61,8 @@ export function ParentAccountProfile({ lang, setLang, onNavigate, onLogout }: Ro
       icon={<Heart size={28} />}
       onLogout={onLogout}
     >
-      <div className="grid gap-5 lg:grid-cols-[1fr_.85fr]">
+      <div className="grid gap-5 lg:grid-cols-3">
+        <RoleAvatarStudio lang={lang} user={account.userData} role="parent" />
         <ParentProfileForm
           user={account.userData}
           name={account.name}
