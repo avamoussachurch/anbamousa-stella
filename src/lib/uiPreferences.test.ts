@@ -97,7 +97,7 @@ test('main and quick navigation expose localized landmarks and selected destinat
   assert.match(styles, /--state-selected:/);
   assert.match(styles, /:focus-visible/);
   assert.match(styles, /prefers-reduced-motion: reduce/);
-  const html = await readFile(new URL('../../../index.html', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../../index.html', import.meta.url), 'utf8');
   assert.match(html, /viewport-fit=cover/);
   assert.match(styles, /env\(safe-area-inset-bottom/);
 });
