@@ -2712,8 +2712,9 @@ test('opening published Hymn and Taxis items records a learning day without comp
       role: 'student',
       userId: studentId
     });
-    assert.equal(taxisDetail.status, 200, await taxisDetail.text());
-    const ritual = (await taxisDetail.json()).item;
+    const taxisDetailPayload = await taxisDetail.json();
+    assert.equal(taxisDetail.status, 200, JSON.stringify(taxisDetailPayload));
+    const ritual = taxisDetailPayload.item;
 
     const taxisOpen = await request('/api/church/student-progress/record-activity', {
       method: 'POST',
