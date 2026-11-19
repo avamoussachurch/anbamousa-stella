@@ -579,22 +579,26 @@ export async function saveAgpeyaProgressToSupabase(
   userId: string,
   record: AgpeyaProgressRecord
 ): Promise<{ success: boolean; error?: string }> {
-  // Always update resilient local cache
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(`agpeya_checks_${record.date}`, JSON.stringify(record.completedHours));
-    localStorage.setItem(`agpeya_streak_days`, record.streakDays.toString());
-    if (record.personalPrayer !== undefined) {
-      localStorage.setItem('agpeya_personal_intentions', record.personalPrayer);
+  const cacheConfirmedRecord = () => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(`agpeya_checks_${record.date}`, JSON.stringify(record.completedHours));
+      localStorage.setItem('agpeya_streak_days', record.streakDays.toString());
+      if (record.personalPrayer !== undefined) {
+        localStorage.setItem('agpeya_personal_intentions', record.personalPrayer);
+      }
+      localStorage.setItem(`agpeya_full_record_${userId}_${record.date}`, JSON.stringify(record));
+    } catch (error) {
+      console.warn('Could not cache confirmed Agpeya progress:', error);
     }
-    localStorage.setItem(`agpeya_full_record_${userId}_${record.date}`, JSON.stringify(record));
-  }
+  };
 
   if (!supabase) {
+    cacheConfirmedRecord();
     return { success: true };
   }
 
   try {
-    // Attempt upsert into 'agpeya_prayers'
     const { error: prayerErr } = await supabase
       .from('agpeya_prayers')
       .upsert({
@@ -606,15 +610,14 @@ export async function saveAgpeyaProgressToSupabase(
         updated_at: record.lastUpdated
       }, { onConflict: 'user_id,date' });
 
-    if (!prayerErr) {
-      return { success: true };
+    if (prayerErr) {
+      return { success: false, error: prayerErr.message };
     }
 
-    // A profile heartbeat is not proof that the prayer record was saved.
-    // Never report success for a failed prayer-history write.
-    return { success: false, error: prayerErr.message };
+    cacheConfirmedRecord();
+    return { success: true };
   } catch (err: any) {
-    console.warn('Supabase Agpeya sync fallback:', err?.message);
+    console.warn('Supabase Agpeya sync failed:', err?.message);
     return { success: false, error: err?.message || 'Could not save prayer progress.' };
   }
 }
