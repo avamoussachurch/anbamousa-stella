@@ -6537,6 +6537,9 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
         if (ritual.audience === 'deacons' && assignedLevel < 2) {
           return res.status(403).json({ success: false, error: "TAXIS_AUDIENCE_DENIED", message: "This Taxis item is reserved for deacons." });
         }
+        if (ritual.audience && !['all', 'preparatory', 'deacons'].includes(ritual.audience)) {
+          return res.status(403).json({ success: false, error: "TAXIS_AUDIENCE_DENIED", message: "This Taxis item is not assigned to your audience." });
+        }
       }
       if (ritual && ritual.status === 'draft') {
         return res.status(403).json({
