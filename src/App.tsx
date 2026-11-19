@@ -351,7 +351,7 @@ function AppContent() {
     <PointsProvider>
     <div 
       dir={getLanguageDirection(lang)}
-      className="min-h-screen relative isolate bg-[var(--color-church-cream)] pb-safe overflow-x-hidden selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
+      className="min-h-screen relative isolate bg-[var(--color-church-cream)] pb-safe overflow-x-clip selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
     >
       <AmbientWorld variant="app" />
       <div className="relative z-10 min-h-screen">
@@ -365,7 +365,7 @@ function AppContent() {
       />
       <OfflineIndicator />
       <GlobalMusicPlayer lang={lang} />
-      <div className="flex items-start">
+      <div className="flex min-h-[calc(100dvh-4rem)] items-start">
       {!activeLessonId && (
         <WorkspaceSidebar
           workspace={activeWorkspace}
@@ -378,7 +378,7 @@ function AppContent() {
       
       {/* Incoming Child Link Alert Banner */}
       {incomingChildCode && hasRole(userData, 'parent') && activeWorkspace === 'parent' && activeTab !== 'family' && (
-        <div className="bg-gradient-to-r from-[var(--color-church-blue)] to-[var(--color-church-burgundy)] text-white px-4 py-2.5 shadow-md flex items-center justify-between text-xs sm:text-sm font-semibold sticky top-14 z-30">
+        <div className="bg-gradient-to-r from-[var(--color-church-blue)] to-[var(--color-church-burgundy)] text-white px-4 py-2.5 shadow-md flex items-center justify-between text-xs sm:text-sm font-semibold relative z-30">
           <div className="flex items-center gap-2">
             <span className="text-base">🔗</span>
             <span>
