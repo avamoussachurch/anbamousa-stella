@@ -69,7 +69,7 @@ export function BottomNav({ activeTab, setActiveTab, lang, workspace }: BottomNa
   };
 
   return (
-    <nav aria-label={lang === 'ar' ? 'القائمة الرئيسية' : 'Main navigation'} className="app-bottom-nav fixed bottom-0 z-50 w-full border-t pb-safe shadow-[0_-4px_25px_-8px_rgba(10,30,35,0.18)] transition-colors lg:hidden">
+    <nav aria-label={lang === 'ar' ? 'القائمة الرئيسية' : 'Main navigation'} className="app-bottom-nav fixed inset-x-0 bottom-0 z-50 w-full border-t pb-safe shadow-[0_-4px_25px_-8px_rgba(10,30,35,0.18)] transition-colors lg:hidden">
       {moreOpen && (
         <>
           <button type="button" aria-label={lang === 'ar' ? 'اقفل القائمة الإضافية' : 'Close additional navigation'} onClick={() => setMoreOpen(false)} className="fixed inset-0 z-[49] bg-black/20" />

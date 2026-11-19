@@ -5,7 +5,6 @@ import {
   Wand2, 
   Upload, 
   Users, 
-  ShieldAlert, 
   CheckCircle2, 
   ArrowLeft, 
   Edit3, 
@@ -48,6 +47,7 @@ import { HelpRequestsPanel } from './HelpRequestsPanel';
 import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
 import { TeacherProgressReport } from './TeacherProgressReport';
 import { TeacherAttendanceWorkspace } from './TeacherAttendanceWorkspace';
+import { TeacherModerationQueue } from './TeacherModerationQueue';
 
 interface TeacherDashboardProps {
   onOpenParentPortal?: () => void;
@@ -420,7 +420,7 @@ export function TeacherDashboard({
   };
 
   return (
-    <div className={`${activeTab === 'overview' ? 'w-full' : 'mx-auto w-full max-w-[96rem] px-4 pt-4 sm:px-6 lg:px-8'} space-y-6 pb-28`} dir="rtl">
+    <div className={`${activeTab === 'overview' ? 'w-full' : 'mx-auto w-full max-w-[96rem] px-4 pt-4 sm:px-6 lg:px-8'} space-y-6 pb-28`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {activeTab !== 'overview' && (
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-default)] pb-4">
           <div className="min-w-0">
@@ -830,9 +830,13 @@ export function TeacherDashboard({
           </div>
 
           <div role="status" className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
-            {lang === 'ar'
-              ? 'ملخص تقدم الطلاب ونتائج الاختبارات مش متاح هنا لحد ما يتوصل بقراءة موثوقة من قاعدة البيانات. مش هنعرض أرقام تجريبية أو محفوظة محلياً على إنها نتائج حقيقية.'
-              : 'Student progress and quiz summaries are unavailable here until a trusted database read path is connected. Demo or browser-cached values are not presented as real results.'}
+            {isOnlineAuth
+              ? (lang === 'ar'
+                ? 'تقارير تقدم التلاميذ ونتائج الاختبارات الموثّقة متاحة في تبويب «تقييم التقدم». مساحة العمل دي مخصصة لإعداد الدروس ونشرها.'
+                : 'Verified student progress and quiz reports are available in the Mastery & Reports tab. This workspace is for preparing and publishing lessons.')
+              : (lang === 'ar'
+                ? 'في الوضع التجريبي، لا نعرض نتائج تقدم أو اختبارات على أنها بيانات مؤكدة. سجّل الدخول بحساب خادم موثّق لعرض التقارير الحقيقية.'
+                : 'In demo mode, progress and quiz results are not presented as confirmed data. Sign in with a verified teacher account to access authoritative reports.')}
           </div>
 
           <LessonPublicationManager
@@ -1092,22 +1096,7 @@ export function TeacherDashboard({
       {activeTab === 'helpRequests' && <HelpRequestsPanel lang={lang} />}
       {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} />}
 
-      {/* Tab 3: Moderation Queue */}
-      {activeTab === 'moderation' && (
-        <div role="status" className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-          <div className="flex items-start gap-3">
-            <ShieldAlert className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
-            <div>
-              <h2 className="font-black">{lang === 'ar' ? 'قائمة الإشراف مش متاحة' : 'Moderation queue unavailable'}</h2>
-              <p className="mt-2 text-sm leading-relaxed">
-                {lang === 'ar'
-                  ? 'مفيش اتصال موثوق ببيانات البلاغات أو بإجراءات الإشراف. مش هنعرض منشورات تجريبية أو نقول إن مفيش بلاغات من غير ما نقدر نتحقق.'
-                  : 'There is no trusted connection to moderation reports or actions. Demo posts are not shown, and we cannot claim the queue is empty without checking its data source.'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {activeTab === 'moderation' && <TeacherModerationQueue lang={lang} />}
 
       {/* Lesson Edit Modal (Edit or Direct Manual Creation) */}
       {editingLesson && (

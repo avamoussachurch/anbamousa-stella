@@ -516,7 +516,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* Header Bar */}
       <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 shadow-xl flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3.5">
@@ -1086,7 +1086,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                             {isOnlineAuth ? (
                               <span className="text-[11px] text-stone-400">
-                                {isAr ? 'ملخص التقدم والاختبارات غير متاح حالياً.' : 'Progress and quiz summary unavailable.'}
+                                {isAr ? 'تقارير التقدم ونتائج الاختبارات الموثّقة متاحة في تبويب تقييم التقدم.' : 'Verified progress and quiz reports are available in the Mastery & Reports tab.'}
                               </span>
                             ) : (
                               <>

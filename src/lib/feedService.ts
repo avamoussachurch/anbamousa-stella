@@ -23,7 +23,8 @@ export async function fetchGlobalFeedAudioTracks(): Promise<{ data: GlobalFeedAu
   try {
     const { data, error } = await supabase
       .from('feed_post_attachments')
-      .select('id, storage_bucket, object_path, external_url, global_audio_title, created_at')
+      .select('id, post_id, storage_bucket, object_path, external_url, global_audio_title, created_at, feed_posts!inner(is_hidden)')
+      .eq('feed_posts.is_hidden', false)
       .eq('media_type', 'audio')
       .eq('include_in_global_player', true)
       .order('created_at', { ascending: false })
@@ -124,7 +125,8 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
     // 1. Fetch posts
     const { data: postsData, error: postsErr } = await supabase
       .from('feed_posts')
-      .select('id, author_id, author_name, author_avatar, content, created_at, media_type, media_url, media_thumbnail, media_provider, is_pinned, is_announcement')
+      .select('id, author_id, author_name, author_avatar, content, created_at, media_type, media_url, media_thumbnail, media_provider, is_pinned, is_announcement, is_hidden')
+      .eq('is_hidden', false)
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false });
 

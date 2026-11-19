@@ -124,3 +124,31 @@ test('database policy restricts storage attachments to the authenticated owner a
   assert.match(migration, /CREATE TRIGGER enforce_feed_post_media_ownership/);
   assert.match(migration, /can_attach_owned_feed_media_reference\(NEW\.media_url, auth\.uid\(\)\)/);
 });
+
+
+test('feed media viewer supports swipe browsing, zoom, close, and device save actions', () => {
+  const component = readFileSync(new URL('../src/components/student/FeedTab.tsx', import.meta.url), 'utf8');
+  assert.match(component, /onTouchStart/);
+  assert.match(component, /navigateLightbox/);
+  assert.match(component, /ZoomIn/);
+  assert.match(component, /ZoomOut/);
+  assert.match(component, /saveLightboxMedia/);
+  assert.match(component, /shareNavigator\.share/);
+  assert.match(component, /Close media viewer/);
+});
+
+
+test('community reports are private, staff-scoped, actionable, and hidden posts leave the feed', () => {
+  const migration = readFileSync(new URL('../supabase/migrations/202611190001_feed_post_moderation.sql', import.meta.url), 'utf8');
+  const feedService = readFileSync(new URL('../src/lib/feedService.ts', import.meta.url), 'utf8');
+  const feed = readFileSync(new URL('../src/components/student/FeedTab.tsx', import.meta.url), 'utf8');
+  const queue = readFileSync(new URL('../src/components/teacher/TeacherModerationQueue.tsx', import.meta.url), 'utf8');
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /can_access_student_data\(reporter_id\)/);
+  assert.match(migration, /review_feed_post_report/);
+  assert.match(migration, /is_hidden = true/);
+  assert.match(feedService, /\.eq\('is_hidden', false\)/);
+  assert.match(feed, /feed_post_reports/);
+  assert.match(queue, /review_feed_post_report/);
+  assert.match(queue, /Hide post & resolve/);
+});

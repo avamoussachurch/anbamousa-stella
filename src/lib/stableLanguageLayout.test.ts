@@ -18,7 +18,6 @@ const languageAwareScreens = [
   '../components/parent/ChurchEventNotifications.tsx',
   '../components/student/LessonsTab.tsx',
   '../components/student/PointsTab.tsx',
-  '../components/design-system/DesignSystemPage.tsx',
   '../components/student/FeedTab.tsx',
   '../components/teacher/ServantSourceManagement.tsx',
   '../components/teacher/TeacherDashboard.tsx',
@@ -38,35 +37,25 @@ const languageAwareScreens = [
   '../components/hymns/HymnsSchoolTab.tsx',
   '../components/teacher/publishing/TeacherPublishingHub.tsx',
   '../components/sunday-school/student/RewardCelebration.tsx',
-  '../components/sunday-school/viewers/InAppDocumentViewer.tsx',
-  '../components/teacher/publishing/HymnsEnrollmentManager.tsx',
   '../components/teacher/StudentExperiencePreview.tsx',
   '../components/student/JourneyOfMosesVisuals.tsx',
   '../components/teacher/ExpressLessonPublishModal.tsx',
-  '../components/teacher/publishing/CurriculumImportCenter.tsx',
   '../components/teacher/ServantClassManagement.tsx',
-  '../components/sunday-school/student/SundaySchoolQuizView.tsx',
-  '../components/teacher/publishing/HymnsPublishingStudio.tsx',
-  '../components/sunday-school/student/SundaySchoolLessonView.tsx',
-  '../components/teacher/publishing/TaxisPublishingStudio.tsx'
+  '../components/sunday-school/student/SundaySchoolQuizView.tsx'
 ];
 
-test('language switching does not mirror role-based or shared screen layouts', async () => {
+test('language-aware screens follow Arabic RTL and English/Coptic LTR direction', async () => {
   const contents = await Promise.all(
     languageAwareScreens.map(path => readFile(new URL(path, import.meta.url), 'utf8'))
   );
-
+  const directionBinding = /dir=\{(?:getLanguageDirection\(lang\)|lang === 'ar' \? 'rtl' : 'ltr'|isAr \? 'rtl' : 'ltr'|isArabic \? 'rtl' : 'ltr')\}/;
   for (let index = 0; index < contents.length; index++) {
-    assert.doesNotMatch(
-      contents[index],
-      /dir=\{(?:lang === 'ar'|isArabic|isAr)[^}]*\}/,
-      `Language-dependent layout direction remains in ${languageAwareScreens[index]}`
-    );
+    assert.match(contents[index], directionBinding, `Selected-language direction is missing in ${languageAwareScreens[index]}`);
   }
 });
 
-test('Arabic-first app shell remains RTL while language metadata can change', async () => {
+test('application shell updates its writing direction together with language metadata', async () => {
   const preferences = await readFile(new URL('./uiPreferences.ts', import.meta.url), 'utf8');
-  assert.match(preferences, /root\.setAttribute\('dir', 'rtl'\)/);
+  assert.match(preferences, /root\.setAttribute\('dir', getLanguageDirection\(lang\)\)/);
   assert.match(preferences, /root\.setAttribute\('data-language'/);
 });

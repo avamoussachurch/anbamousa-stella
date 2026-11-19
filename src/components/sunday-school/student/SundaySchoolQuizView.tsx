@@ -261,7 +261,7 @@ export const SundaySchoolQuizView: React.FC<SundaySchoolQuizViewProps> = ({
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5 pb-16" dir="rtl">
+    <div className="max-w-3xl mx-auto space-y-5 pb-16" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* Top Header Navigation */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <button

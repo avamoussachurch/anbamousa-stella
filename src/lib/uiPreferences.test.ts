@@ -49,7 +49,7 @@ test('theme switching synchronizes the theme attribute, color scheme, and dark u
   assert.equal(root.classes.has('dark'), false);
 });
 
-test('language changes preserve the Arabic-first app layout while updating content language metadata', () => {
+test('language changes update both content metadata and the correct writing direction', () => {
   assert.equal(getLanguageDirection('ar'), 'rtl');
   assert.equal(getLanguageDirection('en'), 'ltr');
   assert.equal(getLanguageDirection('cop'), 'ltr');
@@ -61,11 +61,11 @@ test('language changes preserve the Arabic-first app layout while updating conte
   assert.equal(root.attributes.get('lang'), 'ar');
   assert.equal(root.attributes.get('data-language'), 'ar');
   applyLanguagePreference(root, 'en');
-  assert.equal(root.attributes.get('dir'), 'rtl');
+  assert.equal(root.attributes.get('dir'), 'ltr');
   assert.equal(root.attributes.get('lang'), 'en');
   assert.equal(root.attributes.get('data-language'), 'en');
   applyLanguagePreference(root, 'copt');
-  assert.equal(root.attributes.get('dir'), 'rtl');
+  assert.equal(root.attributes.get('dir'), 'ltr');
   assert.equal(root.attributes.get('lang'), 'cop');
   assert.equal(root.attributes.get('data-language'), 'cop');
 });
@@ -92,9 +92,12 @@ test('main and quick navigation expose localized landmarks and selected destinat
   assert.match(roleProfileShared, /<LanguageSettings lang=\{lang\} setLang=\{setLang\} \/>/);
   assert.match(app, /localStorage\.setItem\('church_app_lang', newLang\)/);
   assert.match(app, /applyLanguagePreference\(document\.documentElement, newLang\)/);
-  assert.match(app, /<div\s+dir="rtl"\s+className="min-h-screen relative isolate/);
-  assert.doesNotMatch(app, /dir=\{getLanguageDirection\(lang\)\}/);
+  assert.match(app, /<div\s+dir=\{getLanguageDirection\(lang\)\}\s+className="min-h-screen relative isolate/);
+  assert.match(app, /dir=\{getLanguageDirection\(lang\)\}/);
   assert.match(styles, /--state-selected:/);
   assert.match(styles, /:focus-visible/);
   assert.match(styles, /prefers-reduced-motion: reduce/);
+  const html = await readFile(new URL('../../index.html', import.meta.url), 'utf8');
+  assert.match(html, /viewport-fit=cover/);
+  assert.match(styles, /env\(safe-area-inset-bottom/);
 });

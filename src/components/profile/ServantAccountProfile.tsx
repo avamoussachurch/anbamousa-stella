@@ -6,6 +6,7 @@ import { ServantProfileForm } from './ServantProfileForm';
 import {
   ProfilePageFrame,
   ProfileSettingsCard,
+  RoleAvatarStudio,
   ProfileUnavailable,
   useRoleProfileAccount,
   type RoleProfileProps,
@@ -53,7 +54,8 @@ export function ServantAccountProfile({ lang, setLang, onNavigate, onLogout }: R
       icon={<GraduationCap size={28} />}
       onLogout={onLogout}
     >
-      <div className="grid gap-5 lg:grid-cols-[1fr_.85fr]">
+      <div className="grid gap-5 xl:grid-cols-3 lg:grid-cols-2">
+        <RoleAvatarStudio lang={lang} user={account.userData} role="teacher" />
         <ServantProfileForm
           user={account.userData}
           name={account.name}

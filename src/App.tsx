@@ -17,7 +17,7 @@ import { PointsProvider } from './context/PointsContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { Language } from './types';
 import { getAccountSetupStatus } from './lib/onboardingService';
-import { applyLanguagePreference } from './lib/uiPreferences';
+import { applyLanguagePreference, getLanguageDirection } from './lib/uiPreferences';
 import { canAccessWorkspace, canAccessWorkspaceTab, hasRole, resolveWorkspace, type Workspace } from './lib/workspaces';
 
 // Keep the entry bundle focused on authentication and shared navigation.
@@ -334,7 +334,7 @@ function AppContent() {
 
   if (userData.roles.length === 0 || !activeWorkspace) {
     return (
-      <div dir="rtl" className="min-h-screen flex items-center justify-center bg-[var(--color-church-cream)] p-6">
+      <div dir={getLanguageDirection(lang)} className="min-h-screen flex items-center justify-center bg-[var(--color-church-cream)] p-6">
         <div className="max-w-md rounded-3xl border bg-white p-6 text-center shadow-xl">
           <h1 className="text-xl font-black">{lang === 'ar' ? 'لا توجد مساحة عمل متاحة' : 'No workspace available'}</h1>
           <p className="mt-3 text-sm text-slate-600">{lang === 'ar' ? 'تعذر التحقق من أدوار الحساب. أعد المحاولة أو سجّل الخروج.' : 'Assigned roles could not be verified. Retry or sign out.'}</p>
@@ -350,8 +350,8 @@ function AppContent() {
     <LessonsProvider>
     <PointsProvider>
     <div 
-      dir="rtl"
-      className="min-h-screen relative isolate bg-[var(--color-church-cream)] pb-safe overflow-x-hidden selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
+      dir={getLanguageDirection(lang)}
+      className="min-h-screen relative isolate bg-[var(--color-church-cream)] pb-safe overflow-x-clip selection:bg-[var(--color-church-gold)] selection:text-[var(--color-church-blue)]"
     >
       <AmbientWorld variant="app" />
       <div className="relative z-10 min-h-screen">
@@ -365,7 +365,7 @@ function AppContent() {
       />
       <OfflineIndicator />
       <GlobalMusicPlayer lang={lang} />
-      <div className="flex items-start">
+      <div className="flex min-h-[calc(100dvh-4rem)] items-start">
       {!activeLessonId && (
         <WorkspaceSidebar
           workspace={activeWorkspace}
@@ -378,7 +378,7 @@ function AppContent() {
       
       {/* Incoming Child Link Alert Banner */}
       {incomingChildCode && hasRole(userData, 'parent') && activeWorkspace === 'parent' && activeTab !== 'family' && (
-        <div className="bg-gradient-to-r from-[var(--color-church-blue)] to-[var(--color-church-burgundy)] text-white px-4 py-2.5 shadow-md flex items-center justify-between text-xs sm:text-sm font-semibold sticky top-14 z-30">
+        <div className="bg-gradient-to-r from-[var(--color-church-blue)] to-[var(--color-church-burgundy)] text-white px-4 py-2.5 shadow-md flex items-center justify-between text-xs sm:text-sm font-semibold relative z-30">
           <div className="flex items-center gap-2">
             <span className="text-base">🔗</span>
             <span>

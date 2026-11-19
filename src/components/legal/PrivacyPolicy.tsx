@@ -29,7 +29,7 @@ export function PrivacyPolicy({ lang, onClose }: { lang: Language, onClose: () =
           </button>
         </div>
 
-        <div className="p-6 md:p-10 flex-1 overflow-y-auto space-y-8" dir="rtl">
+        <div className="p-6 md:p-10 flex-1 overflow-y-auto space-y-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           {lang === 'copt' || lang === 'cop' ? (
             <>
               <section>

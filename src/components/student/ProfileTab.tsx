@@ -42,6 +42,7 @@ export function ProfileTab({
   const [screen, setScreen] = useState<ProfileScreen>('main');
   const [userName, setUserName] = useState(userData?.fullName || '');
   const [avatar, setAvatar] = useState(userData?.avatarUrl || DEFAULT_STUDENT_AVATAR);
+  const [avatarCategory, setAvatarCategory] = useState<'all' | 'saints' | 'students' | 'deacons'>('all');
   const [hymnsTaxisLevel, setHymnsTaxisLevel] = useState('');
   const [isSavingHymnsTaxisLevel, setIsSavingHymnsTaxisLevel] = useState(false);
   const [hymnsTaxisLevelError, setHymnsTaxisLevelError] = useState<string | null>(null);
@@ -1075,12 +1076,12 @@ export function ProfileTab({
                    </p>
                  )}
                  
-                 {/* Coptic Orthodox Avatars Gallery */}
+                 {/* Avatar Studio: choose a Coptic portrait or upload a personal photo. */}
                  <div className="mt-5">
                     <div className="flex items-center justify-between mb-2.5 px-2">
                       <p className="text-xs md:text-sm font-bold text-gray-700 flex items-center gap-1.5">
                         <Sparkles size={14} className="text-[var(--mousa-gold)]" />
-                        {lang === 'ar' ? 'صور ورموز قبطية لمدارس الأحد:' : 'Coptic Sunday School Avatars:'}
+                        {lang === 'ar' ? 'استوديو الصورة الشخصية' : 'Avatar Studio'}
                       </p>
                       <button
                         type="button"
@@ -1092,8 +1093,22 @@ export function ProfileTab({
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2.5 max-w-xl mx-auto p-3 bg-[var(--color-church-cream)]/40 rounded-2xl border border-[var(--mousa-border-sand)]">
-                       {COPTIC_AVATARS.map((preset) => (
+                    <p className="mb-3 text-[11px] text-[var(--text-secondary)]">{lang === 'ar' ? 'اختار الشخصية الأقرب ليك، أو ارفع صورة من جهازك. تقدر تغيّر اختيارك في أي وقت.' : 'Choose a portrait that feels like you, or upload your own photo. You can change it whenever you like.'}</p>
+                    <div className="mb-3 flex flex-wrap justify-center gap-2">
+                      {([
+                        { id: 'all', en: 'All', ar: 'الكل' },
+                        { id: 'saints', en: 'Saints', ar: 'قديسون' },
+                        { id: 'students', en: 'Students', ar: 'طلاب' },
+                        { id: 'deacons', en: 'Deacons', ar: 'شمامسة' }
+                      ] as const).map(category => (
+                        <button key={category.id} type="button" onClick={() => setAvatarCategory(category.id)} aria-pressed={avatarCategory === category.id}
+                          className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors ${avatarCategory === category.id ? 'border-[var(--mousa-teal-deep)] bg-[var(--mousa-teal-deep)] text-white' : 'border-[var(--mousa-border-sand)] bg-white/70 text-[var(--text-secondary)] hover:bg-white'}`}>
+                          {lang === 'ar' ? category.ar : category.en}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5 max-w-2xl mx-auto p-3 bg-[var(--color-church-cream)]/40 rounded-2xl border border-[var(--mousa-border-sand)]">
+                       {COPTIC_AVATARS.filter(preset => avatarCategory === 'all' || preset.category === avatarCategory).map((preset) => (
                           <button 
                             key={preset.id} 
                             type="button"

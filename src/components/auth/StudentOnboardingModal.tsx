@@ -15,6 +15,7 @@ import {
   School,
   Sparkles,
   ArrowRight,
+  ChevronRight,
   Info
 } from 'lucide-react';
 import { CLASS_GROUPS, CANONICAL_GRADE_LIST, getClassGroupForGrade, CANONICAL_GRADES, findCanonicalGrade } from '../../lib/classGroups';
@@ -44,9 +45,10 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
   const [selectedGradeCode, setSelectedGradeCode] = useState<string>(() => {
     if (userData?.requestedGrade) return userData.requestedGrade;
     if (userData?.grade) return userData.grade;
-    return 'Grade 4';
+    return '';
   });
 
+  const [step, setStep] = useState<1 | 2>(1);
   const [fullName, setFullName] = useState(userData?.fullName || '');
   const [phone, setPhone] = useState(userData?.phone || '');
   const [notes, setNotes] = useState('');
@@ -58,6 +60,10 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
   const [existingRequest, setExistingRequest] = useState<OnboardingActivationRequest | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<boolean>(true);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isOpen) setStep(1);
+  }, [isOpen, userData?.id]);
 
   // Fetch status of current request
   useEffect(() => {
@@ -95,9 +101,12 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
 
     try {
       const submittedName = fullName.trim() || userData.fullName || 'Student';
+      const normalizedPhone = phone.trim()
+        .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 0x0660))
+        .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 0x06f0));
       const profileUpdates: { fullName?: string; phone?: string } = {};
       if (submittedName !== userData.fullName) profileUpdates.fullName = submittedName;
-      if (phone.trim() !== (userData.phone || '').trim()) profileUpdates.phone = phone.trim();
+      if (normalizedPhone !== (userData.phone || '').trim()) profileUpdates.phone = normalizedPhone;
       if (Object.keys(profileUpdates).length > 0) {
         const profileResult = await updateUserProfile(profileUpdates);
         if (!profileResult.success) {
@@ -132,7 +141,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
         studentId: userData.id,
         studentName: submittedName,
         email: userData.parentEmail || (userData as any).email || '',
-        phone: phone.trim(),
+        phone: normalizedPhone,
         requestedClassGroupId: derivedClassGroupId,
         requestedGrade: selectedGradeCode,
         notes: notes.trim()
@@ -227,7 +236,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
         exit={{ opacity: 0, scale: 0.96, y: 10 }}
         transition={{ duration: 0.2 }}
         className="w-full max-w-xl bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-border-sand)] rounded-3xl shadow-2xl p-6 relative overflow-hidden my-8"
-        dir="rtl"
+        dir={isAr ? 'rtl' : 'ltr'}
       >
         {/* Close Button */}
         <button
@@ -329,14 +338,24 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmitRequest} className="space-y-5">
+            <div className="rounded-2xl border border-sky-200/70 bg-sky-50/80 p-4 dark:border-sky-900/50 dark:bg-sky-950/20">
+              <p className="text-sm font-black text-sky-950 dark:text-sky-100">{isAr ? 'خلّينا نجهّز مكانك في رحلة التعلّم' : 'Let’s get your learning space ready'}</p>
+              <p className="mt-1 text-xs leading-6 text-sky-900/80 dark:text-sky-200">{isAr ? 'خطوتين بسيطتين، ومفيش إجابة تقلق منها. لو مش متأكد من صفك، اختار الأقرب والخادم يقدر يساعدك.' : 'Just two small steps. There are no trick questions. If you are unsure about your grade, choose your best guess and your teacher can help confirm it.'}</p>
+              <div className="mt-3 flex items-center gap-2 text-[11px] font-bold">
+                <span className={step === 1 ? 'rounded-full bg-sky-800 px-3 py-1.5 text-white' : 'rounded-full bg-white px-3 py-1.5 text-sky-900 dark:bg-slate-800 dark:text-sky-200'}>{isAr ? '١ · الصف' : '1 · Grade'}</span>
+                <span className="h-px flex-1 bg-sky-200 dark:bg-sky-800" />
+                <span className={step === 2 ? 'rounded-full bg-sky-800 px-3 py-1.5 text-white' : 'rounded-full bg-white px-3 py-1.5 text-sky-900 dark:bg-slate-800 dark:text-sky-200'}>{isAr ? '٢ · بياناتك' : '2 · About you'}</span>
+              </div>
+            </div>
+            {step === 1 && (<>
             {/* Core Question: Exact Grade */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="block text-xs sm:text-sm font-black text-gray-900 dark:text-white">
-                  {isAr ? 'ما هي مرحلتك/سنتك الدراسية المحددة في مدارس الأحد؟' : 'What is your exact school/Sunday-School grade?'}
+                  {isAr ? 'أنت في سنة كام في مدارس الأحد؟' : 'Which Sunday School grade are you in right now?'}
                 </label>
                 <span className="text-[11px] text-gray-400">
-                  {isAr ? 'تحديد دقيق' : 'Exact Grade'}
+                  {isAr ? 'اختار صفك' : 'Exact Grade'}
                 </span>
               </div>
 
@@ -373,12 +392,12 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
             </div>
 
             {/* Deterministic Church Class Group Card */}
-            <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 flex items-center justify-between text-xs">
+            {selectedGradeCode && <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 flex items-center justify-between text-xs">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{derivedClassGroup.icon}</span>
                 <div>
                   <div className="text-[11px] text-amber-800 dark:text-amber-400 font-bold uppercase tracking-wider">
-                    {isAr ? 'فصل مدارس الأحد الكنسي المحسوب تلقائياً:' : 'Derived Church Class Group:'}
+                    {isAr ? 'فصلك في مدارس الأحد:' : 'Your class group:'}
                   </div>
                   <div className="font-extrabold text-[var(--mousa-teal)] dark:text-amber-300 text-sm">
                     {derivedClassGroup.name[isAr ? 'ar' : 'en']}
@@ -389,8 +408,10 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
                 <span className="font-mono font-bold text-gray-700 dark:text-gray-300">{selectedGradeCode}</span>
                 <div>{derivedClassGroup.description[isAr ? 'ar' : 'en']}</div>
               </div>
-            </div>
+            </div>}
 
+            </>)}
+            {step === 2 && (<>
             {/* Student Full Name & Contact Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -427,6 +448,14 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               </div>
             </div>
 
+            <p className="-mt-2 text-[10px] leading-5 text-gray-500 dark:text-gray-400">{isAr ? 'تقدر تسيب الرقم فاضي وتضيفه بعدين. وممكن تكتب رقم ولي أمرك.' : 'You can skip this and add it later. A parent or guardian’s number is okay too.'}</p>
+            <div className="rounded-xl border border-sky-200/70 bg-sky-50/70 p-3 text-[11px] leading-6 text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-200">
+              <Info size={15} className="me-2 inline-block align-text-bottom" />
+              {isAr
+                ? 'بيانات الفصل ورقم التواصل تُستخدم داخل الكنيسة فقط بواسطة خدام فصلك والإدارة المختصة لتنظيم الفصل وتسجيل الحضور والاطمئنان عليك عند الحاجة. لن تظهر في منشورات المجتمع.'
+                : 'Your class details and contact number stay within the church account. Your assigned teachers and authorized church administrators use them for class organization, attendance, and checking in when needed. They are not shown in community posts.'}
+            </div>
+
             {/* Note to Servant */}
             <div>
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
@@ -450,37 +479,26 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               <span>
                 {isAr
                   ? 'عند إرسال الطلب، سيصل إشعار إلى خادم الفصل والإدارة للموافقة اليدوية وتسكينك في كشف الفصل الرسمي لمدارس الأحد.'
-                  : 'Submitting will send a notification to your Sunday School servants and admin for manual approval and roster assignment.'}
+                  : 'Your teacher will review your request and help place you in the right class. You can ask for help at any time.'}
               </span>
             </div>
 
+            </>)}
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={submitting}
-                className="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                {isAr ? 'إلغاء' : 'Cancel'}
-              </button>
-              <button
-                type="submit"
-                disabled={submitting || !selectedGradeCode}
-                className="px-5 py-2.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--color-church-blue-light)] text-white text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {submitting ? (
-                  <>
-                    <RefreshCw size={14} className="animate-spin" />
-                    <span>{isAr ? 'جاري الإرسال...' : 'Submitting...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Send size={14} />
-                    <span>{isAr ? 'إرسال طلب التفعيل والتسكين' : 'Submit Activation Request'}</span>
-                  </>
-                )}
-              </button>
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                {step === 2 && <button type="button" onClick={() => setStep(1)} disabled={submitting} className="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800">{isAr ? 'رجوع' : 'Back'}</button>}
+                <button type="button" onClick={onClose} disabled={submitting} className="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">{isAr ? 'إلغاء' : 'Cancel'}</button>
+              </div>
+              {step === 1 ? (
+                <button type="button" onClick={() => setStep(2)} disabled={!selectedGradeCode} className="px-5 py-2.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--color-church-blue-light)] text-white text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50">
+                  {isAr ? 'متابعة' : 'Continue'} <ChevronRight size={15} />
+                </button>
+              ) : (
+                <button type="submit" disabled={submitting || !selectedGradeCode} className="px-5 py-2.5 rounded-xl bg-[var(--mousa-teal)] hover:bg-[var(--color-church-blue-light)] text-white text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50">
+                  {submitting ? <><RefreshCw size={14} className="animate-spin" /><span>{isAr ? 'جاري الإرسال...' : 'Submitting...'}</span></> : <><Send size={14} /><span>{isAr ? 'إرسال طلب التفعيل والتسكين' : 'Send my setup request'}</span></>}
+                </button>
+              )}
             </div>
           </form>
         )}
