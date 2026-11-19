@@ -458,7 +458,7 @@ app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
         const svg = decodeURIComponent(body.avatar.slice('data:image/svg+xml;utf8,'.length));
         return svg.length <= 100_000
           && /^<svg\b[\s\S]*<\/svg>$/.test(svg)
-          && !/<script\b|<foreignObject\b|on[a-z]+\s*=|javascript:|(?:href|xlink:href)\s*=|url\(\s*https?:/i.test(svg);
+          && !/<script\b|<foreignObject\b|<iframe\b|<object\b|<embed\b|<style\b|@import|on[a-z]+\s*=|javascript:|data:text\/html|(?:href|xlink:href)\s*=|url\(\s*https?:/i.test(svg);
       } catch {
         return false;
       }
