@@ -284,7 +284,7 @@ export async function completeLessonProgress(
 export interface RecordSchoolActivityInput {
   school: 'sunday_school' | 'hymns' | 'taxis';
   activityId: string;
-  activityType?: 'LESSON_COMPLETED' | 'HYMN_MASTERED' | 'TAXIS_COMPLETED';
+  activityType?: 'LESSON_COMPLETED' | 'HYMN_MASTERED' | 'TAXIS_COMPLETED' | 'CONTENT_OPENED';
   titleAr?: string;
   titleEn?: string;
   studentId?: string;
