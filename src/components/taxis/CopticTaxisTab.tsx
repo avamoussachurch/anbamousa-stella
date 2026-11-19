@@ -112,6 +112,30 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
     }
   }, []);
 
+  const openTaxisItem = (item: TaxisItem) => {
+    setSelectedItem(item);
+    if (userData && workspace === 'student' && hasRole(userData, 'student')) {
+      void recordStudentSchoolActivity({
+        school: 'taxis',
+        activityId: item.id,
+        activityType: 'CONTENT_OPENED',
+        titleAr: item.titleAr || 'ترتيب طقسي',
+        titleEn: item.titleEn || 'Liturgical Order',
+        studentId: userData.id
+      }).then(result => {
+        if (result.success && setUserDirectly) {
+          setUserDirectly({
+            ...userData,
+            currentStreak: result.streak.currentStreak,
+            longestStreak: Math.max(userData.longestStreak || 0, result.streak.longestStreak)
+          });
+        } else if (!result.success) {
+          console.warn('Could not sync Taxis-open learning activity:', result.error);
+        }
+      });
+    }
+  };
+
   const handleCompleteRitual = async (ritualId: string) => {
     if (isMarkingComplete || !selectedItem) return;
     setIsMarkingComplete(true);
@@ -263,7 +287,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
               return (
                 <div
                   key={item.id}
-                  onClick={() => setSelectedItem(item)}
+                  onClick={() => openTaxisItem(item)}
                   className={`p-4 rounded-3xl cursor-pointer transition-all border ${
                     isSelected
                       ? 'bg-gradient-to-r from-amber-50 to-amber-100/60 dark:from-stone-800 dark:to-stone-850 border-amber-500 shadow-sm ring-2 ring-amber-400/40'
