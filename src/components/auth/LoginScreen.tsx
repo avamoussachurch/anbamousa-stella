@@ -11,7 +11,8 @@ import { requestAccountActivation } from '../../lib/onboardingService';
 import { parseHymnsTaxisLevel, type HymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
 import { PrivacyPolicy } from '../legal/PrivacyPolicy';
 import { FAQ } from '../legal/FAQ';
-import { AmbientWorld } from '../layout/AmbientWorld';
+
+const AmbientWorld = React.lazy(() => import('../layout/AmbientWorld').then(module => ({ default: module.AmbientWorld })));
 
 export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: Language) => void }) {
   const { isDark, toggleTheme } = useTheme();
@@ -177,7 +178,9 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
 
   return (
     <div className="relative isolate min-h-[100svh] bg-[var(--color-church-cream)] dark:bg-slate-950 flex flex-col justify-center items-center p-4 overflow-hidden selection:bg-[var(--color-church-gold)] selection:text-white transition-colors duration-200">
-      <AmbientWorld variant="login" />
+      <React.Suspense fallback={null}>
+        <AmbientWorld variant="login" />
+      </React.Suspense>
       {/* Top action controls: Language & Dark mode */}
       <div className="relative z-10 w-full max-w-md flex justify-between items-center mb-4 px-2">
         <button 
