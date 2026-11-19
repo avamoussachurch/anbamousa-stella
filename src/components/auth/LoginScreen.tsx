@@ -9,10 +9,10 @@ import { CLASS_GROUPS } from '../../lib/classGroups';
 import { ClassGroupId, User as AppUser, Language } from '../../types';
 import { requestAccountActivation } from '../../lib/onboardingService';
 import { parseHymnsTaxisLevel, type HymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
-import { PrivacyPolicy } from '../legal/PrivacyPolicy';
-import { FAQ } from '../legal/FAQ';
 
 const AmbientWorld = React.lazy(() => import('../layout/AmbientWorld').then(module => ({ default: module.AmbientWorld })));
+const PrivacyPolicy = React.lazy(() => import('../legal/PrivacyPolicy').then(module => ({ default: module.PrivacyPolicy })));
+const FAQ = React.lazy(() => import('../legal/FAQ').then(module => ({ default: module.FAQ })));
 
 export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: Language) => void }) {
   const { isDark, toggleTheme } = useTheme();
@@ -602,10 +602,10 @@ export function LoginScreen({ lang, setLang }: { lang: Language, setLang: (l: La
       {/* Legal Modals */}
       <AnimatePresence>
         {showLegal === 'privacy' && (
-          <PrivacyPolicy lang={lang} onClose={() => setShowLegal(null)} />
+          <React.Suspense fallback={null}><PrivacyPolicy lang={lang} onClose={() => setShowLegal(null)} /></React.Suspense>
         )}
         {showLegal === 'faq' && (
-          <FAQ lang={lang} onClose={() => setShowLegal(null)} />
+          <React.Suspense fallback={null}><FAQ lang={lang} onClose={() => setShowLegal(null)} /></React.Suspense>
         )}
       </AnimatePresence>
     </div>
