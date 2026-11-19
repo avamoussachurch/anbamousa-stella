@@ -6468,6 +6468,9 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
         serverReviewState.hymnsCollection[cleanHymnId] ||
         Object.values(serverReviewState.hymnsCollection).find((h: any) => h.id === activityId || h.id === cleanHymnId) ||
         (cleanHymnId === 'ep_oro' ? { id: 'ep_oro', level: 1 } : (cleanHymnId === 'agios' ? { id: 'agios', level: 2 } : null));
+      if (activityType === 'CONTENT_OPENED' && !hymn) {
+        return res.status(404).json({ success: false, error: "HYMN_NOT_FOUND", message: "This hymn is not available to open." });
+      }
       if (hymn && hymn.level > 1) {
         const studentEnrollment = getStudentHymnsMembership(targetStudentId);
         if (!studentEnrollment || studentEnrollment.status !== 'approved' || studentEnrollment.level < hymn.level) {
@@ -6480,6 +6483,9 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       }
     } else if (school === 'taxis') {
       const ritual = serverReviewState.taxisCollection[activityId];
+      if (activityType === 'CONTENT_OPENED' && !ritual) {
+        return res.status(404).json({ success: false, error: "TAXIS_ITEM_NOT_FOUND", message: "This Taxis item is not available to open." });
+      }
       if (ritual && ritual.status === 'draft') {
         return res.status(403).json({
           success: false,
@@ -6491,6 +6497,54 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
 
     const todayCairo = getCairoDateString();
     const nowIso = new Date().toISOString();
+
+    // Opening approved curriculum is a qualifying learning day, but it is
+    // deliberately not a completion, mastery event, or points award.
+    if (activityType === 'CONTENT_OPENED') {
+      const previous = serverReviewState.userStreaks[targetStudentId];
+      let persistedStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> = null;
+      try {
+        persistedStreak = await persistStudentActivityDay(targetStudentId, nowIso);
+      } catch (error: any) {
+        console.error('Could not persist content-open learning day:', error);
+        return res.status(502).json({
+          success: false,
+          error: 'STREAK_PERSISTENCE_FAILED',
+          message: 'The content opened, but the learning streak could not be synchronized. Please retry.'
+        });
+      }
+      const activeCairoDays = Array.from(new Set([
+        ...(Array.isArray(previous?.activeCairoDays) ? previous.activeCairoDays : []),
+        todayCairo
+      ]));
+      const calculated = calculateCairoStreakForStudent(activeCairoDays);
+      const streakRecord = {
+        currentStreak: persistedStreak?.currentStreak ?? calculated.currentStreak,
+        longestStreak: Math.max(
+          persistedStreak?.longestStreak ?? 0,
+          previous?.longestStreak ?? 0,
+          calculated.longestStreak,
+          persistedStreak?.currentStreak ?? calculated.currentStreak
+        ),
+        lastActiveCairoDate: persistedStreak?.lastActiveCairoDate ?? todayCairo,
+        activeCairoDays
+      };
+      serverReviewState.userStreaks[targetStudentId] = streakRecord;
+      return res.json({
+        success: true,
+        school,
+        activityId,
+        activityType: 'CONTENT_OPENED',
+        pointsEarned: 0,
+        totalPoints: serverReviewState.userPoints[targetStudentId] ?? 0,
+        streak: {
+          currentStreak: streakRecord.currentStreak,
+          longestStreak: streakRecord.longestStreak,
+          lastActiveCairoDate: streakRecord.lastActiveCairoDate,
+          isActiveToday: persistedStreak?.isActiveToday ?? true
+        }
+      });
+    }
 
     // Check if this specific activity was already completed
     if (!serverReviewState.completionHistory[targetStudentId]) {
