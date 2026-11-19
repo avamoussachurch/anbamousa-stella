@@ -140,6 +140,7 @@ test('feed media viewer supports swipe browsing, zoom, close, and device save ac
 
 test('community reports are private, staff-scoped, actionable, and hidden posts leave the feed', () => {
   const migration = readFileSync(new URL('../supabase/migrations/202611190001_feed_post_moderation.sql', import.meta.url), 'utf8');
+  const submitMigration = readFileSync(new URL('../supabase/migrations/202611190004_feed_post_reports_rpc_submit.sql', import.meta.url), 'utf8');
   const feedService = readFileSync(new URL('../src/lib/feedService.ts', import.meta.url), 'utf8');
   const feed = readFileSync(new URL('../src/components/student/FeedTab.tsx', import.meta.url), 'utf8');
   const queue = readFileSync(new URL('../src/components/teacher/TeacherModerationQueue.tsx', import.meta.url), 'utf8');
@@ -148,7 +149,9 @@ test('community reports are private, staff-scoped, actionable, and hidden posts 
   assert.match(migration, /review_feed_post_report/);
   assert.match(migration, /is_hidden = true/);
   assert.match(feedService, /\.eq\('is_hidden', false\)/);
-  assert.match(feed, /feed_post_reports/);
+  assert.match(submitMigration, /public\.has_role\('student'\)/);
+  assert.match(submitMigration, /REVOKE INSERT ON public\.feed_post_reports/);
+  assert.match(feed, /submit_feed_post_report/);
   assert.match(queue, /review_feed_post_report/);
   assert.match(queue, /Hide post & resolve/);
 });
