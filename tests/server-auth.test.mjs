@@ -1566,7 +1566,7 @@ test('Hymns and Taxis persist through Supabase across an application restart and
   });
   assert.equal(submitTaxis.status, 200, await submitTaxis.text());
 
-  const selfApproval = await request(`/api/church/taxis/${openedTaxisId}/review`, {
+  const selfApproval = await request(`/api/church/taxis/${taxisId}/review`, {
     method: 'POST',
     role: 'teacher',
     userId: teacherId,
@@ -1574,7 +1574,7 @@ test('Hymns and Taxis persist through Supabase across an application restart and
   });
   assert.equal(selfApproval.status, 403);
 
-  const reviewerApproval = await request(`/api/church/taxis/${openedTaxisId}/review`, {
+  const reviewerApproval = await request(`/api/church/taxis/${taxisId}/review`, {
     method: 'POST',
     role: 'teacher',
     userId: reviewerId,
@@ -1582,7 +1582,7 @@ test('Hymns and Taxis persist through Supabase across an application restart and
   });
   assert.equal(reviewerApproval.status, 200, await reviewerApproval.text());
 
-  const publishTaxis = await request(`/api/church/taxis/${openedTaxisId}/publish`, {
+  const publishTaxis = await request(`/api/church/taxis/${taxisId}/publish`, {
     method: 'POST',
     role: 'teacher',
     userId: teacherId,
@@ -1590,7 +1590,7 @@ test('Hymns and Taxis persist through Supabase across an application restart and
   });
   assert.equal(publishTaxis.status, 200, await publishTaxis.text());
 
-  const unauthorizedPublish = await request(`/api/church/taxis/${openedTaxisId}/publish`, {
+  const unauthorizedPublish = await request(`/api/church/taxis/${taxisId}/publish`, {
     method: 'POST',
     role: 'student',
     userId: studentId,
@@ -2656,8 +2656,8 @@ test('opening published Hymn and Taxis items records a learning day without comp
       userId: adminId,
       body: { id: hymnId, titleAr: 'لحن اختبار فتح المحتوى', titleEn: 'Learning Open Test Hymn', level: 1, status: 'published' }
     });
-    assert.equal(createHymn.status, 201, await createHymn.text());
     const createdHymnPayload = await createHymn.json();
+    assert.equal(createHymn.status, 201, JSON.stringify(createdHymnPayload));
     const openedHymnId = createdHymnPayload.hymn.id;
     assert.ok(openedHymnId);
 
@@ -2667,8 +2667,8 @@ test('opening published Hymn and Taxis items records a learning day without comp
       userId: adminId,
       body: { id: taxisId, titleAr: 'طقس اختبار فتح المحتوى', titleEn: 'Learning Open Test Taxis', level: 1, audience: 'all' }
     });
-    assert.equal(createTaxis.status, 201, await createTaxis.text());
     const createdTaxisPayload = await createTaxis.json();
+    assert.equal(createTaxis.status, 201, JSON.stringify(createdTaxisPayload));
     const openedTaxisId = createdTaxisPayload.item.id;
     assert.ok(openedTaxisId);
     const submitTaxis = await request(`/api/church/taxis/${openedTaxisId}/submit-review`, {
