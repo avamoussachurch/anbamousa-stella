@@ -2370,3 +2370,14 @@ button, a, input, select, textarea { max-width: 100%; }
   input, select, textarea { min-width: 0; }
   [role="dialog"] { max-height: 100dvh; overflow-y: auto; }
 }
+
+
+/* iPhone home-indicator safe area: keep every bottom destination above the system bar. */
+.app-bottom-nav {
+  box-sizing: border-box;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  min-height: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+}
+.app-bottom-nav-item {
+  min-height: 4.25rem;
+}
