@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   GraduationCap, 
   CheckCircle2, 
@@ -388,7 +388,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
             </div>
 
             {/* Deterministic Church Class Group Card */}
-            <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 flex items-center justify-between text-xs">
+            {selectedGradeCode && <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 flex items-center justify-between text-xs">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{derivedClassGroup.icon}</span>
                 <div>
@@ -404,7 +404,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
                 <span className="font-mono font-bold text-gray-700 dark:text-gray-300">{selectedGradeCode}</span>
                 <div>{derivedClassGroup.description[isAr ? 'ar' : 'en']}</div>
               </div>
-            </div>
+            </div>}
 
             </>)}
             {step === 2 && (<>
