@@ -5,7 +5,6 @@ import {
   Wand2, 
   Upload, 
   Users, 
-  ShieldAlert, 
   CheckCircle2, 
   ArrowLeft, 
   Edit3, 
@@ -48,6 +47,7 @@ import { HelpRequestsPanel } from './HelpRequestsPanel';
 import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
 import { TeacherProgressReport } from './TeacherProgressReport';
 import { TeacherAttendanceWorkspace } from './TeacherAttendanceWorkspace';
+import { TeacherModerationQueue } from './TeacherModerationQueue';
 
 interface TeacherDashboardProps {
   onOpenParentPortal?: () => void;
@@ -1096,22 +1096,7 @@ export function TeacherDashboard({
       {activeTab === 'helpRequests' && <HelpRequestsPanel lang={lang} />}
       {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} />}
 
-      {/* Tab 3: Moderation Queue */}
-      {activeTab === 'moderation' && (
-        <div role="status" className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-stone-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-          <div className="flex items-start gap-3">
-            <ShieldAlert className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
-            <div>
-              <h2 className="font-black">{lang === 'ar' ? 'قائمة الإشراف مش متاحة' : 'Moderation queue unavailable'}</h2>
-              <p className="mt-2 text-sm leading-relaxed">
-                {lang === 'ar'
-                  ? 'مفيش اتصال موثوق ببيانات البلاغات أو بإجراءات الإشراف. مش هنعرض منشورات تجريبية أو نقول إن مفيش بلاغات من غير ما نقدر نتحقق.'
-                  : 'There is no trusted connection to moderation reports or actions. Demo posts are not shown, and we cannot claim the queue is empty without checking its data source.'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {activeTab === 'moderation' && <TeacherModerationQueue lang={lang} />}
 
       {/* Lesson Edit Modal (Edit or Direct Manual Creation) */}
       {editingLesson && (
