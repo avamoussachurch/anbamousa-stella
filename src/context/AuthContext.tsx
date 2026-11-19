@@ -250,8 +250,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (typeof updates.fullName !== 'string' || updates.fullName.trim().length < 2 || updates.fullName.trim().length > 100)) {
       return { success: false, error: 'Name must contain 2 to 100 characters.' };
     }
-    if (updates.phone !== undefined) {
-      const phone = updates.phone.trim();
+    const normalizedPhone = updates.phone?.trim()
+      .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 0x0660))
+      .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 0x06f0));
+    if (normalizedPhone !== undefined) {
+      const phone = normalizedPhone;
       const digits = phone.replace(/\D/g, '');
       if (phone && (digits.length < 7 || digits.length > 15 || !/^[+0-9().\s-]+$/.test(phone))) {
         return { success: false, error: 'Enter a valid phone number, including country code if needed.' };
@@ -268,7 +271,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const editableUpdates: Partial<User> = {};
     if (updates.fullName !== undefined) editableUpdates.fullName = updates.fullName.trim();
-    if (updates.phone !== undefined) editableUpdates.phone = updates.phone.trim();
+    if (normalizedPhone !== undefined) editableUpdates.phone = normalizedPhone;
     if (updates.avatarUrl !== undefined) editableUpdates.avatarUrl = updates.avatarUrl;
     if (updates.pushNotificationsEnabled !== undefined) editableUpdates.pushNotificationsEnabled = updates.pushNotificationsEnabled;
     if (updates.notifyLessonCompletion !== undefined) editableUpdates.notifyLessonCompletion = updates.notifyLessonCompletion;
