@@ -91,6 +91,7 @@ export function AccountSetupWizard({ role, lang, onComplete, onNavigate }: Accou
             <label className="block text-sm font-bold">{isAr ? 'رقم الهاتف (اختياري)' : 'Phone number (optional)'}
               <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} className="mt-2 w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900 dark:text-white" placeholder="+20 …"/>
             </label>
+            <p className="-mt-2 text-[11px] text-stone-500">{isAr ? 'تقدر تسيب الرقم فاضي وتضيفه بعدين.' : 'You can leave this blank and add it later.'}</p>
             <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs leading-6 text-sky-950 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
               {isAr ? 'بيانات التواصل دي بتُستخدم داخل الكنيسة فقط بواسطة المسؤولين المخوّلين لتنظيم الخدمة والتواصل عند الحاجة، ومش بتظهر في منشورات المجتمع.' : 'Your contact details stay within the church account and are used by authorized church staff for service coordination and necessary follow-up. They are not displayed in community posts.'}
             </p>
