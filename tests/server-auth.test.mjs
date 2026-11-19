@@ -2688,7 +2688,10 @@ test('opening published Hymn and Taxis items records a learning day without comp
       role: 'student',
       userId: studentId
     });
-    assert.equal(hymnDetail.status, 200, await hymnDetail.text());
+    const hymnDetailPayload = await hymnDetail.json();
+    assert.equal(hymnDetail.status, 200, JSON.stringify(hymnDetailPayload));
+    assert.equal(hymnDetailPayload.hymn.status, 'published');
+    const authorizedHymnId = hymnDetailPayload.hymn.id;
 
     const hymnOpen = await request('/api/church/student-progress/record-activity', {
       method: 'POST',
@@ -2697,7 +2700,7 @@ test('opening published Hymn and Taxis items records a learning day without comp
       body: {
         studentId,
         school: 'hymns',
-        activityId: openedHymnId,
+        activityId: authorizedHymnId,
         activityType: 'CONTENT_OPENED'
       }
     });
