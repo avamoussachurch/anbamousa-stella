@@ -453,8 +453,18 @@ app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
       }
     })();
     const isImageData = /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(body.avatar);
-    if (!isHttpsUrl && !isImageData) {
-      return res.status(400).json({ success: false, error: 'INVALID_AVATAR', message: 'Avatar must be an HTTPS image URL or supported image data.' });
+    const isSafeSvgData = /^data:image\/svg\+xml;utf8,/.test(body.avatar) && (() => {
+      try {
+        const svg = decodeURIComponent(body.avatar.slice('data:image/svg+xml;utf8,'.length));
+        return svg.length <= 100_000
+          && /^<svg\b[\s\S]*<\/svg>$/.test(svg)
+          && !/<script\b|<foreignObject\b|on[a-z]+\s*=|javascript:|(?:href|xlink:href)\s*=|url\(\s*https?:/i.test(svg);
+      } catch {
+        return false;
+      }
+    })();
+    if (!isHttpsUrl && !isImageData && !isSafeSvgData) {
+      return res.status(400).json({ success: false, error: 'INVALID_AVATAR', message: 'Avatar must be an HTTPS image URL or supported, safe image data.' });
     }
     profileUpdates.avatar = body.avatar;
   }
