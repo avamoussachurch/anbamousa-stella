@@ -135,11 +135,19 @@ test('feed media viewer supports swipe browsing, zoom, close, and device save ac
   assert.match(component, /saveLightboxMedia/);
   assert.match(component, /shareNavigator\.share/);
   assert.match(component, /Close media viewer/);
+  assert.match(component, /pauseOrResumeVoiceRecording/);
+  assert.match(component, /stopVoiceRecording/);
+  assert.match(component, /recorder\.pause\(\)/);
+  assert.match(component, /recorder\.resume\(\)/);
+  assert.match(component, /recorder\.stop\(\)/);
+  assert.match(component, /waveformLevels\.map/);
+  assert.match(component, /<audio[\s\S]*?controls/);
 });
 
 
 test('community reports are private, staff-scoped, actionable, and hidden posts leave the feed', () => {
   const migration = readFileSync(new URL('../supabase/migrations/202611190001_feed_post_moderation.sql', import.meta.url), 'utf8');
+  const submitMigration = readFileSync(new URL('../supabase/migrations/202611190004_feed_post_reports_rpc_submit.sql', import.meta.url), 'utf8');
   const feedService = readFileSync(new URL('../src/lib/feedService.ts', import.meta.url), 'utf8');
   const feed = readFileSync(new URL('../src/components/student/FeedTab.tsx', import.meta.url), 'utf8');
   const queue = readFileSync(new URL('../src/components/teacher/TeacherModerationQueue.tsx', import.meta.url), 'utf8');
@@ -148,7 +156,10 @@ test('community reports are private, staff-scoped, actionable, and hidden posts 
   assert.match(migration, /review_feed_post_report/);
   assert.match(migration, /is_hidden = true/);
   assert.match(feedService, /\.eq\('is_hidden', false\)/);
-  assert.match(feed, /feed_post_reports/);
-  assert.match(queue, /review_feed_post_report/);
+  assert.match(feedService, /feed_posts!inner\(is_hidden\)/);
+  assert.match(submitMigration, /public\.has_role\('student'\)/);
+  assert.match(submitMigration, /REVOKE INSERT ON public\.feed_post_reports/);
+  assert.match(feed, /submit_feed_post_report/);
+  assert.match(queue, /supabase\.rpc\('review_feed_post_report'/);
   assert.match(queue, /Hide post & resolve/);
 });
