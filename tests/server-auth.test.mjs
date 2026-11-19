@@ -1566,7 +1566,7 @@ test('Hymns and Taxis persist through Supabase across an application restart and
   });
   assert.equal(submitTaxis.status, 200, await submitTaxis.text());
 
-  const selfApproval = await request(`/api/church/taxis/${taxisId}/review`, {
+  const selfApproval = await request(`/api/church/taxis/${openedTaxisId}/review`, {
     method: 'POST',
     role: 'teacher',
     userId: teacherId,
@@ -1574,7 +1574,7 @@ test('Hymns and Taxis persist through Supabase across an application restart and
   });
   assert.equal(selfApproval.status, 403);
 
-  const reviewerApproval = await request(`/api/church/taxis/${taxisId}/review`, {
+  const reviewerApproval = await request(`/api/church/taxis/${openedTaxisId}/review`, {
     method: 'POST',
     role: 'teacher',
     userId: reviewerId,
@@ -1582,7 +1582,7 @@ test('Hymns and Taxis persist through Supabase across an application restart and
   });
   assert.equal(reviewerApproval.status, 200, await reviewerApproval.text());
 
-  const publishTaxis = await request(`/api/church/taxis/${taxisId}/publish`, {
+  const publishTaxis = await request(`/api/church/taxis/${openedTaxisId}/publish`, {
     method: 'POST',
     role: 'teacher',
     userId: teacherId,
@@ -1590,7 +1590,7 @@ test('Hymns and Taxis persist through Supabase across an application restart and
   });
   assert.equal(publishTaxis.status, 200, await publishTaxis.text());
 
-  const unauthorizedPublish = await request(`/api/church/taxis/${taxisId}/publish`, {
+  const unauthorizedPublish = await request(`/api/church/taxis/${openedTaxisId}/publish`, {
     method: 'POST',
     role: 'student',
     userId: studentId,
@@ -2657,6 +2657,9 @@ test('opening published Hymn and Taxis items records a learning day without comp
       body: { id: hymnId, titleAr: 'لحن اختبار فتح المحتوى', titleEn: 'Learning Open Test Hymn', level: 1, status: 'published' }
     });
     assert.equal(createHymn.status, 201, await createHymn.text());
+    const createdHymnPayload = await createHymn.json();
+    const openedHymnId = createdHymnPayload.hymn.id;
+    assert.ok(openedHymnId);
 
     const createTaxis = await request('/api/church/taxis', {
       method: 'POST',
@@ -2665,27 +2668,27 @@ test('opening published Hymn and Taxis items records a learning day without comp
       body: { id: taxisId, titleAr: 'طقس اختبار فتح المحتوى', titleEn: 'Learning Open Test Taxis', level: 1, audience: 'all' }
     });
     assert.equal(createTaxis.status, 201, await createTaxis.text());
-    const submitTaxis = await request(`/api/church/taxis/${taxisId}/submit-review`, {
+    const createdTaxisPayload = await createTaxis.json();
+    const openedTaxisId = createdTaxisPayload.item.id;
+    assert.ok(openedTaxisId);
+    const submitTaxis = await request(`/api/church/taxis/${openedTaxisId}/submit-review`, {
       method: 'POST', role: 'admin', userId: adminId, body: {}
     });
     assert.equal(submitTaxis.status, 200, await submitTaxis.text());
-    const approveTaxis = await request(`/api/church/taxis/${taxisId}/review`, {
+    const approveTaxis = await request(`/api/church/taxis/${openedTaxisId}/review`, {
       method: 'POST', role: 'admin', userId: adminId, body: { action: 'APPROVE' }
     });
     assert.equal(approveTaxis.status, 200, await approveTaxis.text());
-    const publishTaxis = await request(`/api/church/taxis/${taxisId}/publish`, {
+    const publishTaxis = await request(`/api/church/taxis/${openedTaxisId}/publish`, {
       method: 'POST', role: 'admin', userId: adminId, body: {}
     });
     assert.equal(publishTaxis.status, 200, await publishTaxis.text());
 
-    const hymnsResponse = await request('/api/church/hymns', {
+    const hymnDetail = await request(`/api/church/hymns/${openedHymnId}`, {
       role: 'student',
       userId: studentId
     });
-    assert.equal(hymnsResponse.status, 200);
-    const hymns = await hymnsResponse.json();
-    const hymn = hymns.items.find(item => item.level === 1 && item.status === 'published');
-    assert.ok(hymn, 'a published level-one Hymn should be available in the test fixture');
+    assert.equal(hymnDetail.status, 200, await hymnDetail.text());
 
     const hymnOpen = await request('/api/church/student-progress/record-activity', {
       method: 'POST',
@@ -2694,7 +2697,7 @@ test('opening published Hymn and Taxis items records a learning day without comp
       body: {
         studentId,
         school: 'hymns',
-        activityId: hymn.id,
+        activityId: openedHymnId,
         activityType: 'CONTENT_OPENED'
       }
     });
@@ -2705,14 +2708,12 @@ test('opening published Hymn and Taxis items records a learning day without comp
     assert.equal(hymnResult.streak.currentStreak, 1);
     assert.equal(hymnResult.completionHistory, undefined);
 
-    const taxisResponse = await request('/api/church/taxis', {
+    const taxisDetail = await request(`/api/church/taxis/${openedTaxisId}`, {
       role: 'student',
       userId: studentId
     });
-    assert.equal(taxisResponse.status, 200);
-    const taxis = await taxisResponse.json();
-    const ritual = taxis.items.find(item => item.level === 1 && item.status === 'published');
-    assert.ok(ritual, 'a published level-one Taxis item should be available in the test fixture');
+    assert.equal(taxisDetail.status, 200, await taxisDetail.text());
+    const ritual = (await taxisDetail.json()).item;
 
     const taxisOpen = await request('/api/church/student-progress/record-activity', {
       method: 'POST',
