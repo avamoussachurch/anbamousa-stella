@@ -82,10 +82,18 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
         lessonId,
         versionId: activePublishedVersion.id,
         studentId: currentStudentId
-      }).then(({ data, error }) => {
+      }).then(({ data, error, streak, streakSyncError }) => {
         if (error) {
           setSectionProgressError(getLocalizedErrorMessage(error, lang));
           return;
+        }
+        if (streakSyncError) console.warn('Lesson opened, but learning streak sync failed:', streakSyncError);
+        if (streak && userData && setUserDirectly) {
+          setUserDirectly({
+            ...userData,
+            currentStreak: streak.currentStreak,
+            longestStreak: Math.max(userData.longestStreak || 0, streak.longestStreak)
+          });
         }
         if (data) {
           updateStudentContentProgress(
