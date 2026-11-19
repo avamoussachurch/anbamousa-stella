@@ -40,3 +40,17 @@ test('workspace transitions are perceptible without overriding reduced-motion pr
   assert.match(app, /stiffness: 280, damping: 28/);
   assert.match(app, /reduceMotion\s*\?\s*\{ duration: 0 \}/);
 });
+
+test('Agpeya writes require Supabase confirmation before caching or awarding prayer points', async () => {
+  const database = await read('../src/lib/supabaseDatabase.ts');
+  const agpeya = await read('../src/components/agpeya/AgpeyaPrayerTab.tsx');
+  const migration = await read('../supabase/migrations/20261119125625_create_secure_agpeya_prayers.sql');
+
+  assert.match(database, /if \(prayerErr\) \{\s*return \{ success: false/);
+  assert.match(database, /if \(prayerErr\)[\s\S]*?cacheConfirmedRecord\(\);\s*return \{ success: true/);
+  assert.match(agpeya, /setCompletedHoursToday\(previousHours\)/);
+  assert.match(agpeya, /isNowCompleted && userData && saveConfirmed/);
+  assert.match(migration, /enable row level security/);
+  assert.match(migration, /auth\.uid\(\)\) = user_id/);
+  assert.doesNotMatch(migration, /to anon/i);
+});
