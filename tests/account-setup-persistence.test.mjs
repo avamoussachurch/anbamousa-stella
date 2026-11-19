@@ -20,6 +20,7 @@ test('account setup completion is stored and read from a server-owned table', as
 
 test('student, teacher, parent, and admin setup are marked complete only after server confirmation', async () => {
   const app = await read('../src/App.tsx');
+  const server = await read('../server.ts');
   const wizard = await read('../src/components/auth/AccountSetupWizard.tsx');
   const student = await read('../src/components/auth/StudentOnboardingModal.tsx');
   assert.match(app, /getAccountSetupStatus\(\)/);
@@ -29,4 +30,9 @@ test('student, teacher, parent, and admin setup are marked complete only after s
   assert.match(wizard, /authorized church staff/);
   assert.match(server, /replace\(\/\[٠-٩\]\/g/);
   assert.match(student, /await completeAccountSetup\('student'\)/);
+  assert.match(student, /step === 1/);
+  assert.match(student, /step === 2/);
+  assert.match(student, /There are no trick questions/);
+  assert.match(server, /isSafeSvgData/);
+  assert.match(server, /foreignObject/);
 });
