@@ -25,5 +25,8 @@ test('student, teacher, parent, and admin setup are marked complete only after s
   assert.match(app, /getAccountSetupStatus\(\)/);
   assert.match(app, /status\.completedRoles\.includes\(role\)/);
   assert.match(wizard, /await completeAccountSetup\(role\)/);
+  assert.match(wizard, /Phone number \(optional\)/);
+  assert.match(wizard, /authorized church staff/);
+  assert.match(server, /replace\(\/\[٠-٩\]\/g/);
   assert.match(student, /await completeAccountSetup\('student'\)/);
 });
