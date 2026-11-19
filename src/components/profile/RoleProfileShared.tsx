@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertCircle, Camera, Check, CheckCircle2, LoaderCircle, LogOut, Upload } from 'lucide-react';
+import { AlertCircle, Camera, Check, CheckCircle2, LoaderCircle, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { Language, Role, User } from '../../types';
 import { LanguageSettings } from '../shared/LanguageSettings';
