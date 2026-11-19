@@ -28,6 +28,7 @@ test('authenticated teacher attendance UI uses server APIs rather than demo loca
   const dashboard = await read('../src/components/teacher/TeacherDashboard.tsx');
   const component = await read('../src/components/teacher/TeacherAttendanceWorkspace.tsx');
   const service = await read('../src/lib/teacherAttendanceService.ts');
+  assert.match(dashboard, /currentUser\?\.uid/);
   assert.match(dashboard, /<TeacherAttendanceWorkspace lang=\{lang\} \/>/);
   assert.match(component, /getTeacherAttendance\(/);
   assert.match(component, /saveTeacherAttendance\(/);
