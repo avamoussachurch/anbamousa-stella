@@ -792,7 +792,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
       )}
 
       {activeTab === 'help-requests' && <HelpRequestsPanel lang={lang} />}
-      {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} />}
+      {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} audience="staff" />}
 
       {activeTab === 'profile' && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'تقدر تفتح إعدادات الحساب من قائمة الحساب.' : 'Account settings are available from the account menu.'}</p>}
     </main>
