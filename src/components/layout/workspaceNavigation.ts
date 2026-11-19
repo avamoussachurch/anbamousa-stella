@@ -64,7 +64,7 @@ const navigation: Record<Role, Array<{ id: string; icon: LucideIcon; group: stri
     { id: 'ai', icon: Sparkles, group: 'curriculum', ar: 'توليد الدروس', en: 'Lesson generation' },
     { id: 'feed', icon: MessageCircle, group: 'community', ar: 'المنشورات', en: 'Feed' },
     { id: 'moderation', icon: Shield, group: 'community', ar: 'الإشراف', en: 'Moderation' },
-    { id: 'helpRequests', icon: LifeBuoy, group: 'community', ar: 'طلبات مساعدة التلاميذ', en: 'Student help requests' },
+    { id: 'help-requests', icon: LifeBuoy, group: 'community', ar: 'طلبات مساعدة التلاميذ', en: 'Student help requests' },
     { id: 'profile', icon: User, group: 'account', ar: 'حسابي', en: 'My profile' }
   ],
   admin: [
