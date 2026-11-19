@@ -1547,7 +1547,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => setLightboxAttachment(attachment)}
+                          onClick={() => openPostMedia(post, attachment)}
                           aria-label={lang === 'ar' ? 'عرض الصورة بالحجم الكامل' : 'View photo full size'}
                           className="group relative block w-full cursor-zoom-in bg-gray-900/5 dark:bg-black/30"
                         >
