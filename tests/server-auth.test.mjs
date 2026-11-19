@@ -2705,7 +2705,7 @@ test('opening published Hymn and Taxis items records a learning day without comp
       }
     });
     const hymnResult = await hymnOpen.json();
-    assert.equal(hymnOpen.status, 200, JSON.stringify(hymnResult));
+    assert.equal(hymnOpen.status, 200, `${JSON.stringify(hymnResult)}\n${appOutput.slice(-5000)}`);
     assert.equal(hymnResult.pointsEarned, 0);
     assert.equal(hymnResult.totalPoints, 0);
     assert.equal(hymnResult.streak.currentStreak, 1);
