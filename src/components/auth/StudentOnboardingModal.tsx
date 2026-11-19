@@ -349,10 +349,10 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="block text-xs sm:text-sm font-black text-gray-900 dark:text-white">
-                  {isAr ? 'ما هي مرحلتك/سنتك الدراسية المحددة في مدارس الأحد؟' : 'What is your exact school/Sunday-School grade?'}
+                  {isAr ? 'أنت في سنة كام في مدارس الأحد؟' : 'Which Sunday School grade are you in right now?'}
                 </label>
                 <span className="text-[11px] text-gray-400">
-                  {isAr ? 'تحديد دقيق' : 'Exact Grade'}
+                  {isAr ? 'اختار صفك' : 'Exact Grade'}
                 </span>
               </div>
 
@@ -394,7 +394,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
                 <span className="text-2xl">{derivedClassGroup.icon}</span>
                 <div>
                   <div className="text-[11px] text-amber-800 dark:text-amber-400 font-bold uppercase tracking-wider">
-                    {isAr ? 'فصل مدارس الأحد الكنسي المحسوب تلقائياً:' : 'Derived Church Class Group:'}
+                    {isAr ? 'فصلك في مدارس الأحد:' : 'Your class group:'}
                   </div>
                   <div className="font-extrabold text-[var(--mousa-teal)] dark:text-amber-300 text-sm">
                     {derivedClassGroup.name[isAr ? 'ar' : 'en']}
@@ -475,7 +475,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               <span>
                 {isAr
                   ? 'عند إرسال الطلب، سيصل إشعار إلى خادم الفصل والإدارة للموافقة اليدوية وتسكينك في كشف الفصل الرسمي لمدارس الأحد.'
-                  : 'Submitting will send a notification to your Sunday School servants and admin for manual approval and roster assignment.'}
+                  : 'Your teacher will review your request and help place you in the right class. You can ask for help at any time.'}
               </span>
             </div>
 
