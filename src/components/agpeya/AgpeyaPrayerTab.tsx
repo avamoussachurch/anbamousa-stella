@@ -41,6 +41,8 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
   const [completedHoursToday, setCompletedHoursToday] = useState<Record<string, boolean>>({});
   const [streakDays, setStreakDays] = useState<number>(0);
   const [personalPrayer, setPersonalPrayer] = useState<string>('');
+  const [savedPersonalPrayer, setSavedPersonalPrayer] = useState<string>('');
+  const [prayerSyncError, setPrayerSyncError] = useState<string | null>(null);
   const [isSavedPersonal, setIsSavedPersonal] = useState(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncedTime, setLastSyncedTime] = useState<string | null>(null);
@@ -60,7 +62,10 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
           setCompletedHoursToday(res.data.completedHours || {});
           // The prayer streak is calculated from all persisted prayer days below;
           // never trust the legacy client-supplied streakDays field.
-          if (res.data.personalPrayer) setPersonalPrayer(res.data.personalPrayer);
+          if (res.data.personalPrayer) {
+            setPersonalPrayer(res.data.personalPrayer);
+            setSavedPersonalPrayer(res.data.personalPrayer);
+          }
           setLastSyncedTime(new Date().toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' }));
         } else if (typeof window !== 'undefined') {
           // Fallback to local
@@ -71,6 +76,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
         }
         const prayerStreak = await getPrayerStreakFromSupabase(userData.id);
         if (isMounted && !prayerStreak.error) setStreakDays(prayerStreak.currentStreak);
+        if (isMounted) setPrayerSyncError(prayerStreak.error || null);
         if (isMounted && prayerStreak.error) console.error('Could not load prayer streak history:', prayerStreak.error);
         setIsSyncing(false);
       }
@@ -91,13 +97,17 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
         date: todayKey,
         completedHours: updated,
         streakDays,
-        personalPrayer,
+        personalPrayer: savedPersonalPrayer,
         lastUpdated: new Date().toISOString()
       };
       const saveResult = await saveAgpeyaProgressToSupabase(userData.id, record);
       if (saveResult.success) {
+        setPrayerSyncError(null);
         const prayerStreak = await getPrayerStreakFromSupabase(userData.id);
         if (!prayerStreak.error) setStreakDays(prayerStreak.currentStreak);
+        else setPrayerSyncError(prayerStreak.error);
+      } else {
+        setPrayerSyncError(saveResult.error || 'Could not save prayer progress.');
       }
       setLastSyncedTime(new Date().toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' }));
       setIsSyncing(false);
@@ -118,18 +128,26 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
         date: todayKey,
         completedHours: completedHoursToday,
         streakDays,
-        personalPrayer,
+        personalPrayer: personalPrayer.trim() ? personalPrayer : '',
         lastUpdated: new Date().toISOString()
       };
       const saveResult = await saveAgpeyaProgressToSupabase(userData.id, record);
+      if (saveResult.success) {
+        setSavedPersonalPrayer(personalPrayer.trim() ? personalPrayer : '');
+        setPrayerSyncError(null);
+      } else {
+        setPrayerSyncError(saveResult.error || 'Could not save prayer progress.');
+      }
       if (saveResult.success && personalPrayer.trim()) {
         const prayerStreak = await getPrayerStreakFromSupabase(userData.id);
         if (!prayerStreak.error) setStreakDays(prayerStreak.currentStreak);
+        else setPrayerSyncError(prayerStreak.error);
       }
       setLastSyncedTime(new Date().toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' }));
       setIsSyncing(false);
     } else if (typeof window !== 'undefined') {
       localStorage.setItem('agpeya_personal_intentions', personalPrayer);
+      setSavedPersonalPrayer(personalPrayer);
     }
     setTimeout(() => setIsSavedPersonal(false), 2500);
   };
@@ -173,6 +191,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
                   : (lang === 'ar' ? `متزامن مع السحابة ${lastSyncedTime ? `(${lastSyncedTime})` : ''}` : `Synced with Supabase ${lastSyncedTime ? `(${lastSyncedTime})` : ''}`)
                 }
               </span>
+              {prayerSyncError && <span role="alert" className="text-rose-300">{lang === 'ar' ? 'تعذر حفظ الصلاة' : 'Prayer sync failed'}</span>}
             </div>
           </div>
 
