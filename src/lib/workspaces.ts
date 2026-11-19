@@ -7,8 +7,8 @@ export const ASSIGNED_ROLES: readonly Role[] = ['student', 'parent', 'teacher', 
 export const WORKSPACE_TABS: Record<Workspace, readonly string[]> = {
   student: ['home', 'lessons', 'feed', 'calendar', 'hymns', 'taxis', 'agpeya', 'points', 'profile'],
   parent: ['home', 'children', 'journey', 'family', 'events', 'leaderboard', 'feed', 'profile'],
-  teacher: ['home', 'studio', 'classManagement', 'attendance', 'mastery', 'leaderboard', 'lessons', 'sundaySchool', 'sources', 'preview', 'feed', 'communication', 'moderation', 'ai', 'profile'],
-  admin: ['home', 'accounts', 'roles', 'families', 'classes', 'curriculum', 'security', 'support', 'role-requests', 'role-audit', 'leaderboard', 'profile'],
+  teacher: ['home', 'studio', 'classManagement', 'attendance', 'mastery', 'leaderboard', 'lessons', 'sundaySchool', 'sources', 'preview', 'feed', 'communication', 'moderation', 'help-requests', 'ai', 'profile'],
+  admin: ['home', 'accounts', 'roles', 'families', 'classes', 'curriculum', 'security', 'support', 'role-requests', 'role-audit', 'help-requests', 'leaderboard', 'profile'],
 };
 
 export function normalizeAssignedRoles(value: unknown): Role[] {
