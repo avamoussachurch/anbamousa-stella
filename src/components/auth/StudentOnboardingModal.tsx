@@ -448,6 +448,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
               </div>
             </div>
 
+            <p className="-mt-2 text-[10px] leading-5 text-gray-500 dark:text-gray-400">{isAr ? 'تقدر تسيب الرقم فاضي وتضيفه بعدين. وممكن تكتب رقم ولي أمرك.' : 'You can skip this and add it later. A parent or guardian’s number is okay too.'}</p>
             <div className="rounded-xl border border-sky-200/70 bg-sky-50/70 p-3 text-[11px] leading-6 text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-200">
               <Info size={15} className="me-2 inline-block align-text-bottom" />
               {isAr
