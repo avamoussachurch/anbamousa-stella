@@ -431,10 +431,15 @@ app.patch('/api/account/profile', requireAssignedRoles(), async (req, res) => {
     profileUpdates.name = body.name.trim();
   }
   if (Object.prototype.hasOwnProperty.call(body, 'contact_phone')) {
-    if (body.contact_phone !== null && (typeof body.contact_phone !== 'string' || body.contact_phone.trim().length > 32 || (body.contact_phone.trim() && (!/^[+0-9().\s-]+$/.test(body.contact_phone.trim()) || body.contact_phone.replace(/\D/g, '').length < 7 || body.contact_phone.replace(/\D/g, '').length > 15)))) {
+    const contactPhone = typeof body.contact_phone === 'string'
+      ? body.contact_phone.trim()
+        .replace(/[٠-٩]/g, (digit: string) => String(digit.charCodeAt(0) - 0x0660))
+        .replace(/[۰-۹]/g, (digit: string) => String(digit.charCodeAt(0) - 0x06f0))
+      : body.contact_phone;
+    if (contactPhone !== null && (typeof contactPhone !== 'string' || contactPhone.length > 32 || (contactPhone && (!/^[+0-9().\s-]+$/.test(contactPhone) || contactPhone.replace(/\D/g, '').length < 7 || contactPhone.replace(/\D/g, '').length > 15)))) {
       return res.status(400).json({ success: false, error: 'INVALID_PHONE', message: 'Enter a valid phone number or leave this field blank.' });
     }
-    profileUpdates.contact_phone = typeof body.contact_phone === 'string' && body.contact_phone.trim() ? body.contact_phone.trim() : null;
+    profileUpdates.contact_phone = typeof contactPhone === 'string' && contactPhone ? contactPhone : null;
   }
   if (Object.prototype.hasOwnProperty.call(body, 'avatar')) {
     if (typeof body.avatar !== 'string' || body.avatar.length > 1_000_000) {
