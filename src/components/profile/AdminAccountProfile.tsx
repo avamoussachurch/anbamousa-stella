@@ -48,7 +48,7 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
       icon={<ShieldCheck size={28} />}
       onLogout={onLogout}
     >
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-5 xl:grid-cols-3 lg:grid-cols-2">
         <RoleAvatarStudio lang={lang} user={account.userData} role="admin" />
         <section className="rounded-[1.75rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-6">
           <div className="mb-5">
