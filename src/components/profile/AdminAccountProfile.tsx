@@ -6,6 +6,7 @@ import {
   ProfileFeedback,
   ProfilePageFrame,
   ProfileSettingsCard,
+  RoleAvatarStudio,
   ProfileUnavailable,
   useRoleProfileAccount,
   type RoleProfileProps,
@@ -47,7 +48,8 @@ export function AdminAccountProfile({ lang, setLang, onNavigate, onLogout }: Rol
       icon={<ShieldCheck size={28} />}
       onLogout={onLogout}
     >
-      <div className="grid gap-5 lg:grid-cols-[1fr_.85fr]">
+      <div className="grid gap-5 lg:grid-cols-3">
+        <RoleAvatarStudio lang={lang} user={account.userData} role="admin" />
         <section className="rounded-[1.75rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-6">
           <div className="mb-5">
             <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'حساب مسؤول النظام' : 'Administrator account'}</p>
