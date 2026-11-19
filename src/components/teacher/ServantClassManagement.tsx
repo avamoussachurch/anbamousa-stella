@@ -1086,7 +1086,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                             {isOnlineAuth ? (
                               <span className="text-[11px] text-stone-400">
-                                {isAr ? 'ملخص التقدم والاختبارات غير متاح حالياً.' : 'Progress and quiz summary unavailable.'}
+                                {isAr ? 'تقارير التقدم ونتائج الاختبارات الموثّقة متاحة في تبويب تقييم التقدم.' : 'Verified progress and quiz reports are available in the Mastery & Reports tab.'}
                               </span>
                             ) : (
                               <>
