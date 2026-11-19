@@ -45,6 +45,7 @@ test('Agpeya writes require Supabase confirmation before caching or awarding pra
   const database = await read('../src/lib/supabaseDatabase.ts');
   const agpeya = await read('../src/components/agpeya/AgpeyaPrayerTab.tsx');
   const migration = await read('../supabase/migrations/20261119125625_create_secure_agpeya_prayers.sql');
+  const writeGuard = await read('../supabase/migrations/20261119131043_limit_agpeya_writes_to_current_cairo_day.sql');
 
   assert.match(database, /if \(prayerErr\) \{\s*return \{ success: false/);
   assert.match(database, /if \(prayerErr\)[\s\S]*?cacheConfirmedRecord\(\);\s*return \{ success: true/);
@@ -53,4 +54,7 @@ test('Agpeya writes require Supabase confirmation before caching or awarding pra
   assert.match(migration, /enable row level security/);
   assert.match(migration, /auth\.uid\(\)\) = user_id/);
   assert.doesNotMatch(migration, /to anon/i);
+  assert.match(writeGuard, /Africa\/Cairo/);
+  assert.match(writeGuard, /completed_hours - ARRAY\['prime','terce','sext','none','vespers','compline','midnight'\]/);
+  assert.match(writeGuard, /jsonb_path_exists\(completed_hours/);
 });
