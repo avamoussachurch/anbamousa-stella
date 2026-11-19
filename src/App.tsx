@@ -3,7 +3,6 @@ import { motion, useReducedMotion } from 'motion/react';
 import { BottomNav } from './components/layout/BottomNav';
 import { TopBar } from './components/layout/TopBar';
 import { WorkspaceSidebar } from './components/layout/WorkspaceSidebar';
-import { LoginScreen } from './components/auth/LoginScreen';
 import { AnbaMousaSplashScreen } from './components/layout/AnbaMousaSplashScreen';
 import { useAuth } from './context/AuthContext';
 import { LessonsProvider } from './context/LessonsContext';
@@ -16,6 +15,7 @@ import { canAccessWorkspace, canAccessWorkspaceTab, hasRole, resolveWorkspace, t
 
 // Keep the entry bundle focused on authentication and shared navigation.
 // Role workspaces and feature tabs are downloaded only when the user opens them.
+const LoginScreen = React.lazy(() => import('./components/auth/LoginScreen').then(module => ({ default: module.LoginScreen })));
 const StudentWelcomeTour = React.lazy(() => import('./components/auth/StudentWelcomeTour').then(module => ({ default: module.StudentWelcomeTour })));
 const RoleWelcomeJourney = React.lazy(() => import('./components/auth/RoleWelcomeJourney').then(module => ({ default: module.RoleWelcomeJourney })));
 const PasswordRecoveryScreen = React.lazy(() => import('./components/auth/PasswordRecoveryScreen').then(module => ({ default: module.PasswordRecoveryScreen })));
@@ -211,7 +211,9 @@ function AppContent() {
 
   if (!userData) {
     return (
-      <LoginScreen lang={lang} setLang={setLang} />
+      <React.Suspense fallback={<AnbaMousaSplashScreen lang={lang} />}>
+        <LoginScreen lang={lang} setLang={setLang} />
+      </React.Suspense>
     );
   }
 
