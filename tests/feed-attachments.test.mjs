@@ -124,3 +124,15 @@ test('database policy restricts storage attachments to the authenticated owner a
   assert.match(migration, /CREATE TRIGGER enforce_feed_post_media_ownership/);
   assert.match(migration, /can_attach_owned_feed_media_reference\(NEW\.media_url, auth\.uid\(\)\)/);
 });
+
+
+test('feed media viewer supports swipe browsing, zoom, close, and device save actions', () => {
+  const component = readFileSync(new URL('../src/components/student/FeedTab.tsx', import.meta.url), 'utf8');
+  assert.match(component, /onTouchStart/);
+  assert.match(component, /navigateLightbox/);
+  assert.match(component, /ZoomIn/);
+  assert.match(component, /ZoomOut/);
+  assert.match(component, /saveLightboxMedia/);
+  assert.match(component, /navigator\.share/);
+  assert.match(component, /Close media viewer/);
+});
