@@ -6495,6 +6495,14 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
         Object.values(serverReviewState.hymnsCollection).find((h: any) => h.id === activityId || h.id === cleanHymnId) ||
         (cleanHymnId === 'ep_oro' ? { id: 'ep_oro', level: 1 } : (cleanHymnId === 'agios' ? { id: 'agios', level: 2 } : null));
       if (activityType === 'CONTENT_OPENED') {
+        if (process.env.NODE_ENV === 'test') {
+          console.error('TEST_HYMN_OPEN_LOOKUP', JSON.stringify({
+            activityId,
+            exactKeyFound: Boolean(serverReviewState.hymnsCollection[activityId]),
+            normalizedKeyFound: Boolean(serverReviewState.hymnsCollection[cleanHymnId]),
+            matchingIdFound: Object.values(serverReviewState.hymnsCollection).some((entry: any) => entry.id === activityId || entry.id === cleanHymnId)
+          }));
+        }
         if (!hymn) {
           return res.status(404).json({ success: false, error: "HYMN_NOT_FOUND", message: "This hymn is not available to open." });
         }
