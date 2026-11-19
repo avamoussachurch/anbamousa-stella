@@ -610,18 +610,12 @@ export async function saveAgpeyaProgressToSupabase(
       return { success: true };
     }
 
-    // Secondary fallback: update profile's last_active
-    await supabase
-      .from('profiles')
-      .update({
-        last_active: new Date().toISOString()
-      })
-      .eq('id', userId);
-
-    return { success: true };
+    // A profile heartbeat is not proof that the prayer record was saved.
+    // Never report success for a failed prayer-history write.
+    return { success: false, error: prayerErr.message };
   } catch (err: any) {
     console.warn('Supabase Agpeya sync fallback:', err?.message);
-    return { success: true, error: err?.message };
+    return { success: false, error: err?.message || 'Could not save prayer progress.' };
   }
 }
 
