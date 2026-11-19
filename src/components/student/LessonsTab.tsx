@@ -96,7 +96,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
       exit={{ opacity: 0, y: -15 }}
       transition={{ duration: 0.3 }}
       className="pb-24 pt-6 px-4 w-full max-w-7xl mx-auto space-y-6" 
-      dir="rtl"
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
     >
       {/* 3-Track Switcher: Sunday School, Hymns School, Coptic Rituals / Taxis */}
       <div className="flex bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] rounded-2xl p-1.5 shadow-xs border-2 border-[var(--mousa-border-sand)] max-w-2xl mx-auto gap-1">
