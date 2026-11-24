@@ -7,6 +7,7 @@ type DirectoryProfile = {
   user_id: string; display_name: string; role: string; avatar_url: string | null;
   points: number; current_streak: number; longest_streak: number;
   followers_count: number; following_count: number; is_following: boolean;
+  frame_key?: string; banner_key?: string; display_title?: string | null;
 };
 
 const roleLabel = (role: string, ar: boolean) => {
@@ -70,8 +71,8 @@ export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) 
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {selected ? <div className="mx-auto max-w-md space-y-5 py-3 text-center">
               <button type="button" onClick={()=>setSelected(null)} className="mb-2 text-xs font-bold text-[var(--mousa-teal-deep)]">← {ar?'كل الأعضاء':'All members'}</button>
-              <img src={selected.avatar_url || '/icons/icon-192.png'} alt="" className="mx-auto h-28 w-28 rounded-[2rem] border-4 border-[var(--mousa-gold)] bg-white object-cover shadow-lg"/>
-              <div><h3 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-white">{selected.display_name}</h3><p className="mt-1 text-sm font-bold text-[var(--mousa-sand-500)]">{roleLabel(selected.role,ar)}</p></div>
+              <div className={'mx-auto grid h-28 w-28 place-items-center rounded-[2rem] bg-white p-1 shadow-lg '+(selected.frame_key==='olive-wreath'?'ring-4 ring-emerald-600':selected.frame_key==='royal-blue'?'ring-4 ring-blue-700':selected.frame_key==='desert-sand'?'ring-4 ring-orange-300':selected.frame_key==='burgundy'?'ring-4 ring-rose-900':'ring-4 ring-amber-400')}><img src={selected.avatar_url || '/icons/icon-192.png'} alt="" className="h-full w-full rounded-[1.5rem] object-cover"/></div>
+              <div><h3 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-white">{selected.display_name}</h3><p className="mt-1 text-sm font-bold text-[var(--mousa-sand-500)]">{selected.display_title || roleLabel(selected.role,ar)}</p></div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-2xl bg-white/70 p-3 dark:bg-stone-900"><strong className="block text-xl">{selected.followers_count}</strong><span className="text-[10px] text-[var(--mousa-sand-500)]">{ar?'متابع':'Followers'}</span></div>
                 <div className="rounded-2xl bg-white/70 p-3 dark:bg-stone-900"><strong className="block text-xl">{selected.following_count}</strong><span className="text-[10px] text-[var(--mousa-sand-500)]">{ar?'يتابع':'Following'}</span></div>
