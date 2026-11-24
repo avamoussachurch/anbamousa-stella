@@ -10,6 +10,7 @@ import { ChildQrCodeModal } from '../common/ChildQrCodeModal';
 import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { CLASS_GROUPS, getClassGroupForGrade } from '../../lib/classGroups';
 import { COPTIC_AVATARS, DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
+import { ProfileCustomizationStudio } from '../profile/ProfileCustomizationStudio';
 import { getCurrentChurchYear, joinClassWithCode, getStudentActiveMembership } from '../../lib/churchYearService';
 import { Language, ClassGroupId, Role } from '../../types';
 import { hasRole } from '../../lib/workspaces';
@@ -1124,6 +1125,8 @@ export function ProfileTab({
                    </div>
                  </section>
                </div>
+
+               <ProfileCustomizationStudio userId={userData.id} lang={lang} />
 
                <div className="space-y-4 pt-2">
                  {/* Full Name */}
