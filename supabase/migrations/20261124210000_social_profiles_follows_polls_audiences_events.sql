@@ -464,3 +464,9 @@ language sql stable security definer set search_path=public,pg_temp as $$
 $$;
 revoke all on function public.get_church_event_rsvp_summary(uuid[]) from public;
 grant execute on function public.get_church_event_rsvp_summary(uuid[]) to authenticated;
+
+
+-- Do not expose the entire follower graph; members can inspect only their own edges.
+drop policy if exists profile_follows_read_authenticated on public.profile_follows;
+create policy profile_follows_read_authenticated on public.profile_follows
+  for select to authenticated using (follower_id=auth.uid() or followed_id=auth.uid());
