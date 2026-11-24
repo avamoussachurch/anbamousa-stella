@@ -540,26 +540,6 @@ export function PointsTab({ lang }: { lang: Language }) {
             exit={{ opacity: 0, y: -15 }}
             className="space-y-6 md:max-w-4xl md:mx-auto"
           >
-            <section className="rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-gradient-to-br from-[var(--mousa-teal-deep)] via-[#144E5B] to-[#103D46] p-6 text-white shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-200/40 bg-white/10 px-3 py-1 text-xs font-bold text-amber-100">
-                    <Gift size={14} /> {lang === 'ar' ? 'بازار المكافآت' : 'Rewards Bazaar'}
-                  </div>
-                  <h2 className="text-2xl font-black">{lang === 'ar' ? 'اختار مكافأتك' : 'Choose a reward'}</h2>
-                  <p className="mt-1 text-sm text-white/80">
-                    {lang === 'ar'
-                      ? 'ابعت طلب المكافأة للمراجعة. النقاط لا تُخصم إلا بعد الموافقة.'
-                      : 'Submit a request for review. Points are not deducted when you submit it.'}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-amber-200/30 bg-white/10 px-5 py-3 text-center">
-                  <div className="text-xs font-bold text-amber-100">{lang === 'ar' ? 'رصيدك الحالي' : 'Your balance'}</div>
-                  <div className="mt-1 text-3xl font-black">{userData.points} ✨</div>
-                </div>
-              </div>
-            </section>
-
             <AchievementRewardsStudio mode="student" initialView="bazaar" lang={lang} />
 
             <section className="rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-5 dark:bg-[#1E1914]">
