@@ -311,3 +311,31 @@ as $$
 $$;
 revoke all on function public.get_profile_directory(text) from public;
 grant execute on function public.get_profile_directory(text) to authenticated;
+
+
+-- A new follower is a single community activity notification; respect the existing
+-- per-user in-app preference and category switch. Push delivery remains handled by
+-- the existing notification pipeline and its quiet-hours/subscription checks.
+create or replace function public.notify_profile_followed()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_name text; v_enabled boolean; v_categories jsonb;
+begin
+  select name into v_name from public.profiles where id=new.follower_id;
+  select coalesce(in_app_enabled,true),coalesce(category_settings,'{}'::jsonb)
+    into v_enabled,v_categories
+  from public.notification_preferences where user_id=new.followed_id;
+  if not coalesce(v_enabled,true) or coalesce(v_categories->>'community','true')='false' then
+    return new;
+  end if;
+  if exists(select 1 from public.notifications n where n.recipient_id=new.followed_id and n.dedupe_key='profile-follow:'||new.follower_id::text) then
+    return new;
+  end if;
+  insert into public.notifications(recipient_id,category,title_en,title_ar,body_en,body_ar,action_tab,action_data,dedupe_key)
+  values(new.followed_id,'community','New church follower','متابع جديد',
+    coalesce(v_name,'A church member')||' started following you.','بدأ أحد أعضاء الكنيسة متابعتك.',
+    'feed',jsonb_build_object('profile_id',new.follower_id),'profile-follow:'||new.follower_id::text);
+  return new;
+end $$;
+drop trigger if exists profile_follow_notification on public.profile_follows;
+create trigger profile_follow_notification after insert on public.profile_follows
+for each row execute function public.notify_profile_followed();
