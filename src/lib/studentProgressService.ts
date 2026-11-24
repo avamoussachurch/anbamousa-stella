@@ -346,7 +346,7 @@ export async function recordStudentSchoolActivity(
       const eventType = input.school === 'hymns'
         ? (input.activityType === 'HYMN_MASTERED' ? 'hymn_mastered' : 'hymn_opened')
         : (input.activityType === 'TAXIS_COMPLETED' ? 'taxis_completed' : 'taxis_opened');
-      void recordAchievementEvent(eventType, `${input.school}:${json.activityId}:${input.activityType || 'CONTENT_OPENED'}`, { school: input.school, activityId: json.activityId });
+      void recordAchievementEvent(eventType, `${input.school}:${input.activityId}:${eventType}`, { school: input.school, activityId: json.activityId });
     }
     return {
       success: true,
