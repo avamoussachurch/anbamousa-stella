@@ -35,9 +35,8 @@ const EVENT_TYPES = [
 ];
 const STYLES: Record<string, string> = {
   gold: 'from-amber-300 via-yellow-500 to-orange-500', teal: 'from-teal-300 via-teal-500 to-cyan-700',
-  coral: 'from-rose-300 via-orange-400 to-pink-600', violet: 'from-violet-300 via-purple-500 to-indigo-700',
-  blue: 'from-sky-300 via-blue-500 to-indigo-700', green: 'from-lime-300 via-emerald-500 to-green-700',
-  rose: 'from-pink-300 via-rose-500 to-red-700',
+  coral: 'from-rose-300 via-orange-400 to-pink-600', blue: 'from-sky-300 via-blue-500 to-indigo-700',
+  green: 'from-lime-300 via-emerald-500 to-green-700', rose: 'from-pink-300 via-rose-500 to-red-700',
 };
 const ICONS: Record<string, React.ComponentType<any>> = {
   award: Award, book: BookOpen, 'book-open': BookOpen, 'book-check': BookOpen, 'book-open-check': BookOpen,
