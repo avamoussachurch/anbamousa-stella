@@ -146,6 +146,42 @@ export function FeedTab({ lang }: { lang: Language }) {
   const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
   const [newPostText, setNewPostText] = useState("");
   const [isOfficialAnnouncement, setIsOfficialAnnouncement] = useState(false);
+  const [targetClassesEnabled, setTargetClassesEnabled] = useState(false);
+  const [availableTargetClasses, setAvailableTargetClasses] = useState<Array<{id:string;nameEn:string;nameAr:string}>>([]);
+  const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<string[]>([]);
+  const [loadingTargetClasses, setLoadingTargetClasses] = useState(false);
+
+  useEffect(() => {
+    if (!isComposeModalOpen || !userData?.id || !supabase) return;
+    let cancelled = false;
+    const loadAllowedClasses = async () => {
+      setLoadingTargetClasses(true);
+      try {
+        const { data: year } = await supabase!.from('church_years').select('id').eq('is_active', true).maybeSingle();
+        if (!year?.id) { if (!cancelled) setAvailableTargetClasses([]); return; }
+        let ids: string[] = [];
+        if (userData.roles?.includes('admin')) {
+          const { data } = await supabase!.from('class_instances').select('id').eq('church_year_id', year.id);
+          ids = (data || []).map(row => row.id);
+        } else if (isTeacher) {
+          const { data } = await supabase!.from('servant_class_assignments').select('class_instance_id').eq('servant_id', userData.id).eq('church_year_id', year.id).eq('is_active', true);
+          ids = (data || []).map(row => row.class_instance_id);
+        } else {
+          const { data } = await supabase!.from('class_memberships').select('class_instance_id').eq('student_id', userData.id).eq('church_year_id', year.id).eq('status', 'active');
+          ids = (data || []).map(row => row.class_instance_id);
+        }
+        const uniqueIds = Array.from(new Set(ids));
+        if (!uniqueIds.length) { if (!cancelled) setAvailableTargetClasses([]); return; }
+        const { data: classes } = await supabase!.from('class_instances').select('id,name_en,name_ar').in('id', uniqueIds).order('name_en');
+        if (!cancelled) setAvailableTargetClasses((classes || []).map(row => ({id:row.id,nameEn:row.name_en,nameAr:row.name_ar})));
+      } catch (error) {
+        console.warn('Could not load authorized feed audience classes:', error);
+        if (!cancelled) setAvailableTargetClasses([]);
+      } finally { if (!cancelled) setLoadingTargetClasses(false); }
+    };
+    void loadAllowedClasses();
+    return () => { cancelled = true; };
+  }, [isComposeModalOpen, userData?.id, isTeacher]);
 
   // Cloud Storage status & diagnostic modal
   const [storageStatus, setStorageStatus] = useState<{
@@ -910,7 +946,8 @@ export function FeedTab({ lang }: { lang: Language }) {
         content: newPostText.trim(),
         attachments,
         isPinned: postPinned,
-        isAnnouncement: postPinned
+        isAnnouncement: postPinned,
+        targetClassIds: targetClassesEnabled ? selectedTargetClassIds : []
       });
 
       if (res.error || !res.data) {
@@ -922,6 +959,8 @@ export function FeedTab({ lang }: { lang: Language }) {
       setPosts(previous => [res.data!, ...previous]);
       setNewPostText('');
       setIsOfficialAnnouncement(false);
+      setTargetClassesEnabled(false);
+      setSelectedTargetClassIds([]);
       setShowLinkInput(false);
       setLinkInputValue('');
       setMediaError(null);
@@ -1194,6 +1233,12 @@ export function FeedTab({ lang }: { lang: Language }) {
                 className="w-full h-28 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 resize-none outline-none focus:border-[var(--mousa-teal-deep)] transition-colors text-sm text-gray-800 dark:text-white"
               />
 
+              <section className="rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-sand-50)] dark:bg-stone-800/70 p-3 space-y-3">
+                <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-[var(--mousa-teal-deep)] dark:text-white">{lang === 'ar' ? 'من يستطيع رؤية المنشور؟' : 'Who can see this post?'}</p><p className="mt-1 text-[11px] text-[var(--mousa-sand-600)] dark:text-stone-300">{lang === 'ar' ? 'الافتراضي: كل أعضاء الكنيسة. يمكنك اختيار فصول محددة.' : 'Default: everyone in the church. You can optionally target specific classes.'}</p></div><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black text-emerald-800">{targetClassesEnabled ? (lang === 'ar' ? 'فصول محددة' : 'Selected classes') : (lang === 'ar' ? 'كل الأعضاء' : 'Everyone')}</span></div>
+                <label className="flex items-center gap-2 text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-stone-100"><input type="checkbox" checked={targetClassesEnabled} onChange={event => {setTargetClassesEnabled(event.target.checked);if(!event.target.checked)setSelectedTargetClassIds([]);}} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/>{lang === 'ar' ? 'تحديد فصول بعينها فقط' : 'Limit this post to selected classes'}</label>
+                {targetClassesEnabled && <div className="space-y-2 rounded-xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 dark:bg-stone-900"><p className="text-[11px] font-bold text-[var(--mousa-sand-600)]">{lang === 'ar' ? 'اختار الفصول المسموح لك باستهدافها:' : 'Choose from classes you are authorized to target:'}</p>{loadingTargetClasses ? <p className="text-xs text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'جارٍ تحميل الفصول…' : 'Loading your classes…'}</p> : availableTargetClasses.length ? <div className="grid gap-2 sm:grid-cols-2">{availableTargetClasses.map(item=><label key={item.id} className="flex items-center gap-2 rounded-lg bg-[var(--mousa-sand-50)] p-2 text-xs font-semibold dark:bg-stone-800"><input type="checkbox" checked={selectedTargetClassIds.includes(item.id)} onChange={event=>setSelectedTargetClassIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/><span>{lang === 'ar' ? item.nameAr : item.nameEn}</span></label>)}</div> : <p className="text-xs text-amber-700">{lang === 'ar' ? 'لا توجد فصول يمكنك استهدافها في السنة الكنسية الحالية.' : 'No classes are available for targeting in the active church year.'}</p>}{selectedTargetClassIds.length>0 && <p className="text-[10px] font-bold text-emerald-700">{lang === 'ar' ? 'سيظهر المنشور فقط للأعضاء المسموح لهم في الفصول المحددة.' : 'Only members authorized for the selected classes will see this post.'}</p>}</div>}
+              </section>
+
               {/* Media Selection Actions */}
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
@@ -1405,7 +1450,7 @@ export function FeedTab({ lang }: { lang: Language }) {
 
               <button 
                 onClick={handleCreatePost} 
-                disabled={(!newPostText.trim() && composerAttachments.length === 0) || isUploadingMedia || isRecordingVoice || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready' || (attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim()))}
+                disabled={(!newPostText.trim() && composerAttachments.length === 0) || (targetClassesEnabled && selectedTargetClassIds.length === 0) || isUploadingMedia || isRecordingVoice || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready' || (attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim()))}
                 className={`w-full font-bold py-3.5 rounded-xl transition-colors shadow-md text-sm cursor-pointer flex items-center justify-center gap-2 ${
                   (newPostText.trim() || composerAttachments.length > 0) && !isUploadingMedia && !isCreatingPost && composerAttachments.every(attachment => attachment.status === 'ready')
                     ? 'bg-[var(--mousa-teal-deep)] text-[var(--mousa-gold)] hover:bg-blue-900'
