@@ -11,6 +11,7 @@ const expandedBadges = read('../supabase/migrations/20261124163935_expand_achiev
 const secureEvents = read('../supabase/migrations/20261124164523_secure_achievement_event_sources_and_prayer_verification.sql');
 const completionBadges = read('../supabase/migrations/20261124171826_enable_verified_hymn_taxis_completion_badges.sql');
 const rewardApprovalMigration = read('../supabase/migrations/20261124171750_reward_approval_atomic_points_and_stock.sql');
+const requestValidationMigration = read('../supabase/migrations/20261124172331_validate_reward_request_catalog.sql');
 const server = read('../server.ts');
 const eventService = read('../src/lib/achievementService.ts');
 const gallery = read('../src/components/achievements/AchievementRewardsStudio.tsx');
@@ -101,6 +102,10 @@ test('teachers and admins can manage badges, milestones, catalogue, and fulfilme
   assert.match(rewardApprovalMigration, /new\.cost_points is distinct from old\.cost_points/);
   assert.match(rewardApprovalMigration, /update public\.reward_catalog/);
   assert.match(rewardApprovalMigration, /review_staff_reward_request/);
+  assert.match(requestValidationMigration, /validate_reward_request_catalog/);
+  assert.match(requestValidationMigration, /REWARD_REQUEST_CATALOG_MISMATCH/);
+  assert.match(requestValidationMigration, /REWARD_REQUEST_MUST_START_PENDING/);
+  assert.match(requestValidationMigration, /REWARD_CATALOG_ITEM_NOT_FOUND/);
   assert.match(staffRewards, /can_access_student_data\(v_request.student_id\)/);
   assert.match(staffRewards, /review_staff_reward_request/);
   assert.match(admin, /AchievementRewardsStudio mode="manage"/);
