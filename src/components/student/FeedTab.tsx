@@ -26,6 +26,7 @@ import {
   toggleFeedReactionInSupabase,
   addFeedCommentInSupabase,
   syncUserLocalPostsToSupabase,
+  voteFeedPollInSupabase,
   ExtendedPost
 } from '../../lib/feedService';
 import {
@@ -146,6 +147,11 @@ export function FeedTab({ lang }: { lang: Language }) {
   const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
   const [newPostText, setNewPostText] = useState("");
   const [isOfficialAnnouncement, setIsOfficialAnnouncement] = useState(false);
+  const [pollEnabled, setPollEnabled] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['','']);
+  const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
+  const [votingOptionId, setVotingOptionId] = useState<string | null>(null);
   const [targetClassesEnabled, setTargetClassesEnabled] = useState(false);
   const [availableTargetClasses, setAvailableTargetClasses] = useState<Array<{id:string;nameEn:string;nameAr:string}>>([]);
   const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<string[]>([]);
@@ -910,7 +916,11 @@ export function FeedTab({ lang }: { lang: Language }) {
 
   // 8. Create New Post only after the server confirms the post and its attachments.
   const handleCreatePost = async () => {
-    if ((!newPostText.trim() && composerAttachments.length === 0) || !userData || isCreatingPost) return;
+    if ((!newPostText.trim() && composerAttachments.length === 0 && !pollEnabled) || !userData || isCreatingPost) return;
+    if (pollEnabled && (pollQuestion.trim().length < 2 || pollOptions.filter(option => option.trim()).length < 2)) {
+      setMediaError(lang === 'ar' ? 'أضف سؤالاً وخيارين على الأقل للاستطلاع.' : 'Add a poll question and at least two answer options.');
+      return;
+    }
     if (composerAttachments.some(attachment => attachment.status !== 'ready')) {
       setMediaError(lang === 'ar' ? 'استنى لحد ما الملفات تترفع، أو جرّب ترفع تاني الملفات اللي حصل فيها مشكلة.' : 'Finish or retry every attachment upload before publishing.');
       return;
@@ -947,7 +957,8 @@ export function FeedTab({ lang }: { lang: Language }) {
         attachments,
         isPinned: postPinned,
         isAnnouncement: postPinned,
-        targetClassIds: targetClassesEnabled ? selectedTargetClassIds : []
+        targetClassIds: targetClassesEnabled ? selectedTargetClassIds : [],
+        poll: pollEnabled ? { question: pollQuestion, options: pollOptions.filter(option => option.trim()), allowMultiple: pollAllowMultiple } : undefined
       });
 
       if (res.error || !res.data) {
@@ -959,6 +970,10 @@ export function FeedTab({ lang }: { lang: Language }) {
       setPosts(previous => [res.data!, ...previous]);
       setNewPostText('');
       setIsOfficialAnnouncement(false);
+      setPollEnabled(false);
+      setPollQuestion('');
+      setPollOptions(['','']);
+      setPollAllowMultiple(false);
       setTargetClassesEnabled(false);
       setSelectedTargetClassIds([]);
       setShowLinkInput(false);
@@ -1239,6 +1254,11 @@ export function FeedTab({ lang }: { lang: Language }) {
                 {targetClassesEnabled && <div className="space-y-2 rounded-xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 dark:bg-stone-900"><p className="text-[11px] font-bold text-[var(--mousa-sand-600)]">{lang === 'ar' ? 'اختار الفصول المسموح لك باستهدافها:' : 'Choose from classes you are authorized to target:'}</p>{loadingTargetClasses ? <p className="text-xs text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'جارٍ تحميل الفصول…' : 'Loading your classes…'}</p> : availableTargetClasses.length ? <div className="grid gap-2 sm:grid-cols-2">{availableTargetClasses.map(item=><label key={item.id} className="flex items-center gap-2 rounded-lg bg-[var(--mousa-sand-50)] p-2 text-xs font-semibold dark:bg-stone-800"><input type="checkbox" checked={selectedTargetClassIds.includes(item.id)} onChange={event=>setSelectedTargetClassIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/><span>{lang === 'ar' ? item.nameAr : item.nameEn}</span></label>)}</div> : <p className="text-xs text-amber-700">{lang === 'ar' ? 'لا توجد فصول يمكنك استهدافها في السنة الكنسية الحالية.' : 'No classes are available for targeting in the active church year.'}</p>}{selectedTargetClassIds.length>0 && <p className="text-[10px] font-bold text-emerald-700">{lang === 'ar' ? 'سيظهر المنشور فقط للأعضاء المسموح لهم في الفصول المحددة.' : 'Only members authorized for the selected classes will see this post.'}</p>}</div>}
               </section>
 
+              <section className="rounded-2xl border border-violet-200 bg-violet-50/70 p-3 dark:border-violet-900/60 dark:bg-violet-950/20 space-y-3">
+                <label className="flex items-center gap-2 text-xs font-black text-violet-900 dark:text-violet-200"><input type="checkbox" checked={pollEnabled} onChange={event=>setPollEnabled(event.target.checked)} className="h-4 w-4 accent-violet-700"/>{lang === 'ar' ? 'إضافة استطلاع للمجتمع' : 'Add a community poll'}</label>
+                {pollEnabled && <div className="space-y-2"><input value={pollQuestion} onChange={event=>setPollQuestion(event.target.value)} maxLength={240} placeholder={lang === 'ar'?'اكتب سؤال الاستطلاع…':'Ask your poll question…'} className="w-full rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-violet-500 dark:bg-slate-900"/>{pollOptions.map((option,index)=><div key={index} className="flex gap-2"><input value={option} onChange={event=>setPollOptions(current=>current.map((item,i)=>i===index?event.target.value:item))} maxLength={120} placeholder={lang === 'ar'?'الخيار '+(index+1):'Option '+(index+1)} className="min-w-0 flex-1 rounded-xl border border-violet-200 bg-white px-3 py-2 text-xs outline-none focus:border-violet-500 dark:bg-slate-900"/>{pollOptions.length>2&&<button type="button" onClick={()=>setPollOptions(current=>current.filter((_,i)=>i!==index))} className="rounded-lg px-2 text-rose-600 hover:bg-rose-50" aria-label={lang === 'ar'?'حذف الخيار':'Remove option'}><X size={15}/></button>}</div>)}{pollOptions.length<6&&<button type="button" onClick={()=>setPollOptions(current=>[...current,''])} className="text-xs font-black text-violet-800 hover:underline dark:text-violet-200">+ {lang === 'ar'?'إضافة خيار':'Add option'}</button>}<label className="flex items-center gap-2 text-xs font-semibold text-violet-900 dark:text-violet-200"><input type="checkbox" checked={pollAllowMultiple} onChange={event=>setPollAllowMultiple(event.target.checked)} className="h-4 w-4 accent-violet-700"/>{lang === 'ar'?'السماح باختيار أكثر من إجابة':'Allow multiple answers'}</label></div>}
+              </section>
+
               {/* Media Selection Actions */}
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
@@ -1450,9 +1470,9 @@ export function FeedTab({ lang }: { lang: Language }) {
 
               <button 
                 onClick={handleCreatePost} 
-                disabled={(!newPostText.trim() && composerAttachments.length === 0) || (targetClassesEnabled && selectedTargetClassIds.length === 0) || isUploadingMedia || isRecordingVoice || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready' || (attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim()))}
+                disabled={(!newPostText.trim() && composerAttachments.length === 0 && !pollEnabled) || (pollEnabled && (pollQuestion.trim().length < 2 || pollOptions.filter(option => option.trim()).length < 2)) || (targetClassesEnabled && selectedTargetClassIds.length === 0) || isUploadingMedia || isRecordingVoice || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready' || (attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim()))}
                 className={`w-full font-bold py-3.5 rounded-xl transition-colors shadow-md text-sm cursor-pointer flex items-center justify-center gap-2 ${
-                  (newPostText.trim() || composerAttachments.length > 0) && !isUploadingMedia && !isCreatingPost && composerAttachments.every(attachment => attachment.status === 'ready')
+                  (newPostText.trim() || composerAttachments.length > 0 || pollEnabled) && !isUploadingMedia && !isCreatingPost && composerAttachments.every(attachment => attachment.status === 'ready')
                     ? 'bg-[var(--mousa-teal-deep)] text-[var(--mousa-gold)] hover:bg-blue-900'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
@@ -1577,6 +1597,7 @@ export function FeedTab({ lang }: { lang: Language }) {
               
               {/* Post Body */}
               <p className="text-gray-800 mb-4 text-sm leading-relaxed whitespace-pre-line">{post.content}</p>
+              {post.poll && <section className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-4 dark:border-violet-900/60 dark:bg-violet-950/20"><h4 className="mb-3 text-sm font-black text-violet-950 dark:text-violet-100">{post.poll.question}</h4><div className="space-y-2">{post.poll.options.map(option=>{const total=post.poll!.options.reduce((sum,item)=>sum+item.voteCount,0);const percent=total?Math.round(option.voteCount/total*100):0;return <button key={option.id} type="button" disabled={Boolean(option.hasVoted)||Boolean(votingOptionId)} onClick={async()=>{setVotingOptionId(option.id);const result=await voteFeedPollInSupabase(option.id);if(result.error)setActionError(result.error.message);else{const refreshed=await fetchFeedPostsFromSupabase();if(refreshed.data)setPosts(refreshed.data);}setVotingOptionId(null);}} className="relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-start text-xs font-bold text-violet-950 disabled:cursor-default dark:border-violet-900 dark:bg-slate-900 dark:text-violet-100"><span className="absolute inset-y-0 start-0 bg-violet-200/70 transition-all dark:bg-violet-900/50" style={{width:percent+'%'}}/><span className="relative z-10">{option.label}{option.hasVoted?' ✓':''}</span><span className="relative z-10 tabular-nums">{total?percent+'% · ':''}{option.voteCount}</span></button>})}</div><p className="mt-2 text-[10px] text-violet-800/70 dark:text-violet-200/70">{post.poll.allowMultiple?(lang==='ar'?'يمكن اختيار أكثر من إجابة':'Multiple answers allowed'):(lang==='ar'?'اختيار إجابة واحدة':'Choose one answer')}</p></section>}
 
               {getPostAttachments(post).length > 0 && (
                 <div className={`mb-4 grid gap-3 ${getPostAttachments(post).length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
