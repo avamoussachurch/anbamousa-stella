@@ -5,7 +5,7 @@
  */
 export interface CopticAvatarPreset {
   id: string; nameEn: string; nameAr: string;
-  category: 'saints' | 'students' | 'deacons'; svgDataUri: string;
+  category: 'saints' | 'students' | 'deacons'; imageSrc: string;
 }
 type Emblem = 'cross'|'church'|'bible'|'dove'|'candle'|'chalice'|'incense'|'grapes'|'fish'|'bell'|'lily';
 const paths: Record<Emblem,string> = {
@@ -26,20 +26,29 @@ function emblem(kind:Emblem,bg:string,fg:string,accent:string):string {
  return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg);
 }
 const entries:Array<[string,string,string,Emblem,string,string,string,'saints'|'students'|'deacons']> = [
- ['coptic-church','Coptic Church Emblem','رمز الكنيسة القبطية','church','#6d1f2b','#f8e8c2','#d9ad63','saints'],
+ ['saint-mark-icon','St. Mark the Evangelist','مارمرقس الرسول','church','#6d1f2b','#f8e8c2','#d9ad63','saints'],
  ['coptic-cross','Coptic Cross','الصليب القبطي','cross','#183b67','#f8e8c2','#d9ad63','saints'],
- ['lily-emblem','Lily Emblem','رمز زهرة الزنبق','lily','#71334f','#fff0d8','#e5b5c2','saints'],
- ['victory-cross','Cross of Victory','صليب النصرة','cross','#175c58','#fff0c8','#e5c16f','saints'],
- ['theotokos-symbol','Theotokos Star Emblem','رمز نجمة والدة الإله','lily','#233e70','#fff0d8','#d5b56c','saints'],
- ['abu-seifein-cross','Abu Seifein Cross Emblem','رمز صليب أبي سيفين','cross','#56336f','#fff0d8','#d6b3e5','saints'],
- ['fish-emblem','Ichthys Fish Emblem','رمز السمكة المسيحية','fish','#78452e','#fff0d8','#e7bd85','saints'],
+ ['saint-demiana-icon','St. Demiana','القديسة دميانة','lily','#71334f','#fff0d8','#e5b5c2','saints'],
+ ['archangel-michael-icon','Archangel Michael','رئيس الملائكة ميخائيل','cross','#175c58','#fff0c8','#e5c16f','saints'],
+ ['dormition-icon','Dormition of the Theotokos','رقاد السيدة العذراء','lily','#233e70','#fff0d8','#d5b56c','saints'],
+ ['saint-abanoub-icon','St. Abanoub the Martyr','القديس أبانوب الشهيد','cross','#56336f','#fff0d8','#d6b3e5','saints'],
+ ['saint-anthony-icon','St. Anthony the Great','القديس الأنبا أنطونيوس','fish','#78452e','#fff0d8','#e7bd85','saints'],
  ['deacon-chalice','Deacon service emblem','رمز خدمة الشمامسة','chalice','#164e70','#fff0d8','#8ec8d8','deacons'],
  ['sunday-school-bible','Sunday School emblem','رمز مدارس الأحد','bible','#17634f','#fff0d8','#9ed8b5','students'],
  ['sunday-school-flower','Sunday School flower emblem','زهرة مدارس الأحد','lily','#8a5420','#fff0d8','#f0ce8a','students'],
- ['psalm-emblem','David the Psalmist','داود المرنم','grapes','#456027','#fff0d8','#b9d18a','saints'],
+ ['saint-macarius-icon','St. Macarius the Great','القديس الأنبا مقار,'grapes','#456027','#fff0d8','#b9d18a','saints'],
  ['coptic-cross-dove','Coptic Cross and Dove','الصليب القبطي والحمامة','dove','#49316c','#fff0d8','#c8afe8','saints']
 ];
-export const COPTIC_AVATARS:CopticAvatarPreset[] = entries.map(([id,nameEn,nameAr,kind,bg,fg,accent,category])=>({id,nameEn,nameAr,category,svgDataUri:emblem(kind,bg,fg,accent)}));
-export const DEFAULT_STUDENT_AVATAR=COPTIC_AVATARS[7].svgDataUri;
+const realIconSources: Record<string,string> = {
+ 'saint-mark-icon':'https://upload.wikimedia.org/wikipedia/commons/6/67/StMarkcoptic.jpg',
+ 'saint-demiana-icon':'https://commons.wikimedia.org/wiki/Special:FilePath/St.Demiana_and_the_40_virgins_in_the_Hanging_church.jpg?width=480',
+ 'archangel-michael-icon':'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Coptic_Icon_of_the_Archangel_Michael.jpg/500px-Coptic_Icon_of_the_Archangel_Michael.jpg',
+ 'dormition-icon':'https://upload.wikimedia.org/wikipedia/commons/c/c1/Coptic_icon_of_the_Dormition_of_Virgin_Mary.jpg',
+ 'saint-abanoub-icon':'https://commons.wikimedia.org/wiki/Special:FilePath/Icon_of_St.Abanoub_the_Matyr_in_Samanoud.jpg?width=480',
+ 'saint-anthony-icon':'https://upload.wikimedia.org/wikipedia/commons/8/86/StAnthony.jpg',
+ 'saint-macarius-icon':'https://upload.wikimedia.org/wikipedia/commons/c/cd/Saint_Macarius.jpg'
+};
+export const COPTIC_AVATARS:CopticAvatarPreset[] = entries.map(([id,nameEn,nameAr,kind,bg,fg,accent,category])=>({id,nameEn,nameAr,category,imageSrc:realIconSources[id] || emblem(kind,bg,fg,accent)}));
+export const DEFAULT_STUDENT_AVATAR=COPTIC_AVATARS[7].imageSrc;
 export const DEFAULT_PARENT_AVATAR=COPTIC_AVATARS[0].svgDataUri;
 export const DEFAULT_TEACHER_AVATAR=COPTIC_AVATARS[3].svgDataUri;
