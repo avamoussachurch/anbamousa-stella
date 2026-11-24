@@ -129,11 +129,11 @@ create policy feed_post_class_targets_author_write on public.feed_post_class_tar
   using (exists(select 1 from public.feed_posts p where p.id=post_id and (p.author_id=auth.uid() or has_role('admin'))))
   with check (
     exists(select 1 from public.feed_posts p where p.id=post_id and (p.author_id=auth.uid() or has_role('admin')))
-    and (has_role('admin') or exists(
-      select 1 from public.servant_class_assignments a
-      where a.class_instance_id=feed_post_class_targets.class_instance_id
-        and a.servant_id=auth.uid() and a.is_active=true
-    ))
+    and (
+      has_role('admin')
+      or exists(select 1 from public.servant_class_assignments a where a.class_instance_id=feed_post_class_targets.class_instance_id and a.servant_id=auth.uid() and a.is_active=true)
+      or exists(select 1 from public.class_memberships m where m.class_instance_id=feed_post_class_targets.class_instance_id and m.student_id=auth.uid() and m.status='active')
+    )
   );
 drop policy if exists feed_post_grade_targets_author_write on public.feed_post_grade_targets;
 create policy feed_post_grade_targets_author_write on public.feed_post_grade_targets
