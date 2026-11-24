@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Award, BookOpen, Check, Edit3, Gift, Lock, Plus, RefreshCw, Save, Sparkles, Star, Trash2, Trophy, X } from 'lucide-react';
+import { Award, BookOpen, BookCheck, GraduationCap, Library, Music, AudioLines, Heart, ScrollText, HandHeart, CalendarCheck, CalendarHeart, Church, Brain, MessagesSquare, BookmarkCheck, HeartHandshake, NotebookPen, Cross, Image as ImageIcon, Check, Edit3, Gift, Lock, Plus, RefreshCw, Save, Sparkles, Star, Trophy, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { Language } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -16,7 +16,7 @@ type BadgeRow = {
 type MilestoneRow = { id: string; category: Category; badge_count: number; title_en: string; title_ar: string; points_reward: number; is_active: boolean };
 type RewardRow = {
   id: string; slug: string; title_en: string; title_ar: string; description_en: string; description_ar: string;
-  points_cost: number; icon: string; stock_remaining: number | null; is_active: boolean; fulfillment_note: string;
+  points_cost: number; icon: string; image_url?: string | null; stock_remaining: number | null; is_active: boolean; fulfillment_note: string;
 };
 type EventRow = { event_type: string };
 type UnlockRow = { badge_id: string; earned_at: string; points_awarded: number };
@@ -43,6 +43,10 @@ const STYLES: Record<string, string> = {
 const ICONS: Record<string, React.ComponentType<any>> = {
   award: Award, book: BookOpen, 'book-open': BookOpen, 'book-check': BookOpen, 'book-open-check': BookOpen,
   compass: Star, trophy: Trophy, gift: Gift, star: Star, sparkles: Sparkles,
+  'graduation-cap': GraduationCap, library: Library, music: Music, 'audio-lines': AudioLines,
+  heart: Heart, 'scroll-text': ScrollText, 'heart-handshake': HeartHandshake, 'calendar-heart': CalendarHeart,
+  church: Church, brain: Brain, 'calendar-check': CalendarCheck, 'messages-square': MessagesSquare,
+  'bookmark-check': BookmarkCheck, 'hand-heart': HandHeart, 'notebook-pen': NotebookPen, cross: Cross, image: ImageIcon,
 };
 
 const emptyBadge = {
@@ -51,7 +55,7 @@ const emptyBadge = {
   count: 1, points_reward: 10, is_active: true,
 };
 const emptyMilestone = { id: '', category: 'learning' as Category, badge_count: 3, title_en: '', title_ar: '', points_reward: 50, is_active: true };
-const emptyReward = { id: '', slug: '', title_en: '', title_ar: '', description_en: '', description_ar: '', points_cost: 50, icon: 'gift', stock_remaining: '' as string | number, is_active: true, fulfillment_note: '' };
+const emptyReward = { id: '', slug: '', title_en: '', title_ar: '', description_en: '', description_ar: '', points_cost: 50, icon: 'gift', image_url: '', stock_remaining: '' as string | number, is_active: true, fulfillment_note: '' };
 
 function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 78);
@@ -162,7 +166,7 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
     const payload = { slug: rewardForm.slug.trim() || slugify(rewardForm.title_en),
       title_en: rewardForm.title_en.trim(), title_ar: rewardForm.title_ar.trim(),
       description_en: rewardForm.description_en.trim(), description_ar: rewardForm.description_ar.trim(),
-      points_cost: Number(rewardForm.points_cost), icon: rewardForm.icon.trim() || 'gift',
+      points_cost: Number(rewardForm.points_cost), icon: rewardForm.icon.trim() || 'gift', image_url: rewardForm.image_url.trim() || null,
       stock_remaining: rewardForm.stock_remaining === '' ? null : Number(rewardForm.stock_remaining),
       is_active: rewardForm.is_active, fulfillment_note: rewardForm.fulfillment_note.trim(),
       updated_by: userData.id, updated_at: new Date().toISOString(),
@@ -226,8 +230,9 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{rewards.filter(item => item.is_active).map((reward, index) => {
           const out = reward.stock_remaining !== null && reward.stock_remaining <= 0;
           const enough = (userData?.points || 0) >= reward.points_cost;
+          const RewardIcon = ICONS[reward.icon] || Gift;
           return <motion.article key={reward.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }} className="overflow-hidden rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-5 shadow-sm dark:bg-[#1E1914]">
-            <div className="flex items-start justify-between gap-3"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-3xl dark:bg-amber-950/40">🎁</div><span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-black text-amber-900">{reward.points_cost} pts</span></div>
+            <div className="flex items-start justify-between gap-3"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 dark:bg-amber-950/40"><RewardIcon size={28}/></div><span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-black text-amber-900">{reward.points_cost} pts</span></div>
             <h3 className="mt-4 font-black text-[var(--text-primary)]">{isArabic ? reward.title_ar : reward.title_en}</h3>
             <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? reward.description_ar : reward.description_en}</p>
             {reward.stock_remaining !== null && <p className="mt-2 text-xs font-bold text-[var(--text-secondary)]">{isArabic ? `المتاح: ${reward.stock_remaining}` : `Available: ${reward.stock_remaining}`}</p>}
@@ -296,7 +301,7 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
     <div className="flex justify-end"><button type="button" onClick={() => void load()} className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold"><RefreshCw size={14} />{isArabic ? 'تحديث' : 'Refresh'}</button></div>
 
     {section === 'badges' && <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.9fr)]">
-      <div className="space-y-3">{badges.map(item => <article key={item.id} className="flex items-center gap-3 rounded-2xl border bg-[var(--surface-primary)] p-3"><div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${STYLES[item.style] || STYLES.gold} text-white`}><Award /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{isArabic ? item.title_ar : item.title_en}</p><p className="text-xs text-[var(--text-secondary)]">{categoryName(item.category)} · {item.points_reward} pts · {item.criteria?.event_type} × {item.criteria?.count}</p></div><button type="button" onClick={() => setBadgeForm({ id:item.id,slug:item.slug,title_en:item.title_en,title_ar:item.title_ar,description_en:item.description_en,description_ar:item.description_ar,category:item.category,icon:item.icon,style:item.style,event_type:item.criteria?.event_type || 'lesson_opened',count:item.criteria?.count || 1,points_reward:item.points_reward,is_active:item.is_active })} className="rounded-lg border p-2"><Edit3 size={16} /></button></article>)}</div>
+      <div className="space-y-3">{badges.map(item => { const BadgeIcon = ICONS[item.icon] || Award; return <article key={item.id} className="flex items-center gap-3 rounded-2xl border bg-[var(--surface-primary)] p-3"><div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${STYLES[item.style] || STYLES.gold} text-white`}><BadgeIcon /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{isArabic ? item.title_ar : item.title_en}</p><p className="text-xs text-[var(--text-secondary)]">{categoryName(item.category)} · {item.points_reward} pts · {item.criteria?.event_type} × {item.criteria?.count}</p></div><button type="button" onClick={() => setBadgeForm({ id:item.id,slug:item.slug,title_en:item.title_en,title_ar:item.title_ar,description_en:item.description_en,description_ar:item.description_ar,category:item.category,icon:item.icon,style:item.style,event_type:item.criteria?.event_type || 'lesson_opened',count:item.criteria?.count || 1,points_reward:item.points_reward,is_active:item.is_active })} className="rounded-lg border p-2"><Edit3 size={16} /></button></article>; })}</div>
       <form onSubmit={saveBadge} className="space-y-3 rounded-2xl border bg-[var(--surface-primary)] p-4">
         <h3 className="font-black">{badgeForm.id ? (isArabic ? 'تعديل الوسام' : 'Edit badge') : (isArabic ? 'وسام جديد' : 'Create badge')}</h3>
         <div><label className={labelClass}>English title</label><input required className={inputClass} value={badgeForm.title_en} onChange={e=>setBadgeForm(v=>({...v,title_en:e.target.value}))} /></div>
@@ -332,7 +337,7 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
         <div><label className={labelClass}>English description</label><textarea className={inputClass} value={rewardForm.description_en} onChange={e=>setRewardForm(v=>({...v,description_en:e.target.value}))}/></div>
         <div><label className={labelClass}>الوصف بالعربية</label><textarea className={inputClass} value={rewardForm.description_ar} onChange={e=>setRewardForm(v=>({...v,description_ar:e.target.value}))}/></div>
         <div className="grid grid-cols-2 gap-2"><div><label className={labelClass}>Points cost</label><input type="number" min="1" max="100000" className={inputClass} value={rewardForm.points_cost} onChange={e=>setRewardForm(v=>({...v,points_cost:Number(e.target.value)}))}/></div><div><label className={labelClass}>Stock (blank = unlimited)</label><input type="number" min="0" className={inputClass} value={rewardForm.stock_remaining} onChange={e=>setRewardForm(v=>({...v,stock_remaining:e.target.value}))}/></div></div>
-        <div><label className={labelClass}>Icon name</label><input className={inputClass} value={rewardForm.icon} onChange={e=>setRewardForm(v=>({...v,icon:e.target.value}))}/></div>
+        <div className="grid grid-cols-2 gap-2"><div><label className={labelClass}>Icon name</label><input className={inputClass} value={rewardForm.icon} onChange={e=>setRewardForm(v=>({...v,icon:e.target.value}))}/></div><div><label className={labelClass}>Image URL (optional)</label><input className={inputClass} value={rewardForm.image_url || ''} onChange={e=>setRewardForm(v=>({...v,image_url:e.target.value}))}/></div></div>
         <div><label className={labelClass}>Fulfilment instructions</label><textarea className={inputClass} value={rewardForm.fulfillment_note} onChange={e=>setRewardForm(v=>({...v,fulfillment_note:e.target.value}))}/></div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={rewardForm.is_active} onChange={e=>setRewardForm(v=>({...v,is_active:e.target.checked}))}/>Visible in student Bazaar</label>
         <div className="flex gap-2"><button className={buttonClass} disabled={busy}><Save size={16}/>Save reward</button><button type="button" onClick={()=>setRewardForm(emptyReward)} className="rounded-xl border px-3"><X size={16}/></button></div>
