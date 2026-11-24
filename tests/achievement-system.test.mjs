@@ -38,7 +38,7 @@ test('badge and milestone points are awarded atomically only once', () => {
 
 test('students can only read their own event progress', () => {
   assert.match(progressRead, /student_id = \(select auth\.uid\(\)\)/);
-  assert.match(activity, /achievement_events_read_own/);
+  assert.match(progressRead, /achievement_events_read_own/);
 });
 
 test('activity events cover learning, hymns, taxis, prayer, quizzes, attendance, and community', () => {
