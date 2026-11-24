@@ -1110,12 +1110,12 @@ export function ProfileTab({
                      </div>
                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                        {COPTIC_AVATARS.filter(preset => avatarCategory === 'all' || preset.category === avatarCategory).map((preset, index) => {
-                         const selected = avatar === preset.svgDataUri;
-                         return <button key={preset.id} type="button" onClick={() => setAvatar(preset.svgDataUri)} aria-pressed={selected}
+                         const selected = avatar === preset.imageSrc;
+                         return <button key={preset.id} type="button" onClick={() => setAvatar(preset.imageSrc)} aria-pressed={selected}
                            className={`group relative flex min-h-[142px] flex-col items-center justify-center gap-2 rounded-2xl border-2 p-3 text-center transition-all duration-200 ${selected ? 'border-[#b47a2c] bg-[#fff5dc] text-[#183f40] shadow-[0_8px_0_#b47a2c,0_14px_24px_rgba(25,50,48,.18)] -translate-y-1' : 'border-[var(--border-strong)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-sm hover:-translate-y-1 hover:border-[#b47a2c] hover:shadow-lg'}`}>
                            <span className="absolute left-2 top-2 text-[9px] font-black tabular-nums text-current/45">{String(index + 1).padStart(2,'0')}</span>
                            <span className="h-[76px] w-[76px] overflow-hidden rounded-2xl border-2 border-current/15 bg-[#f4e6c8] shadow-inner transition-transform duration-300 group-hover:scale-105">
-                             <img src={preset.svgDataUri} alt="" className="h-full w-full object-cover" />
+                             <img src={preset.imageSrc} alt="" className="h-full w-full object-cover" />
                            </span>
                            <span className="max-w-full text-xs font-black leading-snug">{lang === 'ar' ? preset.nameAr : preset.nameEn}</span>
                            {selected && <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full border-2 border-white bg-[#173f42] text-white shadow"><Check size={13} strokeWidth={3}/></span>}
