@@ -335,6 +335,7 @@ export async function createFeedPostInSupabase(params: {
   isPinned?: boolean;
   isAnnouncement?: boolean;
   targetClassIds?: string[];
+  targetGradeGroups?: string[];
   poll?: { question: string; options: string[]; allowMultiple?: boolean };
 }): Promise<{ data: ExtendedPost | null; error: Error | null }> {
   if (!supabase) {
@@ -379,7 +380,7 @@ export async function createFeedPostInSupabase(params: {
     media_provider: firstAttachment?.mediaProvider || params.mediaProvider || null,
     is_pinned: Boolean(params.isPinned),
     is_announcement: Boolean(params.isAnnouncement),
-    audience_mode: params.targetClassIds?.length ? 'classes' : 'everyone'
+    audience_mode: params.targetClassIds?.length && params.targetGradeGroups?.length ? 'mixed' : params.targetClassIds?.length ? 'classes' : params.targetGradeGroups?.length ? 'grades' : 'everyone'
   };
 
   const { data, error } = await supabase
@@ -402,6 +403,17 @@ export async function createFeedPostInSupabase(params: {
       if (rollbackError) console.error('Failed to roll back post after audience-target failure:', rollbackError.message);
       const cleanup = await cleanupFeedMediaReferences(references);
       if (cleanup.error) console.error('Unable to clean up media after audience-target failure:', cleanup.error.message);
+      return { data: null, error: new Error(targetError.message) };
+    }
+  }
+  if (params.targetGradeGroups?.length) {
+    const targets = Array.from(new Set(params.targetGradeGroups)).map(grade => ({ post_id: postId, grade }));
+    const { error: targetError } = await supabase.from('feed_post_grade_targets').insert(targets);
+    if (targetError) {
+      const { error: rollbackError } = await supabase.from('feed_posts').delete().eq('id', postId);
+      if (rollbackError) console.error('Failed to roll back post after age-target failure:', rollbackError.message);
+      const cleanup = await cleanupFeedMediaReferences(references);
+      if (cleanup.error) console.error('Unable to clean up media after age-target failure:', cleanup.error.message);
       return { data: null, error: new Error(targetError.message) };
     }
   }
