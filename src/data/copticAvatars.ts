@@ -36,7 +36,7 @@ const entries:Array<[string,string,string,Emblem,string,string,string,'saints'|'
  ['deacon-chalice','Deacon service emblem','رمز خدمة الشمامسة','chalice','#164e70','#fff0d8','#8ec8d8','deacons'],
  ['sunday-school-bible','Sunday School emblem','رمز مدارس الأحد','bible','#17634f','#fff0d8','#9ed8b5','students'],
  ['sunday-school-flower','Sunday School flower emblem','زهرة مدارس الأحد','lily','#8a5420','#fff0d8','#f0ce8a','students'],
- ['saint-macarius-icon','St. Macarius the Great','القديس الأنبا مقار,'grapes','#456027','#fff0d8','#b9d18a','saints'],
+ ['saint-macarius-icon','St. Macarius the Great','القديس الأنبا مقار','grapes','#456027','#fff0d8','#b9d18a','saints'],
  ['coptic-cross-dove','Coptic Cross and Dove','الصليب القبطي والحمامة','dove','#49316c','#fff0d8','#c8afe8','saints']
 ];
 const realIconSources: Record<string,string> = {
@@ -50,5 +50,5 @@ const realIconSources: Record<string,string> = {
 };
 export const COPTIC_AVATARS:CopticAvatarPreset[] = entries.map(([id,nameEn,nameAr,kind,bg,fg,accent,category])=>({id,nameEn,nameAr,category,imageSrc:realIconSources[id] || emblem(kind,bg,fg,accent)}));
 export const DEFAULT_STUDENT_AVATAR=COPTIC_AVATARS[7].imageSrc;
-export const DEFAULT_PARENT_AVATAR=COPTIC_AVATARS[0].svgDataUri;
-export const DEFAULT_TEACHER_AVATAR=COPTIC_AVATARS[3].svgDataUri;
+export const DEFAULT_PARENT_AVATAR=COPTIC_AVATARS[0].imageSrc;
+export const DEFAULT_TEACHER_AVATAR=COPTIC_AVATARS[3].imageSrc;
