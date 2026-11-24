@@ -63,6 +63,35 @@ function getTrustedServiceClient(errorMessage: string) {
   return trustedServiceClient;
 }
 
+async function recordServerAchievementEvent(
+  studentId: string,
+  eventType: 'lesson_opened' | 'lesson_completed' | 'hymn_opened' | 'taxis_opened' | 'quiz_passed',
+  sourceKey: string,
+  metadata: Record<string, unknown> = {}
+) {
+  const client = getTrustedServiceClient('Achievement tracking is temporarily unavailable.');
+  const events: Array<{ student_id: string; event_type: string; source_key: string; metadata: Record<string, unknown> }> = [{
+    student_id: studentId, event_type: eventType, source_key: sourceKey, metadata
+  }];
+  if (['lesson_opened', 'hymn_opened', 'taxis_opened'].includes(eventType)) {
+    events.push({
+      student_id: studentId,
+      event_type: 'learning_day',
+      source_key: `learning-day:${getCairoDateString()}`,
+      metadata: { sourceEvent: eventType }
+    });
+  }
+  for (const event of events) {
+    const { error } = await client.from('achievement_events').upsert(event, {
+      onConflict: 'student_id,source_key', ignoreDuplicates: true
+    });
+    if (error) throw new Error(`Could not persist achievement activity: ${error.message}`);
+  }
+  const { data, error } = await client.rpc('evaluate_student_achievements', { p_student_id: studentId });
+  if (error) throw new Error(`Could not evaluate achievements: ${error.message}`);
+  return data;
+}
+
 function getPublicAuthClient() {
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
@@ -6105,6 +6134,14 @@ app.post("/api/church/student-progress/start", async (req, res) => {
     }
     const resolved = await resolveStudentProgressLesson(targetStudentId, lessonId, versionId);
     const { targetVersion } = resolved;
+    let achievementResult: any = null;
+    if (resolved.isPersisted) {
+      try {
+        achievementResult = await recordServerAchievementEvent(targetStudentId, 'lesson_opened', `lesson-open:${lessonId}`, { lessonId, versionId });
+      } catch (achievementError: any) {
+        console.error('Could not record lesson-open achievement:', achievementError?.message || achievementError);
+      }
+    }
 
     // Opening an authorized, published Sunday School lesson qualifies for the
     // independent learning streak. A streak-sync outage must never block reading.
@@ -6136,7 +6173,8 @@ app.post("/api/church/student-progress/start", async (req, res) => {
         progress: persistedProgress,
         isNew: !existing,
         streak: openStreakPayload,
-        streakSyncError
+        streakSyncError,
+        achievementResult
       });
     }
 
@@ -6145,7 +6183,7 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       existing.versionId = versionId;
       existing.totalSections = totalSections;
       existing.completionPercent = Math.min(100, Math.round((existing.sectionsCompleted.length / totalSections) * 100));
-      return res.json({ success: true, progress: existing, isNew: false, streak: openStreakPayload, streakSyncError });
+      return res.json({ success: true, progress: existing, isNew: false, streak: openStreakPayload, streakSyncError, achievementResult });
     }
 
     const newProgress = {
@@ -6167,7 +6205,8 @@ app.post("/api/church/student-progress/start", async (req, res) => {
       progress: newProgress,
       isNew: true,
       streak: openStreakPayload,
-      streakSyncError
+      streakSyncError,
+      achievementResult
     });
   } catch (err: any) {
     return res.status(err?.status || 500).json({
@@ -6356,6 +6395,14 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
     prog.completedAt = persistedCompletion.completedAt || proposedCompletedAt;
     prog.completionPercent = 100;
     prog.pointsAwarded = true;
+    let achievementResult: any = null;
+    if (resolved.isPersisted) {
+      try {
+        achievementResult = await recordServerAchievementEvent(targetStudentId, 'lesson_completed', `lesson-complete:${lessonId}`, { lessonId, versionId });
+      } catch (achievementError: any) {
+        console.error('Could not record lesson-completion achievement:', achievementError?.message || achievementError);
+      }
+    }
 
     // Authoritative Points Calculation
     const currentPoints = serverReviewState.userPoints[targetStudentId] ?? (targetStudentId === 'mark' || targetStudentId === 'u1' ? 100 : 0);
@@ -6454,7 +6501,8 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
         lastActiveCairoDate: streakInfo.lastActiveCairoDate,
         isActiveToday: persistedStreak?.isActiveToday ?? true
       },
-      completionHistory: serverReviewState.completionHistory[targetStudentId] || []
+      completionHistory: serverReviewState.completionHistory[targetStudentId] || [],
+      achievementResult
     });
   } catch (err: any) {
     return res.status(err?.status || 500).json({
@@ -6611,11 +6659,19 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
         activeCairoDays
       };
       serverReviewState.userStreaks[targetStudentId] = streakRecord;
+      let achievementResult: any = null;
+      try {
+        const eventType = school === 'hymns' ? 'hymn_opened' : 'taxis_opened';
+        achievementResult = await recordServerAchievementEvent(targetStudentId, eventType, `${school}:${activityId}`, { school, activityId });
+      } catch (achievementError: any) {
+        console.error('Could not record content-open achievement:', achievementError?.message || achievementError);
+      }
       return res.json({
         success: true,
         school,
         activityId,
         activityType: 'CONTENT_OPENED',
+        achievementResult,
         pointsEarned: 0,
         totalPoints: serverReviewState.userPoints[targetStudentId] ?? 0,
         streak: {
@@ -8166,6 +8222,11 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
         return res.status(502).json({ success: false, error: 'STREAK_PERSISTENCE_FAILED', message: 'The previous quiz is saved, but its learning streak could not be synchronized. Please retry.' });
       }
       const { streakRecord, currentPoints } = await currentRewardState();
+      let achievementResult: any = null;
+      if (durableDuplicate.passed) {
+        try { achievementResult = await recordServerAchievementEvent(targetStudentId, 'quiz_passed', `quiz-pass:${lessonId}:${quizId}`, { lessonId, quizId }); }
+        catch (achievementError: any) { console.error('Could not record duplicate quiz achievement:', achievementError?.message || achievementError); }
+      }
       return res.json({
         success: true,
         attempt: durableDuplicate,
@@ -8179,7 +8240,8 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
           streakGained: false,
           lastActiveCairoDate: streakRecord.lastActiveCairoDate
         },
-        message: "Duplicate submission safely handled via durable idempotency; existing attempt preserved."
+        message: "Duplicate submission safely handled via durable idempotency; existing attempt preserved.",
+        achievementResult
       });
     }
 
@@ -8245,6 +8307,11 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
             return res.status(502).json({ success: false, error: 'STREAK_PERSISTENCE_FAILED', message: 'The previous quiz is saved, but its learning streak could not be synchronized. Please retry.' });
           }
           const { streakRecord, currentPoints } = await currentRewardState();
+          let achievementResult: any = null;
+          if (recovered.passed) {
+            try { achievementResult = await recordServerAchievementEvent(targetStudentId, 'quiz_passed', `quiz-pass:${lessonId}:${quizId}`, { lessonId, quizId }); }
+            catch (achievementError: any) { console.error('Could not recover quiz achievement:', achievementError?.message || achievementError); }
+          }
           return res.json({
             success: true,
             attempt: recovered,
@@ -8258,7 +8325,8 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
               streakGained: false,
               lastActiveCairoDate: streakRecord.lastActiveCairoDate
             },
-            message: "Duplicate submission safely handled via database unique constraint; existing attempt preserved."
+            message: "Duplicate submission safely handled via database unique constraint; existing attempt preserved.",
+            achievementResult
           });
         }
       }
@@ -8381,6 +8449,11 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
       }
     }
 
+    let achievementResult: any = null;
+    if (newAttempt.passed) {
+      try { achievementResult = await recordServerAchievementEvent(targetStudentId, 'quiz_passed', `quiz-pass:${lessonId}:${quizId}`, { lessonId, quizId }); }
+      catch (achievementError: any) { console.error('Could not record quiz achievement:', achievementError?.message || achievementError); }
+    }
     serverReviewState.attempts[key].push(newAttempt);
 
     // Progress Integration: Sync quiz score without corrupting section completion
@@ -8418,7 +8491,8 @@ app.post("/api/church/student-quiz/submit", async (req, res) => {
         longestStreak: streakRecord.longestStreak,
         streakGained,
         lastActiveCairoDate: streakRecord.lastActiveCairoDate
-      }
+      },
+      achievementResult
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || "Server error" });
