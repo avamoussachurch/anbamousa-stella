@@ -26,17 +26,17 @@ function emblem(kind:Emblem,bg:string,fg:string,accent:string):string {
  return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg);
 }
 const entries:Array<[string,string,string,Emblem,string,string,string,'saints'|'students'|'deacons']> = [
- ['st-mark','Coptic Church Emblem','رمز الكنيسة القبطية','church','#6d1f2b','#f8e8c2','#d9ad63','saints'],
- ['st-george','Coptic Cross','الصليب القبطي','cross','#183b67','#f8e8c2','#d9ad63','saints'],
- ['st-demiana','Lily Emblem','رمز زهرة الزنبق','lily','#71334f','#fff0d8','#e5b5c2','saints'],
- ['archangel-michael','Cross of Victory','صليب النصرة','cross','#175c58','#fff0c8','#e5c16f','saints'],
- ['virgin-mary','Theotokos Star Emblem','رمز نجمة والدة الإله','lily','#233e70','#fff0d8','#d5b56c','saints'],
- ['st-philopateer','Abu Seifein Cross Emblem','رمز صليب أبي سيفين','cross','#56336f','#fff0d8','#d6b3e5','saints'],
- ['st-mina','Ichthys Fish Emblem','رمز السمكة المسيحية','fish','#78452e','#fff0d8','#e7bd85','saints'],
- ['deacon-boy','Deacon service emblem','رمز خدمة الشمامسة','chalice','#164e70','#fff0d8','#8ec8d8','deacons'],
- ['sunday-school-boy','Sunday School emblem','رمز مدارس الأحد','bible','#17634f','#fff0d8','#9ed8b5','students'],
- ['sunday-school-girl','Sunday School flower emblem','زهرة مدارس الأحد','lily','#8a5420','#fff0d8','#f0ce8a','students'],
- ['david-shepherd','David the Psalmist','داود المرنم','grapes','#456027','#fff0d8','#b9d18a','saints'],
+ ['coptic-church','Coptic Church Emblem','رمز الكنيسة القبطية','church','#6d1f2b','#f8e8c2','#d9ad63','saints'],
+ ['coptic-cross','Coptic Cross','الصليب القبطي','cross','#183b67','#f8e8c2','#d9ad63','saints'],
+ ['lily-emblem','Lily Emblem','رمز زهرة الزنبق','lily','#71334f','#fff0d8','#e5b5c2','saints'],
+ ['victory-cross','Cross of Victory','صليب النصرة','cross','#175c58','#fff0c8','#e5c16f','saints'],
+ ['theotokos-symbol','Theotokos Star Emblem','رمز نجمة والدة الإله','lily','#233e70','#fff0d8','#d5b56c','saints'],
+ ['abu-seifein-cross','Abu Seifein Cross Emblem','رمز صليب أبي سيفين','cross','#56336f','#fff0d8','#d6b3e5','saints'],
+ ['fish-emblem','Ichthys Fish Emblem','رمز السمكة المسيحية','fish','#78452e','#fff0d8','#e7bd85','saints'],
+ ['deacon-chalice','Deacon service emblem','رمز خدمة الشمامسة','chalice','#164e70','#fff0d8','#8ec8d8','deacons'],
+ ['sunday-school-bible','Sunday School emblem','رمز مدارس الأحد','bible','#17634f','#fff0d8','#9ed8b5','students'],
+ ['sunday-school-flower','Sunday School flower emblem','زهرة مدارس الأحد','lily','#8a5420','#fff0d8','#f0ce8a','students'],
+ ['psalm-emblem','David the Psalmist','داود المرنم','grapes','#456027','#fff0d8','#b9d18a','saints'],
  ['coptic-cross-dove','Coptic Cross and Dove','الصليب القبطي والحمامة','dove','#49316c','#fff0d8','#c8afe8','saints']
 ];
 export const COPTIC_AVATARS:CopticAvatarPreset[] = entries.map(([id,nameEn,nameAr,kind,bg,fg,accent,category])=>({id,nameEn,nameAr,category,svgDataUri:emblem(kind,bg,fg,accent)}));
