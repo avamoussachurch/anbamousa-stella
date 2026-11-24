@@ -190,7 +190,7 @@ create policy feed_poll_votes_insert_own on public.feed_post_poll_votes for inse
 
 create table if not exists public.church_event_rsvps (
   event_id uuid not null references public.church_events(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   response text not null check (response in ('attending','maybe','not_attending')),
   updated_at timestamptz not null default now(),
   primary key(event_id,user_id)
