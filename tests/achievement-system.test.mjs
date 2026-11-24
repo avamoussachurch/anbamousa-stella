@@ -107,7 +107,7 @@ test('teachers and admins can manage badges, milestones, catalogue, and fulfilme
   assert.match(requestValidationMigration, /REWARD_REQUEST_CATALOG_MISMATCH/);
   assert.match(requestValidationMigration, /REWARD_REQUEST_MUST_START_PENDING/);
   assert.match(requestValidationMigration, /REWARD_CATALOG_ITEM_NOT_FOUND/);
-  assert.match(badgeColorMigration, /style = 'red'/);
+  assert.match(badgeColorMigration, /style='red'/);
   assert.match(badgeColorMigration, /'gold','teal','coral','blue','green','red'/);
   assert.doesNotMatch(gallery, /rose|pink|indigo|violet|purple|magenta/i);
   assert.match(celebration, /confettiHues = \[43, 25, 174, 145, 207, 8\]/);
