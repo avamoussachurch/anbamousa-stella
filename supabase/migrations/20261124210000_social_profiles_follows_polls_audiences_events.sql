@@ -450,3 +450,17 @@ create policy feed_post_grade_targets_author_write on public.feed_post_grade_tar
       or exists(select 1 from public.profiles p where p.id=auth.uid() and public.profile_grade_class_group(p.grade)=feed_post_grade_targets.grade)
     )
   );
+
+
+create or replace function public.get_church_event_rsvp_summary(p_event_ids uuid[])
+returns table(event_id uuid, attending_count bigint, maybe_count bigint)
+language sql stable security definer set search_path=public,pg_temp as $$
+  select r.event_id,
+    count(*) filter(where r.response='attending'),
+    count(*) filter(where r.response='maybe')
+  from public.church_event_rsvps r
+  where auth.uid() is not null and r.event_id=any(coalesce(p_event_ids,'{}'::uuid[]))
+  group by r.event_id;
+$$;
+revoke all on function public.get_church_event_rsvp_summary(uuid[]) from public;
+grant execute on function public.get_church_event_rsvp_summary(uuid[]) to authenticated;
