@@ -1,7 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { StudentContentProgress } from '../types';
-import { recordAchievementEvent } from './achievementService';
-import { getCairoDateString } from './cairoTime';
+import { dispatchAchievementResult } from './achievementService';
 
 export interface StartLessonProgressInput {
   lessonId: string;
@@ -173,8 +172,7 @@ export async function startLessonProgress(
       return { data: null, error: new Error('The server did not return persisted lesson progress.') };
     }
     const confirmed = storeServerProgress(json.progress);
-    void recordAchievementEvent('lesson_opened', `lesson-open:${lessonId}:${versionId}`, { lessonId, versionId });
-    void recordAchievementEvent('learning_day', `learning-day:${getCairoDateString()}`, { school: 'sunday_school' });
+    dispatchAchievementResult(json.achievementResult);
 
     return {
       data: confirmed,
@@ -266,7 +264,7 @@ export async function completeLessonProgress(
     ) {
       return { data: null, error: new Error('The server did not return persisted lesson completion.') };
     }
-    void recordAchievementEvent('lesson_completed', `lesson-complete:${lessonId}:${versionId}`, { lessonId, versionId });
+    dispatchAchievementResult(json.achievementResult);
     if (
       !Number.isFinite(json.totalPoints) ||
       !Number.isFinite(json.pointsEarned) ||
@@ -344,13 +342,7 @@ export async function recordStudentSchoolActivity(
     ) {
       throw new Error('The server did not confirm persisted points and streak for this activity.');
     }
-    if (input.school === 'hymns' || input.school === 'taxis') {
-      const eventType = input.school === 'hymns'
-        ? (input.activityType === 'HYMN_MASTERED' ? 'hymn_mastered' : 'hymn_opened')
-        : (input.activityType === 'TAXIS_COMPLETED' ? 'taxis_completed' : 'taxis_opened');
-      void recordAchievementEvent(eventType, `${input.school}:${input.activityId}:${eventType}`, { school: input.school, activityId: json.activityId });
-      void recordAchievementEvent('learning_day', `learning-day:${getCairoDateString()}`, { school: input.school });
-    }
+    dispatchAchievementResult(json.achievementResult);
     return {
       success: true,
       school: json.school,
