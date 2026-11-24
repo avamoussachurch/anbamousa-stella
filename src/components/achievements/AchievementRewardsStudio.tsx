@@ -181,6 +181,18 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
     finally { setBusy(false); }
   };
 
+  const reviewRequest = async (requestId: string, decision: 'approved' | 'rejected') => {
+    if (!supabase || !canManage) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const { error: rpcError } = await supabase.rpc('review_staff_reward_request', { p_request_id: requestId, p_decision: decision });
+      if (rpcError) throw rpcError;
+      setNotice(isArabic ? (decision === 'approved' ? 'تمت الموافقة وخصم النقاط.' : 'تم رفض الطلب.') : (decision === 'approved' ? 'Request approved and points deducted.' : 'Request rejected.'));
+      await load();
+    } catch (reviewError: any) { setError(reviewError?.message || 'Could not review reward request.'); }
+    finally { setBusy(false); }
+  };
+
   const fulfill = async (requestId: string) => {
     if (!supabase || !canManage) return;
     setBusy(true); setError(''); setNotice('');
@@ -345,8 +357,16 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
     </div>}
 
     {section === 'fulfillment' && <div className="space-y-3">
-      {requests.filter(item=>item.status==='approved').map(item=><article key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-[var(--surface-primary)] p-4"><div><p className="font-black">{item.reward_name_en} · {item.cost_points} pts</p><p className="text-xs text-[var(--text-secondary)]">Student {item.student_id} · {new Date(item.created_at).toLocaleDateString()}</p><p className="text-xs font-bold text-emerald-700">{item.fulfilled_at ? (isArabic ? 'تم التسليم' : 'Fulfilled') : (isArabic ? 'بانتظار التسليم' : 'Awaiting fulfilment')}</p></div>{!item.fulfilled_at && <button type="button" disabled={busy} onClick={()=>void fulfill(item.id)} className={buttonClass}><Check size={16}/>{isArabic ? 'تأكيد التسليم' : 'Mark fulfilled'}</button>}</article>)}
-      {requests.filter(item=>item.status==='approved').length===0 && <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'لا توجد طلبات موافق عليها حتى الآن.' : 'No approved reward requests yet.'}</p>}
+      {requests.map(item=><article key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-[var(--surface-primary)] p-4">
+        <div><p className="font-black">{isArabic ? item.reward_name_ar : item.reward_name_en} · {item.cost_points} pts</p><p className="text-xs text-[var(--text-secondary)]">Student {item.student_id} · {new Date(item.created_at).toLocaleDateString()}</p>
+          <p className={`text-xs font-bold ${item.status==='approved'?'text-emerald-700':item.status==='rejected'?'text-rose-700':'text-amber-700'}`}>{item.status==='approved' ? (item.fulfilled_at ? (isArabic?'تم التسليم':'Fulfilled') : (isArabic?'موافق عليه · بانتظار التسليم':'Approved · awaiting fulfilment')) : item.status==='rejected' ? (isArabic?'مرفوض':'Rejected') : (isArabic?'بانتظار المراجعة':'Pending review')}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {item.status==='pending' && <><button type="button" disabled={busy} onClick={()=>void reviewRequest(item.id,'approved')} className={buttonClass}><Check size={16}/>{isArabic?'موافقة وخصم النقاط':'Approve & deduct points'}</button><button type="button" disabled={busy} onClick={()=>void reviewRequest(item.id,'rejected')} className="rounded-xl border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700">{isArabic?'رفض':'Reject'}</button></>}
+          {item.status==='approved' && !item.fulfilled_at && <button type="button" disabled={busy} onClick={()=>void fulfill(item.id)} className={buttonClass}><Check size={16}/>{isArabic ? 'تأكيد التسليم' : 'Mark fulfilled'}</button>}
+        </div>
+      </article>)}
+      {requests.length===0 && <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'لا توجد طلبات مكافآت حتى الآن.' : 'No reward requests yet.'}</p>}
     </div>}
   </section>;
 }
