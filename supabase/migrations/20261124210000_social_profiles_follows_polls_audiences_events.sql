@@ -245,3 +245,29 @@ end $$;
 drop trigger if exists feed_poll_single_choice_guard on public.feed_post_poll_votes;
 create trigger feed_poll_single_choice_guard before insert on public.feed_post_poll_votes
 for each row execute function public.enforce_single_choice_poll_vote();
+
+
+create or replace function public.get_feed_poll_results(p_post_ids text[])
+returns table (
+  post_id text,
+  option_id uuid,
+  option_label text,
+  vote_count bigint,
+  has_voted boolean
+)
+language sql stable security definer
+set search_path=public,pg_temp
+as $$
+  select o.post_id,o.id,o.label,count(v.user_id),
+         exists(select 1 from public.feed_post_poll_votes mine where mine.option_id=o.id and mine.user_id=auth.uid())
+  from public.feed_post_poll_options o
+  join public.feed_post_polls poll on poll.post_id=o.post_id
+  left join public.feed_post_poll_votes v on v.option_id=o.id
+  where auth.uid() is not null
+    and o.post_id=any(coalesce(p_post_ids,'{}'::text[]))
+    and public.can_view_feed_post(o.post_id)
+  group by o.post_id,o.id,o.label,o.position
+  order by o.post_id,o.position;
+$$;
+revoke all on function public.get_feed_poll_results(text[]) from public;
+grant execute on function public.get_feed_poll_results(text[]) to authenticated;
