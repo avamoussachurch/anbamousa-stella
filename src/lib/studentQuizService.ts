@@ -1,3 +1,4 @@
+import { dispatchAchievementResult } from './achievementService';
 import { supabase } from './supabase';
 import { QuizDraft, StudentQuizAttempt } from '../types';
 
@@ -133,6 +134,7 @@ export async function submitStudentQuizAttempt(
     }
 
     const attempt: StudentQuizAttempt = json.attempt;
+    dispatchAchievementResult(json.achievementResult);
     const key = `${attempt.studentId}_${lessonId}`;
     if (!LOCAL_QUIZ_ATTEMPTS[key]) {
       LOCAL_QUIZ_ATTEMPTS[key] = [];

@@ -12,6 +12,7 @@ import { Language } from './types';
 import { getAccountSetupStatus } from './lib/onboardingService';
 import { applyLanguagePreference, getLanguageDirection } from './lib/uiPreferences';
 import { canAccessWorkspace, canAccessWorkspaceTab, hasRole, resolveWorkspace, type Workspace } from './lib/workspaces';
+import { AchievementCelebrationHost } from './components/achievements/AchievementCelebrationHost';
 
 // Keep the entry bundle focused on authentication and shared navigation.
 // Role workspaces and feature tabs are downloaded only when the user opens them.
@@ -521,6 +522,8 @@ function AppContent() {
           />
         </React.Suspense>
       )}
+
+      <AchievementCelebrationHost lang={lang === 'ar' ? 'ar' : 'en'} />
 
       {/* Unified Bottom Nav: Always accessible across all tabs, hidden during active full-screen lesson */}
       {!activeLessonId && (

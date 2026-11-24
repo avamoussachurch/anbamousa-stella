@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { StudentContentProgress } from '../types';
+import { dispatchAchievementResult } from './achievementService';
 
 export interface StartLessonProgressInput {
   lessonId: string;
@@ -171,6 +172,7 @@ export async function startLessonProgress(
       return { data: null, error: new Error('The server did not return persisted lesson progress.') };
     }
     const confirmed = storeServerProgress(json.progress);
+    dispatchAchievementResult(json.achievementResult);
 
     return {
       data: confirmed,
@@ -262,6 +264,7 @@ export async function completeLessonProgress(
     ) {
       return { data: null, error: new Error('The server did not return persisted lesson completion.') };
     }
+    dispatchAchievementResult(json.achievementResult);
     if (
       !Number.isFinite(json.totalPoints) ||
       !Number.isFinite(json.pointsEarned) ||
@@ -339,6 +342,7 @@ export async function recordStudentSchoolActivity(
     ) {
       throw new Error('The server did not confirm persisted points and streak for this activity.');
     }
+    dispatchAchievementResult(json.achievementResult);
     return {
       success: true,
       school: json.school,

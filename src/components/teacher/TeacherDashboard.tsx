@@ -48,6 +48,7 @@ import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
 import { TeacherProgressReport } from './TeacherProgressReport';
 import { TeacherAttendanceWorkspace } from './TeacherAttendanceWorkspace';
 import { TeacherModerationQueue } from './TeacherModerationQueue';
+import { AchievementRewardsStudio } from '../achievements/AchievementRewardsStudio';
 
 interface TeacherDashboardProps {
   onOpenParentPortal?: () => void;
@@ -56,7 +57,7 @@ interface TeacherDashboardProps {
   onNavigate?: (tab: string) => void;
 }
 
-type TeacherTab = 'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation' | 'helpRequests' | 'leaderboard' | 'preview' | 'communication';
+type TeacherTab = 'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation' | 'helpRequests' | 'leaderboard' | 'preview' | 'communication' | 'achievements';
 
 const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
   overview: { en: 'Servant Studio', ar: 'استوديو الخادم' },
@@ -71,7 +72,8 @@ const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
   helpRequests: { en: 'Student help requests', ar: 'طلبات مساعدة التلاميذ' },
   leaderboard: { en: 'Class leaderboards', ar: 'ترتيب الفصل' },
   preview: { en: 'Student experience preview', ar: 'معاينة تجربة التلميذ' },
-  communication: { en: 'Community feed', ar: 'منشورات المجتمع' }
+  communication: { en: 'Community feed', ar: 'منشورات المجتمع' },
+  achievements: { en: 'Achievements & Bazaar', ar: 'الأوسمة وبازار النقاط' }
 };
 
 const routeToTeacherTab: Record<string, TeacherTab> = {
@@ -89,7 +91,8 @@ const routeToTeacherTab: Record<string, TeacherTab> = {
   'help-requests': 'helpRequests',
   leaderboard: 'leaderboard',
   preview: 'preview',
-  communication: 'communication'
+  communication: 'communication',
+  achievements: 'achievements'
 };
 
 export function TeacherDashboard({ 
@@ -1115,6 +1118,7 @@ export function TeacherDashboard({
 
       {activeTab === 'helpRequests' && <HelpRequestsPanel lang={lang} />}
       {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} audience="staff" />}
+      {activeTab === 'achievements' && <AchievementRewardsStudio mode="manage" lang={lang} />}
 
       {activeTab === 'moderation' && <TeacherModerationQueue lang={lang} />}
 
