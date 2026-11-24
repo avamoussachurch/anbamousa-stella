@@ -1128,7 +1128,11 @@ export function ProfileTab({
 
                <ProfileCustomizationStudio userId={userData.id} lang={lang} />
 
-               <div className="space-y-4 pt-2">
+               <details open className="group rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--surface-primary)] p-4">
+                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-black text-[var(--mousa-teal-deep)] dark:text-white">
+                   <span>{lang === 'ar' ? 'البيانات الأساسية والحساب' : 'Identity & account details'}</span><span className="text-xs text-[var(--text-secondary)] transition-transform group-open:rotate-180">⌄</span>
+                 </summary>
+                 <div className="space-y-4 pt-4">
                  {/* Full Name */}
                  <div>
                     <label className="text-xs md:text-sm font-bold text-gray-700 dark:text-[var(--text-secondary)] mb-1.5 flex items-center justify-between">
@@ -1180,7 +1184,14 @@ export function ProfileTab({
                    </div>
                  </div>
 
-                 <div className="rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                 </div>
+               </details>
+
+               <details open className="group rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-black text-[var(--text-primary)]">
+                   <span>{lang === 'ar' ? 'مستوى الألحان والطقس القبطي' : 'Hymns & Coptic Taxis level'}</span><span className="text-xs text-[var(--text-secondary)] transition-transform group-open:rotate-180">⌄</span>
+                 </summary>
+                 <div className="pt-3">
                    <label htmlFor="student-hymns-school-level" className="text-sm font-black text-[var(--text-primary)]">
                      {lang === 'ar' ? 'مستوى مدرسة الألحان' : 'Hymns School Level'}
                    </label>
@@ -1227,7 +1238,8 @@ export function ProfileTab({
                    {hymnsTaxisLevelError && <p role="alert" className="mt-2 text-xs font-semibold text-[var(--feedback-error)]">{hymnsTaxisLevelError}</p>}
                    {hymnsTaxisLevelMessage && <p role="status" className="mt-2 text-xs font-semibold text-[var(--brand-teal)]">{hymnsTaxisLevelMessage}</p>}
                  </div>
-               </div>
+                 </div>
+               </details>
 
                <div className="pt-2">
                  <button 
