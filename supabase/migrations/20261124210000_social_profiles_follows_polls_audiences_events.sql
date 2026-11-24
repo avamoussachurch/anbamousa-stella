@@ -413,3 +413,40 @@ grant select,insert,delete on public.feed_post_polls to authenticated;
 grant select,insert,delete on public.feed_post_poll_options to authenticated;
 grant select,insert on public.feed_post_poll_votes to authenticated;
 grant select,insert,update,delete on public.church_event_rsvps to authenticated;
+
+
+-- Tighten audience writes to the currently active church year.
+drop policy if exists feed_post_class_targets_author_write on public.feed_post_class_targets;
+create policy feed_post_class_targets_author_write on public.feed_post_class_targets
+  for all to authenticated
+  using (exists(select 1 from public.feed_posts p where p.id=post_id and (p.author_id=auth.uid() or has_role('admin'))))
+  with check (
+    exists(select 1 from public.feed_posts p where p.id=post_id and (p.author_id=auth.uid() or has_role('admin')))
+    and (
+      has_role('admin')
+      or exists(select 1 from public.servant_class_assignments a
+        join public.class_instances ci on ci.id=a.class_instance_id and ci.church_year_id=a.church_year_id
+        join public.church_years cy on cy.id=a.church_year_id and cy.is_active=true
+        where a.class_instance_id=feed_post_class_targets.class_instance_id and a.servant_id=auth.uid() and a.is_active=true)
+      or exists(select 1 from public.class_memberships m
+        join public.class_instances ci on ci.id=m.class_instance_id and ci.church_year_id=m.church_year_id
+        join public.church_years cy on cy.id=m.church_year_id and cy.is_active=true
+        where m.class_instance_id=feed_post_class_targets.class_instance_id and m.student_id=auth.uid() and m.status='active')
+    )
+  );
+
+drop policy if exists feed_post_grade_targets_author_write on public.feed_post_grade_targets;
+create policy feed_post_grade_targets_author_write on public.feed_post_grade_targets
+  for all to authenticated
+  using (exists(select 1 from public.feed_posts p where p.id=post_id and (p.author_id=auth.uid() or has_role('admin'))))
+  with check (
+    exists(select 1 from public.feed_posts p where p.id=post_id and (p.author_id=auth.uid() or has_role('admin')))
+    and (
+      has_role('admin')
+      or exists(select 1 from public.servant_class_assignments a
+        join public.class_instances ci on ci.id=a.class_instance_id and ci.church_year_id=a.church_year_id
+        join public.church_years cy on cy.id=a.church_year_id and cy.is_active=true
+        where a.servant_id=auth.uid() and a.is_active=true and ci.class_group_id=feed_post_grade_targets.grade)
+      or exists(select 1 from public.profiles p where p.id=auth.uid() and public.profile_grade_class_group(p.grade)=feed_post_grade_targets.grade)
+    )
+  );
