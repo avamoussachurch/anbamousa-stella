@@ -29,9 +29,14 @@ const CATEGORIES: Array<{ id: Category; en: string; ar: string }> = [
   { id: 'attendance', en: 'Attendance', ar: 'الحضور' }, { id: 'consistency', en: 'Consistency', ar: 'المواظبة' },
   { id: 'service', en: 'Service', ar: 'الخدمة' },
 ];
+const SUPPORTED_EVENT_TYPES = new Set([
+  'lesson_opened','lesson_completed','hymn_opened','hymn_mastered','taxis_opened','taxis_completed',
+  'prayer_day','quiz_passed','attendance_present','community_post','community_reaction','learning_day'
+]);
 const EVENT_TYPES = [
-  'lesson_opened','lesson_completed','hymn_opened','taxis_opened','prayer_day','quiz_passed',
-  'attendance_present','community_post','community_reaction','learning_day'
+  'lesson_opened','lesson_completed','hymn_opened','hymn_mastered','taxis_opened','taxis_completed',
+  'prayer_day','quiz_passed','attendance_present','community_post','community_reaction','learning_day',
+  'memory_verse','class_participation'
 ];
 const STYLES: Record<string, string> = {
   gold: 'from-amber-300 via-yellow-500 to-orange-500', teal: 'from-teal-300 via-teal-500 to-cyan-700',
@@ -120,6 +125,12 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
 
   const saveBadge = async (event: React.FormEvent) => {
     event.preventDefault(); if (!supabase || !canManage || !userData) return;
+    if (badgeForm.is_active && !SUPPORTED_EVENT_TYPES.has(badgeForm.event_type)) {
+      setError(isArabic
+        ? 'نوع النشاط ده لسه مش متوصل بتسجيل موثوق. سيب الوسام غير منشور لحد ما نكمل ربطه.'
+        : 'This activity is not connected to a verified event source yet. Keep the badge inactive until its tracking is implemented.');
+      return;
+    }
     setBusy(true); setError(''); setNotice('');
     const payload = {
       slug: badgeForm.slug.trim() || slugify(badgeForm.title_en),
@@ -319,7 +330,7 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
         <div><label className={labelClass}>English description</label><textarea className={inputClass} value={badgeForm.description_en} onChange={e=>setBadgeForm(v=>({...v,description_en:e.target.value}))} /></div>
         <div><label className={labelClass}>الوصف بالعربية</label><textarea className={inputClass} value={badgeForm.description_ar} onChange={e=>setBadgeForm(v=>({...v,description_ar:e.target.value}))} /></div>
         <div className="grid grid-cols-2 gap-2"><div><label className={labelClass}>Category</label><select className={inputClass} value={badgeForm.category} onChange={e=>setBadgeForm(v=>({...v,category:e.target.value as Category}))}>{CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.en}</option>)}</select></div><div><label className={labelClass}>Icon name</label><input className={inputClass} value={badgeForm.icon} onChange={e=>setBadgeForm(v=>({...v,icon:e.target.value}))} /></div></div>
-        <div className="grid grid-cols-2 gap-2"><div><label className={labelClass}>Unlock event</label><select className={inputClass} value={badgeForm.event_type} onChange={e=>setBadgeForm(v=>({...v,event_type:e.target.value}))}>{EVENT_TYPES.map(t=><option key={t}>{t}</option>)}</select></div><div><label className={labelClass}>Required events</label><input type="number" min="1" max="10000" className={inputClass} value={badgeForm.count} onChange={e=>setBadgeForm(v=>({...v,count:Number(e.target.value)}))} /></div></div>
+        <div className="grid grid-cols-2 gap-2"><div><label className={labelClass}>Unlock event</label><select className={inputClass} value={badgeForm.event_type} onChange={e=>setBadgeForm(v=>({...v,event_type:e.target.value}))}>{EVENT_TYPES.map(t=><option key={t} disabled={!SUPPORTED_EVENT_TYPES.has(t)}>{t}{SUPPORTED_EVENT_TYPES.has(t) ? '' : ' · not connected yet'}</option>)}</select></div><div><label className={labelClass}>Required events</label><input type="number" min="1" max="10000" className={inputClass} value={badgeForm.count} onChange={e=>setBadgeForm(v=>({...v,count:Number(e.target.value)}))} /></div></div>
         <div className="grid grid-cols-2 gap-2"><div><label className={labelClass}>Points reward</label><input type="number" min="0" max="10000" className={inputClass} value={badgeForm.points_reward} onChange={e=>setBadgeForm(v=>({...v,points_reward:Number(e.target.value)}))} /></div><div><label className={labelClass}>Visual style</label><select className={inputClass} value={badgeForm.style} onChange={e=>setBadgeForm(v=>({...v,style:e.target.value}))}>{Object.keys(STYLES).map(s=><option key={s}>{s}</option>)}</select></div></div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={badgeForm.is_active} onChange={e=>setBadgeForm(v=>({...v,is_active:e.target.checked}))} />Published / active</label>
         <div className="flex gap-2"><button disabled={busy} className={buttonClass}><Save size={16}/>{isArabic ? 'حفظ الوسام' : 'Save badge'}</button><button type="button" onClick={()=>setBadgeForm(emptyBadge)} className="rounded-xl border px-3 py-2 text-sm"><X size={16}/></button></div>
