@@ -160,7 +160,7 @@ create table if not exists public.feed_post_poll_options (
 );
 create table if not exists public.feed_post_poll_votes (
   option_id uuid not null references public.feed_post_poll_options(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key(option_id,user_id)
 );
