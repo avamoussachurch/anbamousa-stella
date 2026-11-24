@@ -1088,7 +1088,7 @@ export function ProfileTab({
                      <div className="relative min-w-0 flex-1 text-center sm:text-start">
                        <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#f6d98f]">{lang === 'ar' ? 'استوديو الرموز الكنسية' : 'CHURCH EMBLEM STUDIO'}</p>
                        <h3 className="mt-1 text-xl font-black">{lang === 'ar' ? 'اختر رمزاً كنسياً يعبر عنك' : 'Choose your church emblem'}</h3>
-                       <p className="mt-1 text-xs leading-5 text-white/85">{lang === 'ar' ? 'رموز كنسية بسيطة وليست صوراً للقديسين. يمكن إضافة أيقونات موثقة ومرخصة عند توفرها.' : 'Symbolic church emblems, not portraits. Verified saint icon artwork can be added when properly sourced and licensed.'}</p>
+                       <p className="mt-1 text-xs leading-5 text-white/85">{lang === 'ar' ? 'أيقونات قبطية موثقة وأيقونات ورموز كنسية بسيطة؛ كل صورة قديس لها مصدر وترخيص واضح.' : 'Authentic Coptic icon images and symbolic church emblems. Each saint icon is sourced and credited; symbols are not portraits.'}</p>
                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploadingAvatar} className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border-2 border-[#f4d58b] bg-[#f4d58b] px-4 py-2 text-xs font-black text-[#173b3e] shadow-md transition hover:bg-white disabled:opacity-60">
                          <Upload size={15}/>{lang === 'ar' ? 'ارفع صورتك الخاصة' : 'Upload your own photo'}
                        </button>
@@ -1098,7 +1098,7 @@ export function ProfileTab({
                      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={lang === 'ar' ? 'تصنيفات الصور' : 'Avatar categories'}>
                        {([
                          { id: 'all', en: 'All emblems', ar: 'كل الرموز' },
-                         { id: 'saints', en: 'Church symbols', ar: 'رموز كنسية' },
+                         { id: 'saints', en: 'Saint icons & symbols', ar: 'رموز كنسية' },
                          { id: 'students', en: 'Students', ar: 'رموز الطلاب' },
                          { id: 'deacons', en: 'Deacon emblems', ar: 'رموز الشمامسة' }
                        ] as const).map(category => (
