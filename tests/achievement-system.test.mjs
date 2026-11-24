@@ -59,8 +59,8 @@ test('activity events cover learning, hymns, taxis, prayer, quizzes, attendance,
   assert.match(quiz, /dispatchAchievementResult\(json\.achievementResult\)/);
   assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'quiz_passed'/);
   assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'hymn_opened'/);
-  assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'hymn_mastered'/);
-  assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'taxis_completed'/);
+  assert.match(server, /const eventType = school === 'hymns' \? 'hymn_mastered' : 'taxis_completed'/);
+  assert.match(server, /recordServerAchievementEvent\(targetStudentId, eventType, sourceKey/);
   assert.match(server, /from\('hymns'\)/);
   assert.match(server, /from\('coptic_taxis_items'\)/);
   assert.match(server, /achievement_events/);
