@@ -25,11 +25,12 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
       if (detail.pointsAwarded > 0 && userData?.id && supabase) {
         // Points are server-owned. setUserDirectly intentionally ignores client
         // point changes, so refresh the authoritative profile after the atomic award.
-        void supabase.from('profiles')
-          .select('points,current_streak,longest_streak')
-          .eq('id', userData.id)
-          .maybeSingle()
-          .then(({ data, error }) => {
+        void (async () => {
+          try {
+            const { data, error } = await supabase.from('profiles')
+              .select('points,current_streak,longest_streak')
+              .eq('id', userData.id)
+              .maybeSingle();
             if (error) {
               console.warn('Could not refresh points after achievement unlock:', error.message);
               return;
@@ -41,8 +42,10 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
                 Number(data.longest_streak || 0)
               );
             }
-          })
-          .catch(error => console.warn('Could not refresh points after achievement unlock:', error));
+          } catch (error) {
+            console.warn('Could not refresh points after achievement unlock:', error);
+          }
+        })();
       }
       setPayload(detail);
       setIndex(0);
