@@ -470,3 +470,13 @@ grant execute on function public.get_church_event_rsvp_summary(uuid[]) to authen
 drop policy if exists profile_follows_read_authenticated on public.profile_follows;
 create policy profile_follows_read_authenticated on public.profile_follows
   for select to authenticated using (follower_id=auth.uid() or followed_id=auth.uid());
+
+
+-- The existing notification category constraint must recognize the new community
+-- activity before the follow trigger can safely enqueue its notification.
+alter table public.notifications drop constraint if exists notifications_category_check;
+alter table public.notifications add constraint notifications_category_check
+  check (category = any(array[
+    'announcement','event','lesson','assignment','progress','streak','achievement',
+    'leaderboard','help_request','moderation','system','motivation','community'
+  ]::text[]));
