@@ -3,6 +3,7 @@ import { FeedAttachment, Post, Comment, Reply, User } from '../types';
 import { buildFeedPostAttachmentRows, mapFeedAttachmentRow, MAX_FEED_ATTACHMENTS } from './feedAttachments';
 import type { FeedPostAttachmentInput } from './feedAttachments';
 import { parseStorageReference } from './mediaStorageReference';
+import { DEFAULT_STUDENT_AVATAR } from '../data/copticAvatars';
 
 export type { FeedPostAttachmentInput } from './feedAttachments';
 
@@ -266,7 +267,7 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
       id: p.id,
       authorId: p.author_id,
       authorName: p.author_name,
-      authorAvatar: p.author_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.author_id}`,
+      authorAvatar: p.author_avatar || DEFAULT_STUDENT_AVATAR,
       content: p.content,
       createdAt: p.created_at,
       mediaType: p.media_type || undefined,
@@ -414,7 +415,7 @@ export async function createFeedPostInSupabase(params: {
     id: data.id,
     authorId: data.author_id,
     authorName: data.author_name,
-    authorAvatar: data.author_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.author_id}`,
+    authorAvatar: data.author_avatar || DEFAULT_STUDENT_AVATAR,
     content: data.content,
     createdAt: data.created_at,
     mediaType: data.media_type || undefined,
