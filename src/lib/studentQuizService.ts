@@ -135,7 +135,7 @@ export async function submitStudentQuizAttempt(
 
     const attempt: StudentQuizAttempt = json.attempt;
     if (attempt.percentage >= 70 && !json.isDuplicate) {
-      void recordAchievementEvent('quiz_passed', `quiz-pass:${attempt.id}`, { lessonId, quizId, percentage: attempt.percentage });
+      void recordAchievementEvent('quiz_passed', `quiz-pass:${lessonId}:${quizId}`, { lessonId, quizId, percentage: attempt.percentage });
     }
     const key = `${attempt.studentId}_${lessonId}`;
     if (!LOCAL_QUIZ_ATTEMPTS[key]) {
