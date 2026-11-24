@@ -1,7 +1,7 @@
 /**
- * Symbolic church emblems for Anba Mousa profiles.
- * These are not invented portraits of saints. Real icon portraits should only
- * be added from verified, appropriately licensed Coptic Orthodox sources.
+ * Sourced Coptic Orthodox icon portraits plus symbolic church emblems.
+ * Saint images are credited in public/licenses/coptic-icon-attributions.md.
+ * Non-portrait emblems are clearly named as symbols, never as saint likenesses.
  */
 export interface CopticAvatarPreset {
   id: string; nameEn: string; nameAr: string;
