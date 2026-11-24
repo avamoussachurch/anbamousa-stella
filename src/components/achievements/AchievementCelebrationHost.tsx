@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Award, Check, Sparkles, Trophy, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 type CelebrationItem = { id: string; title_en?: string; title_ar?: string; points_reward?: number; category?: string; badge_count?: number };
 type CelebrationPayload = { badges: CelebrationItem[]; milestones: CelebrationItem[]; pointsAwarded: number };
@@ -13,7 +14,7 @@ const confetti = Array.from({ length: 34 }, (_, index) => ({
 }));
 
 export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar' }) {
-  const { userData, setUserDirectly } = useAuth();
+  const { userData, syncAuthoritativeProgress } = useAuth();
   const [payload, setPayload] = useState<CelebrationPayload | null>(null);
   const [index, setIndex] = useState(0);
   const isArabic = lang === 'ar';
@@ -21,15 +22,34 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
     const receive = (event: Event) => {
       const detail = (event as CustomEvent<CelebrationPayload>).detail;
       if (!detail || (!detail.badges?.length && !detail.milestones?.length)) return;
-      if (detail.pointsAwarded > 0 && userData) {
-        setUserDirectly({ ...userData, points: (userData.points || 0) + detail.pointsAwarded });
+      if (detail.pointsAwarded > 0 && userData?.id && supabase) {
+        // Points are server-owned. setUserDirectly intentionally ignores client
+        // point changes, so refresh the authoritative profile after the atomic award.
+        void supabase.from('profiles')
+          .select('points,current_streak,longest_streak')
+          .eq('id', userData.id)
+          .maybeSingle()
+          .then(({ data, error }) => {
+            if (error) {
+              console.warn('Could not refresh points after achievement unlock:', error.message);
+              return;
+            }
+            if (data) {
+              syncAuthoritativeProgress(
+                Number(data.points || 0),
+                Number(data.current_streak || 0),
+                Number(data.longest_streak || 0)
+              );
+            }
+          })
+          .catch(error => console.warn('Could not refresh points after achievement unlock:', error));
       }
       setPayload(detail);
       setIndex(0);
     };
     window.addEventListener('anba:achievement-unlocked', receive);
     return () => window.removeEventListener('anba:achievement-unlocked', receive);
-  }, [userData?.id, userData?.points, setUserDirectly]);
+  }, [userData?.id, syncAuthoritativeProgress]);
   if (!payload) return null;
   const items = [...(payload.badges || []), ...(payload.milestones || [])];
   const item = items[index];
