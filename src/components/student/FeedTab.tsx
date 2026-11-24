@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
 import { FeedPeopleDirectory } from './FeedPeopleDirectory';
+import { CLASS_GROUPS } from '../../lib/classGroups';
 import { 
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
   ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
@@ -153,7 +154,9 @@ export function FeedTab({ lang }: { lang: Language }) {
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
   const [votingOptionId, setVotingOptionId] = useState<string | null>(null);
   const [targetClassesEnabled, setTargetClassesEnabled] = useState(false);
-  const [availableTargetClasses, setAvailableTargetClasses] = useState<Array<{id:string;nameEn:string;nameAr:string}>>([]);
+  const [availableTargetClasses, setAvailableTargetClasses] = useState<Array<{id:string;nameEn:string;nameAr:string;classGroupId:string}>>([]);
+  const [targetGradesEnabled, setTargetGradesEnabled] = useState(false);
+  const [selectedTargetGradeGroups, setSelectedTargetGradeGroups] = useState<string[]>([]);
   const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<string[]>([]);
   const [loadingTargetClasses, setLoadingTargetClasses] = useState(false);
 
@@ -178,8 +181,8 @@ export function FeedTab({ lang }: { lang: Language }) {
         }
         const uniqueIds = Array.from(new Set(ids));
         if (!uniqueIds.length) { if (!cancelled) setAvailableTargetClasses([]); return; }
-        const { data: classes } = await supabase!.from('class_instances').select('id,name_en,name_ar').in('id', uniqueIds).order('name_en');
-        if (!cancelled) setAvailableTargetClasses((classes || []).map(row => ({id:row.id,nameEn:row.name_en,nameAr:row.name_ar})));
+        const { data: classes } = await supabase!.from('class_instances') .select('id,name_en,name_ar,class_group_id').in('id', uniqueIds).order('name_en');
+        if (!cancelled) setAvailableTargetClasses((classes || []).map(row => ({id:row.id,nameEn:row.name_en,nameAr:row.name_ar,classGroupId:row.class_group_id})));
       } catch (error) {
         console.warn('Could not load authorized feed audience classes:', error);
         if (!cancelled) setAvailableTargetClasses([]);
@@ -300,6 +303,9 @@ export function FeedTab({ lang }: { lang: Language }) {
   };
 
   const isTeacher = workspace === 'teacher';
+  const availableTargetGradeGroups = userData?.roles?.includes('admin')
+    ? Object.keys(CLASS_GROUPS)
+    : Array.from(new Set(availableTargetClasses.map(item => item.classGroupId)));
 
   // 3. Sorting logic
   const sortedPosts = useMemo(() => {
@@ -958,6 +964,7 @@ export function FeedTab({ lang }: { lang: Language }) {
         isPinned: postPinned,
         isAnnouncement: postPinned,
         targetClassIds: targetClassesEnabled ? selectedTargetClassIds : [],
+        targetGradeGroups: targetGradesEnabled ? selectedTargetGradeGroups : [],
         poll: pollEnabled ? { question: pollQuestion, options: pollOptions.filter(option => option.trim()), allowMultiple: pollAllowMultiple } : undefined
       });
 
@@ -977,6 +984,8 @@ export function FeedTab({ lang }: { lang: Language }) {
       setPollAllowMultiple(false);
       setTargetClassesEnabled(false);
       setSelectedTargetClassIds([]);
+      setTargetGradesEnabled(false);
+      setSelectedTargetGradeGroups([]);
       setShowLinkInput(false);
       setLinkInputValue('');
       setMediaError(null);
@@ -1250,8 +1259,10 @@ export function FeedTab({ lang }: { lang: Language }) {
               />
 
               <section className="rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-sand-50)] dark:bg-stone-800/70 p-3 space-y-3">
-                <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-[var(--mousa-teal-deep)] dark:text-white">{lang === 'ar' ? 'من يستطيع رؤية المنشور؟' : 'Who can see this post?'}</p><p className="mt-1 text-[11px] text-[var(--mousa-sand-600)] dark:text-stone-300">{lang === 'ar' ? 'الافتراضي: كل أعضاء الكنيسة. يمكنك اختيار فصول محددة.' : 'Default: everyone in the church. You can optionally target specific classes.'}</p></div><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black text-emerald-800">{targetClassesEnabled ? (lang === 'ar' ? 'فصول محددة' : 'Selected classes') : (lang === 'ar' ? 'كل الأعضاء' : 'Everyone')}</span></div>
+                <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-[var(--mousa-teal-deep)] dark:text-white">{lang === 'ar' ? 'من يستطيع رؤية المنشور؟' : 'Who can see this post?'}</p><p className="mt-1 text-[11px] text-[var(--mousa-sand-600)] dark:text-stone-300">{lang === 'ar' ? 'الافتراضي: كل أعضاء الكنيسة. يمكنك اختيار فصول محددة.' : 'Default: everyone in the church. You can optionally target specific classes.'}</p></div><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black text-emerald-800">{targetClassesEnabled || targetGradesEnabled ? (lang === 'ar' ? 'جمهور محدد' : 'Targeted audience') : (lang === 'ar' ? 'كل الأعضاء' : 'Everyone')}</span></div>
                 <label className="flex items-center gap-2 text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-stone-100"><input type="checkbox" checked={targetClassesEnabled} onChange={event => {setTargetClassesEnabled(event.target.checked);if(!event.target.checked)setSelectedTargetClassIds([]);}} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/>{lang === 'ar' ? 'تحديد فصول بعينها فقط' : 'Limit this post to selected classes'}</label>
+                <label className="flex items-center gap-2 text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-stone-100"><input type="checkbox" checked={targetGradesEnabled} onChange={event=>{setTargetGradesEnabled(event.target.checked);if(!event.target.checked)setSelectedTargetGradeGroups([]);}} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/>{lang === 'ar' ? 'تحديد مرحلة عمرية / صفية' : 'Limit this post to age / grade groups'}</label>
+                {targetGradesEnabled && <div className="space-y-2 rounded-xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 dark:bg-stone-900"><p className="text-[11px] font-bold text-[var(--mousa-sand-600)]">{lang === 'ar' ? 'المراحل المتاحة حسب صلاحياتك:' : 'Groups available to your role and class assignments:'}</p>{availableTargetGradeGroups.length ? <div className="grid gap-2 sm:grid-cols-2">{availableTargetGradeGroups.map(groupId=><label key={groupId} className="flex items-center gap-2 rounded-lg bg-[var(--mousa-sand-50)] p-2 text-xs font-semibold dark:bg-stone-800"><input type="checkbox" checked={selectedTargetGradeGroups.includes(groupId)} onChange={event=>setSelectedTargetGradeGroups(current=>event.target.checked?[...current,groupId]:current.filter(id=>id!==groupId))} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/><span>{lang === 'ar' ? CLASS_GROUPS[groupId as keyof typeof CLASS_GROUPS].name.ar : CLASS_GROUPS[groupId as keyof typeof CLASS_GROUPS].name.en}</span></label>)}</div> : <p className="text-xs text-amber-700">{lang === 'ar' ? 'لا توجد مراحل متاحة حسب تسجيلك الحالي.' : 'No grade groups are available from your current enrollment.'}</p>}{selectedTargetGradeGroups.length>0 && <p className="text-[10px] font-bold text-emerald-700">{lang === 'ar' ? 'سيظهر المنشور للأعضاء في المراحل المحددة.' : 'Only members in the selected grade groups will see this post.'}</p>}</div>}
                 {targetClassesEnabled && <div className="space-y-2 rounded-xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 dark:bg-stone-900"><p className="text-[11px] font-bold text-[var(--mousa-sand-600)]">{lang === 'ar' ? 'اختار الفصول المسموح لك باستهدافها:' : 'Choose from classes you are authorized to target:'}</p>{loadingTargetClasses ? <p className="text-xs text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'جارٍ تحميل الفصول…' : 'Loading your classes…'}</p> : availableTargetClasses.length ? <div className="grid gap-2 sm:grid-cols-2">{availableTargetClasses.map(item=><label key={item.id} className="flex items-center gap-2 rounded-lg bg-[var(--mousa-sand-50)] p-2 text-xs font-semibold dark:bg-stone-800"><input type="checkbox" checked={selectedTargetClassIds.includes(item.id)} onChange={event=>setSelectedTargetClassIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/><span>{lang === 'ar' ? item.nameAr : item.nameEn}</span></label>)}</div> : <p className="text-xs text-amber-700">{lang === 'ar' ? 'لا توجد فصول يمكنك استهدافها في السنة الكنسية الحالية.' : 'No classes are available for targeting in the active church year.'}</p>}{selectedTargetClassIds.length>0 && <p className="text-[10px] font-bold text-emerald-700">{lang === 'ar' ? 'سيظهر المنشور فقط للأعضاء المسموح لهم في الفصول المحددة.' : 'Only members authorized for the selected classes will see this post.'}</p>}</div>}
               </section>
 
@@ -1471,7 +1482,7 @@ export function FeedTab({ lang }: { lang: Language }) {
 
               <button 
                 onClick={handleCreatePost} 
-                disabled={(!newPostText.trim() && composerAttachments.length === 0 && !pollEnabled) || (pollEnabled && (pollQuestion.trim().length < 2 || pollOptions.filter(option => option.trim()).length < 2)) || (targetClassesEnabled && selectedTargetClassIds.length === 0) || isUploadingMedia || isRecordingVoice || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready' || (attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim()))}
+                disabled={(!newPostText.trim() && composerAttachments.length === 0 && !pollEnabled) || (pollEnabled && (pollQuestion.trim().length < 2 || pollOptions.filter(option => option.trim()).length < 2)) || ((targetClassesEnabled || targetGradesEnabled) && selectedTargetClassIds.length === 0 && selectedTargetGradeGroups.length === 0) || isUploadingMedia || isRecordingVoice || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready' || (attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim()))}
                 className={`w-full font-bold py-3.5 rounded-xl transition-colors shadow-md text-sm cursor-pointer flex items-center justify-center gap-2 ${
                   (newPostText.trim() || composerAttachments.length > 0 || pollEnabled) && !isUploadingMedia && !isCreatingPost && composerAttachments.every(attachment => attachment.status === 'ready')
                     ? 'bg-[var(--mousa-teal-deep)] text-[var(--mousa-gold)] hover:bg-blue-900'
