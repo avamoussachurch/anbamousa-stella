@@ -39,7 +39,19 @@ export function ChurchEventNotifications({ events, lang }: ChurchEventNotificati
     if (!supabase || rsvpBusyId) return;
     setRsvpBusyId(eventId);
     const { error } = await supabase.from('church_event_rsvps').upsert({event_id:eventId,response},{onConflict:'event_id,user_id'});
-    if (!error) setMyRsvps(current=>({...current,[eventId]:response}));
+    if (!error) {
+      const previous = myRsvps[eventId];
+      setMyRsvps(current=>({...current,[eventId]:response}));
+      setRsvpCounts(current=>{
+        const counts = current[eventId] || {attending:0,maybe:0};
+        const next = {...counts};
+        if (previous==='attending') next.attending=Math.max(0,next.attending-1);
+        if (previous==='maybe') next.maybe=Math.max(0,next.maybe-1);
+        if (response==='attending') next.attending+=1;
+        if (response==='maybe') next.maybe+=1;
+        return {...current,[eventId]:next};
+      });
+    }
     setRsvpBusyId(null);
   };
 
