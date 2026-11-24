@@ -6,11 +6,12 @@ import { supabase } from '../../lib/supabase';
 
 type CelebrationItem = { id: string; title_en?: string; title_ar?: string; points_reward?: number; category?: string; badge_count?: number };
 type CelebrationPayload = { badges: CelebrationItem[]; milestones: CelebrationItem[]; pointsAwarded: number };
+const confettiHues = [43, 25, 174, 145, 207, 8];
 const confetti = Array.from({ length: 34 }, (_, index) => ({
   left: (index * 37) % 100,
   delay: (index % 9) * 0.045,
   rotate: (index * 53) % 360,
-  hue: (index * 29) % 360,
+  hue: confettiHues[index % confettiHues.length],
 }));
 
 export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar' }) {
