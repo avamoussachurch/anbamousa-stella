@@ -6,6 +6,7 @@ const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 const foundation = read('../supabase/migrations/20261124162121_achievement_badges_and_staff_managed_bazaar.sql');
 const progressRead = read('../supabase/migrations/20261124162212_allow_students_to_read_own_achievement_progress.sql');
 const activity = read('../supabase/migrations/20261124163057_achievement_engine_activity_coverage_and_policy_tuning.sql');
+const staffRewards = read('../supabase/migrations/20261124163622_staff_reward_request_review_and_scope_checks.sql');
 const eventService = read('../src/lib/achievementService.ts');
 const gallery = read('../src/components/achievements/AchievementRewardsStudio.tsx');
 const celebration = read('../src/components/achievements/AchievementCelebrationHost.tsx');
@@ -68,6 +69,8 @@ test('teachers and admins can manage badges, milestones, catalogue, and fulfilme
   assert.match(gallery, /saveMilestone/);
   assert.match(gallery, /saveReward/);
   assert.match(gallery, /mark_reward_request_fulfilled/);
+  assert.match(gallery, /review_staff_reward_request/);
+  assert.match(staffRewards, /can_access_student_data\(v_request.student_id\)/);
   assert.match(admin, /AchievementRewardsStudio mode="manage"/);
   assert.match(teacher, /AchievementRewardsStudio mode="manage"/);
 });
