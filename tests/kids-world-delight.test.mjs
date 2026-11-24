@@ -33,6 +33,7 @@ test('shared world has visible playful decorations and keeps motion accessible',
 test('profile avatar studio uses sourced Coptic icon images and symbolic emblems, not generated cartoons', async () => {
   const profile = await read('../src/components/student/ProfileTab.tsx');
   const avatars = await read('../src/data/copticAvatars.ts');
+  const credits = await read('../public/licenses/coptic-icon-attributions.md');
   assert.match(profile, /CHURCH EMBLEM STUDIO/);
   assert.match(profile, /border-2 p-3 text-center/);
   assert.match(profile, /Choose your church emblem/);
@@ -40,6 +41,8 @@ test('profile avatar studio uses sourced Coptic icon images and symbolic emblems
   assert.match(avatars, /realIconSources/);
   assert.match(avatars, /upload\.wikimedia\.org/);
   assert.match(avatars, /saint-mark-icon/);
+  assert.match(credits, /CC BY-SA 4.0/);
+  assert.match(credits, /Public Domain Mark/);
   assert.doesNotMatch(avatars, /api\.dicebear\.com|avataaars/);
 });
 
