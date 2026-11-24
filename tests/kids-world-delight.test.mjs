@@ -30,14 +30,20 @@ test('shared world has visible playful decorations and keeps motion accessible',
   assert.match(css, /Higher-contrast defaults/);
 });
 
-test('Coptic avatar studio uses illustrated portraits and strong selected-state contrast', async () => {
+test('profile avatar studio uses sourced Coptic icon images and symbolic emblems, not generated cartoons', async () => {
   const profile = await read('../src/components/student/ProfileTab.tsx');
   const avatars = await read('../src/data/copticAvatars.ts');
-  assert.match(profile, /COPTIC AVATAR ATELIER/);
+  const credits = await read('../public/licenses/coptic-icon-attributions.md');
+  assert.match(profile, /CHURCH EMBLEM STUDIO/);
   assert.match(profile, /border-2 p-3 text-center/);
-  assert.match(profile, /Choose your Anba Mousa character/);
-  assert.match(avatars, /shape-rendering="crispEdges"/);
-  assert.match(avatars, /Coptic/);
+  assert.match(profile, /Choose your church emblem/);
+  assert.match(profile, /Authentic Coptic icon images and symbolic church emblems/);
+  assert.match(avatars, /realIconSources/);
+  assert.match(avatars, /upload\.wikimedia\.org/);
+  assert.match(avatars, /saint-mark-icon/);
+  assert.match(credits, /CC BY-SA 4.0/);
+  assert.match(credits, /Public Domain Mark/);
+  assert.doesNotMatch(avatars, /api\.dicebear\.com|avataaars/);
 });
 
 test('mobile world motion remains visible without animating heavy blur layers', async () => {

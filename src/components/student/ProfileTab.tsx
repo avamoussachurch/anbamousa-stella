@@ -10,6 +10,7 @@ import { ChildQrCodeModal } from '../common/ChildQrCodeModal';
 import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { CLASS_GROUPS, getClassGroupForGrade } from '../../lib/classGroups';
 import { COPTIC_AVATARS, DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
+import { ProfileCustomizationStudio } from '../profile/ProfileCustomizationStudio';
 import { getCurrentChurchYear, joinClassWithCode, getStudentActiveMembership } from '../../lib/churchYearService';
 import { Language, ClassGroupId, Role } from '../../types';
 import { hasRole } from '../../lib/workspaces';
@@ -711,7 +712,7 @@ export function ProfileTab({
                 </div>
               )}
 
-              {/* For Students: Sunday School Class & Grade Card */}
+              {/* For Student emblems: Sunday School Class & Grade Card */}
               {isStudent && (
                 <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
                   <div className="flex items-center justify-between">
@@ -1085,9 +1086,9 @@ export function ProfileTab({
                        <span className="absolute -bottom-2 -right-2 grid h-8 w-8 place-items-center rounded-xl border-2 border-[#173f42] bg-[#f1cc7c] text-[#173f42] shadow-lg"><Check size={17} strokeWidth={3}/></span>
                      </div>
                      <div className="relative min-w-0 flex-1 text-center sm:text-start">
-                       <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#f6d98f]">{lang === 'ar' ? 'ورشة الأيقونات القبطية' : 'COPTIC AVATAR ATELIER'}</p>
-                       <h3 className="mt-1 text-xl font-black">{lang === 'ar' ? 'اختر شخصيتك في عالم أنبا موسى' : 'Choose your Anba Mousa character'}</h3>
-                       <p className="mt-1 text-xs leading-5 text-white/85">{lang === 'ar' ? 'شخصيات مرسومة بروح الفن القبطي، مع رموز وملابس وألوان مميزة.' : 'Illustrated church-inspired portraits with distinctive robes, symbols and colors.'}</p>
+                       <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#f6d98f]">{lang === 'ar' ? 'استوديو الرموز الكنسية' : 'CHURCH EMBLEM STUDIO'}</p>
+                       <h3 className="mt-1 text-xl font-black">{lang === 'ar' ? 'اختر رمزاً كنسياً يعبر عنك' : 'Choose your church emblem'}</h3>
+                       <p className="mt-1 text-xs leading-5 text-white/85">{lang === 'ar' ? 'أيقونات قبطية موثقة وأيقونات ورموز كنسية بسيطة؛ كل صورة قديس لها مصدر وترخيص واضح.' : 'Authentic Coptic icon images and symbolic church emblems. Each saint icon is sourced and credited; symbols are not portraits.'}</p>
                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploadingAvatar} className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border-2 border-[#f4d58b] bg-[#f4d58b] px-4 py-2 text-xs font-black text-[#173b3e] shadow-md transition hover:bg-white disabled:opacity-60">
                          <Upload size={15}/>{lang === 'ar' ? 'ارفع صورتك الخاصة' : 'Upload your own photo'}
                        </button>
@@ -1096,10 +1097,10 @@ export function ProfileTab({
                    <div className="p-4 sm:p-5">
                      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={lang === 'ar' ? 'تصنيفات الصور' : 'Avatar categories'}>
                        {([
-                         { id: 'all', en: 'All characters', ar: 'كل الشخصيات' },
-                         { id: 'saints', en: 'Saints & symbols', ar: 'قديسون ورموز' },
-                         { id: 'students', en: 'Students', ar: 'طلاب' },
-                         { id: 'deacons', en: 'Deacons', ar: 'شمامسة' }
+                         { id: 'all', en: 'All emblems', ar: 'كل الرموز' },
+                         { id: 'saints', en: 'Saint icons & symbols', ar: 'رموز كنسية' },
+                         { id: 'students', en: 'Students', ar: 'رموز الطلاب' },
+                         { id: 'deacons', en: 'Deacon emblems', ar: 'رموز الشمامسة' }
                        ] as const).map(category => (
                          <button key={category.id} type="button" onClick={() => setAvatarCategory(category.id)} aria-pressed={avatarCategory === category.id}
                            className={`min-h-10 rounded-xl border-2 px-3.5 py-2 text-xs font-extrabold transition-all ${avatarCategory === category.id ? 'border-[#173f42] bg-[#173f42] text-white shadow-[0_4px_0_#a97834]' : 'border-[var(--border-strong)] bg-[var(--surface-primary)] text-[var(--text-primary)] hover:border-[#a97834] hover:bg-[var(--surface-secondary)]'}`}>
@@ -1109,12 +1110,12 @@ export function ProfileTab({
                      </div>
                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                        {COPTIC_AVATARS.filter(preset => avatarCategory === 'all' || preset.category === avatarCategory).map((preset, index) => {
-                         const selected = avatar === preset.svgDataUri;
-                         return <button key={preset.id} type="button" onClick={() => setAvatar(preset.svgDataUri)} aria-pressed={selected}
+                         const selected = avatar === preset.imageSrc;
+                         return <button key={preset.id} type="button" onClick={() => setAvatar(preset.imageSrc)} aria-pressed={selected}
                            className={`group relative flex min-h-[142px] flex-col items-center justify-center gap-2 rounded-2xl border-2 p-3 text-center transition-all duration-200 ${selected ? 'border-[#b47a2c] bg-[#fff5dc] text-[#183f40] shadow-[0_8px_0_#b47a2c,0_14px_24px_rgba(25,50,48,.18)] -translate-y-1' : 'border-[var(--border-strong)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-sm hover:-translate-y-1 hover:border-[#b47a2c] hover:shadow-lg'}`}>
                            <span className="absolute left-2 top-2 text-[9px] font-black tabular-nums text-current/45">{String(index + 1).padStart(2,'0')}</span>
                            <span className="h-[76px] w-[76px] overflow-hidden rounded-2xl border-2 border-current/15 bg-[#f4e6c8] shadow-inner transition-transform duration-300 group-hover:scale-105">
-                             <img src={preset.svgDataUri} alt="" className="h-full w-full object-cover" />
+                             <img src={preset.imageSrc} alt="" onError={event => { event.currentTarget.src = DEFAULT_STUDENT_AVATAR; }} className="h-full w-full object-cover" />
                            </span>
                            <span className="max-w-full text-xs font-black leading-snug">{lang === 'ar' ? preset.nameAr : preset.nameEn}</span>
                            {selected && <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full border-2 border-white bg-[#173f42] text-white shadow"><Check size={13} strokeWidth={3}/></span>}
@@ -1125,7 +1126,13 @@ export function ProfileTab({
                  </section>
                </div>
 
-               <div className="space-y-4 pt-2">
+               <ProfileCustomizationStudio userId={userData.id} lang={lang} />
+
+               <details open className="group rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--surface-primary)] p-4">
+                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-black text-[var(--mousa-teal-deep)] dark:text-white">
+                   <span>{lang === 'ar' ? 'البيانات الأساسية والحساب' : 'Identity & account details'}</span><span className="text-xs text-[var(--text-secondary)] transition-transform group-open:rotate-180">⌄</span>
+                 </summary>
+                 <div className="space-y-4 pt-4">
                  {/* Full Name */}
                  <div>
                     <label className="text-xs md:text-sm font-bold text-gray-700 dark:text-[var(--text-secondary)] mb-1.5 flex items-center justify-between">
@@ -1177,7 +1184,14 @@ export function ProfileTab({
                    </div>
                  </div>
 
-                 <div className="rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                 </div>
+               </details>
+
+               <details open className="group rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-black text-[var(--text-primary)]">
+                   <span>{lang === 'ar' ? 'مستوى الألحان والطقس القبطي' : 'Hymns & Coptic Taxis level'}</span><span className="text-xs text-[var(--text-secondary)] transition-transform group-open:rotate-180">⌄</span>
+                 </summary>
+                 <div className="pt-3">
                    <label htmlFor="student-hymns-school-level" className="text-sm font-black text-[var(--text-primary)]">
                      {lang === 'ar' ? 'مستوى مدرسة الألحان' : 'Hymns School Level'}
                    </label>
@@ -1224,7 +1238,7 @@ export function ProfileTab({
                    {hymnsTaxisLevelError && <p role="alert" className="mt-2 text-xs font-semibold text-[var(--feedback-error)]">{hymnsTaxisLevelError}</p>}
                    {hymnsTaxisLevelMessage && <p role="status" className="mt-2 text-xs font-semibold text-[var(--brand-teal)]">{hymnsTaxisLevelMessage}</p>}
                  </div>
-               </div>
+               </details>
 
                <div className="pt-2">
                  <button 

@@ -4,8 +4,9 @@ import { useAuth } from '../../context/AuthContext';
 import type { Language, Role, User } from '../../types';
 import { LanguageSettings } from '../shared/LanguageSettings';
 import { getLanguageDirection } from '../../lib/uiPreferences';
-import { COPTIC_AVATARS, DEFAULT_PARENT_AVATAR, DEFAULT_TEACHER_AVATAR } from '../../data/copticAvatars';
+import { COPTIC_AVATARS, DEFAULT_PARENT_AVATAR, DEFAULT_STUDENT_AVATAR, DEFAULT_TEACHER_AVATAR } from '../../data/copticAvatars';
 import { uploadAvatarToSupabase } from '../../lib/supabaseDatabase';
+import { ProfileCustomizationStudio } from './ProfileCustomizationStudio';
 
 export type AccountPreference =
   | 'pushNotificationsEnabled'
@@ -118,7 +119,7 @@ export function ProfilePageFrame({
 export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: User; role: Exclude<Role, 'student'> }) {
   const { updateUserProfile } = useAuth();
   const isArabic = lang === 'ar';
-  const defaultAvatar = role === 'teacher' ? DEFAULT_TEACHER_AVATAR : role === 'parent' ? DEFAULT_PARENT_AVATAR : COPTIC_AVATARS[0].svgDataUri;
+  const defaultAvatar = role === 'teacher' ? DEFAULT_TEACHER_AVATAR : role === 'parent' ? DEFAULT_PARENT_AVATAR : COPTIC_AVATARS[0].imageSrc;
   const [avatar, setAvatar] = useState(user.avatarUrl || defaultAvatar);
   const [category, setCategory] = useState<'all' | 'saints' | 'students' | 'deacons'>('all');
   const [saving, setSaving] = useState(false);
@@ -164,20 +165,21 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
 
   const categories = [
     { id: 'all', en: 'All', ar: 'الكل' },
-    { id: 'saints', en: 'Saints', ar: 'قديسون' },
+    { id: 'saints', en: 'Saint icons & symbols', ar: 'أيقونات ورموز كنسية' },
     { id: 'students', en: 'Students', ar: 'طلاب' },
     { id: 'deacons', en: 'Deacons', ar: 'شمامسة' }
   ] as const;
 
   return (
+    <>
     <section className="rounded-[1.75rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'التخصيص' : 'Personalization'}</p>
           <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'استوديو الصورة الشخصية' : 'Avatar studio'}</h2>
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'اختار رمز يعبر عنك أو ارفع صورتك.' : 'Choose a portrait or upload your own photo.'}</p>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'اختار أيقونة قبطية أو رمزاً كنسياً أو ارفع صورتك.' : 'Choose a sourced Coptic saint icon, a church symbol, or upload your own photo.'}</p>
         </div>
-        <img src={avatar} alt="" className="h-16 w-16 shrink-0 rounded-2xl border-2 border-[var(--action-primary)] bg-[var(--surface-secondary)] object-cover shadow-sm" />
+        <img src={avatar} alt="" onError={event => { event.currentTarget.src = DEFAULT_STUDENT_AVATAR; }} className="h-16 w-16 shrink-0 rounded-2xl border-2 border-[var(--action-primary)] bg-[var(--surface-secondary)] object-cover shadow-sm" />
       </div>
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={event => void uploadPhoto(event)} className="hidden" />
       <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="mb-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border-default)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--state-hover)] disabled:opacity-50">
@@ -189,9 +191,9 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
       </div>
       <div className="grid grid-cols-4 gap-2">
         {COPTIC_AVATARS.filter(item => category === 'all' || item.category === category).map(item => (
-          <button key={item.id} type="button" onClick={() => setAvatar(item.svgDataUri)} aria-pressed={avatar === item.svgDataUri} title={isArabic ? item.nameAr : item.nameEn} className={`relative rounded-xl border-2 p-1.5 transition-transform hover:scale-[1.03] ${avatar === item.svgDataUri ? 'border-[var(--action-primary)] bg-[var(--state-selected)]' : 'border-transparent bg-[var(--surface-secondary)]'}`}>
-            <img src={item.svgDataUri} alt={isArabic ? item.nameAr : item.nameEn} className="mx-auto aspect-square w-full rounded-lg object-cover" />
-            {avatar === item.svgDataUri && <span className="absolute -end-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-[var(--action-primary)] text-white"><Check size={12} /></span>}
+          <button key={item.id} type="button" onClick={() => setAvatar(item.imageSrc)} aria-pressed={avatar === item.imageSrc} title={isArabic ? item.nameAr : item.nameEn} className={`relative rounded-xl border-2 p-1.5 transition-transform hover:scale-[1.03] ${avatar === item.imageSrc ? 'border-[var(--action-primary)] bg-[var(--state-selected)]' : 'border-transparent bg-[var(--surface-secondary)]'}`}>
+            <img src={item.imageSrc} alt={isArabic ? item.nameAr : item.nameEn} onError={event => { event.currentTarget.src = DEFAULT_STUDENT_AVATAR; }} className="mx-auto aspect-square w-full rounded-lg object-cover" />
+            {avatar === item.imageSrc && <span className="absolute -end-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-[var(--action-primary)] text-white"><Check size={12} /></span>}
           </button>
         ))}
       </div>
@@ -202,6 +204,8 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
       {error && <p role="alert" className="mt-3 text-xs font-semibold text-[var(--feedback-error)]">{error}</p>}
       {message && <p role="status" className="mt-3 text-xs font-semibold text-[var(--brand-teal)]">{message}</p>}
     </section>
+    <ProfileCustomizationStudio userId={user.id} lang={lang} />
+    </>
   );
 }
 

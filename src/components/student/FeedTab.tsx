@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
+import { FeedPeopleDirectory } from './FeedPeopleDirectory';
+import { CLASS_GROUPS } from '../../lib/classGroups';
 import { 
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
   ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
@@ -24,6 +27,7 @@ import {
   toggleFeedReactionInSupabase,
   addFeedCommentInSupabase,
   syncUserLocalPostsToSupabase,
+  voteFeedPollInSupabase,
   ExtendedPost
 } from '../../lib/feedService';
 import {
@@ -50,6 +54,7 @@ export function FeedTab({ lang }: { lang: Language }) {
   const { userData } = useAuth();
   const workspace = useActiveWorkspace();
   const isCop = lang === 'copt' || lang === 'cop';
+  const isTeacher = workspace === 'teacher';
   
   const [posts, setPosts] = useState<ExtendedPost[]>([]);
   const [hasLoadedFeed, setHasLoadedFeed] = useState(false);
@@ -144,6 +149,49 @@ export function FeedTab({ lang }: { lang: Language }) {
   const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
   const [newPostText, setNewPostText] = useState("");
   const [isOfficialAnnouncement, setIsOfficialAnnouncement] = useState(false);
+  const [pollEnabled, setPollEnabled] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['','']);
+  const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
+  const [votingOptionId, setVotingOptionId] = useState<string | null>(null);
+  const [targetClassesEnabled, setTargetClassesEnabled] = useState(false);
+  const [availableTargetClasses, setAvailableTargetClasses] = useState<Array<{id:string;nameEn:string;nameAr:string;classGroupId:string}>>([]);
+  const [targetGradesEnabled, setTargetGradesEnabled] = useState(false);
+  const [selectedTargetGradeGroups, setSelectedTargetGradeGroups] = useState<string[]>([]);
+  const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<string[]>([]);
+  const [loadingTargetClasses, setLoadingTargetClasses] = useState(false);
+
+  useEffect(() => {
+    if (!isComposeModalOpen || !userData?.id || !supabase) return;
+    let cancelled = false;
+    const loadAllowedClasses = async () => {
+      setLoadingTargetClasses(true);
+      try {
+        const { data: year } = await supabase!.from('church_years').select('id').eq('is_active', true).maybeSingle();
+        if (!year?.id) { if (!cancelled) setAvailableTargetClasses([]); return; }
+        let ids: string[] = [];
+        if (userData.roles?.includes('admin')) {
+          const { data } = await supabase!.from('class_instances').select('id').eq('church_year_id', year.id);
+          ids = (data || []).map(row => row.id);
+        } else if (isTeacher) {
+          const { data } = await supabase!.from('servant_class_assignments').select('class_instance_id').eq('servant_id', userData.id).eq('church_year_id', year.id).eq('is_active', true);
+          ids = (data || []).map(row => row.class_instance_id);
+        } else {
+          const { data } = await supabase!.from('class_memberships').select('class_instance_id').eq('student_id', userData.id).eq('church_year_id', year.id).eq('status', 'active');
+          ids = (data || []).map(row => row.class_instance_id);
+        }
+        const uniqueIds = Array.from(new Set(ids));
+        if (!uniqueIds.length) { if (!cancelled) setAvailableTargetClasses([]); return; }
+        const { data: classes } = await supabase!.from('class_instances') .select('id,name_en,name_ar,class_group_id').in('id', uniqueIds).order('name_en');
+        if (!cancelled) setAvailableTargetClasses((classes || []).map(row => ({id:row.id,nameEn:row.name_en,nameAr:row.name_ar,classGroupId:row.class_group_id})));
+      } catch (error) {
+        console.warn('Could not load authorized feed audience classes:', error);
+        if (!cancelled) setAvailableTargetClasses([]);
+      } finally { if (!cancelled) setLoadingTargetClasses(false); }
+    };
+    void loadAllowedClasses();
+    return () => { cancelled = true; };
+  }, [isComposeModalOpen, userData?.id, isTeacher]);
 
   // Cloud Storage status & diagnostic modal
   const [storageStatus, setStorageStatus] = useState<{
@@ -255,7 +303,9 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   };
 
-  const isTeacher = workspace === 'teacher';
+  const availableTargetGradeGroups = userData?.roles?.includes('admin')
+    ? Object.keys(CLASS_GROUPS)
+    : Array.from(new Set(availableTargetClasses.map(item => item.classGroupId)));
 
   // 3. Sorting logic
   const sortedPosts = useMemo(() => {
@@ -872,7 +922,11 @@ export function FeedTab({ lang }: { lang: Language }) {
 
   // 8. Create New Post only after the server confirms the post and its attachments.
   const handleCreatePost = async () => {
-    if ((!newPostText.trim() && composerAttachments.length === 0) || !userData || isCreatingPost) return;
+    if ((!newPostText.trim() && composerAttachments.length === 0 && !pollEnabled) || !userData || isCreatingPost) return;
+    if (pollEnabled && (pollQuestion.trim().length < 2 || pollOptions.filter(option => option.trim()).length < 2)) {
+      setMediaError(lang === 'ar' ? 'أضف سؤالاً وخيارين على الأقل للاستطلاع.' : 'Add a poll question and at least two answer options.');
+      return;
+    }
     if (composerAttachments.some(attachment => attachment.status !== 'ready')) {
       setMediaError(lang === 'ar' ? 'استنى لحد ما الملفات تترفع، أو جرّب ترفع تاني الملفات اللي حصل فيها مشكلة.' : 'Finish or retry every attachment upload before publishing.');
       return;
@@ -883,7 +937,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
     setActionError(null);
     const authorName = userData.fullName + (isTeacher ? ` (${lang === 'ar' ? 'خادم' : 'Servant'})` : '');
-    const authorAvatar = userData.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + userData.fullName;
+    const authorAvatar = userData.avatarUrl || DEFAULT_STUDENT_AVATAR;
     const attachments: FeedPostAttachmentInput[] = composerAttachments.map(attachment => ({
       mediaType: attachment.mediaType,
       mediaUrl: attachment.mediaUrl,
@@ -908,7 +962,10 @@ export function FeedTab({ lang }: { lang: Language }) {
         content: newPostText.trim(),
         attachments,
         isPinned: postPinned,
-        isAnnouncement: postPinned
+        isAnnouncement: postPinned,
+        targetClassIds: targetClassesEnabled ? selectedTargetClassIds : [],
+        targetGradeGroups: targetGradesEnabled ? selectedTargetGradeGroups : [],
+        poll: pollEnabled ? { question: pollQuestion, options: pollOptions.filter(option => option.trim()), allowMultiple: pollAllowMultiple } : undefined
       });
 
       if (res.error || !res.data) {
@@ -917,9 +974,18 @@ export function FeedTab({ lang }: { lang: Language }) {
         setActionError(lang === 'ar' ? `مش قادرين نحفظ المشاركة دلوقتي: ${errorMessage}` : `Failed to save post to cloud: ${errorMessage}`);
         return;
       }
-      setPosts(previous => [res.data!, ...previous]);
+      const refreshedFeed = await fetchFeedPostsFromSupabase();
+      setPosts(refreshedFeed.data || [res.data!, ...posts]);
       setNewPostText('');
       setIsOfficialAnnouncement(false);
+      setPollEnabled(false);
+      setPollQuestion('');
+      setPollOptions(['','']);
+      setPollAllowMultiple(false);
+      setTargetClassesEnabled(false);
+      setSelectedTargetClassIds([]);
+      setTargetGradesEnabled(false);
+      setSelectedTargetGradeGroups([]);
       setShowLinkInput(false);
       setLinkInputValue('');
       setMediaError(null);
@@ -990,6 +1056,7 @@ export function FeedTab({ lang }: { lang: Language }) {
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <FeedPeopleDirectory lang={lang} />
           {isTeacher && (
             <span className="bg-[var(--mousa-coral-soft)] text-[var(--mousa-coral-dark)] border border-[var(--mousa-coral)]/30 px-3 py-1 rounded-full text-xs font-black shadow-2xs flex items-center gap-1">
               <ShieldCheck size={14} />
@@ -1190,6 +1257,19 @@ export function FeedTab({ lang }: { lang: Language }) {
                 placeholder={isCop ? 'Ⲟⲩ ⲡⲉⲧⲉⲣϧⲟⲧⲡ ⲛ̀ϩⲏⲧⲕ; Ϣⲱⲡ ⲛ̀ⲟⲩⲣⲏϯ, ⲟⲩⲉⲩⲭⲏ, ⲟⲩⲙⲉⲩⲓ...' : lang === 'ar' ? 'بم تفكر؟ شارك آية، صلاة، تأمل، أو سؤالاً لمدارس الأحد...' : 'What is on your heart? Share a verse, reflection, or prayer...'}
                 className="w-full h-28 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 resize-none outline-none focus:border-[var(--mousa-teal-deep)] transition-colors text-sm text-gray-800 dark:text-white"
               />
+
+              <section className="rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-sand-50)] dark:bg-stone-800/70 p-3 space-y-3">
+                <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-[var(--mousa-teal-deep)] dark:text-white">{lang === 'ar' ? 'من يستطيع رؤية المنشور؟' : 'Who can see this post?'}</p><p className="mt-1 text-[11px] text-[var(--mousa-sand-600)] dark:text-stone-300">{lang === 'ar' ? 'الافتراضي: كل أعضاء الكنيسة. يمكنك اختيار فصول محددة.' : 'Default: everyone in the church. You can optionally target specific classes.'}</p></div><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black text-emerald-800">{targetClassesEnabled || targetGradesEnabled ? (lang === 'ar' ? 'جمهور محدد' : 'Targeted audience') : (lang === 'ar' ? 'كل الأعضاء' : 'Everyone')}</span></div>
+                <label className="flex items-center gap-2 text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-stone-100"><input type="checkbox" checked={targetClassesEnabled} onChange={event => {setTargetClassesEnabled(event.target.checked);if(!event.target.checked)setSelectedTargetClassIds([]);}} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/>{lang === 'ar' ? 'تحديد فصول بعينها فقط' : 'Limit this post to selected classes'}</label>
+                <label className="flex items-center gap-2 text-xs font-bold text-[var(--mousa-teal-deep)] dark:text-stone-100"><input type="checkbox" checked={targetGradesEnabled} onChange={event=>{setTargetGradesEnabled(event.target.checked);if(!event.target.checked)setSelectedTargetGradeGroups([]);}} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/>{lang === 'ar' ? 'تحديد مرحلة عمرية / صفية' : 'Limit this post to age / grade groups'}</label>
+                {targetGradesEnabled && <div className="space-y-2 rounded-xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 dark:bg-stone-900"><p className="text-[11px] font-bold text-[var(--mousa-sand-600)]">{lang === 'ar' ? 'المراحل المتاحة حسب صلاحياتك:' : 'Groups available to your role and class assignments:'}</p>{availableTargetGradeGroups.length ? <div className="grid gap-2 sm:grid-cols-2">{availableTargetGradeGroups.map(groupId=><label key={groupId} className="flex items-center gap-2 rounded-lg bg-[var(--mousa-sand-50)] p-2 text-xs font-semibold dark:bg-stone-800"><input type="checkbox" checked={selectedTargetGradeGroups.includes(groupId)} onChange={event=>setSelectedTargetGradeGroups(current=>event.target.checked?[...current,groupId]:current.filter(id=>id!==groupId))} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/><span>{lang === 'ar' ? CLASS_GROUPS[groupId as keyof typeof CLASS_GROUPS].name.ar : CLASS_GROUPS[groupId as keyof typeof CLASS_GROUPS].name.en}</span></label>)}</div> : <p className="text-xs text-amber-700">{lang === 'ar' ? 'لا توجد مراحل متاحة حسب تسجيلك الحالي.' : 'No grade groups are available from your current enrollment.'}</p>}{selectedTargetGradeGroups.length>0 && <p className="text-[10px] font-bold text-emerald-700">{lang === 'ar' ? 'سيظهر المنشور للأعضاء في المراحل المحددة.' : 'Only members in the selected grade groups will see this post.'}</p>}</div>}
+                {targetClassesEnabled && <div className="space-y-2 rounded-xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 dark:bg-stone-900"><p className="text-[11px] font-bold text-[var(--mousa-sand-600)]">{lang === 'ar' ? 'اختار الفصول المسموح لك باستهدافها:' : 'Choose from classes you are authorized to target:'}</p>{loadingTargetClasses ? <p className="text-xs text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'جارٍ تحميل الفصول…' : 'Loading your classes…'}</p> : availableTargetClasses.length ? <div className="grid gap-2 sm:grid-cols-2">{availableTargetClasses.map(item=><label key={item.id} className="flex items-center gap-2 rounded-lg bg-[var(--mousa-sand-50)] p-2 text-xs font-semibold dark:bg-stone-800"><input type="checkbox" checked={selectedTargetClassIds.includes(item.id)} onChange={event=>setSelectedTargetClassIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))} className="h-4 w-4 accent-[var(--mousa-teal-deep)]"/><span>{lang === 'ar' ? item.nameAr : item.nameEn}</span></label>)}</div> : <p className="text-xs text-amber-700">{lang === 'ar' ? 'لا توجد فصول يمكنك استهدافها في السنة الكنسية الحالية.' : 'No classes are available for targeting in the active church year.'}</p>}{selectedTargetClassIds.length>0 && <p className="text-[10px] font-bold text-emerald-700">{lang === 'ar' ? 'سيظهر المنشور فقط للأعضاء المسموح لهم في الفصول المحددة.' : 'Only members authorized for the selected classes will see this post.'}</p>}</div>}
+              </section>
+
+              <section className="rounded-2xl border border-violet-200 bg-violet-50/70 p-3 dark:border-violet-900/60 dark:bg-violet-950/20 space-y-3">
+                <label className="flex items-center gap-2 text-xs font-black text-violet-900 dark:text-violet-200"><input type="checkbox" checked={pollEnabled} onChange={event=>setPollEnabled(event.target.checked)} className="h-4 w-4 accent-violet-700"/>{lang === 'ar' ? 'إضافة استطلاع للمجتمع' : 'Add a community poll'}</label>
+                {pollEnabled && <div className="space-y-2"><input value={pollQuestion} onChange={event=>setPollQuestion(event.target.value)} maxLength={240} placeholder={lang === 'ar'?'اكتب سؤال الاستطلاع…':'Ask your poll question…'} className="w-full rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-violet-500 dark:bg-slate-900"/>{pollOptions.map((option,index)=><div key={index} className="flex gap-2"><input value={option} onChange={event=>setPollOptions(current=>current.map((item,i)=>i===index?event.target.value:item))} maxLength={120} placeholder={lang === 'ar'?'الخيار '+(index+1):'Option '+(index+1)} className="min-w-0 flex-1 rounded-xl border border-violet-200 bg-white px-3 py-2 text-xs outline-none focus:border-violet-500 dark:bg-slate-900"/>{pollOptions.length>2&&<button type="button" onClick={()=>setPollOptions(current=>current.filter((_,i)=>i!==index))} className="rounded-lg px-2 text-rose-600 hover:bg-rose-50" aria-label={lang === 'ar'?'حذف الخيار':'Remove option'}><X size={15}/></button>}</div>)}{pollOptions.length<6&&<button type="button" onClick={()=>setPollOptions(current=>[...current,''])} className="text-xs font-black text-violet-800 hover:underline dark:text-violet-200">+ {lang === 'ar'?'إضافة خيار':'Add option'}</button>}<label className="flex items-center gap-2 text-xs font-semibold text-violet-900 dark:text-violet-200"><input type="checkbox" checked={pollAllowMultiple} onChange={event=>setPollAllowMultiple(event.target.checked)} className="h-4 w-4 accent-violet-700"/>{lang === 'ar'?'السماح باختيار أكثر من إجابة':'Allow multiple answers'}</label></div>}
+              </section>
 
               {/* Media Selection Actions */}
               <div>
@@ -1402,9 +1482,9 @@ export function FeedTab({ lang }: { lang: Language }) {
 
               <button 
                 onClick={handleCreatePost} 
-                disabled={(!newPostText.trim() && composerAttachments.length === 0) || isUploadingMedia || isRecordingVoice || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready' || (attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim()))}
+                disabled={(!newPostText.trim() && composerAttachments.length === 0 && !pollEnabled) || (pollEnabled && (pollQuestion.trim().length < 2 || pollOptions.filter(option => option.trim()).length < 2)) || ((targetClassesEnabled || targetGradesEnabled) && selectedTargetClassIds.length === 0 && selectedTargetGradeGroups.length === 0) || isUploadingMedia || isRecordingVoice || isCreatingPost || composerAttachments.some(attachment => attachment.status !== 'ready' || (attachment.isVoiceRecording && attachment.includeInGlobalPlayer && !attachment.globalAudioTitle?.trim()))}
                 className={`w-full font-bold py-3.5 rounded-xl transition-colors shadow-md text-sm cursor-pointer flex items-center justify-center gap-2 ${
-                  (newPostText.trim() || composerAttachments.length > 0) && !isUploadingMedia && !isCreatingPost && composerAttachments.every(attachment => attachment.status === 'ready')
+                  (newPostText.trim() || composerAttachments.length > 0 || pollEnabled) && !isUploadingMedia && !isCreatingPost && composerAttachments.every(attachment => attachment.status === 'ready')
                     ? 'bg-[var(--mousa-teal-deep)] text-[var(--mousa-gold)] hover:bg-blue-900'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
@@ -1529,6 +1609,7 @@ export function FeedTab({ lang }: { lang: Language }) {
               
               {/* Post Body */}
               <p className="text-gray-800 mb-4 text-sm leading-relaxed whitespace-pre-line">{post.content}</p>
+              {post.poll && <section className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-4 dark:border-violet-900/60 dark:bg-violet-950/20"><h4 className="mb-3 text-sm font-black text-violet-950 dark:text-violet-100">{post.poll.question}</h4><div className="space-y-2">{post.poll.options.map(option=>{const total=post.poll!.options.reduce((sum,item)=>sum+item.voteCount,0);const alreadyVoted=post.poll!.options.some(item=>item.hasVoted);const percent=total?Math.round(option.voteCount/total*100):0;return <button key={option.id} type="button" disabled={Boolean(option.hasVoted)||(!post.poll!.allowMultiple&&alreadyVoted)||Boolean(votingOptionId)} onClick={async()=>{setVotingOptionId(option.id);const result=await voteFeedPollInSupabase(option.id);if(result.error)setActionError(result.error.message);else{const refreshed=await fetchFeedPostsFromSupabase();if(refreshed.data)setPosts(refreshed.data);}setVotingOptionId(null);}} className="relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-start text-xs font-bold text-violet-950 disabled:cursor-default dark:border-violet-900 dark:bg-slate-900 dark:text-violet-100"><span className="absolute inset-y-0 start-0 bg-violet-200/70 transition-all dark:bg-violet-900/50" style={{width:percent+'%'}}/><span className="relative z-10">{option.label}{option.hasVoted?' ✓':''}</span><span className="relative z-10 tabular-nums">{total?percent+'% · ':''}{option.voteCount}</span></button>})}</div><p className="mt-2 text-[10px] text-violet-800/70 dark:text-violet-200/70">{post.poll.allowMultiple?(lang==='ar'?'يمكن اختيار أكثر من إجابة':'Multiple answers allowed'):(lang==='ar'?'اختيار إجابة واحدة':'Choose one answer')}</p></section>}
 
               {getPostAttachments(post).length > 0 && (
                 <div className={`mb-4 grid gap-3 ${getPostAttachments(post).length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>

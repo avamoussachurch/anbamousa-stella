@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, CalendarPlus, Check, Copy, MapPin } from 'lucide-react';
 import { ChurchEventNotification } from '../../types';
+import { supabase } from '../../lib/supabase';
 
 interface ChurchEventNotificationsProps {
   events: ChurchEventNotification[];
@@ -11,6 +12,48 @@ export function ChurchEventNotifications({ events, lang }: ChurchEventNotificati
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'liturgy' | 'sunday_school' | 'family' | 'hymn'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [calendarAddedId, setCalendarAddedId] = useState<string | null>(null);
+  const [myRsvps, setMyRsvps] = useState<Record<string,'attending'|'maybe'|'not_attending'>>({});
+  const [rsvpBusyId, setRsvpBusyId] = useState<string | null>(null);
+  const [rsvpCounts, setRsvpCounts] = useState<Record<string,{attending:number;maybe:number}>>({});
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const loadRsvps = async () => {
+      if (!supabase || !events.length) return;
+      const { data: session } = await supabase.auth.getSession();
+      const userId = session.session?.user.id;
+      if (!userId) return;
+      const eventIds = events.map(event=>event.id);
+      const [{ data }, { data: summary }] = await Promise.all([
+        supabase.from('church_event_rsvps').select('event_id,response').eq('user_id',userId).in('event_id',eventIds),
+        supabase.rpc('get_church_event_rsvp_summary',{p_event_ids:eventIds})
+      ]);
+      if (!cancelled && data) setMyRsvps(Object.fromEntries(data.map(row=>[row.event_id,row.response])) as Record<string,'attending'|'maybe'|'not_attending'>);
+      if (!cancelled && summary) setRsvpCounts(Object.fromEntries(summary.map(row=>[row.event_id,{attending:Number(row.attending_count||0),maybe:Number(row.maybe_count||0)}])));
+    };
+    void loadRsvps();
+    return () => { cancelled = true; };
+  },[events]);
+
+  const saveRsvp = async (eventId:string,response:'attending'|'maybe'|'not_attending') => {
+    if (!supabase || rsvpBusyId) return;
+    setRsvpBusyId(eventId);
+    const { error } = await supabase.from('church_event_rsvps').upsert({event_id:eventId,response},{onConflict:'event_id,user_id'});
+    if (!error) {
+      const previous = myRsvps[eventId];
+      setMyRsvps(current=>({...current,[eventId]:response}));
+      setRsvpCounts(current=>{
+        const counts = current[eventId] || {attending:0,maybe:0};
+        const next = {...counts};
+        if (previous==='attending') next.attending=Math.max(0,next.attending-1);
+        if (previous==='maybe') next.maybe=Math.max(0,next.maybe-1);
+        if (response==='attending') next.attending+=1;
+        if (response==='maybe') next.maybe+=1;
+        return {...current,[eventId]:next};
+      });
+    }
+    setRsvpBusyId(null);
+  };
 
   const filteredEvents = events.filter(event => selectedFilter === 'all' || event.category === selectedFilter);
 
@@ -103,6 +146,10 @@ export function ChurchEventNotifications({ events, lang }: ChurchEventNotificati
                     {lang === 'ar' ? event.descriptionAr : event.descriptionEn}
                   </p>
                 )}
+              </div>
+              <p className="text-[10px] font-semibold text-[var(--text-secondary)]">{lang === 'ar' ? 'تأكيدات الحضور:' : 'Responses:'} {rsvpCounts[event.id]?.attending || 0} {lang === 'ar' ? 'سيحضرون' : 'going'} · {rsvpCounts[event.id]?.maybe || 0} {lang === 'ar' ? 'ربما' : 'maybe'}</p>
+              <div className="flex flex-wrap items-center gap-2" role="group" aria-label={lang === 'ar' ? 'تأكيد الحضور' : 'RSVP'}>
+                {(['attending','maybe','not_attending'] as const).map(response=><button key={response} type="button" disabled={rsvpBusyId===event.id} onClick={()=>void saveRsvp(event.id,response)} aria-pressed={myRsvps[event.id]===response} className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition ${myRsvps[event.id]===response?'border-[var(--action-primary)] bg-[var(--action-primary)] text-white':'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--state-hover)]'} disabled:opacity-50`}>{response==='attending'?(lang==='ar'?'سأحضر':'Going'):response==='maybe'?(lang==='ar'?'ربما':'Maybe'):(lang==='ar'?'لن أحضر':'Can’t go')}</button>)}
               </div>
               <div className="flex gap-2 shrink-0">
                 <button onClick={() => void handleShare(event)} className="rounded-xl border border-[var(--border-default)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--state-hover)] flex items-center gap-1.5">
