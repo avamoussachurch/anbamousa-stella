@@ -179,7 +179,7 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
           <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'استوديو الصورة الشخصية' : 'Avatar studio'}</h2>
           <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'اختار أيقونة قبطية أو رمزاً كنسياً أو ارفع صورتك.' : 'Choose a sourced Coptic saint icon, a church symbol, or upload your own photo.'}</p>
         </div>
-        <img src={avatar} alt="" className="h-16 w-16 shrink-0 rounded-2xl border-2 border-[var(--action-primary)] bg-[var(--surface-secondary)] object-cover shadow-sm" />
+        <img src={avatar} alt="" onError={event => { event.currentTarget.src = DEFAULT_STUDENT_AVATAR; }} className="h-16 w-16 shrink-0 rounded-2xl border-2 border-[var(--action-primary)] bg-[var(--surface-secondary)] object-cover shadow-sm" />
       </div>
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={event => void uploadPhoto(event)} className="hidden" />
       <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="mb-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border-default)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--state-hover)] disabled:opacity-50">
@@ -192,7 +192,7 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
       <div className="grid grid-cols-4 gap-2">
         {COPTIC_AVATARS.filter(item => category === 'all' || item.category === category).map(item => (
           <button key={item.id} type="button" onClick={() => setAvatar(item.imageSrc)} aria-pressed={avatar === item.imageSrc} title={isArabic ? item.nameAr : item.nameEn} className={`relative rounded-xl border-2 p-1.5 transition-transform hover:scale-[1.03] ${avatar === item.imageSrc ? 'border-[var(--action-primary)] bg-[var(--state-selected)]' : 'border-transparent bg-[var(--surface-secondary)]'}`}>
-            <img src={item.imageSrc} alt={isArabic ? item.nameAr : item.nameEn} className="mx-auto aspect-square w-full rounded-lg object-cover" />
+            <img src={item.imageSrc} alt={isArabic ? item.nameAr : item.nameEn} onError={event => { event.currentTarget.src = DEFAULT_STUDENT_AVATAR; }} className="mx-auto aspect-square w-full rounded-lg object-cover" />
             {avatar === item.imageSrc && <span className="absolute -end-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-[var(--action-primary)] text-white"><Check size={12} /></span>}
           </button>
         ))}
