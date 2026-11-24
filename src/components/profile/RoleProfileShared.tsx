@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import type { Language, Role, User } from '../../types';
 import { LanguageSettings } from '../shared/LanguageSettings';
 import { getLanguageDirection } from '../../lib/uiPreferences';
-import { COPTIC_AVATARS, DEFAULT_PARENT_AVATAR, DEFAULT_TEACHER_AVATAR } from '../../data/copticAvatars';
+import { COPTIC_AVATARS, DEFAULT_PARENT_AVATAR, DEFAULT_STUDENT_AVATAR, DEFAULT_TEACHER_AVATAR } from '../../data/copticAvatars';
 import { uploadAvatarToSupabase } from '../../lib/supabaseDatabase';
 import { ProfileCustomizationStudio } from './ProfileCustomizationStudio';
 
