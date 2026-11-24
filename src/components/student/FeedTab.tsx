@@ -303,7 +303,6 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   };
 
-  const isTeacher = workspace === 'teacher';
   const availableTargetGradeGroups = userData?.roles?.includes('admin')
     ? Object.keys(CLASS_GROUPS)
     : Array.from(new Set(availableTargetClasses.map(item => item.classGroupId)));
