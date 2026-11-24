@@ -711,7 +711,7 @@ export function ProfileTab({
                 </div>
               )}
 
-              {/* For Students: Sunday School Class & Grade Card */}
+              {/* For Student emblems: Sunday School Class & Grade Card */}
               {isStudent && (
                 <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-5 md:p-6 shadow-sm border border-[var(--mousa-border-sand)] space-y-4">
                   <div className="flex items-center justify-between">
@@ -1085,9 +1085,9 @@ export function ProfileTab({
                        <span className="absolute -bottom-2 -right-2 grid h-8 w-8 place-items-center rounded-xl border-2 border-[#173f42] bg-[#f1cc7c] text-[#173f42] shadow-lg"><Check size={17} strokeWidth={3}/></span>
                      </div>
                      <div className="relative min-w-0 flex-1 text-center sm:text-start">
-                       <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#f6d98f]">{lang === 'ar' ? 'ورشة الأيقونات القبطية' : 'COPTIC AVATAR ATELIER'}</p>
-                       <h3 className="mt-1 text-xl font-black">{lang === 'ar' ? 'اختر شخصيتك في عالم أنبا موسى' : 'Choose your Anba Mousa character'}</h3>
-                       <p className="mt-1 text-xs leading-5 text-white/85">{lang === 'ar' ? 'شخصيات مرسومة بروح الفن القبطي، مع رموز وملابس وألوان مميزة.' : 'Illustrated church-inspired portraits with distinctive robes, symbols and colors.'}</p>
+                       <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#f6d98f]">{lang === 'ar' ? 'استوديو الرموز الكنسية' : 'CHURCH EMBLEM STUDIO'}</p>
+                       <h3 className="mt-1 text-xl font-black">{lang === 'ar' ? 'اختر رمزاً كنسياً يعبر عنك' : 'Choose your church emblem'}</h3>
+                       <p className="mt-1 text-xs leading-5 text-white/85">{lang === 'ar' ? 'رموز كنسية بسيطة وليست صوراً للقديسين. يمكن إضافة أيقونات موثقة ومرخصة عند توفرها.' : 'Symbolic church emblems, not portraits. Verified saint icon artwork can be added when properly sourced and licensed.'}</p>
                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploadingAvatar} className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border-2 border-[#f4d58b] bg-[#f4d58b] px-4 py-2 text-xs font-black text-[#173b3e] shadow-md transition hover:bg-white disabled:opacity-60">
                          <Upload size={15}/>{lang === 'ar' ? 'ارفع صورتك الخاصة' : 'Upload your own photo'}
                        </button>
@@ -1096,10 +1096,10 @@ export function ProfileTab({
                    <div className="p-4 sm:p-5">
                      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={lang === 'ar' ? 'تصنيفات الصور' : 'Avatar categories'}>
                        {([
-                         { id: 'all', en: 'All characters', ar: 'كل الشخصيات' },
-                         { id: 'saints', en: 'Saints & symbols', ar: 'قديسون ورموز' },
-                         { id: 'students', en: 'Students', ar: 'طلاب' },
-                         { id: 'deacons', en: 'Deacons', ar: 'شمامسة' }
+                         { id: 'all', en: 'All emblems', ar: 'كل الرموز' },
+                         { id: 'saints', en: 'Church symbols', ar: 'رموز كنسية' },
+                         { id: 'students', en: 'Students', ar: 'رموز الطلاب' },
+                         { id: 'deacons', en: 'Deacon emblems', ar: 'رموز الشمامسة' }
                        ] as const).map(category => (
                          <button key={category.id} type="button" onClick={() => setAvatarCategory(category.id)} aria-pressed={avatarCategory === category.id}
                            className={`min-h-10 rounded-xl border-2 px-3.5 py-2 text-xs font-extrabold transition-all ${avatarCategory === category.id ? 'border-[#173f42] bg-[#173f42] text-white shadow-[0_4px_0_#a97834]' : 'border-[var(--border-strong)] bg-[var(--surface-primary)] text-[var(--text-primary)] hover:border-[#a97834] hover:bg-[var(--surface-secondary)]'}`}>
