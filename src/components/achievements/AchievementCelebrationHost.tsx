@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Award, Check, Sparkles, Trophy, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useAuth } from '../../context/AuthContext';
 
 type CelebrationItem = { id: string; title_en?: string; title_ar?: string; points_reward?: number; category?: string; badge_count?: number };
 type CelebrationPayload = { badges: CelebrationItem[]; milestones: CelebrationItem[]; pointsAwarded: number };
@@ -12,6 +13,7 @@ const confetti = Array.from({ length: 34 }, (_, index) => ({
 }));
 
 export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar' }) {
+  const { userData, setUserDirectly } = useAuth();
   const [payload, setPayload] = useState<CelebrationPayload | null>(null);
   const [index, setIndex] = useState(0);
   const isArabic = lang === 'ar';
@@ -19,12 +21,15 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
     const receive = (event: Event) => {
       const detail = (event as CustomEvent<CelebrationPayload>).detail;
       if (!detail || (!detail.badges?.length && !detail.milestones?.length)) return;
+      if (detail.pointsAwarded > 0 && userData) {
+        setUserDirectly({ ...userData, points: (userData.points || 0) + detail.pointsAwarded });
+      }
       setPayload(detail);
       setIndex(0);
     };
     window.addEventListener('anba:achievement-unlocked', receive);
     return () => window.removeEventListener('anba:achievement-unlocked', receive);
-  }, []);
+  }, [userData?.id, userData?.points, setUserDirectly]);
   if (!payload) return null;
   const items = [...(payload.badges || []), ...(payload.milestones || [])];
   const item = items[index];
