@@ -883,7 +883,7 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
     setActionError(null);
     const authorName = userData.fullName + (isTeacher ? ` (${lang === 'ar' ? 'خادم' : 'Servant'})` : '');
-    const authorAvatar = userData.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + userData.fullName;
+    const authorAvatar = userData.avatarUrl || DEFAULT_STUDENT_AVATAR;
     const attachments: FeedPostAttachmentInput[] = composerAttachments.map(attachment => ({
       mediaType: attachment.mediaType,
       mediaUrl: attachment.mediaUrl,
