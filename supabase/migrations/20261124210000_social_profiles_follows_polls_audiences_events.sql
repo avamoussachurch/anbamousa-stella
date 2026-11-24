@@ -235,6 +235,11 @@ begin
   from public.feed_post_poll_options o join public.feed_post_polls p on p.post_id=o.post_id
   where o.id=new.option_id;
   if v_post_id is null then raise exception 'Poll option not found'; end if;
+  -- Serialize votes per user and poll so simultaneous requests cannot bypass
+  -- the one-answer rule by both observing an empty vote set.
+  if not v_allow_multiple then
+    perform pg_advisory_xact_lock(hashtext(new.user_id::text || ':' || v_post_id));
+  end if;
   if not v_allow_multiple and exists (
     select 1 from public.feed_post_poll_votes old_vote
     join public.feed_post_poll_options old_option on old_option.id=old_vote.option_id
