@@ -10,7 +10,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 create table if not exists public.profile_follows (
-  follower_id uuid not null references auth.users(id) on delete cascade,
+  follower_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   followed_id uuid not null references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key (follower_id, followed_id),
