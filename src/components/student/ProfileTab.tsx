@@ -1238,7 +1238,6 @@ export function ProfileTab({
                    {hymnsTaxisLevelError && <p role="alert" className="mt-2 text-xs font-semibold text-[var(--feedback-error)]">{hymnsTaxisLevelError}</p>}
                    {hymnsTaxisLevelMessage && <p role="status" className="mt-2 text-xs font-semibold text-[var(--brand-teal)]">{hymnsTaxisLevelMessage}</p>}
                  </div>
-                 </div>
                </details>
 
                <div className="pt-2">
