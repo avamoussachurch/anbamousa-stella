@@ -111,4 +111,6 @@ test('badge unlocks dispatch a global, prominent celebration', () => {
   assert.match(celebration, /fixed inset-0 z-\[9999\]/);
   assert.match(celebration, /BADGE UNLOCKED/);
   assert.match(celebration, /confetti/);
+  assert.match(celebration, /syncAuthoritativeProgress/);
+  assert.match(celebration, /from\('profiles'\)/);
 });
