@@ -49,6 +49,6 @@ const realIconSources: Record<string,string> = {
  'saint-macarius-icon':'https://upload.wikimedia.org/wikipedia/commons/c/cd/Saint_Macarius.jpg'
 };
 export const COPTIC_AVATARS:CopticAvatarPreset[] = entries.map(([id,nameEn,nameAr,kind,bg,fg,accent,category])=>({id,nameEn,nameAr,category,imageSrc:realIconSources[id] || emblem(kind,bg,fg,accent)}));
-export const DEFAULT_STUDENT_AVATAR=COPTIC_AVATARS[7].imageSrc;
+export const DEFAULT_STUDENT_AVATAR=COPTIC_AVATARS[8].imageSrc;
 export const DEFAULT_PARENT_AVATAR=COPTIC_AVATARS[0].imageSrc;
 export const DEFAULT_TEACHER_AVATAR=COPTIC_AVATARS[3].imageSrc;
