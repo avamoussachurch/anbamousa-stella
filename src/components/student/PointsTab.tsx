@@ -13,6 +13,7 @@ import {
 } from '../../lib/pointsService';
 import { LeaderboardEntry, Language } from '../../types';
 import { LeaderboardPodium, PodiumItem } from './LeaderboardPodium';
+import { AchievementRewardsStudio } from '../achievements/AchievementRewardsStudio';
 
 const REWARD_PRODUCTS = [
   { id: '1', title: 'Small Saint Picture', titleAr: 'صورة قديس صغيرة', cost: 50, icon: '🖼️' },
@@ -343,6 +344,8 @@ export function PointsTab({ lang }: { lang: Language }) {
               </div>
             </div>
             
+            <AchievementRewardsStudio mode="student" initialView="badges" lang={lang} />
+
             <div className="space-y-6 relative before:absolute before:inset-0 before:ml-7 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-[var(--mousa-border-sand)]">
               {isGuest && mockBadges.map((badge, index) => {
                 const isUnlocked = userData.points >= badge.pointsThreshold;
@@ -557,35 +560,7 @@ export function PointsTab({ lang }: { lang: Language }) {
               </div>
             </section>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {REWARD_PRODUCTS.map(prod => {
-                const canRequest = userData.points >= prod.cost && !isGuest;
-                return (
-                  <article key={prod.id} className="rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-5 shadow-sm dark:bg-[#1E1914]">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-3xl dark:bg-amber-950/50">{prod.icon}</div>
-                      <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-black text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">{prod.cost} pts</span>
-                    </div>
-                    <h3 className="mt-4 text-base font-black text-[var(--mousa-teal-deep)] dark:text-amber-200">{lang === 'ar' ? prod.titleAr : prod.title}</h3>
-                    <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                      {lang === 'ar' ? 'طلب المكافأة يحتاج موافقة قبل التسليم.' : 'A request must be approved before the reward is issued.'}
-                    </p>
-                    <button
-                      type="button"
-                      disabled={!canRequest}
-                      onClick={() => setConfirmPurchaseItem({ id: prod.id, name: lang === 'ar' ? prod.titleAr : prod.title, cost: prod.cost })}
-                      className="mt-4 w-full rounded-xl bg-[var(--mousa-teal)] px-4 py-3 text-sm font-black text-white transition hover:bg-[var(--mousa-teal-deep)] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isGuest
-                        ? (lang === 'ar' ? 'سجّل الدخول لطلب المكافأة' : 'Sign in to request')
-                        : userData.points < prod.cost
-                          ? (lang === 'ar' ? 'نقاط غير كافية' : 'Not enough points')
-                          : (lang === 'ar' ? 'اطلب المكافأة' : 'Request reward')}
-                    </button>
-                  </article>
-                );
-              })}
-            </div>
+            <AchievementRewardsStudio mode="student" initialView="bazaar" lang={lang} />
 
             <section className="rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-5 dark:bg-[#1E1914]">
               <div className="flex items-center gap-2">
