@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
 import { 
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
   ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
