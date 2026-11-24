@@ -967,7 +967,8 @@ export function FeedTab({ lang }: { lang: Language }) {
         setActionError(lang === 'ar' ? `مش قادرين نحفظ المشاركة دلوقتي: ${errorMessage}` : `Failed to save post to cloud: ${errorMessage}`);
         return;
       }
-      setPosts(previous => [res.data!, ...previous]);
+      const refreshedFeed = await fetchFeedPostsFromSupabase();
+      setPosts(refreshedFeed.data || [res.data!, ...posts]);
       setNewPostText('');
       setIsOfficialAnnouncement(false);
       setPollEnabled(false);
