@@ -1,10 +1,18 @@
 import { supabase } from './supabase';
 
-export type AchievementEventType =
-  | 'lesson_opened' | 'lesson_completed' | 'hymn_opened' | 'hymn_mastered'
-  | 'taxis_opened' | 'taxis_completed' | 'prayer_day' | 'quiz_passed'
-  | 'attendance_present' | 'community_post' | 'community_reaction'
-  | 'memory_verse' | 'class_participation' | 'learning_day';
+export type AchievementEventType = 'prayer_day';
+
+export function dispatchAchievementResult(data: any): { pointsAwarded: number; hasUnlocks: boolean } {
+  const badges = Array.isArray(data?.new_badges) ? data.new_badges : [];
+  const milestones = Array.isArray(data?.new_milestones) ? data.new_milestones : [];
+  const pointsAwarded = Number(data?.points_awarded || 0);
+  if ((badges.length || milestones.length) && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('anba:achievement-unlocked', {
+      detail: { badges, milestones, pointsAwarded }
+    }));
+  }
+  return { pointsAwarded, hasUnlocks: badges.length > 0 || milestones.length > 0 };
+}
 
 export async function recordAchievementEvent(
   eventType: AchievementEventType,
@@ -19,18 +27,10 @@ export async function recordAchievementEvent(
       p_metadata: metadata,
     });
     if (error) throw error;
-    const badges = Array.isArray(data?.new_badges) ? data.new_badges : [];
-    const milestones = Array.isArray(data?.new_milestones) ? data.new_milestones : [];
-    const pointsAwarded = Number(data?.points_awarded || 0);
-    if ((badges.length || milestones.length) && typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('anba:achievement-unlocked', {
-        detail: { badges, milestones, pointsAwarded }
-      }));
-    }
-    return { success: true, pointsAwarded };
+    const result = dispatchAchievementResult(data);
+    return { success: true, pointsAwarded: result.pointsAwarded };
   } catch (error) {
-    // Achievement tracking must never block a lesson, hymn, prayer, or quiz save.
-    console.warn('Achievement event could not be recorded:', error);
+    console.warn('Verified prayer achievement could not be recorded:', error);
     return { success: false, pointsAwarded: 0, error: error instanceof Error ? error.message : 'Achievement tracking failed.' };
   }
 }
