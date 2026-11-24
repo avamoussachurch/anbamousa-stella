@@ -245,7 +245,7 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
         <p className="mt-1 text-sm text-white/80">{isArabic ? 'كل مكافأة بيحددها فريق الكنيسة. الطلب يحتاج موافقة ولي الأمر.' : 'Every reward is managed by your church team. Requests need parent approval.'}</p>
         <div className="mt-4 inline-flex rounded-2xl bg-white/15 px-4 py-2 text-xl font-black">{userData?.points || 0} ✨</div>
       </header>
-      {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+      {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       {notice && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
       {rewards.filter(item => item.is_active).length === 0 ? <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'لا توجد مكافآت منشورة حالياً.' : 'No rewards are available yet.'}</p> :
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{rewards.filter(item => item.is_active).map((reward, index) => {
@@ -271,7 +271,7 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
         <p className="mt-1 text-sm text-white/85">{isArabic ? 'افتح الأوسمة مع التعلم والتسبيح والصلاة والمشاركة.' : 'Unlock badges through learning, hymns, prayer, and participation.'}</p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm font-bold"><span className="rounded-xl bg-white/15 px-3 py-2">{unlocks.length} / {badges.length} {isArabic ? 'وسام' : 'badges'}</span><span className="rounded-xl bg-white/15 px-3 py-2">+{unlocks.reduce((sum, item) => sum + item.points_awarded, 0)} pts</span></div>
       </header>
-      {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+      {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       <div className="space-y-7">{CATEGORIES.map(category => {
         const rows = badges.filter(item => item.category === category.id);
         if (!rows.length) return null;
@@ -317,7 +317,7 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
       <p className="mt-1 text-sm text-white/80">{isArabic ? 'أنشئ الأوسمة والمراحل والمكافآت وحدد النقاط وشروط الفتح.' : 'Create badges, category milestones, and rewards; control points and unlock criteria.'}</p>
     </header>
     <nav className="flex flex-wrap gap-2">{staffTabs.map(([id, label]) => <button key={id} type="button" onClick={() => setSection(id)} className={`rounded-xl px-4 py-2 text-sm font-bold ${section === id ? 'bg-[var(--mousa-teal)] text-white' : 'border border-[var(--border-default)] bg-[var(--surface-primary)]'}`}>{label}</button>)}</nav>
-    {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+    {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</p>}
     {notice && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
     <div className="flex justify-end"><button type="button" onClick={() => void load()} className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold"><RefreshCw size={14} />{isArabic ? 'تحديث' : 'Refresh'}</button></div>
 
@@ -368,10 +368,10 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
     {section === 'fulfillment' && <div className="space-y-3">
       {requests.map(item=><article key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-[var(--surface-primary)] p-4">
         <div><p className="font-black">{isArabic ? item.reward_name_ar : item.reward_name_en} · {item.cost_points} pts</p><p className="text-xs text-[var(--text-secondary)]">Student {item.student_id} · {new Date(item.created_at).toLocaleDateString()}</p>
-          <p className={`text-xs font-bold ${item.status==='approved'?'text-emerald-700':item.status==='rejected'?'text-rose-700':'text-amber-700'}`}>{item.status==='approved' ? (item.fulfilled_at ? (isArabic?'تم التسليم':'Fulfilled') : (isArabic?'موافق عليه · بانتظار التسليم':'Approved · awaiting fulfilment')) : item.status==='rejected' ? (isArabic?'مرفوض':'Rejected') : (isArabic?'بانتظار المراجعة':'Pending review')}</p>
+          <p className={`text-xs font-bold ${item.status==='approved'?'text-emerald-700':item.status==='rejected'?'text-red-700':'text-amber-700'}`}>{item.status==='approved' ? (item.fulfilled_at ? (isArabic?'تم التسليم':'Fulfilled') : (isArabic?'موافق عليه · بانتظار التسليم':'Approved · awaiting fulfilment')) : item.status==='rejected' ? (isArabic?'مرفوض':'Rejected') : (isArabic?'بانتظار المراجعة':'Pending review')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {item.status==='pending' && <><button type="button" disabled={busy} onClick={()=>void reviewRequest(item.id,'approved')} className={buttonClass}><Check size={16}/>{isArabic?'موافقة وخصم النقاط':'Approve & deduct points'}</button><button type="button" disabled={busy} onClick={()=>void reviewRequest(item.id,'rejected')} className="rounded-xl border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700">{isArabic?'رفض':'Reject'}</button></>}
+          {item.status==='pending' && <><button type="button" disabled={busy} onClick={()=>void reviewRequest(item.id,'approved')} className={buttonClass}><Check size={16}/>{isArabic?'موافقة وخصم النقاط':'Approve & deduct points'}</button><button type="button" disabled={busy} onClick={()=>void reviewRequest(item.id,'rejected')} className="rounded-xl border border-red-300 px-3 py-2 text-sm font-bold text-red-700">{isArabic?'رفض':'Reject'}</button></>}
           {item.status==='approved' && !item.fulfilled_at && <button type="button" disabled={busy} onClick={()=>void fulfill(item.id)} className={buttonClass}><Check size={16}/>{isArabic ? 'تأكيد التسليم' : 'Mark fulfilled'}</button>}
         </div>
       </article>)}
