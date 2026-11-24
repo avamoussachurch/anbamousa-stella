@@ -203,3 +203,45 @@ drop policy if exists church_event_rsvps_write_own on public.church_event_rsvps;
 create policy church_event_rsvps_write_own on public.church_event_rsvps
   for all to authenticated using (user_id=auth.uid())
   with check (user_id=auth.uid());
+
+
+-- Polls are authored only by the feed-post owner. A vote is private to its voter.
+drop policy if exists feed_poll_author_insert on public.feed_post_polls;
+create policy feed_poll_author_insert on public.feed_post_polls
+  for insert to authenticated with check (
+    exists(select 1 from public.feed_posts p where p.id=post_id and p.author_id=auth.uid())
+  );
+drop policy if exists feed_poll_author_delete on public.feed_post_polls;
+create policy feed_poll_author_delete on public.feed_post_polls
+  for delete to authenticated using (
+    exists(select 1 from public.feed_posts p where p.id=post_id and p.author_id=auth.uid())
+  );
+drop policy if exists feed_poll_options_author_insert on public.feed_post_poll_options;
+create policy feed_poll_options_author_insert on public.feed_post_poll_options
+  for insert to authenticated with check (
+    exists(select 1 from public.feed_posts p where p.id=post_id and p.author_id=auth.uid())
+  );
+drop policy if exists feed_poll_options_author_delete on public.feed_post_poll_options;
+create policy feed_poll_options_author_delete on public.feed_post_poll_options
+  for delete to authenticated using (
+    exists(select 1 from public.feed_posts p where p.id=post_id and p.author_id=auth.uid())
+  );
+
+create or replace function public.enforce_single_choice_poll_vote()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_post_id text; v_allow_multiple boolean;
+begin
+  select o.post_id,p.allow_multiple into v_post_id,v_allow_multiple
+  from public.feed_post_poll_options o join public.feed_post_polls p on p.post_id=o.post_id
+  where o.id=new.option_id;
+  if v_post_id is null then raise exception 'Poll option not found'; end if;
+  if not v_allow_multiple and exists (
+    select 1 from public.feed_post_poll_votes old_vote
+    join public.feed_post_poll_options old_option on old_option.id=old_vote.option_id
+    where old_vote.user_id=new.user_id and old_option.post_id=v_post_id
+  ) then raise exception 'This poll allows one answer only'; end if;
+  return new;
+end $$;
+drop trigger if exists feed_poll_single_choice_guard on public.feed_post_poll_votes;
+create trigger feed_poll_single_choice_guard before insert on public.feed_post_poll_votes
+for each row execute function public.enforce_single_choice_poll_vote();
