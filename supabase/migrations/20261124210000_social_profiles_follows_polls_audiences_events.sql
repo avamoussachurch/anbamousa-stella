@@ -271,3 +271,43 @@ as $$
 $$;
 revoke all on function public.get_feed_poll_results(text[]) from public;
 grant execute on function public.get_feed_poll_results(text[]) to authenticated;
+
+
+create table if not exists public.profile_customizations (
+  user_id uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  frame_key text not null default 'coptic-gold',
+  banner_key text not null default 'desert-dawn',
+  display_title text,
+  updated_at timestamptz not null default now(),
+  constraint profile_customizations_frame_check check (frame_key in ('coptic-gold','olive-wreath','royal-blue','desert-sand','burgundy')),
+  constraint profile_customizations_banner_check check (banner_key in ('desert-dawn','coptic-pattern','olive-garden','golden-church','midnight-teal')),
+  constraint profile_customizations_title_length check (display_title is null or length(display_title)<=40)
+);
+alter table public.profile_customizations enable row level security;
+drop policy if exists profile_customizations_own on public.profile_customizations;
+create policy profile_customizations_own on public.profile_customizations
+  for all to authenticated using (user_id=auth.uid()) with check (user_id=auth.uid());
+
+drop function if exists public.get_profile_directory(text);
+create function public.get_profile_directory(p_search text default null)
+returns table (
+  user_id uuid, display_name text, role text, avatar_url text,
+  points integer, current_streak integer, longest_streak integer,
+  followers_count bigint, following_count bigint, is_following boolean,
+  frame_key text, banner_key text, display_title text
+)
+language sql stable security definer set search_path=public,pg_temp
+as $$
+  select p.id,p.name,p.role,p.avatar,coalesce(p.points,0),coalesce(p.current_streak,0),coalesce(p.longest_streak,0),
+    (select count(*) from public.profile_follows f where f.followed_id=p.id),
+    (select count(*) from public.profile_follows f where f.follower_id=p.id),
+    exists(select 1 from public.profile_follows f where f.follower_id=auth.uid() and f.followed_id=p.id),
+    coalesce(custom.frame_key,'coptic-gold'),coalesce(custom.banner_key,'desert-dawn'),custom.display_title
+  from public.profiles p
+  left join public.profile_customizations custom on custom.user_id=p.id
+  where auth.uid() is not null
+    and (p_search is null or btrim(p_search)='' or p.name ilike '%'||left(btrim(p_search),60)||'%')
+  order by p.name limit 100;
+$$;
+revoke all on function public.get_profile_directory(text) from public;
+grant execute on function public.get_profile_directory(text) to authenticated;
