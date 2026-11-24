@@ -480,3 +480,12 @@ alter table public.notifications add constraint notifications_category_check
     'announcement','event','lesson','assignment','progress','streak','achievement',
     'leaderboard','help_request','moderation','system','motivation','community'
   ]::text[]));
+
+
+-- Profile titles are a curated child-safe collection, not arbitrary public text.
+alter table public.profile_customizations drop constraint if exists profile_customizations_title_length;
+alter table public.profile_customizations add constraint profile_customizations_title_check
+  check (display_title is null or display_title = any(array[
+    'hymn-explorer','prayer-heart','bible-reader','church-helper',
+    'sunday-school-star','saint-story-keeper'
+  ]::text[]));
