@@ -10,6 +10,16 @@ type DirectoryProfile = {
   frame_key?: string; banner_key?: string; display_title?: string | null;
 };
 
+const profileTitleLabel = (title: string | null | undefined, ar: boolean) => {
+  const labels: Record<string,[string,string]> = {
+    'hymn-explorer':['Hymn Explorer','مستكشف الألحان'], 'prayer-heart':['Prayer Heart','قلب محب للصلاة'],
+    'bible-reader':['Bible Reader','قارئ الكتاب المقدس'], 'church-helper':['Church Helper','خادم الكنيسة'],
+    'sunday-school-star':['Sunday School Star','نجم مدارس الأحد'], 'saint-story-keeper':['Saint Stories Keeper','محب سير القديسين']
+  };
+  const pair = title ? labels[title] : undefined;
+  return pair ? (ar ? pair[1] : pair[0]) : null;
+};
+
 const roleLabel = (role: string, ar: boolean) => {
   const labels: Record<string, [string,string]> = {
     student:['Student','طالب'], parent:['Parent','ولي أمر'], teacher:['Servant','خادم'], admin:['Church Admin','إدارة الكنيسة']
@@ -73,7 +83,7 @@ export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) 
               <button type="button" onClick={()=>setSelected(null)} className="mb-2 text-xs font-bold text-[var(--mousa-teal-deep)]">← {ar?'كل الأعضاء':'All members'}</button>
               <div className="h-20 w-full rounded-2xl shadow-inner" style={{background:selected.banner_key==='coptic-pattern'?'repeating-linear-gradient(45deg,#174d4c 0 12px,#1e6260 12px 24px,#c59b50 24px 27px)':selected.banner_key==='olive-garden'?'linear-gradient(120deg,#244c39,#6e8751,#c2a96a)':selected.banner_key==='golden-church'?'linear-gradient(120deg,#5b3a27,#a77b39,#e9ce8a)':selected.banner_key==='midnight-teal'?'linear-gradient(120deg,#102f3b,#145b62,#327e79)':'linear-gradient(120deg,#6f4935,#d6a15b,#f4dca6)'}}/>
               <div className={'mx-auto grid h-28 w-28 place-items-center rounded-[2rem] bg-white p-1 shadow-lg '+(selected.frame_key==='olive-wreath'?'ring-4 ring-emerald-600':selected.frame_key==='royal-blue'?'ring-4 ring-blue-700':selected.frame_key==='desert-sand'?'ring-4 ring-orange-300':selected.frame_key==='burgundy'?'ring-4 ring-rose-900':'ring-4 ring-amber-400')}><img src={selected.avatar_url || '/icons/icon-192.png'} alt="" className="h-full w-full rounded-[1.5rem] object-cover"/></div>
-              <div><h3 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-white">{selected.display_name}</h3><p className="mt-1 text-sm font-bold text-[var(--mousa-sand-500)]">{selected.display_title || roleLabel(selected.role,ar)}</p></div>
+              <div><h3 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-white">{selected.display_name}</h3><p className="mt-1 text-sm font-bold text-[var(--mousa-sand-500)]">{profileTitleLabel(selected.display_title,ar) || roleLabel(selected.role,ar)}</p></div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-2xl bg-white/70 p-3 dark:bg-stone-900"><strong className="block text-xl">{selected.followers_count}</strong><span className="text-[10px] text-[var(--mousa-sand-500)]">{ar?'متابع':'Followers'}</span></div>
                 <div className="rounded-2xl bg-white/70 p-3 dark:bg-stone-900"><strong className="block text-xl">{selected.following_count}</strong><span className="text-[10px] text-[var(--mousa-sand-500)]">{ar?'يتابع':'Following'}</span></div>
