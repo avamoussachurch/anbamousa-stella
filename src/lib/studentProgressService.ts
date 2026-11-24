@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { StudentContentProgress } from '../types';
 import { recordAchievementEvent } from './achievementService';
+import { getCairoDateString } from './cairoTime';
 
 export interface StartLessonProgressInput {
   lessonId: string;
@@ -173,6 +174,7 @@ export async function startLessonProgress(
     }
     const confirmed = storeServerProgress(json.progress);
     void recordAchievementEvent('lesson_opened', `lesson-open:${lessonId}:${versionId}`, { lessonId, versionId });
+    void recordAchievementEvent('learning_day', `learning-day:${getCairoDateString()}`, { school: 'sunday_school' });
 
     return {
       data: confirmed,
@@ -347,6 +349,7 @@ export async function recordStudentSchoolActivity(
         ? (input.activityType === 'HYMN_MASTERED' ? 'hymn_mastered' : 'hymn_opened')
         : (input.activityType === 'TAXIS_COMPLETED' ? 'taxis_completed' : 'taxis_opened');
       void recordAchievementEvent(eventType, `${input.school}:${input.activityId}:${eventType}`, { school: input.school, activityId: json.activityId });
+      void recordAchievementEvent('learning_day', `learning-day:${getCairoDateString()}`, { school: input.school });
     }
     return {
       success: true,
