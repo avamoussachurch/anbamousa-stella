@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
+import { FeedPeopleDirectory } from './FeedPeopleDirectory';
 import { 
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
   ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
@@ -991,6 +992,7 @@ export function FeedTab({ lang }: { lang: Language }) {
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <FeedPeopleDirectory lang={lang} />
           {isTeacher && (
             <span className="bg-[var(--mousa-coral-soft)] text-[var(--mousa-coral-dark)] border border-[var(--mousa-coral)]/30 px-3 py-1 rounded-full text-xs font-black shadow-2xs flex items-center gap-1">
               <ShieldCheck size={14} />
