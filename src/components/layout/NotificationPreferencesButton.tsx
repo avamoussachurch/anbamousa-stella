@@ -11,7 +11,7 @@ const categories = [
   ['progress','Progress updates','تحديثات التقدم'],['streak','Streak reminders','تذكيرات الاستمرارية'],
   ['achievement','Achievements','الإنجازات'],['leaderboard','Leaderboard changes','تغييرات الترتيب'],
   ['help_request','Help requests','طلبات المساعدة'],['moderation','Moderation','الإشراف'],
-  ['system','System updates','تحديثات النظام'],['motivation','Encouragement','رسائل التشجيع']
+  ['system','System updates','تحديثات النظام'],['motivation','Encouragement','رسائل التشجيع'],['community','New followers','متابعون جدد']
 ] as const;
 
 export function NotificationPreferencesButton({ lang }: { lang: Language }) {
