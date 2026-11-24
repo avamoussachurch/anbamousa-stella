@@ -170,6 +170,7 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
   ] as const;
 
   return (
+    <>
     <section className="rounded-[1.75rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
@@ -202,6 +203,8 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
       {error && <p role="alert" className="mt-3 text-xs font-semibold text-[var(--feedback-error)]">{error}</p>}
       {message && <p role="status" className="mt-3 text-xs font-semibold text-[var(--brand-teal)]">{message}</p>}
     </section>
+    <ProfileCustomizationStudio userId={user.id} lang={lang} />
+    </>
   );
 }
 
