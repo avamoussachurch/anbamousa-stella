@@ -320,6 +320,7 @@ export async function createFeedPostInSupabase(params: {
   attachments?: FeedPostAttachmentInput[];
   isPinned?: boolean;
   isAnnouncement?: boolean;
+  targetClassIds?: string[];
 }): Promise<{ data: ExtendedPost | null; error: Error | null }> {
   if (!supabase) {
     return { data: null, error: new Error('Supabase client not initialized') };
@@ -362,7 +363,8 @@ export async function createFeedPostInSupabase(params: {
     media_thumbnail: firstAttachment?.mediaThumbnail || params.mediaThumbnail || null,
     media_provider: firstAttachment?.mediaProvider || params.mediaProvider || null,
     is_pinned: Boolean(params.isPinned),
-    is_announcement: Boolean(params.isAnnouncement)
+    is_announcement: Boolean(params.isAnnouncement),
+    audience_mode: params.targetClassIds?.length ? 'classes' : 'everyone'
   };
 
   const { data, error } = await supabase
@@ -375,6 +377,18 @@ export async function createFeedPostInSupabase(params: {
     const cleanup = await cleanupFeedMediaReferences(references);
     if (cleanup.error) console.error('Unable to clean up media after feed post creation failure:', cleanup.error.message);
     return { data: null, error: new Error(error.message) };
+  }
+
+  if (params.targetClassIds?.length) {
+    const targets = Array.from(new Set(params.targetClassIds)).map(class_instance_id => ({ post_id: postId, class_instance_id }));
+    const { error: targetError } = await supabase.from('feed_post_class_targets').insert(targets);
+    if (targetError) {
+      const { error: rollbackError } = await supabase.from('feed_posts').delete().eq('id', postId);
+      if (rollbackError) console.error('Failed to roll back post after audience-target failure:', rollbackError.message);
+      const cleanup = await cleanupFeedMediaReferences(references);
+      if (cleanup.error) console.error('Unable to clean up media after audience-target failure:', cleanup.error.message);
+      return { data: null, error: new Error(targetError.message) };
+    }
   }
 
   if (attachments.length > 0) {
