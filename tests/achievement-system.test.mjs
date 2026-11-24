@@ -46,11 +46,13 @@ test('students can only read their own event progress', () => {
 });
 
 test('activity events cover learning, hymns, taxis, prayer, quizzes, attendance, and community', () => {
-  assert.match(progress, /recordAchievementEvent\('lesson_opened'/);
-  assert.match(progress, /recordAchievementEvent\('lesson_completed'/);
-  assert.match(progress, /recordAchievementEvent\('learning_day'/);
+  // Activity is recorded only by authenticated server routes after the underlying
+  // lesson/content/quiz has been verified; the client only dispatches returned awards.
+  assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'lesson_opened'/);
+  assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'lesson_completed'/);
+  assert.match(server, /recordServerAchievementEvent\(targetStudentId, eventType/);
+  assert.match(server, /eventType: 'lesson_opened' \| 'lesson_completed' \| 'hymn_opened' \| 'taxis_opened' \| 'quiz_passed'/);
   assert.match(expandedBadges, /learning_day/);
-  assert.match(progress, /recordAchievementEvent\(eventType/);
   assert.match(prayer, /recordAchievementEvent\('prayer_day'/);
   assert.match(quiz, /dispatchAchievementResult\(json\.achievementResult\)/);
   assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'quiz_passed'/);
