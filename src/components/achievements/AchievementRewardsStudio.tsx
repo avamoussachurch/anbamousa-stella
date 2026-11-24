@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Award, BookOpen, BookCheck, GraduationCap, Library, Music, AudioLines, Heart, ScrollText, HandHeart, CalendarCheck, CalendarHeart, Church, Brain, MessagesSquare, BookmarkCheck, HeartHandshake, NotebookPen, Cross, Image as ImageIcon, Check, Edit3, Gift, Lock, Plus, RefreshCw, Save, Sparkles, Star, Trophy, X } from 'lucide-react';
+import { Award, BookOpen, BookCheck, GraduationCap, Library, Music, AudioLines, Heart, ScrollText, HandHeart, CalendarCheck, CalendarHeart, Church, Brain, MessagesSquare, BookmarkCheck, HeartHandshake, NotebookPen, Cross, Image as ImageIcon, Check, Edit3, Gift, Lock, RefreshCw, Save, Sparkles, Star, Trophy, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { Language } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -63,7 +63,7 @@ function slugify(value: string) {
 
 export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }: Props) {
   const isArabic = lang === 'ar';
-  const { userData, isGuest, setUserDirectly } = useAuth();
+  const { userData, isGuest } = useAuth();
   const canManage = !isGuest && Boolean(userData) && (hasRole(userData, 'teacher') || hasRole(userData, 'admin'));
   const [badges, setBadges] = useState<BadgeRow[]>([]);
   const [unlocks, setUnlocks] = useState<UnlockRow[]>([]);
