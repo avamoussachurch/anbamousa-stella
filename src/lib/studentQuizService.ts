@@ -1,3 +1,4 @@
+import { recordAchievementEvent } from './achievementService';
 import { supabase } from './supabase';
 import { QuizDraft, StudentQuizAttempt } from '../types';
 
@@ -133,6 +134,9 @@ export async function submitStudentQuizAttempt(
     }
 
     const attempt: StudentQuizAttempt = json.attempt;
+    if (attempt.percentage >= 70 && !json.isDuplicate) {
+      void recordAchievementEvent('quiz_passed', `quiz-pass:${attempt.id}`, { lessonId, quizId, percentage: attempt.percentage });
+    }
     const key = `${attempt.studentId}_${lessonId}`;
     if (!LOCAL_QUIZ_ATTEMPTS[key]) {
       LOCAL_QUIZ_ATTEMPTS[key] = [];
