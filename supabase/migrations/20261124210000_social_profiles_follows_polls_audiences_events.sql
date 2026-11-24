@@ -339,3 +339,66 @@ end $$;
 drop trigger if exists profile_follow_notification on public.profile_follows;
 create trigger profile_follow_notification after insert on public.profile_follows
 for each row execute function public.notify_profile_followed();
+
+
+-- Grade targets store the canonical class-group key. The helper maps supported
+-- profile-grade labels without exposing grade or family data in the directory.
+alter table public.feed_posts drop constraint if exists feed_posts_audience_mode_check;
+alter table public.feed_posts add constraint feed_posts_audience_mode_check
+  check (audience_mode in ('everyone','classes','grades','mixed'));
+
+create or replace function public.profile_grade_class_group(p_grade text)
+returns text language sql immutable parallel safe as $$
+  select case
+    when p_grade is null then null
+    when lower(btrim(p_grade)) in ('kg1','kg 1','kindergarten 1','kg 2','kg2','kindergarten 2') then 'angels'
+    when lower(btrim(p_grade)) ~ '^(prep|preparatory)' or lower(btrim(p_grade)) ~ '^(grade )?[789](st|nd|rd|th)?( grade)?$' then 'preparatory'
+    when lower(btrim(p_grade)) ~ '^(sec|secondary)' or lower(btrim(p_grade)) ~ '^(grade )?(10|11|12)(th)?( grade)?$' then 'secondary'
+    when lower(btrim(p_grade)) in ('university','college','university & college youth') then 'university'
+    when lower(btrim(p_grade)) in ('grade 4','4th grade','grade 5','5th grade','grade 6','6th grade') then 'primary_2'
+    when lower(btrim(p_grade)) in ('grade 1','1st grade','grade 2','2nd grade','grade 3','3rd grade') then 'primary_1'
+    else null
+  end;
+$$;
+
+create or replace function public.can_view_feed_post(p_post_id text)
+returns boolean language sql stable security definer set search_path=public,pg_temp as $$
+  select exists (
+    select 1 from public.feed_posts p
+    where p.id=p_post_id and p.is_hidden=false and (
+      p.audience_mode='everyone' or p.author_id=auth.uid() or has_role('admin')
+      or (p.audience_mode in ('classes','mixed') and (
+        exists(select 1 from public.feed_post_class_targets t
+          join public.class_memberships m on m.class_instance_id=t.class_instance_id
+          join public.class_instances ci on ci.id=m.class_instance_id and ci.church_year_id=m.church_year_id
+          join public.church_years cy on cy.id=m.church_year_id and cy.is_active=true
+          where t.post_id=p.id and m.student_id=auth.uid() and m.status='active')
+        or exists(select 1 from public.feed_post_class_targets t
+          join public.servant_class_assignments a on a.class_instance_id=t.class_instance_id
+          join public.class_instances ci on ci.id=a.class_instance_id and ci.church_year_id=a.church_year_id
+          join public.church_years cy on cy.id=a.church_year_id and cy.is_active=true
+          where t.post_id=p.id and a.servant_id=auth.uid() and a.is_active=true)
+      ))
+      or (p.audience_mode in ('grades','mixed') and exists(
+        select 1 from public.feed_post_grade_targets t join public.profiles viewer on viewer.id=auth.uid()
+        where t.post_id=p.id and t.grade=public.profile_grade_class_group(viewer.grade)
+      ))
+    )
+  );
+$$;
+revoke all on function public.can_view_feed_post(text) from public;
+grant execute on function public.can_view_feed_post(text) to authenticated;
+
+drop policy if exists feed_post_grade_targets_author_write on public.feed_post_grade_targets;
+create policy feed_post_grade_targets_author_write on public.feed_post_grade_targets
+  for all to authenticated
+  using (exists(select 1 from public.feed_posts p where p.id=post_id and (p.author_id=auth.uid() or has_role('admin'))))
+  with check (
+    exists(select 1 from public.feed_posts p where p.id=post_id and (p.author_id=auth.uid() or has_role('admin')))
+    and (
+      has_role('admin')
+      or exists(select 1 from public.servant_class_assignments a join public.class_instances ci on ci.id=a.class_instance_id
+        where a.servant_id=auth.uid() and a.is_active=true and ci.class_group_id=feed_post_grade_targets.grade)
+      or exists(select 1 from public.profiles p where p.id=auth.uid() and public.profile_grade_class_group(p.grade)=feed_post_grade_targets.grade)
+    )
+  );
