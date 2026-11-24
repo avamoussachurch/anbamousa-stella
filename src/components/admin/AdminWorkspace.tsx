@@ -10,6 +10,7 @@ import { TeacherPublishingHub } from '../teacher/publishing/TeacherPublishingHub
 import { LessonPublicationManager } from '../teacher/LessonPublicationManager';
 import { HelpRequestsPanel } from '../teacher/HelpRequestsPanel';
 import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
+import { AchievementRewardsStudio } from '../achievements/AchievementRewardsStudio';
 import { useLessons } from '../../context/LessonsContext';
 import {
   filterAdminAccounts,
@@ -126,6 +127,7 @@ const ADMIN_SECTIONS = [
   ['support', 'Support mode', 'وضع الدعم', Activity],
   ['help-requests', 'Student help requests', 'طلبات مساعدة التلاميذ', Shield],
   ['leaderboard', 'Class leaderboards', 'ترتيب الفصول', Award],
+  ['achievements', 'Achievements & Bazaar', 'الأوسمة وبازار النقاط', Award],
 ] as const;
 
 export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspaceProps) {
@@ -793,6 +795,7 @@ export function AdminWorkspace({ activeTab, lang, onNavigate }: AdminWorkspacePr
 
       {activeTab === 'help-requests' && <HelpRequestsPanel lang={lang} />}
       {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} audience="staff" />}
+      {activeTab === 'achievements' && <AchievementRewardsStudio mode="manage" lang={lang} />}
 
       {activeTab === 'profile' && <p className="rounded-2xl border bg-white p-5">{isArabic ? 'تقدر تفتح إعدادات الحساب من قائمة الحساب.' : 'Account settings are available from the account menu.'}</p>}
     </main>
