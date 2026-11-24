@@ -65,7 +65,7 @@ function getTrustedServiceClient(errorMessage: string) {
 
 async function recordServerAchievementEvent(
   studentId: string,
-  eventType: 'lesson_opened' | 'lesson_completed' | 'hymn_opened' | 'taxis_opened' | 'quiz_passed',
+  eventType: 'lesson_opened' | 'lesson_completed' | 'hymn_opened' | 'hymn_mastered' | 'taxis_opened' | 'taxis_completed' | 'quiz_passed',
   sourceKey: string,
   metadata: Record<string, unknown> = {}
 ) {
@@ -6683,6 +6683,85 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       });
     }
 
+    // Completion is a student self-report, but only published items the student is
+    // actually allowed to access can create a durable achievement event.
+    if (school === 'hymns' || school === 'taxis') {
+      const expectedType = school === 'hymns' ? 'HYMN_MASTERED' : 'TAXIS_COMPLETED';
+      const submittedType = activityType || expectedType;
+      if (submittedType !== expectedType) {
+        return res.status(400).json({ success: false, error: 'INVALID_ACTIVITY_TYPE', message: 'The activity type does not match the selected school.' });
+      }
+
+      if (process.env.NODE_ENV !== 'test') {
+        const trustedClient = getRoleRequestClient(req);
+        const studentProfile = await getSharedHymnsTaxisProfile(targetStudentId);
+        const assignedLevel = parseHymnsTaxisLevel(studentProfile?.hymns_taxis_level);
+        if (assignedLevel === null) {
+          return res.status(403).json({ success: false, error: 'HYMNS_TAXIS_LEVEL_REQUIRED', message: 'Complete your Hymns and Taxis level setup first.' });
+        }
+
+        if (school === 'hymns') {
+          const { data: hymnRow, error: hymnReadError } = await trustedClient
+            .from('hymns')
+            .select('id, status, level')
+            .eq('id', activityId)
+            .maybeSingle();
+          if (hymnReadError) {
+            console.error('Hymn mastery lookup failed:', hymnReadError.message);
+            return res.status(503).json({ success: false, error: 'HYMN_LOOKUP_FAILED', message: 'Hymn completion could not be verified. Please try again.' });
+          }
+          if (!hymnRow || String(hymnRow.status).toLowerCase() !== 'published') {
+            return res.status(404).json({ success: false, error: 'HYMN_NOT_PUBLISHED', message: 'Only a published hymn can be marked as mastered.' });
+          }
+          if (Number(hymnRow.level) !== assignedLevel) {
+            return res.status(403).json({ success: false, error: 'HYMN_LEVEL_ACCESS_DENIED', message: 'This hymn is not assigned to your level.' });
+          }
+          if (Number(hymnRow.level) > 1) {
+            const enrollment = getStudentHymnsMembership(targetStudentId);
+            if (!enrollment || enrollment.status !== 'approved' || enrollment.level < Number(hymnRow.level)) {
+              return res.status(403).json({ success: false, error: 'HYMN_LEVEL_ACCESS_DENIED', message: 'Your deacon level enrollment does not allow this hymn.' });
+            }
+          }
+        } else {
+          const { data: taxisRow, error: taxisReadError } = await trustedClient
+            .from('coptic_taxis_items')
+            .select('id, status, level, target_audience, audience_detail, audience')
+            .eq('id', activityId)
+            .maybeSingle();
+          if (taxisReadError) {
+            console.error('Taxis completion lookup failed:', taxisReadError.message);
+            return res.status(503).json({ success: false, error: 'TAXIS_LOOKUP_FAILED', message: 'Taxis completion could not be verified. Please try again.' });
+          }
+          const ritual = taxisRow ? {
+            id: taxisRow.id,
+            status: taxisRow.status,
+            level: Number(taxisRow.level),
+            audience: taxisRow.audience ||
+              (String(taxisRow.target_audience || '').toUpperCase() === 'DEACONS' ? 'deacons' :
+                String(taxisRow.audience_detail || '').toLowerCase() === 'preparatory' ? 'preparatory' : 'all')
+          } : null;
+          const authContext = await verifyServerRequestAuth(req);
+          const permissions = evaluateServerTaxisPermissions(authContext, ritual);
+          if (!ritual || ritual.status !== 'published' || !permissions.canView) {
+            return res.status(403).json({ success: false, error: 'TAXIS_ACCESS_DENIED', message: 'This published Taxis item is not available to complete.' });
+          }
+          if (ritual.level !== assignedLevel) {
+            return res.status(403).json({ success: false, error: 'TAXIS_LEVEL_ACCESS_DENIED', message: 'This Taxis item is not assigned to your level.' });
+          }
+          if (ritual.audience === 'preparatory') {
+            const userClass = serverReviewState.studentClasses?.[targetStudentId];
+            const grade = studentProfile?.grade || userClass?.grade || '';
+            if (!(grade.toLowerCase().includes('prep') || userClass?.classGroupId === 'preparatory')) {
+              return res.status(403).json({ success: false, error: 'TAXIS_AUDIENCE_DENIED', message: 'This Taxis item is not assigned to your class.' });
+            }
+          }
+          if (ritual.audience === 'deacons' && assignedLevel < 2) {
+            return res.status(403).json({ success: false, error: 'TAXIS_AUDIENCE_DENIED', message: 'This Taxis item is reserved for deacons.' });
+          }
+        }
+      }
+    }
+
     // Check if this specific activity was already completed
     if (!serverReviewState.completionHistory[targetStudentId]) {
       serverReviewState.completionHistory[targetStudentId] = [];
@@ -6691,6 +6770,16 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       (h: any) => h.school === school && h.activityId === activityId
     );
     const isFirstCompletion = !existingHistory;
+    let completionAchievementResult: any = null;
+    if (school === 'hymns' || school === 'taxis') {
+      try {
+        const eventType = school === 'hymns' ? 'hymn_mastered' : 'taxis_completed';
+        const sourceKey = school === 'hymns' ? `hymn-mastered:${activityId}` : `taxis-completed:${activityId}`;
+        completionAchievementResult = await recordServerAchievementEvent(targetStudentId, eventType, sourceKey, { school, activityId });
+      } catch (achievementError: any) {
+        console.error('Could not record verified school-completion achievement:', achievementError?.message || achievementError);
+      }
+    }
 
     // Point Awards: 75 for Hymn, 50 for Taxis or Sunday School
     const pointsConfig = school === 'hymns' ? 75 : 50;
@@ -6759,7 +6848,8 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       activityId,
       isFirstCompletion,
       pointsEarned,
-      totalPoints: newTotalPoints,
+      totalPoints: newTotalPoints + Number(completionAchievementResult?.points_awarded || 0),
+      achievementResult: completionAchievementResult,
       streak: {
         currentStreak: streakRecord.currentStreak,
         longestStreak: streakRecord.longestStreak,
