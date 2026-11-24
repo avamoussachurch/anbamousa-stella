@@ -7,6 +7,7 @@ const foundation = read('../supabase/migrations/20261124162121_achievement_badge
 const progressRead = read('../supabase/migrations/20261124162212_allow_students_to_read_own_achievement_progress.sql');
 const activity = read('../supabase/migrations/20261124163057_achievement_engine_activity_coverage_and_policy_tuning.sql');
 const staffRewards = read('../supabase/migrations/20261124163622_staff_reward_request_review_and_scope_checks.sql');
+const expandedBadges = read('../supabase/migrations/20261124163935_expand_achievement_collection_and_learning_consistency.sql');
 const eventService = read('../src/lib/achievementService.ts');
 const gallery = read('../src/components/achievements/AchievementRewardsStudio.tsx');
 const celebration = read('../src/components/achievements/AchievementCelebrationHost.tsx');
@@ -45,6 +46,8 @@ test('students can only read their own event progress', () => {
 test('activity events cover learning, hymns, taxis, prayer, quizzes, attendance, and community', () => {
   assert.match(progress, /recordAchievementEvent\('lesson_opened'/);
   assert.match(progress, /recordAchievementEvent\('lesson_completed'/);
+  assert.match(progress, /recordAchievementEvent\('learning_day'/);
+  assert.match(expandedBadges, /learning_day/);
   assert.match(progress, /recordAchievementEvent\(eventType/);
   assert.match(prayer, /recordAchievementEvent\('prayer_day'/);
   assert.match(quiz, /recordAchievementEvent\('quiz_passed'/);
@@ -71,6 +74,7 @@ test('teachers and admins can manage badges, milestones, catalogue, and fulfilme
   assert.match(gallery, /mark_reward_request_fulfilled/);
   assert.match(gallery, /review_staff_reward_request/);
   assert.match(staffRewards, /can_access_student_data\(v_request.student_id\)/);
+  assert.match(staffRewards, /review_staff_reward_request/);
   assert.match(admin, /AchievementRewardsStudio mode="manage"/);
   assert.match(teacher, /AchievementRewardsStudio mode="manage"/);
 });
