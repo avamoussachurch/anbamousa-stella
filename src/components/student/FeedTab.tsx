@@ -54,6 +54,7 @@ export function FeedTab({ lang }: { lang: Language }) {
   const { userData } = useAuth();
   const workspace = useActiveWorkspace();
   const isCop = lang === 'copt' || lang === 'cop';
+  const isTeacher = workspace === 'teacher';
   
   const [posts, setPosts] = useState<ExtendedPost[]>([]);
   const [hasLoadedFeed, setHasLoadedFeed] = useState(false);
