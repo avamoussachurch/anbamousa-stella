@@ -12,6 +12,7 @@ const secureEvents = read('../supabase/migrations/20261124164523_secure_achievem
 const completionBadges = read('../supabase/migrations/20261124171826_enable_verified_hymn_taxis_completion_badges.sql');
 const rewardApprovalMigration = read('../supabase/migrations/20261124171750_reward_approval_atomic_points_and_stock.sql');
 const requestValidationMigration = read('../supabase/migrations/20261124172331_validate_reward_request_catalog.sql');
+const badgeColorMigration = read('../supabase/migrations/20261124172500_remove_pink_badge_gradients.sql');
 const server = read('../server.ts');
 const eventService = read('../src/lib/achievementService.ts');
 const gallery = read('../src/components/achievements/AchievementRewardsStudio.tsx');
@@ -106,6 +107,10 @@ test('teachers and admins can manage badges, milestones, catalogue, and fulfilme
   assert.match(requestValidationMigration, /REWARD_REQUEST_CATALOG_MISMATCH/);
   assert.match(requestValidationMigration, /REWARD_REQUEST_MUST_START_PENDING/);
   assert.match(requestValidationMigration, /REWARD_CATALOG_ITEM_NOT_FOUND/);
+  assert.match(badgeColorMigration, /style = 'red'/);
+  assert.match(badgeColorMigration, /'gold','teal','coral','blue','green','red'/);
+  assert.doesNotMatch(gallery, /rose|pink|indigo|violet|purple|magenta/i);
+  assert.match(celebration, /confettiHues = \[43, 25, 174, 145, 207, 8\]/);
   assert.match(staffRewards, /can_access_student_data\(v_request.student_id\)/);
   assert.match(staffRewards, /review_staff_reward_request/);
   assert.match(admin, /AchievementRewardsStudio mode="manage"/);
