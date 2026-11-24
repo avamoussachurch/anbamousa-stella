@@ -10,6 +10,7 @@ export type { FeedPostAttachmentInput } from './feedAttachments';
 export interface ExtendedPost extends Post {
   isPinned?: boolean;
   isAnnouncement?: boolean;
+  poll?: { question: string; allowMultiple: boolean; closesAt?: string | null; options: Array<{ id: string; label: string; voteCount: number; hasVoted: boolean }> };
 }
 
 export interface GlobalFeedAudioTrack {
@@ -140,6 +141,18 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
     }
 
     const postIds = postsData.map(p => p.id);
+    const [{ data: pollRows, error: pollError }, { data: pollResults, error: pollResultsError }] = await Promise.all([
+      supabase.from('feed_post_polls').select('post_id,question,allow_multiple,closes_at').in('post_id', postIds),
+      supabase.rpc('get_feed_poll_results', { p_post_ids: postIds })
+    ]);
+    if (pollError || pollResultsError) console.warn('Feed poll data is not available yet:', pollError?.message || pollResultsError?.message);
+    const pollOptionsByPost = new Map<string, Array<{ id:string; label:string; voteCount:number; hasVoted:boolean }>>();
+    for (const option of pollResults || []) {
+      const list = pollOptionsByPost.get(option.post_id) || [];
+      list.push({ id: option.option_id, label: option.option_label, voteCount: Number(option.vote_count || 0), hasVoted: Boolean(option.has_voted) });
+      pollOptionsByPost.set(option.post_id, list);
+    }
+    const pollsByPost = new Map((pollRows || []).map(poll => [poll.post_id, { question: poll.question, allowMultiple: Boolean(poll.allow_multiple), closesAt: poll.closes_at, options: pollOptionsByPost.get(poll.post_id) || [] }]));
     const { data: attachmentRows, error: attachmentError } = await supabase
       .from('feed_post_attachments')
       .select('id, post_id, position, media_type, storage_bucket, object_path, external_url, media_thumbnail, media_provider, original_filename, byte_size')
@@ -276,6 +289,7 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
       mediaProvider: p.media_provider || undefined,
       isPinned: Boolean(p.is_pinned),
       isAnnouncement: Boolean(p.is_announcement),
+      poll: pollsByPost.get(p.id),
       reactions: postReactionsMap.get(p.id) || { heart: 0, candle: 0, cross: 0 },
       comments: commentsByPost.get(p.id) || [],
       attachments: attachmentsByPost.get(p.id) || undefined
@@ -321,6 +335,7 @@ export async function createFeedPostInSupabase(params: {
   isPinned?: boolean;
   isAnnouncement?: boolean;
   targetClassIds?: string[];
+  poll?: { question: string; options: string[]; allowMultiple?: boolean };
 }): Promise<{ data: ExtendedPost | null; error: Error | null }> {
   if (!supabase) {
     return { data: null, error: new Error('Supabase client not initialized') };
@@ -388,6 +403,26 @@ export async function createFeedPostInSupabase(params: {
       const cleanup = await cleanupFeedMediaReferences(references);
       if (cleanup.error) console.error('Unable to clean up media after audience-target failure:', cleanup.error.message);
       return { data: null, error: new Error(targetError.message) };
+    }
+  }
+
+  if (params.poll) {
+    const question = params.poll.question.trim();
+    const options = params.poll.options.map(value => value.trim()).filter(Boolean);
+    if (question.length < 2 || options.length < 2 || options.length > 6) {
+      await supabase.from('feed_posts').delete().eq('id', postId);
+      return { data: null, error: new Error('A poll needs a question and 2–6 answer options.') };
+    }
+    const { error: pollError } = await supabase.from('feed_post_polls').insert({ post_id: postId, question, allow_multiple: Boolean(params.poll.allowMultiple) });
+    if (!pollError) {
+      const { error: optionError } = await supabase.from('feed_post_poll_options').insert(options.map((label, position) => ({ post_id: postId, label, position })));
+      if (optionError) {
+        await supabase.from('feed_posts').delete().eq('id', postId);
+        return { data: null, error: new Error(optionError.message) };
+      }
+    } else {
+      await supabase.from('feed_posts').delete().eq('id', postId);
+      return { data: null, error: new Error(pollError.message) };
     }
   }
 
@@ -778,4 +813,10 @@ export async function syncUserLocalPostsToSupabase(
   } catch {}
 
   return result;
+}
+
+export async function voteFeedPollInSupabase(optionId: string): Promise<{ success: boolean; error: Error | null }> {
+  if (!supabase) return { success: false, error: new Error('Supabase client not initialized') };
+  const { error } = await supabase.from('feed_post_poll_votes').insert({ option_id: optionId });
+  return { success: !error, error: error ? new Error(error.message) : null };
 }
