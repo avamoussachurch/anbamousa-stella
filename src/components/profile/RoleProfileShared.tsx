@@ -119,7 +119,7 @@ export function ProfilePageFrame({
 export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: User; role: Exclude<Role, 'student'> }) {
   const { updateUserProfile } = useAuth();
   const isArabic = lang === 'ar';
-  const defaultAvatar = role === 'teacher' ? DEFAULT_TEACHER_AVATAR : role === 'parent' ? DEFAULT_PARENT_AVATAR : COPTIC_AVATARS[0].svgDataUri;
+  const defaultAvatar = role === 'teacher' ? DEFAULT_TEACHER_AVATAR : role === 'parent' ? DEFAULT_PARENT_AVATAR : COPTIC_AVATARS[0].imageSrc;
   const [avatar, setAvatar] = useState(user.avatarUrl || defaultAvatar);
   const [category, setCategory] = useState<'all' | 'saints' | 'students' | 'deacons'>('all');
   const [saving, setSaving] = useState(false);
@@ -191,9 +191,9 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
       </div>
       <div className="grid grid-cols-4 gap-2">
         {COPTIC_AVATARS.filter(item => category === 'all' || item.category === category).map(item => (
-          <button key={item.id} type="button" onClick={() => setAvatar(item.svgDataUri)} aria-pressed={avatar === item.svgDataUri} title={isArabic ? item.nameAr : item.nameEn} className={`relative rounded-xl border-2 p-1.5 transition-transform hover:scale-[1.03] ${avatar === item.svgDataUri ? 'border-[var(--action-primary)] bg-[var(--state-selected)]' : 'border-transparent bg-[var(--surface-secondary)]'}`}>
-            <img src={item.svgDataUri} alt={isArabic ? item.nameAr : item.nameEn} className="mx-auto aspect-square w-full rounded-lg object-cover" />
-            {avatar === item.svgDataUri && <span className="absolute -end-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-[var(--action-primary)] text-white"><Check size={12} /></span>}
+          <button key={item.id} type="button" onClick={() => setAvatar(item.imageSrc)} aria-pressed={avatar === item.imageSrc} title={isArabic ? item.nameAr : item.nameEn} className={`relative rounded-xl border-2 p-1.5 transition-transform hover:scale-[1.03] ${avatar === item.imageSrc ? 'border-[var(--action-primary)] bg-[var(--state-selected)]' : 'border-transparent bg-[var(--surface-secondary)]'}`}>
+            <img src={item.imageSrc} alt={isArabic ? item.nameAr : item.nameEn} className="mx-auto aspect-square w-full rounded-lg object-cover" />
+            {avatar === item.imageSrc && <span className="absolute -end-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-[var(--action-primary)] text-white"><Check size={12} /></span>}
           </button>
         ))}
       </div>
