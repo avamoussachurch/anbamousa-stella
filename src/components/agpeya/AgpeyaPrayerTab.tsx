@@ -33,6 +33,7 @@ import {
 } from '../../lib/supabaseDatabase';
 import { Language } from '../../types';
 import { getCairoDateString } from '../../lib/cairoTime';
+import { recordAchievementEvent } from '../../lib/achievementService';
 
 export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
   const { userData, updateUserData } = useAuth();
@@ -118,6 +119,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
     }
 
     if (isNowCompleted && userData && saveConfirmed) {
+      void recordAchievementEvent('prayer_day', `prayer-day:${todayKey}`, { source: 'agpeya_hour', hourId });
       const targetHour = AGPEYA_HOURS.find(h => h.id === hourId);
       const u = awardPoints(userData.id, 25, `صلاة ${targetHour?.nameAr || 'الأجبية'}`);
       updateUserData(u);
@@ -144,6 +146,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
         setPrayerSyncError(saveResult.error || 'Could not save prayer progress.');
       }
       if (saveResult.success && personalPrayer.trim()) {
+        void recordAchievementEvent('prayer_day', `prayer-day:${todayKey}`, { source: 'personal_prayer' });
         const prayerStreak = await getPrayerStreakFromSupabase(userData.id);
         if (!prayerStreak.error) setStreakDays(prayerStreak.currentStreak);
         else setPrayerSyncError(prayerStreak.error);
