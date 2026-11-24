@@ -30,9 +30,8 @@ const CATEGORIES: Array<{ id: Category; en: string; ar: string }> = [
   { id: 'service', en: 'Service', ar: 'الخدمة' },
 ];
 const EVENT_TYPES = [
-  'lesson_opened','lesson_completed','hymn_opened','hymn_mastered','taxis_opened','taxis_completed',
-  'prayer_day','quiz_passed','attendance_present','community_post','community_reaction','memory_verse',
-  'class_participation','learning_day'
+  'lesson_opened','lesson_completed','hymn_opened','taxis_opened','prayer_day','quiz_passed',
+  'attendance_present','community_post','community_reaction','learning_day'
 ];
 const STYLES: Record<string, string> = {
   gold: 'from-amber-300 via-yellow-500 to-orange-500', teal: 'from-teal-300 via-teal-500 to-cyan-700',
