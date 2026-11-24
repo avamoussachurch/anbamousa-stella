@@ -165,7 +165,7 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
 
   const categories = [
     { id: 'all', en: 'All', ar: 'الكل' },
-    { id: 'saints', en: 'Church symbols', ar: 'رموز كنسية' },
+    { id: 'saints', en: 'Saint icons & symbols', ar: 'أيقونات ورموز كنسية' },
     { id: 'students', en: 'Students', ar: 'طلاب' },
     { id: 'deacons', en: 'Deacons', ar: 'شمامسة' }
   ] as const;
@@ -177,7 +177,7 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
         <div>
           <p className="text-[10px] font-black uppercase tracking-[.15em] text-[var(--action-primary)]">{isArabic ? 'التخصيص' : 'Personalization'}</p>
           <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">{isArabic ? 'استوديو الصورة الشخصية' : 'Avatar studio'}</h2>
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'اختار رمزاً كنسياً أو ارفع صورتك.' : 'Choose a church emblem or upload your own photo.'}</p>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">{isArabic ? 'اختار أيقونة قبطية أو رمزاً كنسياً أو ارفع صورتك.' : 'Choose a sourced Coptic saint icon, a church symbol, or upload your own photo.'}</p>
         </div>
         <img src={avatar} alt="" className="h-16 w-16 shrink-0 rounded-2xl border-2 border-[var(--action-primary)] bg-[var(--surface-secondary)] object-cover shadow-sm" />
       </div>
