@@ -8,6 +8,8 @@ const progressRead = read('../supabase/migrations/20261124162212_allow_students_
 const activity = read('../supabase/migrations/20261124163057_achievement_engine_activity_coverage_and_policy_tuning.sql');
 const staffRewards = read('../supabase/migrations/20261124163622_staff_reward_request_review_and_scope_checks.sql');
 const expandedBadges = read('../supabase/migrations/20261124163935_expand_achievement_collection_and_learning_consistency.sql');
+const secureEvents = read('../supabase/migrations/20261124164523_secure_achievement_event_sources_and_prayer_verification.sql');
+const server = read('../server.ts');
 const eventService = read('../src/lib/achievementService.ts');
 const gallery = read('../src/components/achievements/AchievementRewardsStudio.tsx');
 const celebration = read('../src/components/achievements/AchievementCelebrationHost.tsx');
@@ -50,10 +52,17 @@ test('activity events cover learning, hymns, taxis, prayer, quizzes, attendance,
   assert.match(expandedBadges, /learning_day/);
   assert.match(progress, /recordAchievementEvent\(eventType/);
   assert.match(prayer, /recordAchievementEvent\('prayer_day'/);
-  assert.match(quiz, /recordAchievementEvent\('quiz_passed'/);
+  assert.match(quiz, /dispatchAchievementResult\(json\.achievementResult\)/);
+  assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'quiz_passed'/);
+  assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'hymn_opened'/);
+  assert.match(server, /recordServerAchievementEvent\(targetStudentId, 'lesson_opened'/);
   assert.match(activity, /capture_attendance_achievement_event/);
   assert.match(activity, /capture_feed_post_achievement_event/);
   assert.match(activity, /capture_feed_reaction_achievement_event/);
+  assert.match(secureEvents, /p_event_type<>'prayer_day'/);
+  assert.match(secureEvents, /public\.agpeya_prayers/);
+  assert.match(secureEvents, /grant execute on function public\.evaluate_student_achievements\(uuid\) to service_role/);
+  assert.match(server, /getTrustedServiceClient\('Achievement tracking is temporarily unavailable\.'/);
 });
 
 test('student gallery and Bazaar use the live database catalogue', () => {
