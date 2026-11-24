@@ -9,6 +9,14 @@ const frames = [
  {id:'desert-sand',label:'Desert Sand',ar:'رمال البرية',className:'ring-4 ring-orange-300 ring-offset-2 ring-offset-orange-50'},
  {id:'burgundy',label:'Burgundy',ar:'عنابي',className:'ring-4 ring-rose-900 ring-offset-2 ring-offset-rose-50'}
 ];
+const titles = [
+ {id:'hymn-explorer',label:'Hymn Explorer',ar:'مستكشف الألحان'},
+ {id:'prayer-heart',label:'Prayer Heart',ar:'قلب محب للصلاة'},
+ {id:'bible-reader',label:'Bible Reader',ar:'قارئ الكتاب المقدس'},
+ {id:'church-helper',label:'Church Helper',ar:'خادم الكنيسة'},
+ {id:'sunday-school-star',label:'Sunday School Star',ar:'نجم مدارس الأحد'},
+ {id:'saint-story-keeper',label:'Saint Stories Keeper',ar:'محب سير القديسين'}
+];
 const banners = [
  {id:'desert-dawn',label:'Desert Dawn',ar:'فجر البرية',style:'linear-gradient(120deg,#6f4935,#d6a15b,#f4dca6)'},
  {id:'coptic-pattern',label:'Coptic Pattern',ar:'نقوش قبطية',style:'repeating-linear-gradient(45deg,#174d4c 0 12px,#1e6260 12px 24px,#c59b50 24px 27px)'},
@@ -33,11 +41,11 @@ export function ProfileCustomizationStudio({userId,lang}:{userId:string;lang:str
   <div className="flex items-center gap-2"><Palette size={18} className="text-[var(--mousa-gold)]"/><div><h3 className="text-sm font-black text-[var(--text-primary)]">{ar?'استوديو مظهر الملف':'Profile style studio'}</h3><p className="text-[10px] text-[var(--text-secondary)]">{ar?'إطارات وخلفيات وألقاب بأسلوب الألعاب':'Game-inspired frames, banners and titles'}</p></div></div>
   <div className="overflow-hidden rounded-2xl border border-[var(--mousa-border-sand)]">
    <div className="h-20" style={{background:selectedBanner.style}}/>
-   <div className="flex items-center gap-3 bg-[var(--surface-secondary)] p-3"><div className={'grid h-14 w-14 place-items-center rounded-2xl bg-[var(--surface-primary)] '+(frames.find(item=>item.id===frame)?.className||'')}><Crown size={23} className="text-[var(--mousa-gold)]"/></div><div><p className="font-black text-[var(--text-primary)]">{ar?'معاينة ملفك الشخصي':'Your profile preview'}</p><p className="text-xs text-[var(--text-secondary)]">{title.trim()|| (ar?'عضو في عيلة أنبا موسى':'Anba Mousa member')}</p></div></div>
+   <div className="flex items-center gap-3 bg-[var(--surface-secondary)] p-3"><div className={'grid h-14 w-14 place-items-center rounded-2xl bg-[var(--surface-primary)] '+(frames.find(item=>item.id===frame)?.className||'')}><Crown size={23} className="text-[var(--mousa-gold)]"/></div><div><p className="font-black text-[var(--text-primary)]">{ar?'معاينة ملفك الشخصي':'Your profile preview'}</p><p className="text-xs text-[var(--text-secondary)]">{titles.find(item=>item.id===title)?.[ar?'ar':'label'] || (ar?'عضو في عيلة أنبا موسى':'Anba Mousa member')}</p></div></div>
   </div>
   <div><p className="mb-2 text-xs font-black text-[var(--text-primary)]">{ar?'اختر الإطار':'Choose a frame'}</p><div className="grid grid-cols-5 gap-2">{frames.map(item=><button key={item.id} type="button" onClick={()=>setFrame(item.id)} aria-pressed={frame===item.id} className={'aspect-square rounded-xl border-2 bg-[var(--surface-secondary)] transition hover:-translate-y-0.5 '+(frame===item.id?'border-[var(--mousa-gold)] shadow-md':'border-transparent')}><span className={'mx-auto block h-8 w-8 rounded-xl bg-white '+item.className}/><span className="mt-1 block text-[9px] font-bold text-[var(--text-secondary)]">{ar?item.ar:item.label}</span></button>)}</div></div>
   <div><p className="mb-2 text-xs font-black text-[var(--text-primary)]">{ar?'اختر خلفية الملف':'Choose a profile banner'}</p><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{banners.map(item=><button key={item.id} type="button" onClick={()=>setBanner(item.id)} aria-pressed={banner===item.id} className={'overflow-hidden rounded-xl border-2 text-start transition hover:-translate-y-0.5 '+(banner===item.id?'border-[var(--mousa-gold)] shadow-md':'border-[var(--border-default)]')}><span className="block h-10" style={{background:item.style}}/><span className="block px-2 py-1.5 text-[10px] font-bold text-[var(--text-primary)]">{ar?item.ar:item.label}</span></button>)}</div></div>
-  <label className="block"><span className="mb-1.5 block text-xs font-black text-[var(--text-primary)]">{ar?'لقب الملف (اختياري)':'Profile title (optional)'}</span><input value={title} maxLength={40} onChange={event=>setTitle(event.target.value)} placeholder={ar?'مثلاً: محب الألحان':'e.g. Hymn Enthusiast'} className="min-h-11 w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-sm outline-none focus:border-[var(--action-primary)]"/></label>
+  <label className="block"><span className="mb-1.5 block text-xs font-black text-[var(--text-primary)]">{ar?'لقب الملف (اختياري)':'Profile title (optional)'}</span><select value={title} onChange={event=>setTitle(event.target.value)} className="min-h-11 w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-sm outline-none focus:border-[var(--action-primary)]"><option value="">{ar?'بدون لقب':'No title'}</option>{titles.map(item=><option key={item.id} value={item.id}>{ar?item.ar:item.label}</option>)}</select></label>
   <div className="flex items-center justify-between gap-3"><p role="status" className="text-xs font-bold text-emerald-700">{message}</p><button type="button" disabled={saving} onClick={()=>void save()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--action-primary)] px-4 py-2 text-xs font-black text-[var(--action-primary-text)] disabled:opacity-50">{saving?<Loader2 size={14} className="animate-spin"/>:<Sparkles size={14}/>}{ar?'حفظ المظهر':'Save style'}</button></div>
  </section>;
 }
