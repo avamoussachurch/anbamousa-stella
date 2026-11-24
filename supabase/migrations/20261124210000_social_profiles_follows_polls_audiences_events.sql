@@ -402,3 +402,14 @@ create policy feed_post_grade_targets_author_write on public.feed_post_grade_tar
       or exists(select 1 from public.profiles p where p.id=auth.uid() and public.profile_grade_class_group(p.grade)=feed_post_grade_targets.grade)
     )
   );
+
+
+-- Explicit API grants for the new RLS-protected tables.
+grant select,insert,delete on public.profile_follows to authenticated;
+grant select,insert,update,delete on public.profile_customizations to authenticated;
+grant select,insert,delete on public.feed_post_class_targets to authenticated;
+grant select,insert,delete on public.feed_post_grade_targets to authenticated;
+grant select,insert,delete on public.feed_post_polls to authenticated;
+grant select,insert,delete on public.feed_post_poll_options to authenticated;
+grant select,insert on public.feed_post_poll_votes to authenticated;
+grant select,insert,update,delete on public.church_event_rsvps to authenticated;
