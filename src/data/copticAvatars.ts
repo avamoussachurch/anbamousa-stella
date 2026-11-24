@@ -26,13 +26,13 @@ function emblem(kind:Emblem,bg:string,fg:string,accent:string):string {
  return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg);
 }
 const entries:Array<[string,string,string,Emblem,string,string,string,'saints'|'students'|'deacons']> = [
- ['st-mark','St. Mark the Apostle','مارمرقس الرسول','church','#6d1f2b','#f8e8c2','#d9ad63','saints'],
- ['st-george','St. George','مارجرجس','cross','#183b67','#f8e8c2','#d9ad63','saints'],
- ['st-demiana','St. Demiana','القديسة دميانة','lily','#71334f','#fff0d8','#e5b5c2','saints'],
- ['archangel-michael','Archangel Michael','رئيس الملائكة ميخائيل','cross','#175c58','#fff0c8','#e5c16f','saints'],
- ['virgin-mary','The Holy Virgin Mary','القديسة مريم العذراء','lily','#233e70','#fff0d8','#d5b56c','saints'],
- ['st-philopateer','St. Philopateer Abu Seifein','أبو سيفين','cross','#56336f','#fff0d8','#d6b3e5','saints'],
- ['st-mina','St. Mina','مارمينا','fish','#78452e','#fff0d8','#e7bd85','saints'],
+ ['st-mark','Coptic Church Emblem','رمز الكنيسة القبطية','church','#6d1f2b','#f8e8c2','#d9ad63','saints'],
+ ['st-george','Coptic Cross','الصليب القبطي','cross','#183b67','#f8e8c2','#d9ad63','saints'],
+ ['st-demiana','Lily Emblem','رمز زهرة الزنبق','lily','#71334f','#fff0d8','#e5b5c2','saints'],
+ ['archangel-michael','Cross of Victory','صليب النصرة','cross','#175c58','#fff0c8','#e5c16f','saints'],
+ ['virgin-mary','Theotokos Star Emblem','رمز نجمة والدة الإله','lily','#233e70','#fff0d8','#d5b56c','saints'],
+ ['st-philopateer','Abu Seifein Cross Emblem','رمز صليب أبي سيفين','cross','#56336f','#fff0d8','#d6b3e5','saints'],
+ ['st-mina','Ichthys Fish Emblem','رمز السمكة المسيحية','fish','#78452e','#fff0d8','#e7bd85','saints'],
  ['deacon-boy','Deacon service emblem','رمز خدمة الشمامسة','chalice','#164e70','#fff0d8','#8ec8d8','deacons'],
  ['sunday-school-boy','Sunday School emblem','رمز مدارس الأحد','bible','#17634f','#fff0d8','#9ed8b5','students'],
  ['sunday-school-girl','Sunday School flower emblem','زهرة مدارس الأحد','lily','#8a5420','#fff0d8','#f0ce8a','students'],
