@@ -36,7 +36,6 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
           pendingPayloads.current.push(next);
           return current;
         }
-        setIndex(0);
         return next;
       });
     };
