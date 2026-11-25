@@ -8,6 +8,8 @@ const directory = await readFile(new URL('../src/components/student/FeedPeopleDi
 test('community feed provides private, persistent saved posts and a saved-only view', () => {
   assert.match(feed, /from\('feed_post_bookmarks'\)/);
   assert.match(feed, /handleToggleBookmark/);
+  assert.match(feed, /handleSharePost/);
+  assert.match(feed, /navigator\.share/);
   assert.match(feed, /case 'saved'/);
   assert.match(feed, /aria-pressed=\{bookmarkedPostIds\.has\(post\.id\)\}/);
 });
