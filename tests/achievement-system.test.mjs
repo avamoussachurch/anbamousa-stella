@@ -169,6 +169,6 @@ test('student follows and saved posts also count toward community achievements',
   assert.match(socialActionMigration, /first-follow/);
   assert.match(socialActionMigration, /first-bookmark/);
   assert.match(socialActionMigration, /community-connector/);
-  assert.match(socialActionMigration, /memory-keeper/);
+  assert.match(socialActionMigration, /bookmark-keeper/);
   assert.equal((socialActionMigration.match(/r\.role = 'student' and r\.revoked_at is null/g) || []).length, 2);
 });
