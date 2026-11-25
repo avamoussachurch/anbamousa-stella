@@ -7445,7 +7445,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
           return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
         }
         allInstances = data || [];
-      }      } else if (hasServerRole(authContext, 'parent')) {
+      } else if (hasServerRole(authContext, '$1')) {
         const requestedChildId = String(req.query.studentId || '');
         if (!requestedChildId || !isUuidStudentId(requestedChildId)) {
           return res.status(400).json({ success: false, error: 'CHILD_REQUIRED', message: 'Choose one of your linked children to view their class ranking.' });
