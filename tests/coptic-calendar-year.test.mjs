@@ -38,3 +38,10 @@ test('major and minor Egyptian Coptic Orthodox observances are represented', () 
     assert.match(calendarData, new RegExp("id: '" + feastId + "'"));
   }
 });
+
+test('multi-day fasts show their full date range and Annunciation follows Holy Week observance rules', () => {
+  assert.match(calendarData, /endDateThisYear/);
+  assert.match(calendarData, /isCelebratedThisYear/);
+  assert.match(calendarTab, /feastEndDate/);
+  assert.match(calendarTab, /Not observed this year/);
+});
