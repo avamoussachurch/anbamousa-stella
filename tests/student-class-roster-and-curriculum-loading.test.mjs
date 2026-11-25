@@ -5,6 +5,7 @@ import { test } from 'node:test';
 const server = await readFile(new URL('../server.ts', import.meta.url), 'utf8');
 const lessonsTab = await readFile(new URL('../src/components/student/LessonsTab.tsx', import.meta.url), 'utf8');
 const homeTab = await readFile(new URL('../src/components/student/HomeTab.tsx', import.meta.url), 'utf8');
+const roadmap = await readFile(new URL('../src/components/student/StudentRoadmapView.tsx', import.meta.url), 'utf8');
 
 test('admin class roster reads bypass legacy profiles.role RLS after server-side role verification', () => {
   assert.match(server, /const client = hasServerRole\(authContext, 'admin'\)\s*\? getTrustedRoleClient\(\)/);
@@ -33,4 +34,11 @@ test('staff leaderboard selection is available and dual-role teachers use staff 
   const route = server.slice(routeStart, routeEnd);
   assert.ok(route.indexOf("hasServerRole(authContext, 'teacher')") < route.indexOf("hasServerRole(authContext, 'parent')"));
   assert.match(route, /availableClassGroupIds: permittedGroupIds/);
+});
+
+test('student roadmap has illustrated scenery, an animated active quest, and animated trail segments', () => {
+  assert.match(roadmap, /roadmap-desert-sky/);
+  assert.match(roadmap, /whileInView=\{\{ pathLength: 1 \}\}/);
+  assert.match(roadmap, /border-amber-300\/70/);
+  assert.match(roadmap, /DESERT_WAYPOINTS/);
 });
