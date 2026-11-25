@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Search, Users, UserPlus, UserCheck, X, Flame, Trophy, Loader2, Sparkles } from 'lucide-react';
+import { Search, MessagesSquare, UserPlus, UserCheck, X, Flame, Trophy, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type DirectoryProfile = {
@@ -72,8 +72,8 @@ export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) 
   };
 
   return <>
-    <button type="button" onClick={()=>{setOpen(true);setSelected(null);}} className="inline-flex items-center gap-2 rounded-xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] px-3 py-2 text-xs font-black text-[var(--mousa-teal-deep)] shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
-      <Users size={16}/>{ar?'الأعضاء':'People'}
+    <button type="button" onClick={()=>{setOpen(true);setSelected(null);}} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#8B9AFF]/50 border-b-4 border-b-[#3442B8] bg-[#5865F2] px-4 py-2 text-xs font-black text-white shadow-[0_8px_20px_rgba(45,57,170,.25)] transition hover:-translate-y-0.5 hover:bg-[#6975FF]">
+      <MessagesSquare size={17} strokeWidth={2.5}/><span>{ar?'أعضاء المجتمع':'Community'}</span><span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[9px] font-black">{ar?'الأعضاء':'PEOPLE'}</span>
     </button>
     <AnimatePresence>
       {open && <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onMouseDown={e=>{if(e.target===e.currentTarget)setOpen(false);}}>

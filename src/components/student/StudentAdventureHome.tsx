@@ -319,7 +319,7 @@ export function StudentAdventureHome({
           </g>
         </svg>
 
-        <motion.div aria-hidden="true" className="pointer-events-none absolute end-[5%] top-[15%] z-[2] hidden w-32 drop-shadow-[0_12px_24px_rgba(0,0,0,.45)] sm:block md:w-44" animate={reduceMotion ? undefined : { y: [0, -5, 0], rotate: [-1, 1, -1] }} transition={reduceMotion ? { duration: 0 } : { duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}>
+        <motion.div aria-hidden="true" className="pointer-events-none absolute end-[5%] top-[15%] z-[1] end-2 top-[30%] w-20 opacity-30 drop-shadow-[0_12px_24px_rgba(0,0,0,.45)] sm:end-[5%] sm:top-[15%] sm:z-[2] sm:w-32 sm:opacity-100 md:w-44" animate={reduceMotion ? undefined : { y: [0, -5, 0], rotate: [-1, 1, -1] }} transition={reduceMotion ? { duration: 0 } : { duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}>
           <svg viewBox="0 0 180 230" className="h-auto w-full" fill="none">
             <circle cx="91" cy="50" r="39" fill="#E8B95E" opacity=".22"/>
             <circle cx="91" cy="50" r="29" stroke="#F5D98C" strokeWidth="3" opacity=".95"/>
