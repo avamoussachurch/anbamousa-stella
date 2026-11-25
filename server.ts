@@ -7411,7 +7411,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
       let permittedGroupIds: string[] = [];
       let leaderboardTargetStudentId = authContext.userId;
 
-      if (hasServerRole(authContext, 'admin')) {
+      if (hasServerRole(authContext, 'admin') && !(requestedAudience === 'parent' && hasServerRole(authContext, 'parent'))) {
         const { data, error } = await client
           .from('class_instances')
           .select('id, class_group_id, name_en, name_ar')

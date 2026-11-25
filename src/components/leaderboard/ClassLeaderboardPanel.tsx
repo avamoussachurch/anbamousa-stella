@@ -14,7 +14,7 @@ export function ClassLeaderboardPanel({ lang, audience = 'parent', childId, chil
   const [selectedChildId, setSelectedChildId] = useState(childId || '');
   const [selectedClassGroupId, setSelectedClassGroupId] = useState('');
   const [onlyChild, setOnlyChild] = useState(false);
-  useEffect(() => { if (childId && !selectedChildId) setSelectedChildId(childId); }, [childId, selectedChildId]);
+  useEffect(() => { if (childId) setSelectedChildId(childId); }, [childId]);
   const effectiveChildId = childOptions?.length ? selectedChildId : childId;
   const effectiveChildName = childOptions?.find(child => child.id === effectiveChildId)?.name || childName;
   const isParentView = audience === 'parent';
