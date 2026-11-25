@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Award, Check, Sparkles, Trophy, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
@@ -18,14 +18,48 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
   const { userData, syncAuthoritativeProgress } = useAuth();
   const [payload, setPayload] = useState<CelebrationPayload | null>(null);
   const [index, setIndex] = useState(0);
+  const seenUnlocks = useRef<Set<string>>(new Set());
+  const pendingPayloads = useRef<CelebrationPayload[]>([]);
   const isArabic = lang === 'ar';
+
   useEffect(() => {
+    seenUnlocks.current.clear();
+    pendingPayloads.current = [];
+    setPayload(null);
+    setIndex(0);
+  }, [userData?.id]);
+
+  useEffect(() => {
+    const enqueue = (next: CelebrationPayload) => {
+      setPayload(current => {
+        if (current) {
+          pendingPayloads.current.push(next);
+          return current;
+        }
+        setIndex(0);
+        return next;
+      });
+    };
+
     const receive = (event: Event) => {
       const detail = (event as CustomEvent<CelebrationPayload>).detail;
-      if (!detail || (!detail.badges?.length && !detail.milestones?.length)) return;
-      if (detail.pointsAwarded > 0 && userData?.id && supabase) {
-        // Points are server-owned. setUserDirectly intentionally ignores client
-        // point changes, so refresh the authoritative profile after the atomic award.
+      if (!detail) return;
+      const badges = (detail.badges || []).filter(item => {
+        const key = 'badge:' + item.id;
+        if (seenUnlocks.current.has(key)) return false;
+        seenUnlocks.current.add(key);
+        return true;
+      });
+      const milestones = (detail.milestones || []).filter(item => {
+        const key = 'milestone:' + item.id;
+        if (seenUnlocks.current.has(key)) return false;
+        seenUnlocks.current.add(key);
+        return true;
+      });
+      if (!badges.length && !milestones.length) return;
+      const pointsAwarded = [...badges, ...milestones].reduce((sum, item) => sum + Number(item.points_reward || 0), 0);
+      if (pointsAwarded > 0 && userData?.id && supabase) {
+        // Points are server-owned. Refresh the authoritative profile after the atomic award.
         void (async () => {
           try {
             const { data, error } = await supabase.from('profiles')
@@ -48,19 +82,72 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
           }
         })();
       }
-      setPayload(detail);
-      setIndex(0);
+      enqueue({ badges, milestones, pointsAwarded });
     };
     window.addEventListener('anba:achievement-unlocked', receive);
     return () => window.removeEventListener('anba:achievement-unlocked', receive);
   }, [userData?.id, syncAuthoritativeProgress]);
+
+  useEffect(() => {
+    if (!userData?.id || !supabase) return;
+    const channel = supabase
+      .channel('achievement-celebrations-' + userData.id)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'achievement_unlocks',
+        filter: 'student_id=eq.' + userData.id
+      }, async (change: any) => {
+        const row = change.new;
+        const key = 'badge:' + row.badge_id;
+        if (!row.badge_id || seenUnlocks.current.has(key)) return;
+        const { data, error } = await supabase.from('achievement_badges')
+          .select('id,title_en,title_ar,points_reward,category')
+          .eq('id', row.badge_id)
+          .maybeSingle();
+        if (error || !data) {
+          console.warn('Could not load newly unlocked badge:', error?.message);
+          return;
+        }
+        window.dispatchEvent(new CustomEvent<CelebrationPayload>('anba:achievement-unlocked', {
+          detail: { badges: [{ ...data, points_reward: Number(row.points_awarded ?? data.points_reward ?? 0) }], milestones: [], pointsAwarded: Number(row.points_awarded || 0) }
+        }));
+      })
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'achievement_milestone_awards',
+        filter: 'student_id=eq.' + userData.id
+      }, async (change: any) => {
+        const row = change.new;
+        const key = 'milestone:' + row.milestone_id;
+        if (!row.milestone_id || seenUnlocks.current.has(key)) return;
+        const { data, error } = await supabase.from('achievement_category_milestones')
+          .select('id,title_en,title_ar,points_reward,category,badge_count')
+          .eq('id', row.milestone_id)
+          .maybeSingle();
+        if (error || !data) {
+          console.warn('Could not load newly unlocked milestone:', error?.message);
+          return;
+        }
+        window.dispatchEvent(new CustomEvent<CelebrationPayload>('anba:achievement-unlocked', {
+          detail: { badges: [], milestones: [{ ...data, points_reward: Number(row.points_awarded ?? data.points_reward ?? 0) }], pointsAwarded: Number(row.points_awarded || 0) }
+        }));
+      })
+      .subscribe((status: string) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('Achievement celebration realtime channel status:', status);
+        }
+      });
+    return () => { void supabase.removeChannel(channel); };
+  }, [userData?.id]);
+
   if (!payload) return null;
   const items = [...(payload.badges || []), ...(payload.milestones || [])];
   const item = items[index];
   const isMilestone = index >= (payload.badges || []).length;
   const title = isArabic ? (item.title_ar || item.title_en) : (item.title_en || item.title_ar);
   const hasNext = index < items.length - 1;
-  const close = () => { setPayload(null); setIndex(0); };
+  const close = () => {
+    setPayload(pendingPayloads.current.shift() || null);
+    setIndex(0);
+  };
   return <AnimatePresence>
     <motion.div key="achievement-celebration" className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-[#071B20]/80 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="dialog" aria-modal="true" aria-label={isArabic ? 'احتفال بإنجاز جديد' : 'Achievement unlocked celebration'}>
       <button type="button" onClick={close} aria-label={isArabic ? 'إغلاق' : 'Close'} className="absolute right-5 top-5 z-20 rounded-full bg-white/15 p-3 text-white hover:bg-white/25"><X size={22}/></button>
@@ -71,7 +158,7 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
           {isMilestone ? <Trophy size={58}/> : <Award size={58}/>}
         </motion.div>
         <motion.p initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .15 }} className="text-sm font-black uppercase tracking-[.25em] text-amber-700">{isArabic ? 'يا سلام! إنجاز جديد!' : 'Amazing! You did it!'}</motion.p>
-        <motion.h2 initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .25 }} className="mt-3 text-3xl font-black sm:text-4xl">{isArabic ? 'فتحت وسام جديد!' : 'BADGE UNLOCKED!'}</motion.h2>
+        <motion.h2 initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .25 }} className="mt-3 text-3xl font-black sm:text-4xl">{isArabic ? (isMilestone ? 'مكافأة مرحلة جديدة!' : 'فتحت وسام جديد!') : (isMilestone ? 'MILESTONE REACHED!' : 'BADGE UNLOCKED!')}</motion.h2>
         <motion.p initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .35 }} className="mt-3 text-xl font-extrabold">{title}</motion.p>
         <div className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full bg-amber-100 px-5 py-3 text-lg font-black text-amber-900"><Sparkles size={20}/>+{item.points_reward || 0} {isArabic ? 'نقطة' : 'points'}</div>
         {payload.milestones?.length > 0 && <p className="mt-3 text-sm font-bold text-[#477078]">{isArabic ? `مكافآت المراحل: ${payload.milestones.length}` : `Category milestones earned: ${payload.milestones.length}`}</p>}
