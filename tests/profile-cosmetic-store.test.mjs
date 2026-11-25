@@ -8,6 +8,8 @@ const pointsTab = await readFile(new URL('../src/components/student/PointsTab.ts
 
 test('profile cosmetics use database inventory and secure purchase/equip RPCs', () => {
   assert.match(studio, /profile_cosmetic_catalog/);
+  assert.match(studio, /--surface-primary': '#232428'/);
+  assert.match(studio, /--action-primary': '#5865F2'/);
   assert.match(studio, /profile_cosmetic_unlocks/);
   assert.match(studio, /purchase_profile_cosmetic/);
   assert.match(studio, /equip_profile_cosmetic/);
