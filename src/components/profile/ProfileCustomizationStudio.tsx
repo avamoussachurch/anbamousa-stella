@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Award, Check, Crown, Loader2, Palette, ShoppingBag, Star, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -41,6 +41,8 @@ const safeColor = (value: string, fallback: string) => /^#[0-9a-f]{6}$/i.test(va
 export function ProfileCustomizationStudio({ userId, lang, initialView = 'profile' }: { userId: string; lang: string; initialView?: 'profile' | 'store' }) {
   const ar = lang === 'ar';
   const { syncAuthoritativeProgress } = useAuth();
+  const syncProgressRef = useRef(syncAuthoritativeProgress);
+  syncProgressRef.current = syncAuthoritativeProgress;
   const [view, setView] = useState<'profile' | 'store'>(initialView);
   const [category, setCategory] = useState<CosmeticKind>('frame');
   const [catalog, setCatalog] = useState<Cosmetic[]>([]);
@@ -82,7 +84,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
     setUnlocked((unlockResult.data || []).map((row: any) => row.cosmetic_id));
     setPoints(Number(profileResult.data?.points || 0));
     if (profileResult.data) {
-      syncAuthoritativeProgress(
+      syncProgressRef.current(
         Number(profileResult.data.points || 0),
         Number(profileResult.data.current_streak || 0),
         Number(profileResult.data.longest_streak || 0)
@@ -95,7 +97,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
     setCurrentStreak(Number(profileResult.data?.current_streak || 0));
     setLongestStreak(Number(profileResult.data?.longest_streak || 0));
     setLoading(false);
-  }, [userId, ar, syncAuthoritativeProgress]);
+  }, [userId, ar]);
 
   useEffect(() => { void load(); }, [load]);
 
