@@ -22,6 +22,25 @@ const profileTitleLabel = (title: string | null | undefined, ar: boolean) => {
   return pair ? (ar ? pair[1] : pair[0]) : null;
 };
 
+const bannerBackground = (profile: DirectoryProfile): string => {
+  const equipped = profile.equipped_cosmetics?.banner;
+  const cosmeticBanners: Record<string, string> = {
+    'banner-kiahk-stars': 'linear-gradient(120deg,#101D46,#5B78C7)',
+    'banner-pascha-light': 'linear-gradient(120deg,#4A1020,#D7A94A)',
+    'banner-heavenly-blue': 'linear-gradient(120deg,#164E83,#8BC5E8)',
+    'banner-nile-moonlight': 'linear-gradient(120deg,#0F3448,#38A6A8)',
+    'banner-kiahk-candlelight': 'linear-gradient(120deg,#2E1C43,#F6C86F)',
+    'banner-golden-desert': 'linear-gradient(120deg,#7A3E1D,#F0C16B)'
+  };
+  if (equipped && cosmeticBanners[equipped]) return cosmeticBanners[equipped];
+  const legacyBanners: Record<string, string> = {
+    'coptic-pattern': 'repeating-linear-gradient(45deg,#174d4c 0 12px,#1e6260 12px 24px,#c59b50 24px 27px)',
+    'olive-garden': 'linear-gradient(120deg,#244c39,#6e8751,#c2a96a)',
+    'golden-church': 'linear-gradient(120deg,#5b3a27,#a77b39,#e9ce8a)',
+    'midnight-teal': 'linear-gradient(120deg,#102f3b,#145b62,#327e79)'
+  };
+  return legacyBanners[profile.banner_key || ''] || 'linear-gradient(120deg,#6f4935,#d6a15b,#f4dca6)';
+};
 const roleLabel = (role: string, ar: boolean) => {
   const labels: Record<string, [string,string]> = {
     student:['Student','طالب'], parent:['Parent','ولي أمر'], teacher:['Servant','خادم'], admin:['Church Admin','إدارة الكنيسة']
@@ -86,7 +105,7 @@ export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) 
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {selected ? <div className="mx-auto max-w-md space-y-5 py-3 text-center">
               <button type="button" onClick={()=>setSelected(null)} className="mb-2 text-xs font-bold text-[var(--mousa-teal-deep)]">← {ar?'كل الأعضاء':'All members'}</button>
-              <div className="h-20 w-full rounded-2xl shadow-inner" style={{background:(selected.equipped_cosmetics?.banner==='banner-kiahk-stars'?'linear-gradient(120deg,#101D46,#5B78C7)':selected.equipped_cosmetics?.banner==='banner-pascha-light'?'linear-gradient(120deg,#4A1020,#D7A94A)':selected.equipped_cosmetics?.banner==='banner-heavenly-blue'?'linear-gradient(120deg,#164E83,#8BC5E8)':selected.equipped_cosmetics?.banner==='banner-nile-moonlight'?'linear-gradient(120deg,#0F3448,#38A6A8)':selected.equipped_cosmetics?.banner==='banner-kiahk-candlelight'?'linear-gradient(120deg,#2E1C43,#F6C86F)':selected.equipped_cosmetics?.banner==='banner-golden-desert'?'linear-gradient(120deg,#7A3E1D,#F0C16B)':selected.banner_key==='coptic-pattern'?'repeating-linear-gradient(45deg,#174d4c 0 12px,#1e6260 12px 24px,#c59b50 24px 27px)':selected.banner_key==='olive-garden'?'linear-gradient(120deg,#244c39,#6e8751,#c2a96a)':selected.banner_key==='golden-church'?'linear-gradient(120deg,#5b3a27,#a77b39,#e9ce8a)':selected.banner_key==='midnight-teal'?'linear-gradient(120deg,#102f3b,#145b62,#327e79)':'linear-gradient(120deg,#6f4935,#d6a15b,#f4dca6)')}}/>
+               <div className="h-20 w-full rounded-2xl shadow-inner" style={{ background: bannerBackground(selected) }} />
               <div className={'mx-auto grid h-28 w-28 place-items-center rounded-[2rem] bg-white p-1 shadow-lg '+(selected.frame_key==='olive-wreath'?'ring-4 ring-emerald-600':selected.frame_key==='royal-blue'?'ring-4 ring-blue-700':selected.frame_key==='desert-sand'?'ring-4 ring-orange-300':selected.frame_key==='burgundy'?'ring-4 ring-rose-900':'ring-4 ring-amber-400')} style={{outline:selected.equipped_cosmetics?.frame==='frame-midnight-coptic'?'4px solid #6BC6C4':selected.equipped_cosmetics?.frame==='frame-pascha-radiance'?'4px solid #F5C96A':selected.equipped_cosmetics?.frame==='frame-desert-royal'?'4px solid #E7A84B':selected.equipped_cosmetics?.frame==='frame-archangel-sapphire'?'4px solid #6FA8DC':selected.equipped_cosmetics?.frame==='frame-martyr-ruby'?'4px solid #D95D5D':selected.equipped_cosmetics?.frame==='frame-olive-crown'?'4px solid #C7D86A':selected.equipped_cosmetics?.frame==='frame-halo-gold'?'4px solid #F6D365':undefined,boxShadow:selected.equipped_cosmetics?.effect==='effect-stardust'?'0 0 28px #E9D5FF':selected.equipped_cosmetics?.effect==='effect-emerald-aura'?'0 0 28px #6EE7B7':selected.equipped_cosmetics?.effect==='effect-golden-radiance'?'0 0 28px #FDE68A':selected.equipped_cosmetics?.effect==='effect-celestial-blue'?'0 0 28px #A5B4FC':undefined}}><img src={selected.avatar_url || '/icons/icon-192.png'} alt="" className="h-full w-full rounded-[1.5rem] object-cover"/></div>
               <div><h3 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-white">{selected.display_name}</h3><p className="mt-1 text-sm font-bold text-[var(--mousa-sand-500)]">{profileTitleLabel(selected.display_title,ar) || roleLabel(selected.role,ar)}</p></div>
               <div className="grid grid-cols-3 gap-2">
