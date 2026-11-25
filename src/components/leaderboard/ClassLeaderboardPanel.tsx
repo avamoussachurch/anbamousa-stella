@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Flame, RefreshCw, Trophy } from 'lucide-react';
 import { getAuthoritativeLeaderboard } from '../../lib/studentProgressService';
+import { CLASS_GROUPS } from '../../lib/classGroups';
 import type { Language } from '../../types';
 
 type Result = Awaited<ReturnType<typeof getAuthoritativeLeaderboard>>;
@@ -12,6 +13,7 @@ export function ClassLeaderboardPanel({ lang, audience = 'parent', childId, chil
   const [loading, setLoading] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
   const [selectedChildId, setSelectedChildId] = useState(childId || '');
+  const [selectedClassGroupId, setSelectedClassGroupId] = useState('');
   useEffect(() => { if (childId && !selectedChildId) setSelectedChildId(childId); }, [childId, selectedChildId]);
   const effectiveChildId = childOptions?.length ? selectedChildId : childId;
   const effectiveChildName = childOptions?.find(child => child.id === effectiveChildId)?.name || childName;
@@ -23,13 +25,13 @@ export function ClassLeaderboardPanel({ lang, audience = 'parent', childId, chil
     if (!canLoadLeaderboard) { setResult(null); setLoading(false); return; }
     setLoading(true);
     setResult(null);
-    getAuthoritativeLeaderboard({ timeframe, ...(isParentView ? { studentId: effectiveChildId } : {}) }).then(value => {
+    getAuthoritativeLeaderboard({ timeframe, ...(isParentView ? { studentId: effectiveChildId } : selectedClassGroupId ? { classGroupId: selectedClassGroupId } : {}) }).then(value => {
       if (!active) return;
       setResult(value);
       setLoading(false);
     });
     return () => { active = false; };
-  }, [canLoadLeaderboard, effectiveChildId, isParentView, timeframe, refreshTick]);
+  }, [canLoadLeaderboard, effectiveChildId, isParentView, selectedClassGroupId, timeframe, refreshTick]);
 
   const entries = result?.leaderboard || [];
   const streaks = result?.streakLeaderboard || [];
@@ -46,6 +48,7 @@ export function ClassLeaderboardPanel({ lang, audience = 'parent', childId, chil
         </div>
       </header>
       {isParentView && childOptions?.length ? <label className="block text-sm font-bold">{isArabic ? 'اختر ابنك أو بنتك' : 'Choose a child'}<select value={selectedChildId} onChange={event => setSelectedChildId(event.target.value)} className="mt-1 min-h-11 w-full max-w-sm rounded-xl border bg-[var(--surface-primary)] px-3">{childOptions.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label> : null}
+      {!isParentView && (result?.availableClassGroupIds?.length || 0) > 0 ? <label className="block text-sm font-bold">{isArabic ? 'اختر الفصل' : 'Choose a class'}<select value={selectedClassGroupId || result?.classGroupId || ''} onChange={event => setSelectedClassGroupId(event.target.value)} className="mt-1 min-h-11 w-full max-w-sm rounded-xl border bg-[var(--surface-primary)] px-3">{result?.availableClassGroupIds.map(id => <option key={id} value={id}>{CLASS_GROUPS[id as keyof typeof CLASS_GROUPS]?.name?.[isArabic ? 'ar' : 'en'] || id}</option>)}</select></label> : null}
       {!canLoadLeaderboard ? <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك أو بنتك أولاً لعرض ترتيبهم.' : 'Link a child account first to view their ranking.'}</p>
         : loading ? <p role="status" className="p-8 text-center text-sm">{isArabic ? 'بنحمّل الترتيب الرسمي...' : 'Loading verified rankings...'}</p>
         : result?.error ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{result.error}</p>
