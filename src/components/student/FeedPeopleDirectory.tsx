@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Search, Users, UserPlus, UserCheck, X, Flame, Trophy, Loader2 } from 'lucide-react';
+import { Search, Users, UserPlus, UserCheck, X, Flame, Trophy, Loader2, MessagesSquare, ArrowUpRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type DirectoryProfile = {
@@ -66,8 +66,11 @@ export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) 
   };
 
   return <>
-    <button type="button" onClick={()=>{setOpen(true);setSelected(null);}} className="inline-flex items-center gap-2 rounded-xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] px-3 py-2 text-xs font-black text-[var(--mousa-teal-deep)] shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
-      <Users size={16}/>{ar?'الأعضاء':'People'}
+    <button type="button" onClick={()=>{setOpen(true);setSelected(null);}} className="group inline-flex min-h-11 items-center gap-2.5 rounded-xl border-2 border-[#7C79F6]/60 bg-gradient-to-br from-[#5865F2] via-[#5059D8] to-[#3D43A8] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_22px_-10px_rgba(76,83,220,.8)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_rgba(76,83,220,.9)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8F96FF]">
+      <span className="grid h-7 w-7 place-items-center rounded-lg bg-white/15 ring-1 ring-white/20"><MessagesSquare size={17}/></span>
+      <span>{ar?'مجتمعنا':'Community'}</span>
+      <span className="rounded-full bg-white/15 px-2 py-1 text-[9px] font-black text-white/90">{ar?'اكتشف':'Explore'}</span>
+      <ArrowUpRight size={14} className="opacity-75 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/>
     </button>
     <AnimatePresence>
       {open && <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onMouseDown={e=>{if(e.target===e.currentTarget)setOpen(false);}}>
