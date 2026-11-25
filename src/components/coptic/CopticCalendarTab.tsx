@@ -4,16 +4,30 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   getCopticDate, 
   COPTIC_MONTHS, 
-  COPTIC_FEASTS, 
+  COPTIC_FEASTS,
+  getCopticMonthDateRange, 
   CopticFeast, 
   CopticDateResult 
 } from '../../data/copticCalendarData';
 import { Language } from '../../types';
 
+
+function getNextFeastDate(feast: CopticFeast, now: Date): Date {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let target = feast.targetDateThisYear(now.getFullYear());
+  target = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  if (target < today) {
+    target = feast.targetDateThisYear(now.getFullYear() + 1);
+    target = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  }
+  return target;
+}
+
 export function CopticCalendarTab({ lang }: { lang: Language }) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [copticDate, setCopticDate] = useState<CopticDateResult>(getCopticDate(new Date()));
   const [activeFilter, setActiveFilter] = useState<'all' | 'feasts' | 'fasts'>('all');
+  const [feastSort, setFeastSort] = useState<'upcoming' | 'calendar'>('upcoming');
 
   // Real-time countdown calculation
   const [timeRemaining, setTimeRemaining] = useState<Record<string, { days: number; hours: number; minutes: number }>>({});
@@ -25,11 +39,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
       const updated: Record<string, { days: number; hours: number; minutes: number }> = {};
 
       COPTIC_FEASTS.forEach((feast) => {
-        let target = feast.targetDateThisYear(currentYear);
-        if (target.getTime() < now.getTime() - 86400000) {
-          // If already passed this year, point to next year
-          target = feast.targetDateThisYear(currentYear + 1);
-        }
+        const target = getNextFeastDate(feast, now);
 
         const diffMs = target.getTime() - now.getTime();
         if (diffMs <= 0) {
@@ -62,6 +72,11 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
     if (activeFilter === 'feasts') return f.type === 'major_feast' || f.type === 'minor_feast';
     if (activeFilter === 'fasts') return f.type === 'fast';
     return true;
+  }).sort((a, b) => {
+    const now = new Date();
+    const aDate = feastSort === 'upcoming' ? getNextFeastDate(a, now) : a.targetDateThisYear(now.getFullYear());
+    const bDate = feastSort === 'upcoming' ? getNextFeastDate(b, now) : b.targetDateThisYear(now.getFullYear());
+    return aDate.getTime() - bDate.getTime();
   });
 
   return (
@@ -168,6 +183,10 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
               {lang === 'ar' ? 'الأصوام المقدسة' : 'Fasts'}
             </button>
           </div>
+          <div className="flex items-center gap-1 rounded-xl border border-amber-200 bg-white/80 p-1 dark:border-slate-700 dark:bg-slate-900/70">
+            <button type="button" onClick={() => setFeastSort('upcoming')} aria-pressed={feastSort === 'upcoming'} className={`rounded-lg px-2.5 py-1 text-[11px] font-bold ${feastSort === 'upcoming' ? 'bg-amber-500 text-white shadow-sm' : 'text-gray-500'}`}>{lang === 'ar' ? 'الأقرب أولاً' : 'Closest first'}</button>
+            <button type="button" onClick={() => setFeastSort('calendar')} aria-pressed={feastSort === 'calendar'} className={`rounded-lg px-2.5 py-1 text-[11px] font-bold ${feastSort === 'calendar' ? 'bg-amber-500 text-white shadow-sm' : 'text-gray-500'}`}>{lang === 'ar' ? 'ترتيب السنة' : 'Year order'}</button>
+          </div>
         </div>
 
         {/* Feasts Grid */}
@@ -192,7 +211,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
                       {feast.toneNameAr}
                     </span>
                     <span className="text-xs font-bold text-gray-400">
-                      {feast.copticDateAr}
+                      {feast.copticDateAr} · {getNextFeastDate(feast, new Date()).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Cairo' })}
                     </span>
                   </div>
 
@@ -249,7 +268,10 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
           <span>{lang === 'ar' ? 'شهور السنة القبطية الـ١٣' : 'The 13 Coptic Months'}</span>
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {COPTIC_MONTHS.map((m) => (
+          {COPTIC_MONTHS.map((m) => {
+            const range = getCopticMonthDateRange(m.number, copticDate.year);
+            const formatRangeDate = (value: Date) => value.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Cairo' });
+            return (
             <div
               key={m.number}
               className={`p-3.5 rounded-2xl border transition-all ${
@@ -260,13 +282,15 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold opacity-80">#{m.number}</span>
-                <span className="text-xs font-extrabold">{m.daysCount} {lang === 'ar' ? 'يوم' : 'days'}</span>
+                <span className="text-xs font-extrabold">{range.daysCount} {lang === 'ar' ? 'يوم' : 'days'}</span>
               </div>
               <h4 className="font-bold text-base">{lang === 'ar' ? m.nameAr : m.nameEn}</h4>
               <p className="text-[11px] opacity-80 mt-0.5">{m.nameCopt}</p>
               <p className="text-[10px] opacity-70 mt-1 line-clamp-1">{lang === 'ar' ? m.seasonAr : m.seasonEn}</p>
+              <p className="mt-2 text-[10px] font-bold opacity-80">{formatRangeDate(range.start)} – {formatRangeDate(range.end)}</p>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </motion.div>
