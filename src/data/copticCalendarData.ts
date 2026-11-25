@@ -318,13 +318,7 @@ const additionalCopticFeasts: CopticFeast[] = [
     descriptionAr: 'استعداد لعيد الظهور الإلهي وصلوات اللقان.', 
     descriptionEn: 'Preparation for Theophany and the blessing of the waters.'
   }),
-  fixedFeast({
-    id: 'st_mary_feast', nameAr: 'عيد السيدة العذراء مريم', nameEn: 'Feast of St. Mary',
-    type: 'major_feast', monthNumber: 12, copticDay: 16, copticDateAr: '١٦ مسرى', gregorianApprox: '22 أغسطس',
-    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
-    descriptionAr: 'ختام صوم السيدة العذراء والاحتفال بتذكارها المبارك.', 
-    descriptionEn: 'The joyful feast concluding the fast of St. Mary.'
-  })
+
 ];
 
 export const COPTIC_FEASTS: CopticFeast[] = [
@@ -519,7 +513,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     descriptionAr: 'من أحب وأجمل الأصوام في قلوب الشعب القبطي، ينتهي بتذكار صعود جسد أم النور الطاهر.',
     descriptionEn: 'A deeply cherished fast of repentance and praises concluding with the Assumption of the Virgin Mary.',
     targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 12, 1)
-  }
+  },
   ...additionalCopticFeasts,
 ];
 
