@@ -37,9 +37,9 @@ const rarityLabels: Record<string, [string, string]> = {
 };
 const safeColor = (value: string, fallback: string) => /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
 
-export function ProfileCustomizationStudio({ userId, lang }: { userId: string; lang: string }) {
+export function ProfileCustomizationStudio({ userId, lang, initialView = 'profile' }: { userId: string; lang: string; initialView?: 'profile' | 'store' }) {
   const ar = lang === 'ar';
-  const [view, setView] = useState<'profile' | 'store'>('profile');
+  const [view, setView] = useState<'profile' | 'store'>(initialView);
   const [category, setCategory] = useState<CosmeticKind>('frame');
   const [catalog, setCatalog] = useState<Cosmetic[]>([]);
   const [unlocked, setUnlocked] = useState<string[]>([]);
