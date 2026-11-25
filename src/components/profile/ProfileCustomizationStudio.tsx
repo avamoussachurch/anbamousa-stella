@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Award, Check, Crown, Gem, Loader2, Palette, ShoppingBag, Sparkles, Star, X } from 'lucide-react';
+import { Award, Check, Crown, Loader2, Palette, ShoppingBag, Star, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type CosmeticKind = 'frame' | 'banner' | 'badge' | 'effect';
@@ -18,7 +18,7 @@ const titles = [
   { id: 'sunday-school-star', label: 'Sunday School Star', ar: 'نجم مدارس الأحد' },
   { id: 'saint-story-keeper', label: 'Saint Stories Keeper', ar: 'محب سير القديسين' }
 ];
-const fallbackFrames: Record<string, string> = {
+const fallbackBanners: Record<string, [string, string]> = {\n  'desert-dawn': ['#6F4935', '#F4DCA6'], 'coptic-pattern': ['#174D4C', '#C59B50'],\n  'olive-garden': ['#244C39', '#C2A96A'], 'golden-church': ['#5B3A27', '#E9CE8A'],\n  'midnight-teal': ['#102F3B', '#327E79']\n};\nconst fallbackFrames: Record<string, string> = {
   'coptic-gold': '#D6A84F', 'olive-wreath': '#47734D', 'royal-blue': '#285A9B',
   'desert-sand': '#C58A4A', burgundy: '#762B3A'
 };
@@ -168,7 +168,7 @@ export function ProfileCustomizationStudio({ userId, lang }: { userId: string; l
           <label className="block"><span className="mb-1.5 block text-xs font-black text-[var(--text-primary)]">{ar ? 'اللقب' : 'Profile title'}</span><select value={title} onChange={event => setTitle(event.target.value)} className="min-h-11 w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-sm"><option value="">{ar ? 'بدون لقب' : 'No title'}</option>{titles.map(item => <option key={item.id} value={item.id}>{ar ? item.ar : item.label}</option>)}</select></label>
         </div>
         <label className="block"><span className="mb-1.5 block text-xs font-black text-[var(--text-primary)]">{ar ? 'الغلاف الأساسي' : 'Starter banner'}</span><select value={banner} onChange={event => setBanner(event.target.value)} className="min-h-11 w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-sm"><option value="desert-dawn">{ar ? 'فجر البرية' : 'Desert Dawn'}</option><option value="coptic-pattern">{ar ? 'نقوش قبطية' : 'Coptic Pattern'}</option><option value="olive-garden">{ar ? 'بستان الزيتون' : 'Olive Garden'}</option><option value="golden-church">{ar ? 'الكنيسة الذهبية' : 'Golden Church'}</option><option value="midnight-teal">{ar ? 'فيروزي ليلي' : 'Midnight Teal'}</option></select></label>
-        <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-[var(--text-secondary)]">{ar ? 'العناصر اللي فتحتها من المتجر هتظهر في معاينة ملفك.' : 'Items you unlock in the store appear in your profile preview.'}</p><button type="button" disabled={Boolean(busyId)} onClick={() => void saveLegacyStyle()} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--action-primary)] px-4 text-sm font-black text-[var(--action-primary-text)] disabled:opacity-50">{busyId === 'save' ? <Loader2 size={15} className="animate-spin"/> : <Check size={15}/ >}{ar ? 'حفظ الملف' : 'Save profile'}</button></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-[var(--text-secondary)]">{ar ? 'العناصر اللي فتحتها من المتجر هتظهر في معاينة ملفك.' : 'Items you unlock in the store appear in your profile preview.'}</p><button type="button" disabled={Boolean(busyId)} onClick={() => void saveLegacyStyle()} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--action-primary)] px-4 text-sm font-black text-[var(--action-primary-text)] disabled:opacity-50">{busyId === 'save' ? <Loader2 size={15} className="animate-spin"/> : <Check size={15} />}{ar ? 'حفظ الملف' : 'Save profile'}</button></div>
       </div> : <div className="space-y-3">
         <div className="grid grid-cols-4 gap-1 rounded-xl bg-[var(--surface-secondary)] p-1">{(['frame','banner','badge','effect'] as CosmeticKind[]).map(kind => <button key={kind} type="button" onClick={() => setCategory(kind)} aria-pressed={category === kind} className={'min-h-10 rounded-lg px-1 text-[11px] font-black ' + (category === kind ? 'bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-secondary)]')}>{ar ? kindLabels[kind][1] : kindLabels[kind][0]}</button>)}</div>
         {visibleItems.length ? <div className="grid gap-3 sm:grid-cols-2">{visibleItems.map(item => {
