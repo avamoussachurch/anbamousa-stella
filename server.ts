@@ -7778,6 +7778,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
       cairoDate: todayCairo,
       cairoWeekReset
     });
+    }
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || "Server error" });
   }
