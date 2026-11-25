@@ -26,5 +26,15 @@ test('feast list defaults to the closest upcoming observance with a Coptic-order
   assert.match(calendarTab, /useState<'upcoming' \| 'coptic'>\('upcoming'\)/);
   assert.match(calendarTab, /sortMode === 'upcoming'/);
   assert.match(calendarTab, /Closest first/);
-  assert.match(calendarTab, /Coptic order/);
+  assert.match(calendarTab, /Calendar order/);
+});
+
+test('major and minor Egyptian Coptic Orthodox observances are represented', () => {
+  for (const feastId of [
+    'annunciation','circumcision','wedding_cana','presentation_temple','entry_egypt',
+    'transfiguration','ascension','pentecost','covenant_thursday','good_friday',
+    'thomas_sunday','jonah_feast','apostles_feast','st_mary_assumption','cross_feast_2'
+  ]) {
+    assert.match(calendarData, new RegExp("id: '" + feastId + "'"));
+  }
 });
