@@ -4,6 +4,7 @@ import { test } from 'node:test';
 
 const studio = await readFile(new URL('../src/components/profile/ProfileCustomizationStudio.tsx', import.meta.url), 'utf8');
 const directory = await readFile(new URL('../src/components/student/FeedPeopleDirectory.tsx', import.meta.url), 'utf8');
+const pointsTab = await readFile(new URL('../src/components/student/PointsTab.tsx', import.meta.url), 'utf8');
 
 test('profile cosmetics use database inventory and secure purchase/equip RPCs', () => {
   assert.match(studio, /profile_cosmetic_catalog/);
@@ -19,4 +20,10 @@ test('public people directory reads the privacy-scoped v3 profile projection', (
   assert.match(directory, /earned_badges/);
   assert.match(directory, /equipped_cosmetics/);
   assert.doesNotMatch(directory, /\.from\(['"]profiles['"]\)/);
+});
+
+test('profile cosmetics are available directly from the points store', () => {
+  assert.match(pointsTab, /setView\('cosmetics'\)/);
+  assert.match(pointsTab, /ProfileCustomizationStudio/);
+  assert.match(pointsTab, /initialView="store"/);
 });
