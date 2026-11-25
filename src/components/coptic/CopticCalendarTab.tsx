@@ -15,7 +15,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [copticDate, setCopticDate] = useState<CopticDateResult>(getCopticDate(new Date()));
   const [activeFilter, setActiveFilter] = useState<'all' | 'feasts' | 'fasts'>('all');
-  const [sortMode, setSortMode] = useState<'upcoming' | 'coptic'>('upcoming');
+  const [sortMode, setSortMode] = useState<'upcoming' | 'calendar'>('upcoming');
 
   // Real-time countdown calculation
   const [timeRemaining, setTimeRemaining] = useState<Record<string, { days: number; hours: number; minutes: number }>>({});
@@ -66,17 +66,15 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
   });
   const today = new Date();
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const displayedFeasts = filteredFeasts.map((feast, index) => {
+  const displayedFeasts = filteredFeasts.map((feast) => {
     let targetDate = feast.targetDateThisYear(today.getFullYear());
     targetDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-    if (targetDate < todayStart) {
+    if (sortMode === 'upcoming' && targetDate < todayStart) {
       targetDate = feast.targetDateThisYear(today.getFullYear() + 1);
       targetDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
     }
-    return { feast, targetDate, originalOrder: index };
-  }).sort((a, b) => sortMode === 'upcoming'
-    ? a.targetDate.getTime() - b.targetDate.getTime()
-    : a.originalOrder - b.originalOrder);
+    return { feast, targetDate };
+  }).sort((a, b) => a.targetDate.getTime() - b.targetDate.getTime());
 
   return (
     <motion.div
@@ -184,7 +182,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
           </div>
           <div className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-white/80 p-1 dark:border-slate-700 dark:bg-slate-900">
             <button type="button" onClick={() => setSortMode('upcoming')} aria-pressed={sortMode === 'upcoming'} className={`rounded-lg px-2.5 py-2 text-[11px] font-black transition ${sortMode === 'upcoming' ? 'bg-[var(--color-church-blue)] text-white' : 'text-gray-500'}`}>{lang === 'ar' ? 'الأقرب أولاً' : 'Closest first'}</button>
-            <button type="button" onClick={() => setSortMode('coptic')} aria-pressed={sortMode === 'coptic'} className={`rounded-lg px-2.5 py-2 text-[11px] font-black transition ${sortMode === 'coptic' ? 'bg-[var(--color-church-blue)] text-white' : 'text-gray-500'}`}>{lang === 'ar' ? 'ترتيب السنة القبطية' : 'Coptic order'}</button>
+            <button type="button" onClick={() => setSortMode('calendar')} aria-pressed={sortMode === 'calendar'} className={`rounded-lg px-2.5 py-2 text-[11px] font-black transition ${sortMode === 'coptic' ? 'bg-[var(--color-church-blue)] text-white' : 'text-gray-500'}`}>{lang === 'ar' ? 'ترتيب السنة' : 'Calendar order'}</button>
           </div>
         </div>
 
