@@ -204,7 +204,7 @@ export function RoleAvatarStudio({ lang, user, role }: { lang: Language; user: U
       {error && <p role="alert" className="mt-3 text-xs font-semibold text-[var(--feedback-error)]">{error}</p>}
       {message && <p role="status" className="mt-3 text-xs font-semibold text-[var(--brand-teal)]">{message}</p>}
     </section>
-    <ProfileCustomizationStudio userId={user.id} lang={lang} />
+    <ProfileCustomizationStudio userId={user.id} lang={lang} avatarUrl={user.avatarUrl} displayName={user.fullName} />
     </>
   );
 }

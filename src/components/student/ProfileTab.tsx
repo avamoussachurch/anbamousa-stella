@@ -1126,7 +1126,7 @@ export function ProfileTab({
                  </section>
                </div>
 
-               <ProfileCustomizationStudio userId={userData.id} lang={lang} />
+               <ProfileCustomizationStudio userId={userData.id} lang={lang} avatarUrl={userData.avatarUrl} displayName={userData.fullName} />
 
                <details open className="group rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--surface-primary)] p-4">
                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-black text-[var(--mousa-teal-deep)] dark:text-white">

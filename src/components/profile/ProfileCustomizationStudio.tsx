@@ -154,7 +154,7 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
               {equippedEffect && <span className="rounded-full border border-violet-300 bg-violet-50 px-3 py-1 text-[10px] font-black text-violet-900"><Sparkles size={11} className="mr-1 inline"/> {ar ? 'تأثير مفعل' : 'Effect active'}</span>}
             </div>
           </div>
-          <div className="mt-3"><p className="text-base font-black text-[var(--text-primary)]">{displayName || (ar ? 'عضو في عيلة أنبا موسى' : 'Anba Mousa member')}</p><p className="mt-0.5 text-xs text-[var(--text-secondary)]">{ar ? titleItem?.ar : titleItem?.label || (ar ? 'عضو في مجتمع الكنيسة' : 'Church community member')}</p></div>
+          <div className="mt-3"><p className="text-base font-black text-[var(--text-primary)]">{displayName || (ar ? 'عضو في عيلة أنبا موسى' : 'Anba Mousa member')}</p><p className="mt-0.5 text-xs text-[var(--text-secondary)]">{titleItem ? (ar ? titleItem.ar : titleItem.label) : (ar ? 'عضو في مجتمع الكنيسة' : 'Church community member')}</p></div>
         </div>
       </div>
 
