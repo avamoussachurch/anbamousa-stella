@@ -8,7 +8,7 @@ const calendarTab = await readFile(new URL('../src/components/coptic/CopticCalen
 test('Coptic month ranges are calculated for the selected Anno Martyrum year', () => {
   assert.match(calendarData, /getCopticYearStartGregorianDate/);
   assert.match(calendarData, /getCopticMonthGregorianRange/);
-  assert.match(calendarData, /monthNumber === 13 && copticYear % 4 === 3 \? 6 : 5/);
+  assert.match(calendarData, /monthNumber === 13 && copticYear % 4 === 3 \? 6 : monthNumber === 13 \? 5 : 30/);
   assert.match(calendarTab, /getCopticMonthGregorianRange\(copticDate\.year, m\.number\)/);
   assert.match(calendarTab, /formatMonthDay\(range\.start\)/);
   assert.match(calendarTab, /formatMonthDay\(range\.end\)/);
@@ -22,8 +22,8 @@ test('movable Coptic feasts use the Orthodox Paschalion rather than fixed Gregor
   assert.match(calendarData, /date\.setDate\(date\.getDate\(\) \+ 50\)/);
 });
 
-test('feast list defaults to the closest upcoming observance with a Coptic-order alternative', () => {
-  assert.match(calendarTab, /useState<'upcoming' \| 'coptic'>\('upcoming'\)/);
+test('feast list defaults to the closest upcoming observance with a calendar-order alternative', () => {
+  assert.match(calendarTab, /useState<'upcoming' \| 'calendar'>\('upcoming'\)/);
   assert.match(calendarTab, /sortMode === 'upcoming'/);
   assert.match(calendarTab, /Closest first/);
   assert.match(calendarTab, /Calendar order/);
