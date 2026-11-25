@@ -278,7 +278,7 @@ const additionalCopticFeasts: CopticFeast[] = [
   }),
   fixedFeast({
     id: 'apostles_feast', nameAr: 'عيد الرسل الأطهار (بطرس وبولس)', nameEn: 'Feast of the Holy Apostles Peter and Paul',
-    type: 'major_feast', monthNumber: 11, copticDay: 5, copticDateAr: '٥ أبيب', gregorianApprox: '12 يوليو',
+    type: 'minor_feast', monthNumber: 11, copticDay: 5, copticDateAr: '٥ أبيب', gregorianApprox: '12 يوليو',
     fastingRuleAr: 'فطر احتفالي بعد صوم الرسل', fastingRuleEn: 'Feast day following the Apostles’ Fast', isFishPermitted: true,
     descriptionAr: 'تذكار استشهاد الرسولين بطرس وبولس وخدمتهما في نشر الإنجيل.',
     descriptionEn: 'Commemoration of the martyrdom and apostolic witness of Saints Peter and Paul.'
@@ -299,7 +299,7 @@ const additionalCopticFeasts: CopticFeast[] = [
   }),
   fixedFeast({
     id: 'st_mary_assumption', nameAr: 'عيد صعود جسد السيدة العذراء', nameEn: 'Feast of the Assumption of St. Mary',
-    type: 'major_feast', monthNumber: 12, copticDay: 16, copticDateAr: '١٦ مسرى', gregorianApprox: '22 أغسطس',
+    type: 'minor_feast', monthNumber: 12, copticDay: 16, copticDateAr: '١٦ مسرى', gregorianApprox: '22 أغسطس',
     fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
     descriptionAr: 'تذكار صعود جسد والدة الإله القديسة مريم بحسب تقليد الكنيسة القبطية.', 
     descriptionEn: 'The Church’s commemoration of the assumption of the body of the Theotokos.'
