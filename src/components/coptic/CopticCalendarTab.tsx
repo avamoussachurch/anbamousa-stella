@@ -211,7 +211,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
                       {feast.toneNameAr}
                     </span>
                     <span className="text-xs font-bold text-gray-400">
-                      {feast.copticDateAr} · {getNextFeastDate(feast, new Date()).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Cairo' })}
+                      {feast.copticDateAr} · {getNextFeastDate(feast, new Date()).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
 
@@ -270,7 +270,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {COPTIC_MONTHS.map((m) => {
             const range = getCopticMonthDateRange(m.number, copticDate.year);
-            const formatRangeDate = (value: Date) => value.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Cairo' });
+            const formatRangeDate = (value: Date) => value.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' });
             return (
             <div
               key={m.number}

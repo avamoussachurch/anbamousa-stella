@@ -296,12 +296,12 @@ export function StudentRoadmapView({
                   onClick={() => handleNodeClick(node)}
                   className={`group relative rounded-full flex flex-col items-center justify-center transition-all cursor-pointer shadow-lg select-none ${
                     node.state === 'completed'
-                      ? 'w-24 h-24 sm:w-26 sm:h-26 bg-gradient-to-br from-emerald-300 via-emerald-500 to-teal-800 text-white ring-4 ring-emerald-300 dark:ring-emerald-700 shadow-[0_12px_30px_rgba(16,185,129,.28)]'
+                      ? 'w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-br from-emerald-300 via-emerald-500 to-teal-800 text-white ring-4 ring-emerald-300 dark:ring-emerald-700 shadow-[0_12px_30px_rgba(16,185,129,.28)]'
                       : node.state === 'current'
-                        ? 'w-28 h-28 sm:w-30 sm:h-30 bg-gradient-to-br from-[#FFE18A] via-amber-500 to-[#D97706] text-white ring-[5px] ring-[var(--mousa-gold)] ring-offset-4 ring-offset-[var(--mousa-cream-surface)] dark:ring-offset-[#1C1814] shadow-[0_18px_44px_rgba(245,158,11,.42)]'
+                        ? 'w-28 h-28 sm:w-32 sm:h-32 bg-gradient-to-br from-[#FFE18A] via-amber-500 to-[#D97706] text-white ring-[5px] ring-[var(--mousa-gold)] ring-offset-4 ring-offset-[var(--mousa-cream-surface)] dark:ring-offset-[#1C1814] shadow-[0_18px_44px_rgba(245,158,11,.42)]'
                         : node.state === 'available'
                           ? 'w-24 h-24 sm:w-26 sm:h-26 bg-gradient-to-br from-teal-400 via-teal-600 to-teal-900 text-white ring-4 ring-teal-300 dark:ring-teal-700 shadow-[0_12px_30px_rgba(13,148,136,.24)]'
-                          : 'w-22 h-22 sm:w-24 sm:h-24 bg-stone-200 dark:bg-stone-800 text-stone-500 dark:text-stone-400 ring-2 border-2 border-stone-300 dark:border-stone-700 opacity-90 shadow-[0_8px_18px_rgba(80,65,45,.12)]'
+                          : 'w-20 h-20 sm:w-24 sm:h-24 bg-stone-200 dark:bg-stone-800 text-stone-500 dark:text-stone-400 ring-2 border-2 border-stone-300 dark:border-stone-700 opacity-90 shadow-[0_8px_18px_rgba(80,65,45,.12)]'
                   }`}
                   aria-label={`${title} - ${node.state}`}
                 >
