@@ -4,7 +4,7 @@ import { FeedPeopleDirectory } from './FeedPeopleDirectory';
 import { CLASS_GROUPS } from '../../lib/classGroups';
 import { 
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
-  ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, Bookmark, BookmarkCheck, User as UserIcon,
+  ShieldCheck, Sparkles, ArrowUpDown, Flame, Clock, Bell, Bookmark, BookmarkCheck, User as UserIcon,
   Image as ImageIcon, Video, Link2, Loader2, Play, Info, ExternalLink, AlertCircle, Check, Maximize2, Mic, Square, Pause,
   Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning, Flag, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight
 } from 'lucide-react';
