@@ -7409,6 +7409,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
       let allInstances: any[] = [];
       let leaderboardTargetStudentId = authContext.userId;
 
+      // Keep this precedence: staff roles must win over the optional parent workspace role.
       if (hasServerRole(authContext, 'admin')) {
         const { data, error } = await client
           .from('class_instances')
