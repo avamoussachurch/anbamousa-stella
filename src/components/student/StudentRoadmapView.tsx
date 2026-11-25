@@ -73,9 +73,9 @@ export function StudentRoadmapView({
     // Curate real lessons in natural curriculum order
     const sorted = [...lessons].sort((a, b) => {
       // Sort by date ascending if available, or maintain given curriculum order
-      if (a.date && b.date) {
-        return a.date.localeCompare(b.date);
-      }
+      const aTime = Date.parse(a.date || '');
+      const bTime = Date.parse(b.date || '');
+      if (Number.isFinite(aTime) && Number.isFinite(bTime) && aTime !== bTime) return aTime - bTime;
       return 0;
     });
 
@@ -372,13 +372,18 @@ export function StudentRoadmapView({
                           : 'bg-stone-100/80 dark:bg-stone-900/40 border-stone-300 dark:border-stone-800 hover:border-stone-400'
                   }`}
                 >
+                  {node.lesson.imageUrl && <img src={node.lesson.imageUrl} alt="" loading="lazy" className="mb-2 h-20 w-full rounded-xl border border-black/5 object-cover shadow-inner sm:h-24" />}
+                  <div className="mb-1 flex items-center justify-center gap-1 text-[9px] font-black uppercase tracking-wide text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)]">
+                    <span>{node.lesson.category === 'hymns' ? '🎵' : node.lesson.category === 'history' ? '🏛️' : node.lesson.category === 'virtues' ? '🌱' : '📖'}</span>
+                    <span>{node.lesson.category || (isAr ? 'درس كتابي' : 'Bible lesson')}</span>
+                  </div>
                   <p className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 line-clamp-1">
                     {title}
                   </p>
                   
                   {node.lesson.summary && (
                     <p className="text-[11px] text-stone-600 dark:text-stone-400 line-clamp-2 mt-0.5 leading-snug">
-                      {isAr ? (node.lesson.summaryAr || node.lesson.summary) : node.lesson.summary}
+                      {isAr ? (node.lesson.summaryAr || node.lesson.summary) : isCop ? (node.lesson.summaryCop || node.lesson.summary) : node.lesson.summary}
                     </p>
                   )}
 
