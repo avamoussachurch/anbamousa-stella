@@ -483,9 +483,11 @@ export async function getAuthoritativeLeaderboard(options?: {
   classGroupId?: string;
   timeframe?: 'weekly' | 'all_time';
   studentId?: string;
+  audience?: 'parent' | 'staff';
 }): Promise<{
   success: boolean;
   classGroupId: string | null;
+  availableClassGroups: Array<{ id: string; nameEn: string; nameAr: string }>;
   timeframe: string;
   leaderboard: any[];
   currentUserEntry: any | null;
@@ -502,6 +504,7 @@ export async function getAuthoritativeLeaderboard(options?: {
     if (options?.classGroupId) query.set('classGroupId', options.classGroupId);
     if (options?.timeframe) query.set('timeframe', options.timeframe);
     if (options?.studentId) query.set('studentId', options.studentId);
+    if (options?.audience) query.set('audience', options.audience);
 
     const res = await fetch(`/api/church/leaderboard?${query.toString()}`, {
       method: 'GET',
@@ -514,6 +517,7 @@ export async function getAuthoritativeLeaderboard(options?: {
     return {
       success: true,
       classGroupId: json.classGroupId,
+      availableClassGroups: Array.isArray(json.availableClassGroups) ? json.availableClassGroups : [],
       timeframe: json.timeframe,
       leaderboard: json.leaderboard || [],
       currentUserEntry: json.currentUserEntry || null,
@@ -527,6 +531,7 @@ export async function getAuthoritativeLeaderboard(options?: {
     return {
       success: false,
       classGroupId: options?.classGroupId || null,
+      availableClassGroups: [],
       timeframe: options?.timeframe || 'weekly',
       leaderboard: [],
       currentUserEntry: null,

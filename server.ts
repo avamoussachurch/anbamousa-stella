@@ -7364,6 +7364,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
     const authContext = await verifyServerRequestAuth(req);
     const requestedClassGroupId = req.query.classGroupId ? String(req.query.classGroupId) : undefined;
     const timeframe = req.query.timeframe === 'all_time' ? 'all_time' : 'weekly';
+    const requestedAudience = String(req.query.audience || '');
 
     if (authContext.isAuthenticated && authContext.userId && isUuidStudentId(authContext.userId)) {
       if (!hasAnyServerRole(authContext, ['student', 'teacher', 'admin', 'parent'])) {
@@ -7380,9 +7381,11 @@ app.get("/api/church/leaderboard", async (req, res) => {
       const currentDayOfWeek = new Date(cairoParts.year, cairoParts.month - 1, cairoParts.day).getDay();
       const sundayDate = new Date(cairoParts.year, cairoParts.month - 1, cairoParts.day - currentDayOfWeek);
       const cairoWeekReset = getCairoDateString(sundayDate);
+      let availableClassGroups: Array<{ id: string; nameEn: string; nameAr: string }> = [];
       const emptyLeaderboard = (classGroupId: string | null) => res.json({
         success: true,
         classGroupId,
+        availableClassGroups,
         timeframe,
         leaderboard: [],
         currentUserEntry: null,
@@ -7411,14 +7414,14 @@ app.get("/api/church/leaderboard", async (req, res) => {
       if (hasServerRole(authContext, 'admin')) {
         const { data, error } = await client
           .from('class_instances')
-          .select('id, class_group_id')
+          .select('id, class_group_id, name_en, name_ar')
           .eq('church_year_id', activeYear.id);
         if (error) {
           console.error('Leaderboard class lookup failed:', error.message);
           return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
         }
         allInstances = data || [];
-      } else if (hasServerRole(authContext, 'parent')) {
+      } else if (hasServerRole(authContext, 'parent') && !(hasServerRole(authContext, 'teacher') && requestedAudience === 'staff')) {
         const requestedChildId = String(req.query.studentId || '');
         if (!requestedChildId || !isUuidStudentId(requestedChildId)) {
           return res.status(400).json({ success: false, error: 'CHILD_REQUIRED', message: 'Choose one of your linked children to view their class ranking.' });
@@ -7464,7 +7467,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
           return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Family rankings are temporarily unavailable.' });
         }
         allInstances = data || [];
-      } else if (hasServerRole(authContext, 'student')) {
+      } else if (hasServerRole(authContext, 'student') && !(hasServerRole(authContext, 'teacher') && requestedAudience === 'staff')) {
         const { data: ownMemberships, error: membershipError } = await client
           .from('class_memberships')
           .select('class_instance_id')
@@ -7523,6 +7526,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         .map((instance: any) => instance.class_group_id)
         .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
       permittedGroupIds.sort();
+      availableClassGroups = Array.from(new Map((allInstances || []).map((instance: any) => [instance.class_group_id, { id: instance.class_group_id, nameEn: instance.name_en || instance.class_group_id, nameAr: instance.name_ar || instance.name_en || instance.class_group_id }])).values()).sort((a: any, b: any) => a.nameEn.localeCompare(b.nameEn));
       if (requestedClassGroupId && !permittedGroupIds.includes(requestedClassGroupId)) {
         return res.status(403).json({
           success: false,
@@ -7647,6 +7651,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
       return res.json({
         success: true,
         classGroupId: effectiveClassGroup,
+        availableClassGroups,
         timeframe,
         leaderboard,
         currentUserEntry,
