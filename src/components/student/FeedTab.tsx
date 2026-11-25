@@ -451,6 +451,25 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   };
 
+  const handleSharePost = async (post: Post) => {
+    const shareText = (post.content || '').trim().slice(0, 220);
+    const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: 'Anba Mousa Community', text: shareText, url: shareUrl });
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText([shareText, shareUrl].filter(Boolean).join('\n\n'));
+        setActionError(lang === 'ar' ? 'تم نسخ المنشور لمشاركته.' : 'Post text and feed link copied to share.');
+      } else {
+        setActionError(lang === 'ar' ? 'المشاركة غير متاحة على هذا الجهاز.' : 'Sharing is not available on this device.');
+      }
+    } catch (error) {
+      if ((error as Error)?.name !== 'AbortError') {
+        setActionError(lang === 'ar' ? 'تعذرت مشاركة المنشور.' : 'Could not share this post.');
+      }
+    }
+  };
+
   // 5. Comment Reactions (Optimistic update with Supabase persistence & rollback)
   const handleReactComment = async (postId: string, commentId: string, reactionType: 'heart' | 'candle' | 'cross') => {
     setActionError(null);
@@ -1768,6 +1787,15 @@ export function FeedTab({ lang }: { lang: Language }) {
                 
                 <div className="flex-1"></div>
                 
+                <button
+                  type="button"
+                  onClick={() => void handleSharePost(post)}
+                  aria-label={lang === 'ar' ? 'مشاركة المنشور' : 'Share post'}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold text-gray-500 transition-colors hover:bg-sky-50 hover:text-sky-700"
+                >
+                  <Share2 size={14}/>
+                  {lang === 'ar' ? 'مشاركة' : 'Share'}
+                </button>
                 <button
                   type="button"
                   onClick={() => void handleToggleBookmark(post.id)}
