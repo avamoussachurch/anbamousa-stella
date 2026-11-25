@@ -26,3 +26,11 @@ test('student and teacher Lessons tab opens on the progression roadmap by defaul
   assert.match(lessonsTab, /displayMode === 'roadmap' \?/);
   assert.match(lessonsTab, /Lesson Cards Grid/);
 });
+
+test('staff leaderboard selection is available and dual-role teachers use staff access before parent access', () => {
+  const routeStart = server.indexOf('app.get("/api/church/leaderboard"');
+  const routeEnd = server.indexOf('PHASE 2C.2: STUDENT QUIZZES', routeStart);
+  const route = server.slice(routeStart, routeEnd);
+  assert.ok(route.indexOf("hasServerRole(authContext, 'teacher')") < route.indexOf("hasServerRole(authContext, 'parent')"));
+  assert.match(route, /availableClassGroupIds: permittedGroupIds/);
+});
