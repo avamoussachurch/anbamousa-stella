@@ -241,6 +241,32 @@ export function StudentRoadmapView({
 
       {/* 2. The Winding Candy Crush Roadmap Trail */}
       <div className="relative pt-4 pb-16 flex flex-col items-center">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[2rem] opacity-70">
+          <svg viewBox="0 0 400 1200" preserveAspectRatio="none" className="h-full w-full">
+            <defs>
+              <linearGradient id="roadmap-desert-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#F5E8C9" stopOpacity=".42"/>
+                <stop offset="100%" stopColor="#D8C39A" stopOpacity=".08"/>
+              </linearGradient>
+            </defs>
+            <rect width="400" height="1200" fill="url(#roadmap-desert-sky)"/>
+            <path d="M0 170 C90 110 130 210 220 160 S330 120 400 180 L400 370 C300 320 220 400 120 350 S40 390 0 350Z" fill="#D9B77D" opacity=".18"/>
+            <path d="M0 510 C90 440 150 550 245 500 S340 450 400 520 L400 740 C300 690 230 770 120 720 S40 760 0 720Z" fill="#B98A54" opacity=".13"/>
+            <path d="M0 900 C80 830 170 950 250 900 S340 850 400 920 L400 1200 L0 1200Z" fill="#D9B77D" opacity=".16"/>
+            <g fill="#A97943" opacity=".45">
+              <path d="M62 210 L62 270 L56 270 L59 210Z M62 214 Q28 190 35 166 Q55 173 62 198 Q65 170 88 160 Q93 187 67 211 Q91 192 105 202 Q95 226 65 221Z"/>
+              <path d="M334 625 L334 688 L328 688 L331 625Z M334 632 Q302 604 310 582 Q329 591 334 614 Q340 588 362 580 Q366 606 338 629 Q363 612 378 624 Q368 647 337 640Z"/>
+              <path d="M82 1000 L82 1058 L76 1058 L79 1000Z M82 1006 Q53 980 60 960 Q77 968 82 991 Q87 965 107 958 Q111 981 86 1004 Q109 987 122 999 Q113 1020 85 1015Z"/>
+            </g>
+            <g fill="none" stroke="#A97943" strokeWidth="3" opacity=".42" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M265 760 V715 H300 V760 M258 715 L282 690 L307 715 M274 760 V738 H290 V760"/>
+              <path d="M150 1120 V1088 H184 V1120 M145 1088 L167 1066 L190 1088 M162 1120 V1100 H176 V1120"/>
+            </g>
+          </svg>
+          <motion.span className="absolute left-[7%] top-[9%] text-2xl drop-shadow-sm" animate={{ y: [0, -7, 0], rotate: [-3, 2, -3] }} transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}>🌴</motion.span>
+          <motion.span className="absolute right-[8%] top-[46%] text-xl drop-shadow-sm" animate={{ y: [0, -9, 0], x: [0, 3, 0] }} transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}>🕊️</motion.span>
+          <motion.span className="absolute left-[10%] bottom-[8%] text-2xl drop-shadow-sm" animate={{ y: [0, -6, 0] }} transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}>🌵</motion.span>
+        </div>
         {nodes.map((node, i) => {
           const isLast = i === nodes.length - 1;
           const nextNode = !isLast ? nodes[i + 1] : null;
@@ -290,6 +316,7 @@ export function StudentRoadmapView({
                   }`}
                   aria-label={`${title} - ${node.state}`}
                 >
+                  {node.state === 'current' && <motion.span aria-hidden="true" className="pointer-events-none absolute -inset-3 rounded-full border-4 border-amber-300/70" animate={{ scale: [0.92, 1.2, 0.92], opacity: [0.7, 0.12, 0.7] }} transition={{ duration: 2.1, repeat: Infinity, ease: "easeInOut" }} />}
                   {/* Floating Indicator for Current Node (Avatar Guide & Start Banner) */}
                   {node.state === 'current' && (
                     <div className="absolute -top-11 flex flex-col items-center pointer-events-none z-20">
@@ -401,7 +428,11 @@ export function StudentRoadmapView({
                     viewBox="-100 0 200 40"
                     preserveAspectRatio="none"
                   >
-                    <path
+                    <motion.path
+                      initial={{ pathLength: 0.25 }}
+                      whileInView={{ pathLength: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.85, ease: 'easeOut' }}
                       d={`M ${node.xOffsetPercent * 2} 0 C ${node.xOffsetPercent * 2} 25, ${nextNode.xOffsetPercent * 2} 15, ${nextNode.xOffsetPercent * 2} 40`}
                       fill="none"
                       stroke={
