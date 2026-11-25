@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { 
   CheckCircle2, 
   Lock, 
@@ -64,6 +64,7 @@ export function StudentRoadmapView({
 }: StudentRoadmapViewProps) {
   const isAr = lang === 'ar';
   const isCop = lang === 'copt' || lang === 'cop';
+  const reduceMotion = useReducedMotion();
 
   const [selectedLockedNode, setSelectedLockedNode] = useState<RoadmapNode | null>(null);
 
@@ -240,7 +241,14 @@ export function StudentRoadmapView({
       </motion.div>
 
       {/* 2. The Winding Candy Crush Roadmap Trail */}
-      <div className="relative pt-4 pb-16 flex flex-col items-center">
+      <div className="relative isolate overflow-hidden rounded-[2rem] border border-[#D9C7A6] bg-[radial-gradient(circle_at_50%_0%,rgba(246,211,133,.30),transparent_42%),linear-gradient(180deg,rgba(244,229,197,.55),rgba(230,214,186,.2))] px-2 pt-8 pb-16 flex flex-col items-center dark:border-stone-800 dark:bg-[radial-gradient(circle_at_50%_0%,rgba(180,130,55,.18),transparent_42%),linear-gradient(180deg,rgba(36,29,22,.7),rgba(25,22,19,.2))]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 opacity-40">
+          <svg viewBox="0 0 600 1000" preserveAspectRatio="none" className="h-full w-full">
+            <path d="M300 0 C70 110 520 190 300 310 S80 500 300 620 S520 810 300 1000" fill="none" stroke="#C69A4B" strokeWidth="24" strokeDasharray="3 28" strokeLinecap="round" opacity=".32" />
+            <path d="M300 0 C70 110 520 190 300 310 S80 500 300 620 S520 810 300 1000" fill="none" stroke="#FFF7E7" strokeWidth="3" strokeDasharray="2 18" strokeLinecap="round" opacity=".8" />
+            <circle cx="88" cy="180" r="30" fill="#E4B85F" opacity=".12"/><circle cx="510" cy="470" r="46" fill="#2C9A7B" opacity=".08"/><circle cx="100" cy="790" r="36" fill="#E4B85F" opacity=".1" />
+          </svg>
+        </div>
         {nodes.map((node, i) => {
           const isLast = i === nodes.length - 1;
           const nextNode = !isLast ? nodes[i + 1] : null;
@@ -257,9 +265,10 @@ export function StudentRoadmapView({
               {/* Optional Scenic Oasis Waypoint Celebration */}
               {waypoint && (
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
+                  initial={reduceMotion ? false : { opacity: 0, scale: 0.82, y: 18, rotate: -2 }}
+                  whileInView={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
+                  viewport={{ once: true, amount: 0.45 }}
+                  transition={{ duration: 0.55, type: 'spring', stiffness: 150, damping: 16 }}
                   className="my-6 px-4 py-2 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-800/80 shadow-xs flex items-center gap-2 text-xs font-black text-amber-900 dark:text-amber-200 z-10"
                 >
                   <span className="text-xl">{waypoint.icon}</span>
@@ -268,7 +277,11 @@ export function StudentRoadmapView({
               )}
 
               {/* Checkpoint Node Container with Calculated Horizontal Offset */}
-              <div 
+              <motion.div
+                initial={reduceMotion ? false : { opacity: 0, y: 28, scale: 0.88 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.48, delay: Math.min(i * 0.035, 0.28), type: 'spring', stiffness: 140, damping: 17 }}
                 className="relative my-6 flex flex-col items-center z-10"
                 style={{
                   transform: `translateX(${node.xOffsetPercent}%)`
@@ -276,17 +289,19 @@ export function StudentRoadmapView({
               >
                 {/* Checkpoint Stone Button */}
                 <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.94 }}
+                  whileHover={reduceMotion ? undefined : { scale: 1.12, rotate: node.state === 'current' ? 2 : 0 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.92 }}
+                  animate={node.state === 'current' && !reduceMotion ? { scale: [1, 1.055, 1], boxShadow: ['0 0 0 0 rgba(245,158,11,.0)','0 0 0 16px rgba(245,158,11,.12)','0 0 0 0 rgba(245,158,11,.0)'] } : undefined}
+                  transition={node.state === 'current' && !reduceMotion ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } : { type: 'spring', stiffness: 300, damping: 18 }}
                   onClick={() => handleNodeClick(node)}
                   className={`group relative rounded-full flex flex-col items-center justify-center transition-all cursor-pointer shadow-lg select-none ${
                     node.state === 'completed'
-                      ? 'w-20 h-20 sm:w-22 sm:h-22 bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-700 text-white ring-4 ring-emerald-300 dark:ring-emerald-700'
+                      ? 'w-24 h-24 sm:w-26 sm:h-26 bg-gradient-to-br from-emerald-300 via-emerald-500 to-teal-800 text-white ring-4 ring-emerald-300 dark:ring-emerald-700 shadow-[0_12px_30px_rgba(16,185,129,.28)]'
                       : node.state === 'current'
-                        ? 'w-22 h-22 sm:w-24 sm:h-24 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-white ring-4 ring-[var(--mousa-gold)] ring-offset-4 ring-offset-[var(--mousa-cream-surface)] dark:ring-offset-[#1C1814] shadow-amber-500/40 animate-pulse'
+                        ? 'w-28 h-28 sm:w-30 sm:h-30 bg-gradient-to-br from-[#FFE18A] via-amber-500 to-[#D97706] text-white ring-[5px] ring-[var(--mousa-gold)] ring-offset-4 ring-offset-[var(--mousa-cream-surface)] dark:ring-offset-[#1C1814] shadow-[0_18px_44px_rgba(245,158,11,.42)]'
                         : node.state === 'available'
-                          ? 'w-20 h-20 sm:w-22 sm:h-22 bg-gradient-to-br from-teal-500 via-teal-600 to-teal-800 text-white ring-2 ring-teal-300 dark:ring-teal-700'
-                          : 'w-18 h-18 sm:w-20 sm:h-20 bg-stone-200 dark:bg-stone-800 text-stone-500 dark:text-stone-400 ring-2 border-2 border-stone-300 dark:border-stone-700 opacity-80'
+                          ? 'w-24 h-24 sm:w-26 sm:h-26 bg-gradient-to-br from-teal-400 via-teal-600 to-teal-900 text-white ring-4 ring-teal-300 dark:ring-teal-700 shadow-[0_12px_30px_rgba(13,148,136,.24)]'
+                          : 'w-22 h-22 sm:w-24 sm:h-24 bg-stone-200 dark:bg-stone-800 text-stone-500 dark:text-stone-400 ring-2 border-2 border-stone-300 dark:border-stone-700 opacity-90 shadow-[0_8px_18px_rgba(80,65,45,.12)]'
                   }`}
                   aria-label={`${title} - ${node.state}`}
                 >
@@ -391,7 +406,7 @@ export function StudentRoadmapView({
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Connecting Trail Segment to Next Node */}
               {nextNode && (
@@ -401,7 +416,10 @@ export function StudentRoadmapView({
                     viewBox="-100 0 200 40"
                     preserveAspectRatio="none"
                   >
-                    <path
+                    <motion.path
+                      initial={reduceMotion ? false : { pathLength: 0, opacity: 0.25 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ duration: 0.8, delay: Math.min(i * 0.025, 0.35), ease: 'easeOut' }}
                       d={`M ${node.xOffsetPercent * 2} 0 C ${node.xOffsetPercent * 2} 25, ${nextNode.xOffsetPercent * 2} 15, ${nextNode.xOffsetPercent * 2} 40`}
                       fill="none"
                       stroke={
