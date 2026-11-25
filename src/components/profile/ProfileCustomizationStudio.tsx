@@ -48,6 +48,12 @@ export function ProfileCustomizationStudio({ userId, lang }: { userId: string; l
   const [banner, setBanner] = useState('desert-dawn');
   const [title, setTitle] = useState('');
   const [points, setPoints] = useState(0);
+  const [profileName, setProfileName] = useState('Anba Mousa member');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const [profileRole, setProfileRole] = useState('student');
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [longestStreak, setLongestStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
   const [message, setMessage] = useState('');
@@ -60,7 +66,7 @@ export function ProfileCustomizationStudio({ userId, lang }: { userId: string; l
       supabase.from('profile_customizations').select('frame_key,banner_key,display_title,equipped_cosmetics').eq('user_id', userId).maybeSingle(),
       supabase.from('profile_cosmetic_catalog').select('*').eq('is_active', true).order('display_order'),
       supabase.from('profile_cosmetic_unlocks').select('cosmetic_id').eq('user_id', userId),
-      supabase.from('profiles').select('points').eq('id', userId).maybeSingle()
+      supabase.from('profiles').select('name,avatar,role,points,current_streak,longest_streak').eq('id', userId).maybeSingle()
     ]);
     const firstError = customResult.error || catalogResult.error || unlockResult.error || profileResult.error;
     if (firstError) setError(firstError.message);
@@ -73,6 +79,12 @@ export function ProfileCustomizationStudio({ userId, lang }: { userId: string; l
     setCatalog((catalogResult.data || []) as Cosmetic[]);
     setUnlocked((unlockResult.data || []).map((row: any) => row.cosmetic_id));
     setPoints(Number(profileResult.data?.points || 0));
+    setProfileName(profileResult.data?.name || 'Anba Mousa member');
+    setAvatarUrl(profileResult.data?.avatar || '');
+    setAvatarFailed(false);
+    setProfileRole(profileResult.data?.role || 'student');
+    setCurrentStreak(Number(profileResult.data?.current_streak || 0));
+    setLongestStreak(Number(profileResult.data?.longest_streak || 0));
     setLoading(false);
   }, [userId, ar]);
 
@@ -152,13 +164,25 @@ export function ProfileCustomizationStudio({ userId, lang }: { userId: string; l
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, white 0 1px, transparent 2px), radial-gradient(circle at 75% 60%, white 0 1px, transparent 2px)', backgroundSize: '28px 28px' }}/>
           <div className="absolute end-3 top-3 rounded-full bg-black/20 px-2.5 py-1 text-[10px] font-black text-white">{ar ? 'ملف أنبا موسى' : 'ANBA MOUSA PROFILE'}</div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 p-4">
-          <div className="relative -mt-10 grid h-[68px] w-[68px] shrink-0 place-items-center rounded-[22px] bg-[var(--surface-primary)] shadow-lg" style={{ outline: '4px solid ' + frameColor, outlineOffset: '2px', boxShadow: selectedEffect ? '0 0 24px ' + safeColor(selectedEffect.preview_end, '#D6A84F') : undefined }}>
-            <Crown size={28} style={{ color: frameColor }}/>
-            {selectedBadge && <span className="absolute -bottom-2 -end-2 grid h-7 w-7 place-items-center rounded-full border-2 border-[var(--surface-primary)] text-white" style={{ background: 'linear-gradient(135deg,' + safeColor(selectedBadge.preview_start, '#9A6A1F') + ',' + safeColor(selectedBadge.preview_end, '#FDE68A') + ')' }}><Award size={14}/></span>}
+        <div className="flex flex-wrap items-center gap-3 p-4 sm:gap-4">
+          <div className="relative -mt-10 grid h-[76px] w-[76px] shrink-0 place-items-center overflow-visible rounded-[24px] bg-[var(--surface-primary)] p-1 shadow-xl" style={{ outline: '4px solid ' + frameColor, outlineOffset: '2px', boxShadow: selectedEffect ? '0 0 28px ' + safeColor(selectedEffect.preview_end, '#D6A84F') : undefined }}>
+            <div className="grid h-full w-full place-items-center overflow-hidden rounded-[19px] bg-[var(--surface-secondary)]">
+              {avatarUrl && !avatarFailed ? <img src={avatarUrl} alt="" onError={() => setAvatarFailed(true)} className="h-full w-full object-cover"/> : <Crown size={30} style={{ color: frameColor }}/>}
+            </div>
+            <span className="absolute bottom-0 end-0 h-4 w-4 rounded-full border-[3px] border-[var(--surface-primary)] bg-emerald-500" title={ar ? 'نشط' : 'Online'} />
+            {selectedBadge && <span className="absolute -bottom-2 -start-2 grid h-7 w-7 place-items-center rounded-full border-2 border-[var(--surface-primary)] text-white" style={{ background: 'linear-gradient(135deg,' + safeColor(selectedBadge.preview_start, '#9A6A1F') + ',' + safeColor(selectedBadge.preview_end, '#FDE68A') + ')' }}><Award size={14}/></span>}
           </div>
-          <div className="min-w-0 flex-1"><p className="font-black text-[var(--text-primary)]">{ar ? 'عضو في عيلة أنبا موسى' : 'Anba Mousa member'}</p><p className="text-xs text-[var(--text-secondary)]">{titles.find(item => item.id === title)?.[ar ? 'ar' : 'label'] || (ar ? 'رحلة نمو في الإيمان والمحبة' : 'Growing in Faith, Learning in Love')}</p></div>
-          <div className="flex gap-1.5">{equippedItems.map(item => <span key={item.id} title={ar ? item.title_ar : item.title_en} className="rounded-lg border px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)]">{item.kind === 'frame' ? '✦' : item.kind === 'banner' ? '▰' : item.kind === 'badge' ? '✚' : '✧'}</span>)}</div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2"><p className="truncate text-base font-black text-[var(--text-primary)]">{profileName}</p><span className="rounded-md bg-indigo-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-200">{profileRole === 'teacher' ? (ar ? 'خادم' : 'Servant') : profileRole === 'parent' ? (ar ? 'ولي أمر' : 'Parent') : profileRole === 'admin' ? (ar ? 'إدارة' : 'Admin') : (ar ? 'طالب' : 'Student')}</span></div>
+            <p className="mt-0.5 text-xs font-bold text-[var(--text-secondary)]">{titles.find(item => item.id === title)?.[ar ? 'ar' : 'label'] || (ar ? 'رحلة نمو في الإيمان والمحبة' : 'Growing in Faith, Learning in Love')}</p>
+            <p className="mt-1 text-[10px] text-[var(--text-secondary)]">{ar ? 'مجتمع • إيمان • تعلّم • خدمة' : 'Community • Faith • Learning • Service'}</p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">{equippedItems.map(item => <span key={item.id} title={ar ? item.title_ar : item.title_en} className="rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)]">{item.kind === 'frame' ? '✦' : item.kind === 'banner' ? '▰' : item.kind === 'badge' ? '✚' : '✧'}</span>)}</div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 px-4 pb-4">
+          <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">{points.toLocaleString()}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'النقاط' : 'Points'}</p></div>
+          <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">🔥 {currentStreak}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'المواظبة الحالية' : 'Current streak'}</p></div>
+          <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">🏆 {longestStreak}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'أطول مواظبة' : 'Longest streak'}</p></div>
         </div>
       </div>
 
