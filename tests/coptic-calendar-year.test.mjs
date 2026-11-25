@@ -33,7 +33,7 @@ test('major and minor Egyptian Coptic Orthodox observances are represented', () 
   for (const feastId of [
     'annunciation','circumcision','wedding_cana','presentation_temple','entry_egypt',
     'transfiguration','ascension','pentecost','covenant_thursday','good_friday',
-    'thomas_sunday','jonah_feast','apostles_feast','st_mary_assumption','cross_feast_2'
+    'thomas_sunday','jonah_feast','apostles_feast','st_mary_assumption','cross_feast_2','bright_saturday','st_george_feast'
   ]) {
     assert.match(calendarData, new RegExp("id: '" + feastId + "'"));
   }
