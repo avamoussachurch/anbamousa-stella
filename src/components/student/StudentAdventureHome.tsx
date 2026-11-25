@@ -10,6 +10,7 @@ import {
   LoaderCircle,
   LockKeyhole,
   MessageCircle,
+  MessagesSquare,
   RefreshCw,
   Sparkles,
   Star,
@@ -318,6 +319,26 @@ export function StudentAdventureHome({
           </g>
         </svg>
 
+        <motion.div aria-hidden="true" className="pointer-events-none absolute end-[5%] top-[15%] z-[2] hidden w-32 drop-shadow-[0_12px_24px_rgba(0,0,0,.45)] sm:block md:w-44" animate={reduceMotion ? undefined : { y: [0, -5, 0], rotate: [-1, 1, -1] }} transition={reduceMotion ? { duration: 0 } : { duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}>
+          <svg viewBox="0 0 180 230" className="h-auto w-full" fill="none">
+            <circle cx="91" cy="50" r="39" fill="#E8B95E" opacity=".22"/>
+            <circle cx="91" cy="50" r="29" stroke="#F5D98C" strokeWidth="3" opacity=".95"/>
+            <path d="M66 63c-3-26 8-42 25-42 18 0 29 16 25 42l-9 13H75L66 63Z" fill="#3D2C27" stroke="#C79A54" strokeWidth="2"/>
+            <path d="M76 55c0-14 6-23 15-23s15 9 15 23v15c-4 9-9 13-15 13s-11-4-15-13V55Z" fill="#B9784C"/>
+            <path d="M79 58c4-4 8-5 12-5s8 1 12 5" stroke="#5B352A" strokeWidth="3" strokeLinecap="round"/>
+            <path d="M84 67h3m10 0h3" stroke="#35251F" strokeWidth="2.5" strokeLinecap="round"/>
+            <path d="M85 79c4 4 9 4 13 0" stroke="#6A332B" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M71 78c-10 9-17 26-18 49l-7 74h90l-7-74c-1-23-8-40-18-49l-12 13-14-13Z" fill="#E8DCC2" stroke="#C49B59" strokeWidth="3"/>
+            <path d="M91 92v104" stroke="#A77A42" strokeWidth="3"/>
+            <path d="M57 111 32 145l-9 24 10 4 20-20 14-24m49-18 25 34 9 24-10 4-20-20-14-24" fill="#D5C6A9" stroke="#C49B59" strokeWidth="3" strokeLinejoin="round"/>
+            <path d="M23 171 15 184m132-13 8 13" stroke="#B9784C" strokeWidth="8" strokeLinecap="round"/>
+            <path d="M145 111V54m-12 13h24" stroke="#F5D98C" strokeWidth="5" strokeLinecap="round"/>
+            <path d="M139 54h12m-6-7v14" stroke="#F5D98C" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M48 201h86" stroke="#D8A64D" strokeWidth="4" strokeLinecap="round"/>
+            <path d="M63 219h56" stroke="#F5D98C" strokeWidth="3" strokeLinecap="round" opacity=".8"/>
+          </svg>
+        </motion.div>
+
         <div className="relative z-10 flex min-h-[250px] flex-col justify-between gap-5 sm:min-h-[270px] sm:flex-row sm:items-end sm:gap-7">
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#79CDD0]/25 bg-[#14313D]/80 px-3 py-1.5 text-[11px] font-black text-[#A7DCD7] backdrop-blur">
@@ -345,6 +366,11 @@ export function StudentAdventureHome({
               <span className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#79CDD0]/25 bg-[#122B36]/90 px-3.5 text-xs font-extrabold text-[#B9E4DE] shadow-lg">
                 <Flame size={15} className="text-[#F0A27A]" /> {user.currentStreak ?? 0} {isArabic ? 'أيام مواظبة' : 'day streak'}
               </span>
+              <button type="button" onClick={() => onNavigate('feed')} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#8B9AFF]/60 border-b-4 border-b-[#3442B8] bg-[#5865F2] px-4 text-xs font-black text-white shadow-[0_8px_20px_rgba(45,57,170,.35)] transition hover:-translate-y-0.5 hover:bg-[#6975FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
+                <MessagesSquare size={17} strokeWidth={2.6}/>
+                <span>{isArabic ? 'مجتمع الكنيسة' : 'Community'}</span>
+                <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[9px] font-black">{isArabic ? 'جديد' : 'OPEN'}</span>
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-3 self-start rounded-2xl border border-white/10 bg-[#102431]/80 px-4 py-3 backdrop-blur sm:self-end">
