@@ -181,18 +181,6 @@ export function PointsTab({ lang }: { lang: Language }) {
         </button>
 
         {/* 4. Points Bazaar — Arabic: متجر المكافآت */}
-        <button
-          onClick={() => setView('cosmetics')}
-          className={`flex-1 min-w-[140px] py-2.5 sm:py-3 px-2 rounded-xl font-black transition-all z-10 cursor-pointer flex items-center justify-center gap-1.5 ${
-            view === 'cosmetics'
-              ? 'bg-gradient-to-r from-[#5865F2] to-[#3D43A8] text-white shadow-md'
-              : 'text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[#5865F2]'
-          }`}
-        >
-          <Palette size={15}/>
-          <span>{lang === 'ar' ? 'متجر مظهر الملف' : 'Profile Store'}</span>
-        </button>
-
         <button 
           onClick={() => setView('bazaar')}
           className={`flex-1 min-w-[110px] py-2.5 sm:py-3 px-2 rounded-xl font-black transition-all z-10 cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -203,6 +191,17 @@ export function PointsTab({ lang }: { lang: Language }) {
         >
           <Gift size={15} />
           <span>{lang === 'ar' ? 'متجر المكافآت' : 'Points Bazaar'}</span>
+        </button>
+        <button
+          onClick={() => setView('cosmetics')}
+          className={`flex-1 min-w-[140px] py-2.5 sm:py-3 px-2 rounded-xl font-black transition-all z-10 cursor-pointer flex items-center justify-center gap-1.5 ${
+            view === 'cosmetics'
+              ? 'bg-gradient-to-r from-[#5865F2] to-[#3D43A8] text-white shadow-md'
+              : 'text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[#5865F2]'
+          }`}
+        >
+          <Palette size={15}/>
+          <span>{lang === 'ar' ? 'متجر مظهر الملف' : 'Profile Store'}</span>
         </button>
       </div>
 
