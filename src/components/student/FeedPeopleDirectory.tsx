@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Search, Users, UserPlus, UserCheck, X, Flame, Trophy, Loader2, MessagesSquare, ArrowUpRight } from 'lucide-react';
+import { Search, UserPlus, UserCheck, X, Flame, Trophy, Loader2, MessagesSquare, ArrowUpRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type DirectoryProfile = {
