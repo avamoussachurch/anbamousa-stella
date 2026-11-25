@@ -79,6 +79,57 @@ export function getCopticDate(dateInput: Date = new Date()): CopticDateResult {
   };
 }
 
+function julianDayToGregorianDate(julianDay: number): Date {
+  const a = julianDay + 32044;
+  const b = Math.floor((4 * a + 3) / 146097);
+  const c = a - Math.floor((146097 * b) / 4);
+  const d = Math.floor((4 * c + 3) / 1461);
+  const e = c - Math.floor((1461 * d) / 4);
+  const m = Math.floor((5 * e + 2) / 153);
+  const day = e - Math.floor((153 * m + 2) / 5) + 1;
+  const month = m + 3 - 12 * Math.floor(m / 10);
+  const year = 100 * b + d - 4800 + Math.floor(m / 10);
+  return new Date(year, month - 1, day);
+}
+
+/** Gregorian start/end dates for a Coptic month in a specific Anno Martyrum year. */
+export function getCopticYearStartGregorianDate(copticYear: number): Date {
+  const startJulianDay = 1824665 + Math.floor((1461 * copticYear) / 4);
+  return julianDayToGregorianDate(startJulianDay);
+}
+
+export function getCopticMonthGregorianRange(copticYear: number, monthNumber: number): {
+  start: Date; end: Date; daysCount: number;
+} {
+  const daysCount = monthNumber === 13 && copticYear % 4 === 3 ? 6 : monthNumber === 13 ? 5 : 30;
+  const start = getCopticYearStartGregorianDate(copticYear);
+  start.setDate(start.getDate() + (monthNumber - 1) * 30);
+  const end = new Date(start);
+  end.setDate(end.getDate() + daysCount - 1);
+  return { start, end, daysCount };
+}
+
+export function getGregorianDateForCopticDate(copticYear: number, monthNumber: number, day: number): Date {
+  const range = getCopticMonthGregorianRange(copticYear, monthNumber);
+  const safeDay = Math.max(1, Math.min(range.daysCount, day));
+  const date = new Date(range.start);
+  date.setDate(date.getDate() + safeDay - 1);
+  return date;
+}
+
+/** Orthodox/Coptic Pascha, computed from the Julian Paschalion and converted to Gregorian. */
+export function getOrthodoxEasterDate(gregorianYear: number): Date {
+  const a = gregorianYear % 4;
+  const b = gregorianYear % 7;
+  const c = gregorianYear % 19;
+  const d = (19 * c + 15) % 30;
+  const e = (2 * a + 4 * b - d + 34) % 7;
+  const julianMonth = Math.floor((d + e + 114) / 31);
+  const julianDay = ((d + e + 114) % 31) + 1;
+  const gregorianOffset = Math.floor(gregorianYear / 100) - Math.floor(gregorianYear / 400) - 2;
+  return new Date(gregorianYear, julianMonth - 1, julianDay + gregorianOffset);
+}
+
 export type LiturgicalTone = 'Sanawy' | 'Kiahky' | 'Soami' | 'Hazayni' | 'Shaani' | 'Frayhi';
 
 export interface CopticFeast {
@@ -113,7 +164,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'ذكرى شهداء المسيحية الأبرار وتجديد العهد مع الله في بداية السنة القبطية الجديدة.',
     descriptionEn: 'Commemoration of the holy Coptic martyrs and spiritual renewal at the beginning of the Coptic year.',
-    targetDateThisYear: (y) => new Date(y, 8, 11) // Sept 11
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 1, 1)
   },
   {
     id: 'cross_feast_1',
@@ -129,7 +180,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'تذكار ظهور الصليب المقدس للقديسة هيلانة الملكة في أورشليم ورفع راية الخلاص.',
     descriptionEn: 'Commemoration of the appearance of the Holy Cross to Empress Helena in Jerusalem.',
-    targetDateThisYear: (y) => new Date(y, 8, 27)
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 1, 17)
   },
   {
     id: 'nativity_fast',
@@ -145,7 +196,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'فترة الاستعداد لميلاد عمانوئيل مع تماجيد وألحان شهر كيهك المريمية البهيجة.',
     descriptionEn: '43 days of spiritual preparation with joyous Marian praises awaiting the Nativity of Christ.',
-    targetDateThisYear: (y) => new Date(y, 10, 25) // Nov 25
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 3, 16)
   },
   {
     id: 'nativity_feast',
@@ -161,7 +212,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'تجسد مخلصنا يسوع المسيح وولادته في مذود بيت لحم لخلاص جنس البشر.',
     descriptionEn: 'The Incarnation and Birth of our Lord Jesus Christ in Bethlehem for our salvation.',
-    targetDateThisYear: (y) => new Date(y, 0, 7) // Jan 7
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 4, 29)
   },
   {
     id: 'theophany',
@@ -177,7 +228,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'معمودية الرب يسوع في نهر الأردن من يوحنا المعمدان وظهور الثالوث الأقدس.',
     descriptionEn: 'Baptism of Christ in the Jordan River and revelation of the Holy Trinity.',
-    targetDateThisYear: (y) => new Date(y, 0, 19) // Jan 19
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 5, 11)
   },
   {
     id: 'jonah_fast',
@@ -193,7 +244,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'توبة أهل نينوى وصلاة يونان النبي في جوف الحوت، رمز لقيامة المسيح بعد ثلاثة أيام.',
     descriptionEn: 'Three days of fasting and repentance commemorating Jonah in the belly of the whale.',
-    targetDateThisYear: (y) => new Date(y, 1, 16)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 69); return date; }
   },
   {
     id: 'great_lent',
@@ -209,7 +260,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'أقدس أيام السنة، ٥٥ يوماً من الصلاة والانقطاع والصدقة مسيرة مع الفادي في البرية.',
     descriptionEn: 'The most sacred season: 55 days of asceticism, prayers, and charity following Christ in the wilderness.',
-    targetDateThisYear: (y) => new Date(y, 2, 2)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 55); return date; }
   },
   {
     id: 'palm_sunday',
@@ -225,7 +276,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'دخول الملك المخلص أورشليم راكباً على جحش وسط هتافات الأطفال: أوصنا يا ابن داود!',
     descriptionEn: 'Triumphal entry of Christ into Jerusalem welcomed by children with palm branches.',
-    targetDateThisYear: (y) => new Date(y, 3, 12)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 7); return date; }
   },
   {
     id: 'holy_pascha',
@@ -241,7 +292,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'مرافقة آلام المخلص الفادية على الصليب، ولبس السواد الكنسي وقراءة نبوات الخلاص.',
     descriptionEn: 'Meditating on the Passion of Christ, black church veils, and solemn Pascha hymns.',
-    targetDateThisYear: (y) => new Date(y, 3, 15)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 7); return date; }
   },
   {
     id: 'resurrection_feast',
@@ -257,7 +308,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'المسيح قام بالحقيقة قام وكسر شوكة الموت، ونعيش ٥٠ يوماً من الفرح والبهجة السماوية.',
     descriptionEn: 'Christ is Risen! Trampling down death by death, followed by 50 days of holy joy.',
-    targetDateThisYear: (y) => new Date(y, 3, 19)
+    targetDateThisYear: (y) => getOrthodoxEasterDate(y)
   },
   {
     id: 'apostles_fast',
@@ -273,7 +324,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'صوم التلاميذ القديسين قبل انطلاقهم للبشارة المسكونية بالإنجيل المقدس.',
     descriptionEn: 'The Apostles fast before preaching the Gospel across all nations.',
-    targetDateThisYear: (y) => new Date(y, 5, 20)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() + 50); return date; }
   },
   {
     id: 'st_mary_fast',
@@ -289,7 +340,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'من أحب وأجمل الأصوام في قلوب الشعب القبطي، ينتهي بتذكار صعود جسد أم النور الطاهر.',
     descriptionEn: 'A deeply cherished fast of repentance and praises concluding with the Assumption of the Virgin Mary.',
-    targetDateThisYear: (y) => new Date(y, 7, 7)
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 12, 1)
   }
 ];
 
