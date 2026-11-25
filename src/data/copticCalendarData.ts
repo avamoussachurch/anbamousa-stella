@@ -321,6 +321,42 @@ const additionalCopticFeasts: CopticFeast[] = [
     descriptionEn: 'Christ is transfigured in glory before Peter, James, and John.'
   }),
   fixedFeast({
+    id: 'st_mary_nativity', nameAr: 'عيد ميلاد السيدة العذراء', nameEn: 'Nativity of St. Mary',
+    type: 'minor_feast', monthNumber: 9, copticDay: 1, copticDateAr: '١ بشنس', gregorianApprox: '9 مايو',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
+    descriptionAr: 'تذكار ميلاد والدة الإله القديسة مريم.', descriptionEn: 'Commemoration of the Nativity of the Theotokos.'
+  }),
+  fixedFeast({
+    id: 'st_mary_entry_temple', nameAr: 'عيد دخول السيدة العذراء الهيكل', nameEn: 'Entry of St. Mary into the Temple',
+    type: 'minor_feast', monthNumber: 4, copticDay: 3, copticDateAr: '٣ كيهك', gregorianApprox: '12 ديسمبر',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار دخول العذراء مريم إلى الهيكل وتكريس حياتها لله.', descriptionEn: 'Commemoration of the child Mary’s dedication in the Temple.'
+  }),
+  fixedFeast({
+    id: 'st_mary_dormition', nameAr: 'عيد نياحة السيدة العذراء', nameEn: 'Dormition of St. Mary',
+    type: 'minor_feast', monthNumber: 5, copticDay: 21, copticDateAr: '٢١ طوبة', gregorianApprox: '29 يناير',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار نياحة والدة الإله القديسة مريم.', descriptionEn: 'Commemoration of the repose of the Theotokos.'
+  }),
+  fixedFeast({
+    id: 'st_mary_annunciation_nativity', nameAr: 'بشارة ميلاد السيدة العذراء', nameEn: 'Annunciation of the Nativity of St. Mary',
+    type: 'minor_feast', monthNumber: 12, copticDay: 7, copticDateAr: '٧ مسرى', gregorianApprox: '13 أغسطس',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار البشارة بميلاد القديسة مريم والدة الإله.', descriptionEn: 'Commemoration of the announcement of the birth of the Virgin Mary.'
+  }),
+  fixedFeast({
+    id: 'st_mary_iron_dissolver', nameAr: 'عيد حل الحديد', nameEn: 'Feast of the Iron Dissolver',
+    type: 'minor_feast', monthNumber: 10, copticDay: 21, copticDateAr: '٢١ بؤونة', gregorianApprox: '28 يونيو',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار من تذكارات السيدة العذراء المعروفة بعيد حل الحديد.', descriptionEn: 'One of the traditional Marian feasts known as the Iron Dissolver.'
+  }),
+  fixedFeast({
+    id: 'st_mary_zeitoun', nameAr: 'عيد ظهور العذراء في الزيتون', nameEn: 'Apparition of St. Mary at Zeitoun',
+    type: 'minor_feast', monthNumber: 7, copticDay: 24, copticDateAr: '٢٤ برمهات', gregorianApprox: '2 أبريل',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار ظهورات السيدة العذراء في كنيسة الزيتون بالقاهرة.', descriptionEn: 'Commemoration of the reported Marian apparitions at Zeitoun, Cairo.'
+  }),
+  fixedFeast({
     id: 'st_mary_assumption', nameAr: 'عيد صعود جسد السيدة العذراء', nameEn: 'Feast of the Assumption of St. Mary',
     type: 'minor_feast', monthNumber: 12, copticDay: 16, copticDateAr: '١٦ مسرى', gregorianApprox: '22 أغسطس',
     fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
