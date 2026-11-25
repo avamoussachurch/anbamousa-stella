@@ -6,6 +6,7 @@ const server = await readFile(new URL('../server.ts', import.meta.url), 'utf8');
 const lessonsTab = await readFile(new URL('../src/components/student/LessonsTab.tsx', import.meta.url), 'utf8');
 const homeTab = await readFile(new URL('../src/components/student/HomeTab.tsx', import.meta.url), 'utf8');
 const roadmap = await readFile(new URL('../src/components/student/StudentRoadmapView.tsx', import.meta.url), 'utf8');
+const studentHome = await readFile(new URL('../src/components/student/StudentAdventureHome.tsx', import.meta.url), 'utf8');
 
 test('admin class roster reads bypass legacy profiles.role RLS after server-side role verification', () => {
   assert.match(server, /const client = hasServerRole\(authContext, 'admin'\)\s*\? getTrustedRoleClient\(\)/);
@@ -41,4 +42,10 @@ test('student roadmap has illustrated scenery, an animated active quest, and ani
   assert.match(roadmap, /whileInView=\{\{ pathLength: 1 \}\}/);
   assert.match(roadmap, /border-amber-300\/70/);
   assert.match(roadmap, /DESERT_WAYPOINTS/);
+});
+
+test('student welcome hero includes the completed illustrated journey figure', () => {
+  assert.match(studentHome, /translate\(710 252\)/);
+  assert.match(studentHome, /aria-hidden="true"/);
+  assert.match(studentHome, /F5D98C/);
 });
