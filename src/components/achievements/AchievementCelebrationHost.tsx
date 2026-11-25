@@ -16,6 +16,8 @@ const confetti = Array.from({ length: 34 }, (_, index) => ({
 
 export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar' }) {
   const { userData, syncAuthoritativeProgress } = useAuth();
+  const syncProgressRef = useRef(syncAuthoritativeProgress);
+  syncProgressRef.current = syncAuthoritativeProgress;
   const [payload, setPayload] = useState<CelebrationPayload | null>(null);
   const [index, setIndex] = useState(0);
   const seenUnlocks = useRef<Set<string>>(new Set());
@@ -70,7 +72,7 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
               return;
             }
             if (data) {
-              syncAuthoritativeProgress(
+              syncProgressRef.current(
                 Number(data.points || 0),
                 Number(data.current_streak || 0),
                 Number(data.longest_streak || 0)
@@ -85,7 +87,7 @@ export function AchievementCelebrationHost({ lang = 'en' }: { lang?: 'en' | 'ar'
     };
     window.addEventListener('anba:achievement-unlocked', receive);
     return () => window.removeEventListener('anba:achievement-unlocked', receive);
-  }, [userData?.id, syncAuthoritativeProgress]);
+  }, [userData?.id]);
 
   useEffect(() => {
     if (!userData?.id || !supabase) return;
