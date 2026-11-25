@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Star, BookOpen, ChevronRight, ChevronLeft, Sparkles, AlertCircle, Info, Flame } from 'lucide-react';
+import { Calendar, Clock, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   getCopticDate, 
   COPTIC_MONTHS, 
   COPTIC_FEASTS, 
   getCopticMonthGregorianRange,
-  CopticFeast, 
   CopticDateResult 
 } from '../../data/copticCalendarData';
 import { Language } from '../../types';
