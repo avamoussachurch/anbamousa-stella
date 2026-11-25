@@ -33,7 +33,8 @@ export function PointsTab({ lang }: { lang: Language }) {
   // 1. Streak Stars (نجوم المواظبة) — DEFAULT
   // 2. My Trail (رحلتي)
   // 3. Points Leaderboard (ترتيب النقاط)
-  // 4. Points Bazaar (متجر المكافآت)\n  // 5. Profile Cosmetics Store (متجر مظهر الملف)
+  // 4. Points Bazaar (متجر المكافآت)
+  // 5. Profile Cosmetics Store (متجر مظهر الملف)
   const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar' | 'cosmetics'>('streak');
   const [purchases, setPurchases] = useState<any[]>([]);
   const [confirmPurchaseItem, setConfirmPurchaseItem] = useState<{ id: string; name: string; cost: number } | null>(null);
