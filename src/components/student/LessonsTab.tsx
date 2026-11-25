@@ -27,7 +27,7 @@ export function LessonsTab({ onStartLesson, onOpenTeacherStudio, lang }: Lessons
   const isOnlineCurriculumLoading = !isGuest && isSupabaseConfigured && (curriculumLoading || !isOnlineCurriculumReady);
   const isOnlineCurriculumFailed = !isGuest && isSupabaseConfigured && isOnlineCurriculumReady && Boolean(curriculumError);
   const [selectedSchool, setSelectedSchool] = useState<'sunday_school' | 'hymns' | 'taxis'>('sunday_school');
-  const [displayMode, setDisplayMode] = useState<'roadmap' | 'cards'>('cards');
+  const [displayMode, setDisplayMode] = useState<'roadmap' | 'cards'>('roadmap');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'published' | 'drafts'>('all');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);

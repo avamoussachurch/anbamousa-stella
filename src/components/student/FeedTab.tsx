@@ -4,7 +4,7 @@ import { FeedPeopleDirectory } from './FeedPeopleDirectory';
 import { CLASS_GROUPS } from '../../lib/classGroups';
 import { 
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
-  ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
+  ShieldCheck, Sparkles, ArrowUpDown, Flame, Clock, Bell, Bookmark, BookmarkCheck, User as UserIcon,
   Image as ImageIcon, Video, Link2, Loader2, Play, Info, ExternalLink, AlertCircle, Check, Maximize2, Mic, Square, Pause,
   Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning, Flag, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight
 } from 'lucide-react';
@@ -38,7 +38,7 @@ import {
   uploadFeedAttachmentFile
 } from '../../lib/feedAttachments';
 
-type SortOption = 'latest' | 'popular' | 'discussed' | 'announcements';
+type SortOption = 'latest' | 'popular' | 'discussed' | 'announcements' | 'saved';
 
 const FEED_STORAGE_KEY = 'orthodox_church_feed_posts_v5';
 
@@ -134,6 +134,17 @@ export function FeedTab({ lang }: { lang: Language }) {
     return () => { isMounted = false; };
   }, [userData?.id, lang, feedReloadKey]);
 
+  useEffect(() => {
+    let active = true;
+    if (!supabase || !userData?.id) { setBookmarkedPostIds(new Set()); return; }
+    void supabase.from('feed_post_bookmarks').select('post_id').eq('user_id', userData.id)
+      .then(({ data, error }) => {
+        if (!active || error) return;
+        setBookmarkedPostIds(new Set((data || []).map((row: any) => row.post_id)));
+      });
+    return () => { active = false; };
+  }, [userData?.id]);
+
   const retryFeedLoad = () => {
     setFeedLoadError(null);
     setIsLoadingServerPosts(true);
@@ -143,6 +154,7 @@ export function FeedTab({ lang }: { lang: Language }) {
 
   // 2. State controls
   const [sortBy, setSortBy] = useState<SortOption>('latest');
+  const [bookmarkedPostIds, setBookmarkedPostIds] = useState<Set<string>>(() => new Set());
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [replyTarget, setReplyTarget] = useState<{ commentId: string; replyToAuthor?: string } | null>(null);
@@ -312,6 +324,9 @@ export function FeedTab({ lang }: { lang: Language }) {
     const list = [...posts];
 
     switch (sortBy) {
+      case 'saved':
+        return list.filter(post => bookmarkedPostIds.has(post.id));
+
       case 'announcements':
         return list.sort((a, b) => {
           if (a.isPinned && !b.isPinned) return -1;
@@ -344,7 +359,7 @@ export function FeedTab({ lang }: { lang: Language }) {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
     }
-  }, [posts, sortBy]);
+  }, [posts, sortBy, bookmarkedPostIds]);
 
   const submitPostReport = async () => {
     if (!supabase || !userData?.id || !reportingPost) {
@@ -409,6 +424,49 @@ export function FeedTab({ lang }: { lang: Language }) {
         }
         return p;
       }));
+    }
+  };
+
+  const handleToggleBookmark = async (postId: string) => {
+    if (!supabase || !userData?.id) {
+      setActionError(lang === 'ar' ? 'سجّل الدخول لحفظ المنشورات.' : 'Sign in to save posts.');
+      return;
+    }
+    const wasSaved = bookmarkedPostIds.has(postId);
+    setBookmarkedPostIds(previous => {
+      const next = new Set(previous);
+      if (wasSaved) next.delete(postId); else next.add(postId);
+      return next;
+    });
+    const result = wasSaved
+      ? await supabase.from('feed_post_bookmarks').delete().eq('user_id', userData.id).eq('post_id', postId)
+      : await supabase.from('feed_post_bookmarks').insert({ user_id: userData.id, post_id: postId });
+    if (result.error) {
+      setBookmarkedPostIds(previous => {
+        const next = new Set(previous);
+        if (wasSaved) next.add(postId); else next.delete(postId);
+        return next;
+      });
+      setActionError(lang === 'ar' ? 'تعذر حفظ المنشور. حاول مرة أخرى.' : 'Could not update saved posts. Please try again.');
+    }
+  };
+
+  const handleSharePost = async (post: Post) => {
+    const shareText = (post.content || '').trim().slice(0, 220);
+    const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: 'Anba Mousa Community', text: shareText, url: shareUrl });
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText([shareText, shareUrl].filter(Boolean).join('\n\n'));
+        setActionError(lang === 'ar' ? 'تم نسخ المنشور لمشاركته.' : 'Post text and feed link copied to share.');
+      } else {
+        setActionError(lang === 'ar' ? 'المشاركة غير متاحة على هذا الجهاز.' : 'Sharing is not available on this device.');
+      }
+    } catch (error) {
+      if ((error as Error)?.name !== 'AbortError') {
+        setActionError(lang === 'ar' ? 'تعذرت مشاركة المنشور.' : 'Could not share this post.');
+      }
     }
   };
 
@@ -1182,6 +1240,15 @@ export function FeedTab({ lang }: { lang: Language }) {
             <span>{isCop ? 'Ⲡⲓϩⲟⲩⲟ̀ ⲛ̀ⲥⲁϫⲓ' : lang === 'ar' ? 'الأكثر تعليقاً' : 'Most Discussed'}</span>
           </button>
 
+          {userData?.id && <button
+            type="button"
+            onClick={() => setSortBy('saved')}
+            aria-pressed={sortBy === 'saved'}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${sortBy === 'saved' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-200'}`}
+          >
+            <Bookmark size={13} />
+            <span>{lang === 'ar' ? 'المحفوظات' : 'Saved'}</span>
+          </button>}
           <button
             onClick={() => setSortBy('announcements')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -1720,6 +1787,26 @@ export function FeedTab({ lang }: { lang: Language }) {
                 
                 <div className="flex-1"></div>
                 
+                <button
+                  type="button"
+                  onClick={() => void handleSharePost(post)}
+                  aria-label={lang === 'ar' ? 'مشاركة المنشور' : 'Share post'}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold text-gray-500 transition-colors hover:bg-sky-50 hover:text-sky-700"
+                >
+                  <Share2 size={14}/>
+                  {lang === 'ar' ? 'مشاركة' : 'Share'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleToggleBookmark(post.id)}
+                  disabled={!userData?.id}
+                  aria-pressed={bookmarkedPostIds.has(post.id)}
+                  aria-label={bookmarkedPostIds.has(post.id) ? (lang === 'ar' ? 'إزالة من المحفوظات' : 'Remove from saved') : (lang === 'ar' ? 'حفظ المنشور' : 'Save post')}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold transition-colors ${bookmarkedPostIds.has(post.id) ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-200' : 'text-gray-500 hover:bg-indigo-50 hover:text-indigo-700'}`}
+                >
+                  {bookmarkedPostIds.has(post.id) ? <BookmarkCheck size={14}/> : <Bookmark size={14}/>}
+                  {lang === 'ar' ? (bookmarkedPostIds.has(post.id) ? 'محفوظ' : 'حفظ') : (bookmarkedPostIds.has(post.id) ? 'Saved' : 'Save')}
+                </button>
                 <button 
                   onClick={() => setExpandedPostId(expandedPostId === post.id ? null : post.id)}
                   className="flex items-center gap-1 text-gray-500 hover:text-[var(--mousa-teal-deep)] font-bold text-xs transition-colors cursor-pointer"

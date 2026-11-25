@@ -23,6 +23,8 @@ const teacher = read('../src/components/teacher/TeacherDashboard.tsx');
 const progress = read('../src/lib/studentProgressService.ts');
 const prayer = read('../src/components/agpeya/AgpeyaPrayerTab.tsx');
 const quiz = read('../src/lib/studentQuizService.ts');
+const realtimeMigration = read('../supabase/migrations/20261125184732_achievement_unlock_realtime.sql');
+const milestoneMigration = read('../supabase/migrations/20261125183844_attainable_category_milestones.sql');
 
 test('achievement data is persisted with RLS and idempotent unlock records', () => {
   for (const table of ['achievement_badges','achievement_events','achievement_unlocks','achievement_category_milestones','achievement_milestone_awards','reward_catalog']) {
@@ -124,4 +126,20 @@ test('badge unlocks dispatch a global, prominent celebration', () => {
   assert.match(celebration, /confetti/);
   assert.match(celebration, /syncAuthoritativeProgress/);
   assert.match(celebration, /from\('profiles'\)/);
+});
+
+test('database-triggered achievements reach the large celebration overlay exactly once', () => {
+  assert.match(realtimeMigration, /alter publication supabase_realtime add table public\.achievement_unlocks/);
+  assert.match(realtimeMigration, /alter publication supabase_realtime add table public\.achievement_milestone_awards/);
+  assert.match(celebration, /postgres_changes/);
+  assert.match(celebration, /seenUnlocks/);
+  assert.match(celebration, /pendingPayloads/);
+  assert.match(celebration, /MILESTONE REACHED/);
+});
+
+test('category milestones are configured within the number of available category badges', () => {
+  assert.match(milestoneMigration, /category = 'service'/);
+  assert.match(milestoneMigration, /badge_count = 7 where category = 'learning' and badge_count = 10/);
+  assert.match(milestoneMigration, /badge_count = 5 where category = 'hymns' and badge_count = 10/);
+  assert.match(milestoneMigration, /badge_count = 4 where category in \('prayer','taxis'\) and badge_count = 10/);
 });

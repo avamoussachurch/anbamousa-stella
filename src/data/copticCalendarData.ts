@@ -79,6 +79,57 @@ export function getCopticDate(dateInput: Date = new Date()): CopticDateResult {
   };
 }
 
+function julianDayToGregorianDate(julianDay: number): Date {
+  const a = julianDay + 32044;
+  const b = Math.floor((4 * a + 3) / 146097);
+  const c = a - Math.floor((146097 * b) / 4);
+  const d = Math.floor((4 * c + 3) / 1461);
+  const e = c - Math.floor((1461 * d) / 4);
+  const m = Math.floor((5 * e + 2) / 153);
+  const day = e - Math.floor((153 * m + 2) / 5) + 1;
+  const month = m + 3 - 12 * Math.floor(m / 10);
+  const year = 100 * b + d - 4800 + Math.floor(m / 10);
+  return new Date(year, month - 1, day);
+}
+
+/** Gregorian start/end dates for a Coptic month in a specific Anno Martyrum year. */
+export function getCopticYearStartGregorianDate(copticYear: number): Date {
+  const startJulianDay = 1824665 + Math.floor((1461 * copticYear) / 4);
+  return julianDayToGregorianDate(startJulianDay);
+}
+
+export function getCopticMonthGregorianRange(copticYear: number, monthNumber: number): {
+  start: Date; end: Date; daysCount: number;
+} {
+  const daysCount = monthNumber === 13 && copticYear % 4 === 3 ? 6 : monthNumber === 13 ? 5 : 30;
+  const start = getCopticYearStartGregorianDate(copticYear);
+  start.setDate(start.getDate() + (monthNumber - 1) * 30);
+  const end = new Date(start);
+  end.setDate(end.getDate() + daysCount - 1);
+  return { start, end, daysCount };
+}
+
+export function getGregorianDateForCopticDate(copticYear: number, monthNumber: number, day: number): Date {
+  const range = getCopticMonthGregorianRange(copticYear, monthNumber);
+  const safeDay = Math.max(1, Math.min(range.daysCount, day));
+  const date = new Date(range.start);
+  date.setDate(date.getDate() + safeDay - 1);
+  return date;
+}
+
+/** Orthodox/Coptic Pascha, computed from the Julian Paschalion and converted to Gregorian. */
+export function getOrthodoxEasterDate(gregorianYear: number): Date {
+  const a = gregorianYear % 4;
+  const b = gregorianYear % 7;
+  const c = gregorianYear % 19;
+  const d = (19 * c + 15) % 30;
+  const e = (2 * a + 4 * b - d + 34) % 7;
+  const julianMonth = Math.floor((d + e + 114) / 31);
+  const julianDay = ((d + e + 114) % 31) + 1;
+  const gregorianOffset = Math.floor(gregorianYear / 100) - Math.floor(gregorianYear / 400) - 2;
+  return new Date(gregorianYear, julianMonth - 1, julianDay + gregorianOffset);
+}
+
 export type LiturgicalTone = 'Sanawy' | 'Kiahky' | 'Soami' | 'Hazayni' | 'Shaani' | 'Frayhi';
 
 export interface CopticFeast {
@@ -96,7 +147,238 @@ export interface CopticFeast {
   descriptionAr: string;
   descriptionEn: string;
   targetDateThisYear: (currentYear: number) => Date;
+  endDateThisYear?: (currentYear: number) => Date;
+  isCelebratedThisYear?: (currentYear: number) => boolean;
 }
+
+type FixedFeastInput = Omit<CopticFeast, 'targetDateThisYear' | 'tone' | 'toneNameAr'> & {
+  monthNumber: number; copticDay: number; tone?: LiturgicalTone; toneNameAr?: string;
+};
+
+function fixedFeast(input: FixedFeastInput): CopticFeast {
+  const { monthNumber, copticDay, ...feast } = input;
+  return {
+    ...feast,
+    tone: input.tone || 'Frayhi',
+    toneNameAr: input.toneNameAr || 'طقس فرايحي',
+    targetDateThisYear: (gregorianYear) => getGregorianDateForCopticDate(
+      gregorianYear - (monthNumber <= 4 ? 283 : 284),
+      monthNumber,
+      copticDay
+    )
+  };
+}
+
+function movableFeast(input: Omit<CopticFeast, 'targetDateThisYear' | 'tone' | 'toneNameAr'> & {
+  easterOffset: number; tone?: LiturgicalTone; toneNameAr?: string;
+}): CopticFeast {
+  const { easterOffset, ...feast } = input;
+  return {
+    ...feast,
+    tone: input.tone || 'Frayhi',
+    toneNameAr: input.toneNameAr || 'طقس فرايحي',
+    targetDateThisYear: (gregorianYear) => {
+      const date = getOrthodoxEasterDate(gregorianYear);
+      date.setDate(date.getDate() + easterOffset);
+      return date;
+    }
+  };
+}
+
+const additionalCopticFeasts: CopticFeast[] = [
+  fixedFeast({
+    id: 'circumcision', nameAr: 'عيد ختان ربنا يسوع المسيح', nameEn: 'Feast of the Circumcision of Christ',
+    type: 'minor_feast', monthNumber: 5, copticDay: 6, copticDateAr: '٦ طوبة', gregorianApprox: '14 يناير',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
+    descriptionAr: 'تذكار خضوع الرب يسوع للناموس وإتمامه الشريعة من أجل خلاصنا.',
+    descriptionEn: 'The Lord submits to the Law and fulfills the covenant for our salvation.'
+  }),
+  fixedFeast({
+    id: 'wedding_cana', nameAr: 'عيد عرس قانا الجليل', nameEn: 'Feast of the Wedding at Cana',
+    type: 'minor_feast', monthNumber: 5, copticDay: 13, copticDateAr: '١٣ طوبة', gregorianApprox: '21 يناير',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
+    descriptionAr: 'تذكار أولى آيات السيد المسيح وتحويل الماء إلى خمر في عرس قانا الجليل.',
+    descriptionEn: 'Commemoration of the first sign of Christ at the wedding in Cana of Galilee.'
+  }),
+  fixedFeast({
+    id: 'presentation_temple', nameAr: 'عيد دخول السيد المسيح الهيكل', nameEn: 'Presentation of Christ in the Temple',
+    type: 'minor_feast', monthNumber: 6, copticDay: 8, copticDateAr: '٨ أمشير', gregorianApprox: '15 فبراير',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
+    descriptionAr: 'دخول الطفل يسوع الهيكل وتقديمه للآب حسب الشريعة وشهادة سمعان الشيخ.',
+    descriptionEn: 'The presentation of the infant Christ in the Temple and the witness of Simeon.'
+  }),
+  fixedFeast({
+    id: 'annunciation', nameAr: 'عيد البشارة المجيد', nameEn: 'Feast of the Annunciation',
+    type: 'major_feast', monthNumber: 7, copticDay: 29, copticDateAr: '٢٩ برمهات', gregorianApprox: '7 أبريل',
+    isCelebratedThisYear: (year) => {
+      const date = getGregorianDateForCopticDate(year - 284, 7, 29);
+      const easter = getOrthodoxEasterDate(year);
+      const palmSunday = new Date(easter); palmSunday.setDate(palmSunday.getDate() - 7);
+      const brightSaturday = new Date(easter); brightSaturday.setDate(brightSaturday.getDate() - 1);
+      return date < palmSunday || date > brightSaturday;
+    },
+    fastingRuleAr: 'فطر احتفالي حتى في أيام الصوم', fastingRuleEn: 'Major feast, even during fasting seasons', isFishPermitted: true,
+    descriptionAr: 'بشارة الملاك جبرائيل للعذراء مريم بالتجسد الإلهي.',
+    descriptionEn: 'The Archangel Gabriel announces the Incarnation to the Virgin Mary.'
+  }),
+  fixedFeast({
+    id: 'cross_feast_2', nameAr: 'عيد ظهور الصليب المقدس', nameEn: 'Commemoration of the Finding of the Holy Cross',
+    type: 'minor_feast', monthNumber: 7, copticDay: 10, copticDateAr: '١٠ برمهات', gregorianApprox: '19 مارس',
+    fastingRuleAr: 'طقس العيد بحسب ترتيب الصوم الكبير', fastingRuleEn: 'Observed according to the Great Lent liturgical order', isFishPermitted: false,
+    descriptionAr: 'تذكار اكتشاف الصليب المقدس على يد الملكة هيلانة.',
+    descriptionEn: 'Commemoration of the finding of the Holy Cross by Empress Helena.'
+  }),
+  movableFeast({
+    id: 'lazarus_saturday', nameAr: 'سبت لعازر', nameEn: 'Lazarus Saturday',
+    type: 'minor_feast', copticDateAr: 'السبت السابق لأحد الشعانين', gregorianApprox: 'قبل أحد الشعانين بأسبوع',
+    fastingRuleAr: 'صوم نباتي بحسب ترتيب أسبوع الآلام', fastingRuleEn: 'Vegan fasting according to Holy Week order', isFishPermitted: false,
+    descriptionAr: 'تذكار إقامة لعازر من الموت وإعلان سلطان المسيح على الموت.',
+    descriptionEn: 'Christ raises Lazarus, revealing His authority over death.', easterOffset: -8
+  }),
+  movableFeast({
+    id: 'covenant_thursday', nameAr: 'خميس العهد (خميس الأسرار)', nameEn: 'Covenant Thursday / Maundy Thursday',
+    type: 'minor_feast', copticDateAr: 'خميس أسبوع الآلام', gregorianApprox: 'قبل القيامة بثلاثة أيام',
+    fastingRuleAr: 'طقس أسبوع الآلام المقدس', fastingRuleEn: 'Holy Pascha liturgical observance', isFishPermitted: false,
+    descriptionAr: 'تذكار العشاء الأخير وغسل السيد المسيح أرجل تلاميذه وتأسيس سر الإفخارستيا.',
+    descriptionEn: 'The Last Supper, the washing of the disciples’ feet, and the institution of the Eucharist.', easterOffset: -3
+  }),
+  movableFeast({
+    id: 'bright_saturday', nameAr: 'سبت النور', nameEn: 'Bright Saturday',
+    type: 'minor_feast', copticDateAr: 'سبت أسبوع الآلام', gregorianApprox: 'قبل القيامة بيوم',
+    fastingRuleAr: 'طقس أسبوع الآلام المقدس', fastingRuleEn: 'Holy Pascha liturgical observance', isFishPermitted: false,
+    descriptionAr: 'سبت النور الذي يسبق عيد القيامة المجيد.', 
+    descriptionEn: 'The Holy Saturday of Light immediately preceding the Resurrection.', easterOffset: -1
+  }),
+  movableFeast({
+    id: 'good_friday', nameAr: 'الجمعة العظيمة', nameEn: 'Great and Holy Friday',
+    type: 'fast', copticDateAr: 'جمعة أسبوع الآلام', gregorianApprox: 'قبل القيامة بيومين',
+    fastingRuleAr: 'أقدس أيام الصوم الانقطاعي', fastingRuleEn: 'The strictest Holy Week fast', isFishPermitted: false,
+    descriptionAr: 'تذكار آلام وصلب وموت السيد المسيح بالجسد من أجل خلاص العالم.',
+    descriptionEn: 'The Passion and Crucifixion of Christ for the salvation of the world.', easterOffset: -2,
+    tone: 'Hazayni', toneNameAr: 'طقس حزايني مهيب'
+  }),
+  movableFeast({
+    id: 'jonah_feast', nameAr: 'فصح يونان النبي', nameEn: 'Jonah’s Feast',
+    type: 'minor_feast', copticDateAr: 'الخميس بعد صوم يونان', gregorianApprox: 'بعد صوم يونان بثلاثة أيام',
+    fastingRuleAr: 'فطر بحسب ترتيب الكنيسة', fastingRuleEn: 'Feast day according to the Church calendar', isFishPermitted: true,
+    descriptionAr: 'فرح التوبة وقبول الله لتوبة أهل نينوى ورمز القيامة بعد ثلاثة أيام.', 
+    descriptionEn: 'The joy of repentance and God’s mercy toward Nineveh, foreshadowing the Resurrection.', easterOffset: -66
+  }),
+  movableFeast({
+    id: 'thomas_sunday', nameAr: 'أحد توما', nameEn: 'Thomas Sunday',
+    type: 'minor_feast', copticDateAr: 'الأحد التالي لعيد القيامة', gregorianApprox: 'بعد القيامة بأسبوع',
+    fastingRuleAr: 'فطر أيام الخماسين المقدسة', fastingRuleEn: 'Joyful Fifty Days - no fasting', isFishPermitted: true,
+    descriptionAr: 'تذكار ظهور السيد المسيح للتلاميذ وتثبيت إيمان توما الرسول.', 
+    descriptionEn: 'The risen Christ appears to the disciples and strengthens the faith of Thomas.', easterOffset: 7
+  }),
+  movableFeast({
+    id: 'ascension', nameAr: 'عيد الصعود المجيد', nameEn: 'Feast of the Ascension',
+    type: 'major_feast', copticDateAr: 'اليوم الأربعون بعد القيامة', gregorianApprox: 'بعد القيامة بتسعة وثلاثين يوماً',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Major feast - no fasting', isFishPermitted: true,
+    descriptionAr: 'صعود ربنا يسوع المسيح بالجسد إلى السموات بعد قيامته المجيدة.', 
+    descriptionEn: 'The bodily Ascension of our Lord Jesus Christ into heaven.', easterOffset: 39
+  }),
+  movableFeast({
+    id: 'pentecost', nameAr: 'عيد حلول الروح القدس (العنصرة)', nameEn: 'Holy Pentecost',
+    type: 'major_feast', copticDateAr: 'اليوم الخمسون بعد القيامة', gregorianApprox: 'بعد القيامة بتسعة وأربعين يوماً',
+    fastingRuleAr: 'فطر وبدء صوم الرسل في اليوم التالي', fastingRuleEn: 'Feast day; Apostles’ Fast begins the following day', isFishPermitted: true,
+    descriptionAr: 'حلول الروح القدس على التلاميذ وبداية كرازة الكنيسة للعالم.', 
+    descriptionEn: 'The Holy Spirit descends upon the Apostles and the Church’s mission begins.', easterOffset: 49
+  }),
+  fixedFeast({
+    id: 'entry_egypt', nameAr: 'عيد دخول السيد المسيح أرض مصر', nameEn: 'Feast of the Entry of Christ into Egypt',
+    type: 'minor_feast', monthNumber: 9, copticDay: 24, copticDateAr: '٢٤ بشنس', gregorianApprox: '1 يونيو',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
+    descriptionAr: 'تذكار مجيء العائلة المقدسة إلى أرض مصر وتحقيق النبوة: من مصر دعوت ابني.',
+    descriptionEn: 'The Holy Family’s journey into Egypt, fulfilling the prophecy, “Out of Egypt I called My Son.”'
+  }),
+  fixedFeast({
+    id: 'apostles_feast', nameAr: 'عيد الرسل الأطهار (بطرس وبولس)', nameEn: 'Feast of the Holy Apostles Peter and Paul',
+    type: 'minor_feast', monthNumber: 11, copticDay: 5, copticDateAr: '٥ أبيب', gregorianApprox: '12 يوليو',
+    fastingRuleAr: 'فطر احتفالي بعد صوم الرسل', fastingRuleEn: 'Feast day following the Apostles’ Fast', isFishPermitted: true,
+    descriptionAr: 'تذكار استشهاد الرسولين بطرس وبولس وخدمتهما في نشر الإنجيل.',
+    descriptionEn: 'Commemoration of the martyrdom and apostolic witness of Saints Peter and Paul.'
+  }),
+  fixedFeast({
+    id: 'st_george_feast', nameAr: 'عيد استشهاد القديس مار جرجس', nameEn: 'Feast of St. George the Martyr',
+    type: 'minor_feast', monthNumber: 8, copticDay: 23, copticDateAr: '٢٣ برمودة', gregorianApprox: '1 مايو',
+    fastingRuleAr: 'تذكار قديس', fastingRuleEn: 'Saint’s commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار استشهاد الأمير الشهيد مار جرجس وشهادته الشجاعة للمسيح.',
+    descriptionEn: 'Commemoration of the martyrdom and courageous witness of St. George.'
+  }),
+  fixedFeast({
+    id: 'st_mark_feast', nameAr: 'عيد استشهاد القديس مار مرقس الرسول', nameEn: 'Feast of St. Mark the Evangelist',
+    type: 'minor_feast', monthNumber: 8, copticDay: 30, copticDateAr: '٣٠ برمودة', gregorianApprox: '8 مايو',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
+    descriptionAr: 'تذكار كاروز الديار المصرية ومؤسس كرسي الإسكندرية واستشهاده.',
+    descriptionEn: 'Commemoration of the evangelist of Egypt and founder of the See of Alexandria.'
+  }),
+  fixedFeast({
+    id: 'transfiguration', nameAr: 'عيد التجلي المجيد', nameEn: 'Feast of the Transfiguration',
+    type: 'minor_feast', monthNumber: 12, copticDay: 13, copticDateAr: '١٣ مسرى', gregorianApprox: '19 أغسطس',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
+    descriptionAr: 'تذكار تجلي السيد المسيح على جبل طابور أمام بطرس ويعقوب ويوحنا.', 
+    descriptionEn: 'Christ is transfigured in glory before Peter, James, and John.'
+  }),
+  fixedFeast({
+    id: 'st_mary_nativity', nameAr: 'عيد ميلاد السيدة العذراء', nameEn: 'Nativity of St. Mary',
+    type: 'minor_feast', monthNumber: 9, copticDay: 1, copticDateAr: '١ بشنس', gregorianApprox: '9 مايو',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
+    descriptionAr: 'تذكار ميلاد والدة الإله القديسة مريم.', descriptionEn: 'Commemoration of the Nativity of the Theotokos.'
+  }),
+  fixedFeast({
+    id: 'st_mary_entry_temple', nameAr: 'عيد دخول السيدة العذراء الهيكل', nameEn: 'Entry of St. Mary into the Temple',
+    type: 'minor_feast', monthNumber: 4, copticDay: 3, copticDateAr: '٣ كيهك', gregorianApprox: '12 ديسمبر',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار دخول العذراء مريم إلى الهيكل وتكريس حياتها لله.', descriptionEn: 'Commemoration of the child Mary’s dedication in the Temple.'
+  }),
+  fixedFeast({
+    id: 'st_mary_dormition', nameAr: 'عيد نياحة السيدة العذراء', nameEn: 'Dormition of St. Mary',
+    type: 'minor_feast', monthNumber: 5, copticDay: 21, copticDateAr: '٢١ طوبة', gregorianApprox: '29 يناير',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار نياحة والدة الإله القديسة مريم.', descriptionEn: 'Commemoration of the repose of the Theotokos.'
+  }),
+  fixedFeast({
+    id: 'st_mary_annunciation_nativity', nameAr: 'بشارة ميلاد السيدة العذراء', nameEn: 'Annunciation of the Nativity of St. Mary',
+    type: 'minor_feast', monthNumber: 12, copticDay: 7, copticDateAr: '٧ مسرى', gregorianApprox: '13 أغسطس',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار البشارة بميلاد القديسة مريم والدة الإله.', descriptionEn: 'Commemoration of the announcement of the birth of the Virgin Mary.'
+  }),
+  fixedFeast({
+    id: 'st_mary_iron_dissolver', nameAr: 'عيد حل الحديد', nameEn: 'Feast of the Iron Dissolver',
+    type: 'minor_feast', monthNumber: 10, copticDay: 21, copticDateAr: '٢١ بؤونة', gregorianApprox: '28 يونيو',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار من تذكارات السيدة العذراء المعروفة بعيد حل الحديد.', descriptionEn: 'One of the traditional Marian feasts known as the Iron Dissolver.'
+  }),
+  fixedFeast({
+    id: 'st_mary_zeitoun', nameAr: 'عيد ظهور العذراء في الزيتون', nameEn: 'Apparition of St. Mary at Zeitoun',
+    type: 'minor_feast', monthNumber: 7, copticDay: 24, copticDateAr: '٢٤ برمهات', gregorianApprox: '2 أبريل',
+    fastingRuleAr: 'تذكار كنسي', fastingRuleEn: 'Church commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار ظهورات السيدة العذراء في كنيسة الزيتون بالقاهرة.', descriptionEn: 'Commemoration of the reported Marian apparitions at Zeitoun, Cairo.'
+  }),
+  fixedFeast({
+    id: 'st_mary_assumption', nameAr: 'عيد صعود جسد السيدة العذراء', nameEn: 'Feast of the Assumption of St. Mary',
+    type: 'minor_feast', monthNumber: 12, copticDay: 16, copticDateAr: '١٦ مسرى', gregorianApprox: '22 أغسطس',
+    fastingRuleAr: 'فطر احتفالي', fastingRuleEn: 'Feast day - no fasting', isFishPermitted: true,
+    descriptionAr: 'تذكار صعود جسد والدة الإله القديسة مريم بحسب تقليد الكنيسة القبطية.', 
+    descriptionEn: 'The Church’s commemoration of the assumption of the body of the Theotokos.'
+  }),
+  fixedFeast({
+    id: 'nativity_paramon', nameAr: 'برامون عيد الميلاد', nameEn: 'Paramon of the Nativity',
+    type: 'fast', monthNumber: 4, copticDay: 28, copticDateAr: '٢٨ كيهك', gregorianApprox: '6 يناير',
+    fastingRuleAr: 'صوم البرامون بحسب ترتيب الكنيسة', fastingRuleEn: 'Paramon fast according to the Church order', isFishPermitted: false,
+    descriptionAr: 'استعداد نسكي وليتورجي لعيد الميلاد المجيد.', 
+    descriptionEn: 'Liturgical preparation and fasting on the eve of the Nativity.'
+  }),
+  fixedFeast({
+    id: 'theophany_paramon', nameAr: 'برامون عيد الغطاس', nameEn: 'Paramon of Theophany',
+    type: 'fast', monthNumber: 5, copticDay: 10, copticDateAr: '١٠ طوبة', gregorianApprox: '18 يناير',
+    fastingRuleAr: 'صوم البرامون بحسب ترتيب الكنيسة', fastingRuleEn: 'Paramon fast according to the Church order', isFishPermitted: false,
+    descriptionAr: 'استعداد لعيد الظهور الإلهي وصلوات اللقان.', 
+    descriptionEn: 'Preparation for Theophany and the blessing of the waters.'
+  }),
+
+];
 
 export const COPTIC_FEASTS: CopticFeast[] = [
   {
@@ -113,7 +395,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'ذكرى شهداء المسيحية الأبرار وتجديد العهد مع الله في بداية السنة القبطية الجديدة.',
     descriptionEn: 'Commemoration of the holy Coptic martyrs and spiritual renewal at the beginning of the Coptic year.',
-    targetDateThisYear: (y) => new Date(y, 8, 11) // Sept 11
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 1, 1)
   },
   {
     id: 'cross_feast_1',
@@ -129,7 +411,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'تذكار ظهور الصليب المقدس للقديسة هيلانة الملكة في أورشليم ورفع راية الخلاص.',
     descriptionEn: 'Commemoration of the appearance of the Holy Cross to Empress Helena in Jerusalem.',
-    targetDateThisYear: (y) => new Date(y, 8, 27)
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 1, 17),
+    endDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 1, 19)
   },
   {
     id: 'nativity_fast',
@@ -145,7 +428,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'فترة الاستعداد لميلاد عمانوئيل مع تماجيد وألحان شهر كيهك المريمية البهيجة.',
     descriptionEn: '43 days of spiritual preparation with joyous Marian praises awaiting the Nativity of Christ.',
-    targetDateThisYear: (y) => new Date(y, 10, 25) // Nov 25
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 3, 16),
+    endDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 4, 28)
   },
   {
     id: 'nativity_feast',
@@ -161,7 +445,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'تجسد مخلصنا يسوع المسيح وولادته في مذود بيت لحم لخلاص جنس البشر.',
     descriptionEn: 'The Incarnation and Birth of our Lord Jesus Christ in Bethlehem for our salvation.',
-    targetDateThisYear: (y) => new Date(y, 0, 7) // Jan 7
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 4, 29)
   },
   {
     id: 'theophany',
@@ -177,7 +461,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'معمودية الرب يسوع في نهر الأردن من يوحنا المعمدان وظهور الثالوث الأقدس.',
     descriptionEn: 'Baptism of Christ in the Jordan River and revelation of the Holy Trinity.',
-    targetDateThisYear: (y) => new Date(y, 0, 19) // Jan 19
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 5, 11)
   },
   {
     id: 'jonah_fast',
@@ -193,7 +477,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'توبة أهل نينوى وصلاة يونان النبي في جوف الحوت، رمز لقيامة المسيح بعد ثلاثة أيام.',
     descriptionEn: 'Three days of fasting and repentance commemorating Jonah in the belly of the whale.',
-    targetDateThisYear: (y) => new Date(y, 1, 16)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 69); return date; },
+    endDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 67); return date; }
   },
   {
     id: 'great_lent',
@@ -209,7 +494,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'أقدس أيام السنة، ٥٥ يوماً من الصلاة والانقطاع والصدقة مسيرة مع الفادي في البرية.',
     descriptionEn: 'The most sacred season: 55 days of asceticism, prayers, and charity following Christ in the wilderness.',
-    targetDateThisYear: (y) => new Date(y, 2, 2)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 55); return date; },
+    endDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 9); return date; }
   },
   {
     id: 'palm_sunday',
@@ -225,7 +511,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'دخول الملك المخلص أورشليم راكباً على جحش وسط هتافات الأطفال: أوصنا يا ابن داود!',
     descriptionEn: 'Triumphal entry of Christ into Jerusalem welcomed by children with palm branches.',
-    targetDateThisYear: (y) => new Date(y, 3, 12)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 7); return date; }
   },
   {
     id: 'holy_pascha',
@@ -241,7 +527,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'مرافقة آلام المخلص الفادية على الصليب، ولبس السواد الكنسي وقراءة نبوات الخلاص.',
     descriptionEn: 'Meditating on the Passion of Christ, black church veils, and solemn Pascha hymns.',
-    targetDateThisYear: (y) => new Date(y, 3, 15)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 6); return date; },
+    endDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 4); return date; }
   },
   {
     id: 'resurrection_feast',
@@ -257,7 +544,7 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'المسيح قام بالحقيقة قام وكسر شوكة الموت، ونعيش ٥٠ يوماً من الفرح والبهجة السماوية.',
     descriptionEn: 'Christ is Risen! Trampling down death by death, followed by 50 days of holy joy.',
-    targetDateThisYear: (y) => new Date(y, 3, 19)
+    targetDateThisYear: (y) => getOrthodoxEasterDate(y)
   },
   {
     id: 'apostles_fast',
@@ -273,7 +560,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'صوم التلاميذ القديسين قبل انطلاقهم للبشارة المسكونية بالإنجيل المقدس.',
     descriptionEn: 'The Apostles fast before preaching the Gospel across all nations.',
-    targetDateThisYear: (y) => new Date(y, 5, 20)
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() + 50); return date; },
+    endDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 11, 4)
   },
   {
     id: 'st_mary_fast',
@@ -289,8 +577,10 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'من أحب وأجمل الأصوام في قلوب الشعب القبطي، ينتهي بتذكار صعود جسد أم النور الطاهر.',
     descriptionEn: 'A deeply cherished fast of repentance and praises concluding with the Assumption of the Virgin Mary.',
-    targetDateThisYear: (y) => new Date(y, 7, 7)
-  }
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 12, 1),
+    endDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 12, 15)
+  },
+  ...additionalCopticFeasts,
 ];
 
 export interface SynaxariumStory {

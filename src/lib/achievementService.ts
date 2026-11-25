@@ -34,3 +34,4 @@ export async function recordAchievementEvent(
     return { success: false, pointsAwarded: 0, error: error instanceof Error ? error.message : 'Achievement tracking failed.' };
   }
 }
+

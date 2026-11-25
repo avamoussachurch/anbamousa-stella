@@ -316,6 +316,16 @@ export function StudentAdventureHome({
           <g fill="#F5D98C">
             <circle cx="95" cy="148" r="2" /><circle cx="258" cy="125" r="2" /><circle cx="442" cy="160" r="2" /><circle cx="722" cy="98" r="2" /><circle cx="540" cy="80" r="1.5" />
           </g>
+          <g aria-hidden="true" transform="translate(710 252)" stroke="#EBCB78" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="0" cy="-57" r="25" fill="none" stroke="#F5D98C" strokeWidth="2" opacity=".8" />
+            <circle cx="0" cy="-58" r="12" fill="#D6A96A" stroke="#F5D98C" />
+            <path d="M-17 -43 Q0 -54 17 -43 L31 22 Q0 43 -31 22Z" fill="#172B37" />
+            <path d="M-9 -36 Q0 -28 9 -36" fill="none" stroke="#E8D4A4" strokeWidth="2" />
+            <path d="M-20 -17 L-43 9" fill="none" stroke="#D6A96A" strokeWidth="8" />
+            <path d="M-43 9 L-50 33" fill="none" stroke="#D6A96A" strokeWidth="5" />
+            <path d="M-50 33 L-50 -5 M-59 7 H-41" fill="none" stroke="#F5D98C" strokeWidth="4" />
+            <path d="M-10 27 L-16 51 M12 27 L18 51" fill="none" stroke="#172B37" strokeWidth="9" />
+          </g>
         </svg>
 
         <div className="relative z-10 flex min-h-[250px] flex-col justify-between gap-5 sm:min-h-[270px] sm:flex-row sm:items-end sm:gap-7">

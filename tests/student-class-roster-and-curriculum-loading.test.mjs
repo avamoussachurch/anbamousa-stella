@@ -5,6 +5,8 @@ import { test } from 'node:test';
 const server = await readFile(new URL('../server.ts', import.meta.url), 'utf8');
 const lessonsTab = await readFile(new URL('../src/components/student/LessonsTab.tsx', import.meta.url), 'utf8');
 const homeTab = await readFile(new URL('../src/components/student/HomeTab.tsx', import.meta.url), 'utf8');
+const roadmap = await readFile(new URL('../src/components/student/StudentRoadmapView.tsx', import.meta.url), 'utf8');
+const studentHome = await readFile(new URL('../src/components/student/StudentAdventureHome.tsx', import.meta.url), 'utf8');
 
 test('admin class roster reads bypass legacy profiles.role RLS after server-side role verification', () => {
   assert.match(server, /const client = hasServerRole\(authContext, 'admin'\)\s*\? getTrustedRoleClient\(\)/);
@@ -21,8 +23,29 @@ test('online Home lessons trust membership-scoped curriculum results instead of 
 });
 
 
-test('student and teacher Lessons tab opens with the familiar lesson-card library by default', () => {
-  assert.match(lessonsTab, /const \[displayMode, setDisplayMode\] = useState<'roadmap' \| 'cards'>\('cards'\)/);
+test('student and teacher Lessons tab opens on the progression roadmap by default', () => {
+  assert.match(lessonsTab, /const \[displayMode, setDisplayMode\] = useState<'roadmap' \| 'cards'>\('roadmap'\)/);
   assert.match(lessonsTab, /displayMode === 'roadmap' \?/);
   assert.match(lessonsTab, /Lesson Cards Grid/);
+});
+
+test('staff leaderboard selection is available and dual-role teachers use staff access before parent access', () => {
+  const routeStart = server.indexOf('app.get("/api/church/leaderboard"');
+  const routeEnd = server.indexOf('PHASE 2C.2: STUDENT QUIZZES', routeStart);
+  const route = server.slice(routeStart, routeEnd);
+  assert.ok(route.indexOf("hasServerRole(authContext, 'teacher')") < route.indexOf("hasServerRole(authContext, 'parent')"));
+  assert.match(route, /availableClassGroupIds: permittedGroupIds/);
+});
+
+test('student roadmap has illustrated scenery, an animated active quest, and animated trail segments', () => {
+  assert.match(roadmap, /roadmap-desert-sky/);
+  assert.match(roadmap, /whileInView=\{\{ pathLength: 1 \}\}/);
+  assert.match(roadmap, /border-amber-300\/70/);
+  assert.match(roadmap, /DESERT_WAYPOINTS/);
+});
+
+test('student welcome hero includes the completed illustrated journey figure', () => {
+  assert.match(studentHome, /translate\(710 252\)/);
+  assert.match(studentHome, /aria-hidden="true"/);
+  assert.match(studentHome, /F5D98C/);
 });
