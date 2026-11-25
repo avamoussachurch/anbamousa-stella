@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Medal, Lock, Trophy, Users, ChevronUp, History, Landmark, Gift, X, CheckCircle2, AlertCircle, Flame, Sparkles } from 'lucide-react';
+import { Star, Medal, Lock, Trophy, Users, ChevronUp, History, Landmark, Gift, X, CheckCircle2, AlertCircle, Flame, Sparkles, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { mockBadges } from '../../data';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +14,7 @@ import {
 import { LeaderboardEntry, Language } from '../../types';
 import { LeaderboardPodium, PodiumItem } from './LeaderboardPodium';
 import { AchievementRewardsStudio } from '../achievements/AchievementRewardsStudio';
+import { ProfileCustomizationStudio } from '../profile/ProfileCustomizationStudio';
 
 const REWARD_PRODUCTS = [
   { id: '1', title: 'Small Saint Picture', titleAr: 'صورة قديس صغيرة', cost: 50, icon: '🖼️' },
@@ -32,8 +33,8 @@ export function PointsTab({ lang }: { lang: Language }) {
   // 1. Streak Stars (نجوم المواظبة) — DEFAULT
   // 2. My Trail (رحلتي)
   // 3. Points Leaderboard (ترتيب النقاط)
-  // 4. Points Bazaar (متجر المكافآت)
-  const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar'>('streak');
+  // 4. Points Bazaar (متجر المكافآت)\n  // 5. Profile Cosmetics Store (متجر مظهر الملف)
+  const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar' | 'cosmetics'>('streak');
   const [purchases, setPurchases] = useState<any[]>([]);
   const [confirmPurchaseItem, setConfirmPurchaseItem] = useState<{ id: string; name: string; cost: number } | null>(null);
   const [feedbackToast, setFeedbackToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -138,7 +139,7 @@ export function PointsTab({ lang }: { lang: Language }) {
   return (
     <div className="pb-24 pt-6 px-4 w-full max-w-7xl mx-auto space-y-8 overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* 4-Section View Toggle in Exact Required Order */}
-      <div className="flex flex-wrap bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] rounded-2xl p-1.5 shadow-sm border-2 border-[var(--mousa-border-sand)] relative z-10 text-xs sm:text-sm max-w-2xl mx-auto gap-1">
+      <div className="flex flex-wrap bg-[var(--mousa-cream-surface)] dark:bg-[#1C1712] rounded-2xl p-1.5 shadow-sm border-2 border-[var(--mousa-border-sand)] relative z-10 text-xs sm:text-sm max-w-4xl mx-auto gap-1">
         {/* 1. Streak Stars — Arabic: نجوم المواظبة (DEFAULT) */}
         <button 
           onClick={() => setView('streak')}
@@ -179,6 +180,18 @@ export function PointsTab({ lang }: { lang: Language }) {
         </button>
 
         {/* 4. Points Bazaar — Arabic: متجر المكافآت */}
+        <button
+          onClick={() => setView('cosmetics')}
+          className={`flex-1 min-w-[140px] py-2.5 sm:py-3 px-2 rounded-xl font-black transition-all z-10 cursor-pointer flex items-center justify-center gap-1.5 ${
+            view === 'cosmetics'
+              ? 'bg-gradient-to-r from-[#5865F2] to-[#3D43A8] text-white shadow-md'
+              : 'text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[#5865F2]'
+          }`}
+        >
+          <Palette size={15}/>
+          <span>{lang === 'ar' ? 'متجر مظهر الملف' : 'Profile Store'}</span>
+        </button>
+
         <button 
           onClick={() => setView('bazaar')}
           className={`flex-1 min-w-[110px] py-2.5 sm:py-3 px-2 rounded-xl font-black transition-all z-10 cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -532,6 +545,18 @@ export function PointsTab({ lang }: { lang: Language }) {
         {/* =========================================================================
             SECTION 4: POINTS BAZAAR — LIVE REWARD REQUESTS
            ========================================================================= */}
+        {view === 'cosmetics' && (
+          <motion.div
+            key="cosmetics"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="md:max-w-4xl md:mx-auto"
+          >
+            <ProfileCustomizationStudio userId={userData.id} lang={lang} initialView="store" />
+          </motion.div>
+        )}
+
         {view === 'bazaar' && (
           <motion.div
             key="bazaar"
