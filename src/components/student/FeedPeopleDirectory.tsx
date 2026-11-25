@@ -9,6 +9,7 @@ type DirectoryProfile = {
   followers_count: number; following_count: number; is_following: boolean;
   frame_key?: string; banner_key?: string; display_title?: string | null;
   equipped_cosmetics?: Partial<Record<'frame' | 'banner' | 'badge' | 'effect', string>>;
+  earned_badges?: Array<{ id: string; title_en: string; title_ar: string; category: string; icon: string; style: string; earned_at: string }>;
 };
 type DirectoryCosmetic = { id: string; kind: 'frame' | 'banner' | 'badge' | 'effect'; title_en: string; title_ar: string; preview_start: string; preview_end: string };
 };
@@ -46,7 +47,7 @@ export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) 
     if (!supabase) return;
     setLoading(true); setError('');
     const [{ data, error: rpcError }, { data: cosmetics }] = await Promise.all([
-      supabase.rpc('get_profile_directory_v2',{p_search:search.trim() || null}),
+      supabase.rpc('get_profile_directory_v3',{p_search:search.trim() || null}),
       supabase.from('profile_cosmetic_catalog').select('id,kind,title_en,title_ar,preview_start,preview_end').eq('is_active',true)
     ]);
     if (rpcError) setError(ar ? 'تعذر تحميل دليل أعضاء الكنيسة.' : 'Could not load the church directory.');
@@ -92,6 +93,7 @@ export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) 
               <div className="relative h-24 w-full rounded-2xl shadow-inner" style={{background:(cosmeticCatalog.find(item=>item.id===selected.equipped_cosmetics?.banner) ? 'linear-gradient(120deg,'+cosmeticCatalog.find(item=>item.id===selected.equipped_cosmetics?.banner)!.preview_start+','+cosmeticCatalog.find(item=>item.id===selected.equipped_cosmetics?.banner)!.preview_end+')' : selected.banner_key==='coptic-pattern'?'repeating-linear-gradient(45deg,#174d4c 0 12px,#1e6260 12px 24px,#c59b50 24px 27px)':selected.banner_key==='olive-garden'?'linear-gradient(120deg,#244c39,#6e8751,#c2a96a)':selected.banner_key==='golden-church'?'linear-gradient(120deg,#5b3a27,#a77b39,#e9ce8a)':selected.banner_key==='midnight-teal'?'linear-gradient(120deg,#102f3b,#145b62,#327e79)':'linear-gradient(120deg,#6f4935,#d6a15b,#f4dca6)')}}/>
               <div className="mx-auto grid h-28 w-28 place-items-center rounded-[2rem] bg-white p-1 shadow-lg" style={{background:cosmeticCatalog.find(item=>item.id===selected.equipped_cosmetics?.frame) ? 'linear-gradient(135deg,'+cosmeticCatalog.find(item=>item.id===selected.equipped_cosmetics?.frame)!.preview_start+','+cosmeticCatalog.find(item=>item.id===selected.equipped_cosmetics?.frame)!.preview_end+')' : undefined}}><img src={selected.avatar_url || '/icons/icon-192.png'} alt="" className="h-full w-full rounded-[1.5rem] object-cover"/></div>
               <div><h3 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-white">{selected.display_name}</h3><p className="mt-1 text-sm font-bold text-[var(--mousa-sand-500)]">{profileTitleLabel(selected.display_title,ar) || roleLabel(selected.role,ar)}</p><div className="mt-2 flex flex-wrap justify-center gap-1.5">{selected.equipped_cosmetics?.badge && <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-900">{cosmeticCatalog.find(item=>item.id===selected.equipped_cosmetics?.badge)?.[ar?'title_ar':'title_en'] || (ar?'شارة':'Badge')}</span>}{selected.equipped_cosmetics?.effect && <span className="inline-flex items-center gap-1 rounded-full border border-violet-300 bg-violet-50 px-2.5 py-1 text-[10px] font-black text-violet-900"><Sparkles size={11}/>{ar?'تأثير مفعل':'Profile effect'}</span>}</div></div>
+              {selected.earned_badges && selected.earned_badges.length > 0 && <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900/60 dark:bg-amber-950/20"><h4 className="mb-2 flex items-center justify-center gap-1.5 text-[11px] font-black text-amber-900 dark:text-amber-200"><Trophy size={13}/>{ar?'إنجازات حصل عليها':'Earned achievements'}</h4><div className="flex flex-wrap justify-center gap-1.5">{selected.earned_badges.slice(0,8).map(badge=><span key={badge.id} className="rounded-full border border-amber-300/80 bg-white/80 px-2.5 py-1 text-[10px] font-bold text-amber-950 dark:bg-slate-900 dark:text-amber-100">{ar?badge.title_ar:badge.title_en}</span>)}</div></section>}
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-2xl bg-white/70 p-3 dark:bg-stone-900"><strong className="block text-xl">{selected.followers_count}</strong><span className="text-[10px] text-[var(--mousa-sand-500)]">{ar?'متابع':'Followers'}</span></div>
                 <div className="rounded-2xl bg-white/70 p-3 dark:bg-stone-900"><strong className="block text-xl">{selected.following_count}</strong><span className="text-[10px] text-[var(--mousa-sand-500)]">{ar?'يتابع':'Following'}</span></div>
