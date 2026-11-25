@@ -456,121 +456,19 @@ export function ProfileTab({
             
             <div className="md:grid md:grid-cols-[1.5fr_1fr] md:gap-8 space-y-6 md:space-y-0">
               <div className="space-y-6">
-                <div className="bg-[var(--mousa-cream-surface)] dark:bg-[var(--surface-primary)] rounded-3xl p-6 shadow-xs border-2 border-[var(--mousa-border-sand)] text-center relative">
-                  <button onClick={handleOpenEdit} className={`absolute top-4 ${lang === 'ar' ? 'left-4' : 'right-4'} text-[var(--mousa-sand-500)] hover:text-[var(--mousa-coral)] p-2 rounded-xl hover:bg-[var(--mousa-sand-100)] transition-colors cursor-pointer`} title={lang === 'ar' ? 'تعديل ملفك الشخصي' : 'Edit Profile'}>
-                    <Edit3 size={20} />
-                  </button>
-                  <img src={userData.avatarUrl} alt="Avatar" className="w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full border-4 border-[var(--mousa-gold)] bg-[var(--mousa-sand-100)] mb-4 shadow-sm object-cover" />
-                  <h2 className="text-xl md:text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{userData.fullName}</h2>
-                  <p className="text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)] font-bold md:text-lg">{lang === 'ar' ? 'رحلة القديس الأنبا موسى' : 'The Journey of Moses'}</p>
-                  {isGuest && (
-                    <span className="mt-2 inline-flex items-center rounded-full border border-amber-300/50 bg-amber-100/70 px-3 py-1 text-[10px] font-extrabold text-amber-900 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-200">
-                      {lang === 'ar' ? 'معاينة ضيف · بيانات تجريبية' : 'Guest preview · demo data'}
-                    </span>
-                  )}
-                  
-                  <div className="flex justify-center gap-6 md:gap-12 mt-6 pt-6 border-t border-[var(--mousa-border-sand)]/60">
-                    <div>
-                      <p className="text-2xl md:text-3xl font-black text-[var(--mousa-gold)] dark:text-[var(--mousa-gold-light)]">{userData.points}</p>
-                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--text-muted)] font-black uppercase tracking-wider">{lang === 'ar' ? 'نقاط البركة' : 'Points'}</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl md:text-3xl font-black text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)]">{userData.currentStreak}</p>
-                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--text-muted)] font-black uppercase tracking-wider">{lang === 'ar' ? 'شعلة الأيام' : 'Streak'}</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl md:text-3xl font-black text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]">{userData.longestStreak}</p>
-                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--text-muted)] font-black uppercase tracking-wider">{lang === 'ar' ? 'أعلى إنجاز' : 'Best'}</p>
-                    </div>
-                  </div>
+                <ProfileCustomizationStudio
+                  userId={userData.id}
+                  lang={lang}
+                  avatarUrl={userData.avatarUrl}
+                  displayName={userData.fullName}
+                  points={userData.points}
+                  currentStreak={userData.currentStreak}
+                  longestStreak={userData.longestStreak}
+                  activeLearningTime={formatScreenTime(userData.screenTimeSeconds || 0)}
+                  onEdit={handleOpenEdit}
+                  isGuest={isGuest}
+                />
 
-                  {/* Active Screen / Study Time */}
-                  <div className="mt-4 pt-3.5 border-t border-[var(--mousa-border-sand)]/60 flex items-center justify-between text-xs text-[var(--mousa-sand-500)] font-medium px-1">
-                    <span className="flex items-center gap-1.5 text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] font-bold">
-                      <Clock size={15} className="text-[var(--mousa-gold)] animate-pulse" />
-                      {lang === 'ar' ? 'وقت التعلم النشط اليوم' : 'Active Learning Time Today'}
-                    </span>
-                    <span className="font-black text-xs md:text-sm text-[var(--mousa-teal-deep)] dark:text-[var(--text-primary)] bg-[var(--mousa-sand-100)] dark:bg-[var(--surface-secondary)] px-3 py-1 rounded-full border border-[var(--mousa-border-sand)] dark:border-[var(--border-default)]">
-                      {formatScreenTime(userData.screenTimeSeconds || 0)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Achievement Badges Section */}
-                <div className="bg-white dark:bg-[var(--surface-primary)] rounded-3xl p-6 shadow-sm border border-[var(--mousa-border-sand)]">
-                  <h3 className="font-bold text-lg md:text-xl text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] mb-4 flex items-center gap-2">
-                    <Award size={20} className="text-[var(--mousa-gold)]" />
-                    {lang === 'ar' ? 'الأوسمة والإنجازات' : 'Achievements'}
-                  </h3>
-                  {isGuest && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-                    {[
-                      {
-                        id: 'early_bird',
-                        title: { en: 'Early Bird', ar: 'مبكر' },
-                        description: { en: 'Completed a morning lesson', ar: 'أنهى درس الصباح' },
-                        icon: Sun,
-                        color: 'text-amber-500',
-                        bg: 'bg-amber-100',
-                        border: 'border-amber-200',
-                        isUnlocked: userData.points > 0, // Unlocks after any activity
-                      },
-                      {
-                        id: 'studious',
-                        title: { en: 'Studious', ar: 'مجتهد' },
-                        description: { en: 'Reached 300 points', ar: 'الوصول لـ ٣٠٠ نقطة' },
-                        icon: BookOpen,
-                        color: 'text-[var(--mousa-teal-deep)]',
-                        bg: 'bg-blue-50',
-                        border: 'border-blue-200',
-                        isUnlocked: userData.points >= 300,
-                      },
-                      {
-                        id: 'community_helper',
-                        title: { en: 'Community Helper', ar: 'مساعد المجتمع' },
-                        description: { en: 'Shared 5 replies in feed', ar: 'شارك ٥ تعليقات' },
-                        icon: Heart,
-                        color: 'text-[var(--color-church-burgundy)]',
-                        bg: 'bg-red-50',
-                        border: 'border-red-200',
-                        isUnlocked: false,
-                      },
-                      {
-                        id: 'consistent',
-                        title: { en: 'Consistent', ar: 'مستمر' },
-                        description: { en: '3-day streak', ar: '٣ أيام متتالية' },
-                        icon: Flame,
-                        color: 'text-[var(--mousa-gold)]',
-                        bg: 'bg-amber-50',
-                        border: 'border-amber-200',
-                        isUnlocked: userData.longestStreak >= 3,
-                      }
-                    ].map(badge => (
-                      <div 
-                        key={badge.id} 
-                        className={`flex items-center gap-3 p-3 md:p-4 rounded-2xl border ${badge.isUnlocked ? `${badge.bg} ${badge.border}` : 'bg-gray-50 dark:bg-[var(--surface-secondary)] border-gray-200 dark:border-[var(--border-default)]'} transition-all`}
-                      >
-                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 ${badge.isUnlocked ? 'bg-white shadow-sm' : 'bg-gray-200 dark:bg-[var(--surface-overlay)]'}`}>
-                          <badge.icon size={24} className={badge.isUnlocked ? badge.color : 'text-gray-500 dark:text-[var(--text-muted)]'} />
-                        </div>
-                        <div>
-                          <p className={`font-bold text-sm md:text-base ${badge.isUnlocked ? badge.color : 'text-gray-700 dark:text-[var(--text-secondary)]'}`}>
-                            {badge.title[lang]}
-                          </p>
-                          <p className="text-xs md:text-sm text-gray-600 dark:text-[var(--text-muted)] mt-0.5 font-medium leading-tight">{badge.description[lang]}</p>
-                        </div>
-                      </div>
-                    ))}
-                    </div>
-                  )}
-                  {!isGuest && (
-                    <p role="status" className="mt-4 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">
-                      {lang === 'ar'
-                        ? 'لا توجد إنجازات موثقة متاحة لهذا الحساب حتى الآن.'
-                        : 'Verified achievements are not available for this account yet.'}
-                    </p>
-                  )}
-                </div>
               </div>
 
               {/* Role-Specific Connection Card */}
@@ -1126,7 +1024,7 @@ export function ProfileTab({
                  </section>
                </div>
 
-               <ProfileCustomizationStudio userId={userData.id} lang={lang} avatarUrl={userData.avatarUrl} displayName={userData.fullName} />
+
 
                <details open className="group rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--surface-primary)] p-4">
                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-black text-[var(--mousa-teal-deep)] dark:text-white">

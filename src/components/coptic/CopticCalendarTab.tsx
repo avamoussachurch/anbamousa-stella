@@ -23,6 +23,32 @@ function getNextFeastDate(feast: CopticFeast, now: Date): Date {
   return target;
 }
 
+
+function getUpcomingMonthlyObservances() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const copticToday = getCopticDate(now);
+  const monthStart = copticToday.month.number || 1;
+  const observances = [
+    { id: 'archangel-michael-monthly', day: 12, icon: '🛡️', nameEn: 'Archangel Michael', nameAr: 'رئيس الملائكة ميخائيل' },
+    { id: 'st-mary-monthly', day: 21, icon: '🌹', nameEn: 'St. Mary the Theotokos', nameAr: 'القديسة مريم والدة الإله' },
+    { id: 'lord-feasts-monthly', day: 29, icon: '✝️', nameEn: 'Monthly Feasts of the Lord', nameAr: 'تذكار الأعياد السيدية الشهرية' }
+  ];
+  return observances.map(observance => {
+    let nextDate: Date | null = null;
+    for (let offset = 0; offset < 14 && !nextDate; offset++) {
+      const absoluteMonth = monthStart - 1 + offset;
+      const monthNumber = (absoluteMonth % 13) + 1;
+      const year = copticToday.year + Math.floor(absoluteMonth / 13);
+      const range = getCopticMonthDateRange(monthNumber, year);
+      if (observance.day > range.daysCount) continue;
+      const candidate = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate() + observance.day - 1);
+      if (candidate >= today) nextDate = candidate;
+    }
+    return { ...observance, date: nextDate || today };
+  });
+}
+
 export function CopticCalendarTab({ lang }: { lang: Language }) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [copticDate, setCopticDate] = useState<CopticDateResult>(getCopticDate(new Date()));
@@ -87,6 +113,28 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
       transition={{ duration: 0.3 }}
       className="pb-28 pt-6 px-4 w-full max-w-7xl mx-auto space-y-8"
     >
+
+      <section className="rounded-3xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-4 shadow-sm dark:bg-[#1E1914]">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{lang === 'ar' ? 'التذكارات الشهرية الكنسية' : 'Monthly Church Commemorations'}</h2>
+            <p className="mt-1 text-[10px] text-[var(--mousa-sand-500)]">{lang === 'ar' ? 'اليوم ١٢ لرئيس الملائكة ميخائيل، واليوم ٢١ للقديسة مريم، واليوم ٢٩ للأعياد السيدية.' : 'The 12th for Archangel Michael, 21st for St. Mary, and 29th for the monthly feasts of the Lord.'}</p>
+          </div>
+          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black text-amber-900">{lang === 'ar' ? 'يتكرر كل شهر قبطي' : 'Every Coptic month'}</span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {getUpcomingMonthlyObservances().map(item => (
+            <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 dark:bg-stone-900/70">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-xl dark:bg-amber-950/40">{item.icon}</span>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-black text-[var(--mousa-teal-deep)] dark:text-white">{lang === 'ar' ? item.nameAr : item.nameEn}</p>
+                <p className="mt-0.5 text-[10px] font-bold text-[var(--mousa-sand-500)]">{item.date.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Page Header with Coptic Date Banner */}
       <div className="bg-linear-to-br from-[var(--color-church-burgundy)] via-[#701622] to-[#0B2E5C] text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 opacity-10 text-white pointer-events-none transform translate-x-10 -translate-y-10">

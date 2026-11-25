@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Backpack, Check, Crown, Loader2, Palette, ShieldCheck, ShoppingBag, Sparkles, Star, UserRound, WandSparkles } from 'lucide-react';
+import { Backpack, Check, Clock, Crown, Flame, Loader2, Palette, Pencil, ShieldCheck, ShoppingBag, Sparkles, Star, Trophy, UserRound, WandSparkles } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type CosmeticKind = 'frame' | 'banner' | 'badge' | 'effect';
@@ -39,7 +39,7 @@ const kindLabel: Record<CosmeticKind, { en: string; ar: string }> = {
   badge: { en: 'Profile badge', ar: 'شارة الملف' }, effect: { en: 'Profile effect', ar: 'تأثير الملف' }
 };
 
-export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayName }: { userId: string; lang: string; avatarUrl?: string; displayName?: string }) {
+export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayName, points = 0, currentStreak = 0, longestStreak = 0, activeLearningTime, onEdit, isGuest = false }: { userId: string; lang: string; avatarUrl?: string; displayName?: string; points?: number; currentStreak?: number; longestStreak?: number; activeLearningTime?: string; onEdit?: () => void; isGuest?: boolean }) {
   const ar = lang === 'ar';
   const [section, setSection] = useState<Section>('profile');
   const [frame, setFrame] = useState('coptic-gold');
@@ -57,7 +57,7 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    if (!supabase) { setLoading(false); return; }
+    if (isGuest || !supabase) { setLoading(false); return; }
     setLoading(true); setError('');
     try {
       const [customResult, catalogResult, unlockResult, profileResult, badgeUnlockResult] = await Promise.all([
@@ -88,7 +88,7 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
     } catch (loadError: any) {
       setError(loadError?.message || (ar ? 'تعذر تحميل المتجر ومظهر الملف.' : 'Could not load the profile store.'));
     } finally { setLoading(false); }
-  }, [userId, ar]);
+  }, [userId, ar, isGuest]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -156,7 +156,10 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
     <section className="space-y-4 rounded-[1.5rem] border border-[var(--mousa-border-sand)] bg-[var(--surface-primary)] p-3 shadow-sm sm:p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2"><Palette size={19} className="text-[var(--mousa-gold)]"/><div><h3 className="text-sm font-black text-[var(--text-primary)]">{ar ? 'ملفك الشخصي' : 'Your profile'}</h3><p className="text-[10px] text-[var(--text-secondary)]">{ar ? 'مظهر اجتماعي ومخزون قابل للفتح بالنقاط' : 'A social profile with unlockable cosmetics'}</p></div></div>
-        <div className="rounded-full border border-[var(--mousa-border-sand)] bg-[var(--surface-secondary)] px-3 py-1 text-[10px] font-black text-[var(--text-secondary)]">{unlockedIds.length} {ar ? 'عنصر مفتوح' : 'items unlocked'}</div>
+        <div className="flex items-center gap-2">
+          <div className="rounded-full border border-[var(--mousa-border-sand)] bg-[var(--surface-secondary)] px-3 py-1 text-[10px] font-black text-[var(--text-secondary)]">{unlockedIds.length} {ar ? 'عنصر مفتوح' : 'items unlocked'}</div>
+          {onEdit && <button type="button" onClick={onEdit} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-[10px] font-black text-[var(--text-secondary)] transition hover:border-[#5865F2] hover:text-[#5865F2]"><Pencil size={12}/>{ar ? 'تعديل الحساب' : 'Edit account'}</button>}
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--surface-secondary)]">
@@ -180,8 +183,15 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-xl border border-[var(--mousa-border-sand)] bg-[var(--surface-secondary)] p-3"><p className="flex items-center gap-1 text-[9px] font-bold text-[var(--text-secondary)]"><Star size={11}/>{ar ? 'نقاط البركة' : 'Points'}</p><p className="mt-1 text-lg font-black text-amber-600">{points.toLocaleString()}</p></div>
+        <div className="rounded-xl border border-[var(--mousa-border-sand)] bg-[var(--surface-secondary)] p-3"><p className="flex items-center gap-1 text-[9px] font-bold text-[var(--text-secondary)]"><Flame size={11}/>{ar ? 'المواظبة' : 'Streak'}</p><p className="mt-1 text-lg font-black text-orange-600">{currentStreak}</p></div>
+        <div className="rounded-xl border border-[var(--mousa-border-sand)] bg-[var(--surface-secondary)] p-3"><p className="flex items-center gap-1 text-[9px] font-bold text-[var(--text-secondary)]"><Trophy size={11}/>{ar ? 'أفضل سلسلة' : 'Best streak'}</p><p className="mt-1 text-lg font-black text-emerald-600">{longestStreak}</p></div>
+        <div className="rounded-xl border border-[var(--mousa-border-sand)] bg-[var(--surface-secondary)] p-3"><p className="flex items-center gap-1 text-[9px] font-bold text-[var(--text-secondary)]"><Clock size={11}/>{ar ? 'وقت التعلم' : 'Learning time'}</p><p className="mt-1 truncate text-sm font-black text-[var(--text-primary)]">{activeLearningTime || '—'}</p></div>
+      </div>
+
       <div className="grid grid-cols-3 gap-1 rounded-xl border border-[var(--mousa-border-sand)] bg-[var(--surface-secondary)] p-1">
-        {tabs.map(item => {
+        {tabs.filter(item => !isGuest || item.id === 'profile').map(item => {
           const Icon = item.icon;
           return <button key={item.id} type="button" onClick={() => setSection(item.id)} aria-pressed={section === item.id}
             className={'flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 text-[11px] font-black transition-all ' + (section === item.id ? 'bg-[#5865F2] text-white shadow-sm border-b-2 border-[#3442B8]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-primary)]')}>
@@ -190,6 +200,7 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
         })}
       </div>
 
+      {isGuest && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-900">{ar ? 'سجّل الدخول لفتح المتجر وحفظ مظهر ملفك.' : 'Sign in to unlock store items and save your profile appearance.'}</p>}
       {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-800">{error}</p>}
       {message && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800">{message}</p>}
 
@@ -234,7 +245,7 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
         </section>
       )}
 
-      {section === 'store' && (
+      {section === 'store' && !isGuest && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? 'متجر المظاهر' : 'Cosmetic store'}</h4><p className="text-[10px] text-[var(--text-secondary)]">{ar ? 'افتح إطارات وأغلفة وشارات وتأثيرات بالنقاط' : 'Unlock frames, banners, badges and effects with points'}</p></div><div className="flex items-center gap-2"><span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-black text-amber-900"><Star size={12} className="mr-1 inline"/>{pointsBalance} {ar ? 'نقطة' : 'pts'}</span><ShoppingBag size={19} className="text-[#5865F2]"/></div></div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -260,7 +271,7 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
         </div>
       )}
 
-      {section === 'inventory' && (
+      {section === 'inventory' && !isGuest && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? 'مخزونك' : 'Your inventory'}</h4><p className="text-[10px] text-[var(--text-secondary)]">{ar ? 'العناصر التي فتحتها ويمكنك تطبيقها' : 'Everything you have unlocked and can equip'}</p></div><Backpack size={19} className="text-[var(--mousa-gold)]"/></div>
           {unlockedItems.length === 0
