@@ -23,6 +23,6 @@ create policy feed_post_bookmarks_insert_own on public.feed_post_bookmarks
 drop policy if exists feed_post_bookmarks_delete_own on public.feed_post_bookmarks;
 create policy feed_post_bookmarks_delete_own on public.feed_post_bookmarks
   for delete to authenticated
-  using ((select auth.uid()) = user_id and public.can_view_feed_post(post_id));
+  using ((select auth.uid()) = user_id);
 
 grant select, insert, delete on public.feed_post_bookmarks to authenticated;
