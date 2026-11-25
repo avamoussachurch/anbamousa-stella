@@ -191,6 +191,10 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
             const time = timeRemaining[feast.id] || { days: 0, hours: 0, minutes: 0 };
             const isToday = targetDate.toDateString() === new Date().toDateString();
             const isPastInCalendarView = sortMode === 'calendar' && targetDate < todayStart;
+            const feastEndDate = feast.endDateThisYear?.(targetDate.getFullYear());
+            const isNotObservedThisYear = feast.isCelebratedThisYear?.(targetDate.getFullYear()) === false;
+            const formatFeastDate = (date: Date) => date.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+            const feastDateLabel = feastEndDate ? `${formatFeastDate(targetDate)} – ${formatFeastDate(feastEndDate)}` : formatFeastDate(targetDate);
 
             return (
               <div
@@ -209,7 +213,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
                     </span>
                     <span className="text-xs font-bold text-gray-400 text-end">
                       {feast.copticDateAr}
-                      <span className="mt-0.5 block text-[10px] font-semibold opacity-80">{targetDate.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      <span className="mt-0.5 block text-[10px] font-semibold opacity-80">{feastDateLabel}</span>
                     </span>
                   </div>
 
@@ -236,7 +240,9 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
                   <span className="text-xs font-bold text-gray-400">
                     {lang === 'ar' ? 'فاضل:' : 'Time Left:'}
                   </span>
-                  {isToday ? (
+                  {isNotObservedThisYear ? (
+                    <span className="rounded-lg bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">{lang === 'ar' ? 'لا يُحتفل به هذا العام' : 'Not observed this year'}</span>
+                  ) : isToday ? (
                     <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-extrabold text-xs animate-pulse">
                       {lang === 'ar' ? 'النهارده بنحتفل بالعيد!' : 'Celebrating Today!'}
                     </span>
