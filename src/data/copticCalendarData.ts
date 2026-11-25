@@ -234,6 +234,13 @@ const additionalCopticFeasts: CopticFeast[] = [
     descriptionEn: 'The Last Supper, the washing of the disciples’ feet, and the institution of the Eucharist.', easterOffset: -3
   }),
   movableFeast({
+    id: 'bright_saturday', nameAr: 'سبت النور', nameEn: 'Bright Saturday',
+    type: 'minor_feast', copticDateAr: 'سبت أسبوع الآلام', gregorianApprox: 'قبل القيامة بيوم',
+    fastingRuleAr: 'طقس أسبوع الآلام المقدس', fastingRuleEn: 'Holy Pascha liturgical observance', isFishPermitted: false,
+    descriptionAr: 'سبت النور الذي يسبق عيد القيامة المجيد.', 
+    descriptionEn: 'The Holy Saturday of Light immediately preceding the Resurrection.', easterOffset: -1
+  }),
+  movableFeast({
     id: 'good_friday', nameAr: 'الجمعة العظيمة', nameEn: 'Great and Holy Friday',
     type: 'fast', copticDateAr: 'جمعة أسبوع الآلام', gregorianApprox: 'قبل القيامة بيومين',
     fastingRuleAr: 'أقدس أيام الصوم الانقطاعي', fastingRuleEn: 'The strictest Holy Week fast', isFishPermitted: false,
@@ -282,6 +289,13 @@ const additionalCopticFeasts: CopticFeast[] = [
     fastingRuleAr: 'فطر احتفالي بعد صوم الرسل', fastingRuleEn: 'Feast day following the Apostles’ Fast', isFishPermitted: true,
     descriptionAr: 'تذكار استشهاد الرسولين بطرس وبولس وخدمتهما في نشر الإنجيل.',
     descriptionEn: 'Commemoration of the martyrdom and apostolic witness of Saints Peter and Paul.'
+  }),
+  fixedFeast({
+    id: 'st_george_feast', nameAr: 'عيد استشهاد القديس مار جرجس', nameEn: 'Feast of St. George the Martyr',
+    type: 'minor_feast', monthNumber: 8, copticDay: 23, copticDateAr: '٢٣ برمودة', gregorianApprox: '1 مايو',
+    fastingRuleAr: 'تذكار قديس', fastingRuleEn: 'Saint’s commemoration', isFishPermitted: true,
+    descriptionAr: 'تذكار استشهاد الأمير الشهيد مار جرجس وشهادته الشجاعة للمسيح.',
+    descriptionEn: 'Commemoration of the martyrdom and courageous witness of St. George.'
   }),
   fixedFeast({
     id: 'st_mark_feast', nameAr: 'عيد استشهاد القديس مار مرقس الرسول', nameEn: 'Feast of St. Mark the Evangelist',
