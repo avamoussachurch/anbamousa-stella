@@ -7518,7 +7518,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
           return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Class rankings are temporarily unavailable.' });
         }
         allInstances = data || [];
-
+      }
 
       permittedGroupIds = Array.from(new Set(allInstances
         .map((instance: any) => instance.class_group_id)
