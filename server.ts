@@ -7380,9 +7380,11 @@ app.get("/api/church/leaderboard", async (req, res) => {
       const currentDayOfWeek = new Date(cairoParts.year, cairoParts.month - 1, cairoParts.day).getDay();
       const sundayDate = new Date(cairoParts.year, cairoParts.month - 1, cairoParts.day - currentDayOfWeek);
       const cairoWeekReset = getCairoDateString(sundayDate);
+      let permittedGroupIds: string[] = [];
       const emptyLeaderboard = (classGroupId: string | null) => res.json({
         success: true,
         classGroupId,
+        availableClassGroupIds: permittedGroupIds,
         timeframe,
         leaderboard: [],
         currentUserEntry: null,
@@ -7405,7 +7407,6 @@ app.get("/api/church/leaderboard", async (req, res) => {
       if (!activeYear?.id) return emptyLeaderboard(null);
 
       let allInstances: any[] = [];
-      let permittedGroupIds: string[] = [];
       let leaderboardTargetStudentId = authContext.userId;
 
       if (hasServerRole(authContext, 'admin')) {
@@ -7647,6 +7648,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
       return res.json({
         success: true,
         classGroupId: effectiveClassGroup,
+        availableClassGroupIds: permittedGroupIds,
         timeframe,
         leaderboard,
         currentUserEntry,
