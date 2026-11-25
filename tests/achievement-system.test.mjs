@@ -25,6 +25,7 @@ const prayer = read('../src/components/agpeya/AgpeyaPrayerTab.tsx');
 const quiz = read('../src/lib/studentQuizService.ts');
 const realtimeMigration = read('../supabase/migrations/20261125184732_achievement_unlock_realtime.sql');
 const milestoneMigration = read('../supabase/migrations/20261125183844_attainable_category_milestones.sql');
+const communityGamificationMigration = read('../supabase/migrations/20261125202000_gamify_community_and_profile_actions.sql');
 
 test('achievement data is persisted with RLS and idempotent unlock records', () => {
   for (const table of ['achievement_badges','achievement_events','achievement_unlocks','achievement_category_milestones','achievement_milestone_awards','reward_catalog']) {
@@ -142,4 +143,13 @@ test('category milestones are configured within the number of available category
   assert.match(milestoneMigration, /badge_count = 7 where category = 'learning' and badge_count = 10/);
   assert.match(milestoneMigration, /badge_count = 5 where category = 'hymns' and badge_count = 10/);
   assert.match(milestoneMigration, /badge_count = 4 where category in \('prayer','taxis'\) and badge_count = 10/);
+});
+
+test('polls, church RSVPs, and cosmetic unlocks create server-verified achievement events', () => {
+  assert.match(communityGamificationMigration, /capture_community_poll_vote_achievement_event/);
+  assert.match(communityGamificationMigration, /capture_church_event_rsvp_achievement_event/);
+  assert.match(communityGamificationMigration, /capture_profile_cosmetic_unlock_achievement_event/);
+  assert.match(communityGamificationMigration, /poll-participant/);
+  assert.match(communityGamificationMigration, /event-supporter/);
+  assert.match(communityGamificationMigration, /profile-stylist/);
 });
