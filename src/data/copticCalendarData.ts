@@ -147,6 +147,8 @@ export interface CopticFeast {
   descriptionAr: string;
   descriptionEn: string;
   targetDateThisYear: (currentYear: number) => Date;
+  endDateThisYear?: (currentYear: number) => Date;
+  isCelebratedThisYear?: (currentYear: number) => boolean;
 }
 
 type FixedFeastInput = Omit<CopticFeast, 'targetDateThisYear' | 'tone' | 'toneNameAr'> & {
@@ -208,6 +210,13 @@ const additionalCopticFeasts: CopticFeast[] = [
   fixedFeast({
     id: 'annunciation', nameAr: 'عيد البشارة المجيد', nameEn: 'Feast of the Annunciation',
     type: 'major_feast', monthNumber: 7, copticDay: 29, copticDateAr: '٢٩ برمهات', gregorianApprox: '7 أبريل',
+    isCelebratedThisYear: (year) => {
+      const date = getGregorianDateForCopticDate(year - 284, 7, 29);
+      const easter = getOrthodoxEasterDate(year);
+      const palmSunday = new Date(easter); palmSunday.setDate(palmSunday.getDate() - 7);
+      const brightSaturday = new Date(easter); brightSaturday.setDate(brightSaturday.getDate() - 1);
+      return date < palmSunday || date > brightSaturday;
+    },
     fastingRuleAr: 'فطر احتفالي حتى في أيام الصوم', fastingRuleEn: 'Major feast, even during fasting seasons', isFishPermitted: true,
     descriptionAr: 'بشارة الملاك جبرائيل للعذراء مريم بالتجسد الإلهي.',
     descriptionEn: 'The Archangel Gabriel announces the Incarnation to the Virgin Mary.'
@@ -366,7 +375,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'تذكار ظهور الصليب المقدس للقديسة هيلانة الملكة في أورشليم ورفع راية الخلاص.',
     descriptionEn: 'Commemoration of the appearance of the Holy Cross to Empress Helena in Jerusalem.',
-    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 1, 17)
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 1, 17),
+    endDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 1, 19)
   },
   {
     id: 'nativity_fast',
@@ -382,7 +392,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'فترة الاستعداد لميلاد عمانوئيل مع تماجيد وألحان شهر كيهك المريمية البهيجة.',
     descriptionEn: '43 days of spiritual preparation with joyous Marian praises awaiting the Nativity of Christ.',
-    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 3, 16)
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 3, 16),
+    endDateThisYear: (y) => getGregorianDateForCopticDate(y - 283, 4, 28)
   },
   {
     id: 'nativity_feast',
@@ -430,7 +441,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'توبة أهل نينوى وصلاة يونان النبي في جوف الحوت، رمز لقيامة المسيح بعد ثلاثة أيام.',
     descriptionEn: 'Three days of fasting and repentance commemorating Jonah in the belly of the whale.',
-    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 69); return date; }
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 69); return date; },
+    endDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 67); return date; }
   },
   {
     id: 'great_lent',
@@ -446,7 +458,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'أقدس أيام السنة، ٥٥ يوماً من الصلاة والانقطاع والصدقة مسيرة مع الفادي في البرية.',
     descriptionEn: 'The most sacred season: 55 days of asceticism, prayers, and charity following Christ in the wilderness.',
-    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 55); return date; }
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 55); return date; },
+    endDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 9); return date; }
   },
   {
     id: 'palm_sunday',
@@ -478,7 +491,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'مرافقة آلام المخلص الفادية على الصليب، ولبس السواد الكنسي وقراءة نبوات الخلاص.',
     descriptionEn: 'Meditating on the Passion of Christ, black church veils, and solemn Pascha hymns.',
-    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 7); return date; }
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 7); return date; },
+    endDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 1); return date; }
   },
   {
     id: 'resurrection_feast',
@@ -510,7 +524,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'صوم التلاميذ القديسين قبل انطلاقهم للبشارة المسكونية بالإنجيل المقدس.',
     descriptionEn: 'The Apostles fast before preaching the Gospel across all nations.',
-    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() + 50); return date; }
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() + 50); return date; },
+    endDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 11, 4)
   },
   {
     id: 'st_mary_fast',
@@ -526,7 +541,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: true,
     descriptionAr: 'من أحب وأجمل الأصوام في قلوب الشعب القبطي، ينتهي بتذكار صعود جسد أم النور الطاهر.',
     descriptionEn: 'A deeply cherished fast of repentance and praises concluding with the Assumption of the Virgin Mary.',
-    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 12, 1)
+    targetDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 12, 1),
+    endDateThisYear: (y) => getGregorianDateForCopticDate(y - 284, 12, 15)
   },
   ...additionalCopticFeasts,
 ];
