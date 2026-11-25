@@ -164,7 +164,19 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
   if (loading) return <div className="rounded-2xl border border-[var(--mousa-border-sand)] p-5 text-sm text-[var(--text-secondary)]"><Loader2 className="mr-2 inline animate-spin" size={16}/>{ar ? 'جارٍ تحميل ملفك ومتجرك…' : 'Loading your profile and store…'}</div>;
 
   return (
-    <section className="space-y-4 rounded-[1.5rem] border border-[var(--mousa-border-sand)] bg-[var(--surface-primary)] p-3 sm:p-5 shadow-sm">
+    <section
+      className="space-y-4 rounded-[1.5rem] border border-[var(--mousa-border-sand)] bg-[var(--surface-primary)] p-3 text-[#F2F3F5] shadow-[0_18px_55px_rgba(0,0,0,.22)] sm:p-5"
+      style={{
+        '--surface-primary': '#232428',
+        '--surface-secondary': '#2B2D31',
+        '--text-primary': '#F2F3F5',
+        '--text-secondary': '#B5BAC1',
+        '--border-default': '#3F4147',
+        '--action-primary': '#5865F2',
+        '--action-primary-text': '#FFFFFF',
+        '--mousa-border-sand': '#3F4147'
+      } as React.CSSProperties}
+    >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2"><Palette size={19} className="text-[var(--mousa-gold)]"/><div><h3 className="text-base font-black text-[var(--text-primary)]">{ar ? 'مظهر ملفك' : 'Your profile'}</h3><p className="text-xs text-[var(--text-secondary)]">{ar ? 'هوية بسيطة، ولمستك الخاصة' : 'A cleaner identity, with your own style'}</p></div></div>
         <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs font-black text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"><Star size={14}/>{points.toLocaleString()} {ar ? 'نقطة' : 'points'}</div>
@@ -184,7 +196,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
             {selectedBadge && <span className="absolute -bottom-2 -start-2 grid h-7 w-7 place-items-center rounded-full border-2 border-[var(--surface-primary)] text-white" style={{ background: 'linear-gradient(135deg,' + safeColor(selectedBadge.preview_start, '#9A6A1F') + ',' + safeColor(selectedBadge.preview_end, '#FDE68A') + ')' }}><Award size={14}/></span>}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2"><p className="truncate text-base font-black text-[var(--text-primary)]">{profileName}</p><span className="rounded-md bg-indigo-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-200">{profileRole === 'teacher' ? (ar ? 'خادم' : 'Servant') : profileRole === 'parent' ? (ar ? 'ولي أمر' : 'Parent') : profileRole === 'admin' ? (ar ? 'إدارة' : 'Admin') : (ar ? 'طالب' : 'Student')}</span></div>
+            <div className="flex flex-wrap items-center gap-2"><p className="truncate text-base font-black text-[var(--text-primary)]">{profileName}</p><span className="rounded-md bg-[#5865F2]/20 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-[#C7CBFF]">{profileRole === 'teacher' ? (ar ? 'خادم' : 'Servant') : profileRole === 'parent' ? (ar ? 'ولي أمر' : 'Parent') : profileRole === 'admin' ? (ar ? 'إدارة' : 'Admin') : (ar ? 'طالب' : 'Student')}</span></div>
             <p className="mt-0.5 text-xs font-bold text-[var(--text-secondary)]">{titles.find(item => item.id === title)?.[ar ? 'ar' : 'label'] || (ar ? 'رحلة نمو في الإيمان والمحبة' : 'Growing in Faith, Learning in Love')}</p>
             <p className="mt-1 text-[10px] text-[var(--text-secondary)]">{ar ? 'مجتمع • إيمان • تعلّم • خدمة' : 'Community • Faith • Learning • Service'}</p>
           </div>
