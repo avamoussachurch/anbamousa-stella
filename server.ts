@@ -7459,7 +7459,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         if (childInstanceIds.length === 0) return emptyLeaderboard(null);
         const { data, error } = await client
           .from('class_instances')
-          .select('id, class_group_id')
+          .select('id, class_group_id, name_en, name_ar')
           .in('id', childInstanceIds)
           .eq('church_year_id', activeYear.id);
         if (error) {
@@ -7486,7 +7486,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
 
         const { data, error } = await client
           .from('class_instances')
-          .select('id, class_group_id')
+          .select('id, class_group_id, name_en, name_ar')
           .in('id', ownInstanceIds)
           .eq('church_year_id', activeYear.id);
         if (error) {
@@ -7512,7 +7512,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
 
         const { data, error } = await client
           .from('class_instances')
-          .select('id, class_group_id')
+          .select('id, class_group_id, name_en, name_ar')
           .in('id', assignedInstanceIds)
           .eq('church_year_id', activeYear.id);
         if (error) {
@@ -11149,7 +11149,7 @@ app.post("/api/church/onboarding/review", async (req, res) => {
               const instIds = assignments.map((a: any) => a.class_instance_id);
               const { data: insts } = await client
                 .from('class_instances')
-                .select('id, class_group_id')
+                .select('id, class_group_id, name_en, name_ar')
                 .in('id', instIds);
               const match = (insts || []).find((i: any) => i.class_group_id === targetRequest.requestedClassGroupId);
               resolvedInstanceId = match?.id || assignments[0].class_instance_id;
