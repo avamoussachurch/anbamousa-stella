@@ -46,7 +46,7 @@ export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) 
     if (!supabase) return;
     setLoading(true); setError('');
     const [{ data, error: rpcError }, { data: cosmetics }] = await Promise.all([
-      supabase.rpc('get_profile_directory',{p_search:search.trim() || null}),
+      supabase.rpc('get_profile_directory_v2',{p_search:search.trim() || null}),
       supabase.from('profile_cosmetic_catalog').select('id,kind,title_en,title_ar,preview_start,preview_end').eq('is_active',true)
     ]);
     if (rpcError) setError(ar ? 'تعذر تحميل دليل أعضاء الكنيسة.' : 'Could not load the church directory.');
