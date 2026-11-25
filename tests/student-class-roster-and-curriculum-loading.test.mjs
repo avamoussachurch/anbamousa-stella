@@ -22,7 +22,7 @@ test('online Home lessons trust membership-scoped curriculum results instead of 
 
 
 test('student and teacher Lessons tab opens on the progression roadmap by default', () => {
-  assert.match(lessonsTab, /const \[displayMode, setDisplayMode\] = useState<'roadmap' \| 'cards'>\('cards'\)/);
+  assert.match(lessonsTab, /const \[displayMode, setDisplayMode\] = useState<'roadmap' \| 'cards'>\('roadmap'\)/);
   assert.match(lessonsTab, /displayMode === 'roadmap' \?/);
   assert.match(lessonsTab, /Lesson Cards Grid/);
 });
