@@ -15,7 +15,6 @@ import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { supabase } from '../../lib/supabase';
-import { recordCommunityAchievementEvent } from '../../lib/achievementService';
 import { getFeedDisplayState } from '../../lib/feedDisplayState';
 import { uploadFeedMediaToSupabase, extractEmbedMedia, checkStorageBackendStatus } from '../../lib/supabaseDatabase';
 import {
@@ -425,8 +424,6 @@ export function FeedTab({ lang }: { lang: Language }) {
         }
         return p;
       }));
-    } else if (res.action === 'added') {
-      void recordCommunityAchievementEvent('community_reaction', postId);
     }
   };
 
@@ -1016,7 +1013,6 @@ export function FeedTab({ lang }: { lang: Language }) {
         setActionError(lang === 'ar' ? `مش قادرين نحفظ المشاركة دلوقتي: ${errorMessage}` : `Failed to save post to cloud: ${errorMessage}`);
         return;
       }
-      void recordCommunityAchievementEvent('community_post', res.data.id);
       const refreshedFeed = await fetchFeedPostsFromSupabase();
       setPosts(refreshedFeed.data || [res.data!, ...posts]);
       setNewPostText('');
