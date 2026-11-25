@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 type CosmeticKind = 'frame' | 'banner' | 'badge' | 'effect';
 type Cosmetic = { id: string; kind: CosmeticKind; title_en: string; title_ar: string; description_en: string; description_ar: string; preview_start: string; preview_end: string; points_cost: number; rarity: 'common' | 'rare' | 'epic' | 'legendary' };
 type Equipped = Partial<Record<CosmeticKind, string>>;
+type EarnedBadge = { id: string; title_en: string; title_ar: string; category: string; icon: string; style: string; earned_at: string };
 type Section = 'profile' | 'store' | 'inventory';
 
 const frames = [
@@ -47,6 +48,8 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
   const [equipped, setEquipped] = useState<Equipped>({});
   const [catalog, setCatalog] = useState<Cosmetic[]>([]);
   const [unlockedIds, setUnlockedIds] = useState<string[]>([]);
+  const [earnedBadges, setEarnedBadges] = useState<EarnedBadge[]>([]);
+  const [pointsBalance, setPointsBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -57,12 +60,14 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
     if (!supabase) { setLoading(false); return; }
     setLoading(true); setError('');
     try {
-      const [customResult, catalogResult, unlockResult] = await Promise.all([
+      const [customResult, catalogResult, unlockResult, profileResult, badgeUnlockResult] = await Promise.all([
         supabase.from('profile_customizations').select('frame_key,banner_key,display_title,equipped_cosmetics').eq('user_id', userId).maybeSingle(),
         supabase.from('profile_cosmetic_catalog').select('*').eq('is_active', true).order('display_order'),
-        supabase.from('profile_cosmetic_unlocks').select('cosmetic_id').eq('user_id', userId)
+        supabase.from('profile_cosmetic_unlocks').select('cosmetic_id').eq('user_id', userId),
+        supabase.from('profiles').select('points').eq('id', userId).maybeSingle(),
+        supabase.from('achievement_unlocks').select('badge_id,earned_at').eq('student_id', userId).order('earned_at', { ascending: false }).limit(8)
       ]);
-      const firstError = customResult.error || catalogResult.error || unlockResult.error;
+      const firstError = customResult.error || catalogResult.error || unlockResult.error || profileResult.error || badgeUnlockResult.error;
       if (firstError) throw firstError;
       if (customResult.data) {
         setFrame(customResult.data.frame_key || 'coptic-gold');
@@ -72,6 +77,14 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
       } else setEquipped({});
       setCatalog((catalogResult.data || []) as Cosmetic[]);
       setUnlockedIds((unlockResult.data || []).map(row => row.cosmetic_id));
+      setPointsBalance(profileResult.data?.points || 0);
+      const badgeIds = (badgeUnlockResult.data || []).map(row => row.badge_id);
+      if (badgeIds.length) {
+        const { data: badgeRows, error: badgeError } = await supabase.from('achievement_badges').select('id,title_en,title_ar,category,icon,style').in('id', badgeIds);
+        if (badgeError) throw badgeError;
+        const earnedAt = new Map((badgeUnlockResult.data || []).map(row => [row.badge_id, row.earned_at]));
+        setEarnedBadges((badgeRows || []).map(badge => ({ ...badge, earned_at: earnedAt.get(badge.id) || '' })).sort((a,b) => (earnedAt.get(b.id) || '').localeCompare(earnedAt.get(a.id) || '')) as EarnedBadge[]);
+      } else setEarnedBadges([]);
     } catch (loadError: any) {
       setError(loadError?.message || (ar ? 'تعذر تحميل المتجر ومظهر الملف.' : 'Could not load the profile store.'));
     } finally { setLoading(false); }
@@ -110,6 +123,15 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
         : raw.includes('COSMETIC_NOT_AVAILABLE') ? (ar ? 'العنصر ده مش متاح حالياً.' : 'This item is no longer available.')
         : raw || (ar ? 'تعذر إتمام الشراء.' : 'Purchase failed.'));
     } else { setMessage(ar ? 'اتفتح العنصر في مخزونك!' : 'Unlocked! It is now in your inventory.'); await load(); }
+    setBusyId(null);
+  };
+
+  const unequip = async (kind: CosmeticKind) => {
+    if (!supabase) return;
+    setBusyId('free-' + kind); setError(''); setMessage('');
+    const { error: unequipError } = await supabase.rpc('unequip_profile_cosmetic', { p_kind: kind });
+    if (unequipError) setError(unequipError.message || (ar ? 'تعذر إزالة المظهر.' : 'Could not remove this cosmetic.'));
+    else { setMessage(ar ? 'تم الرجوع للمظهر الأساسي.' : 'Free appearance restored.'); await load(); }
     setBusyId(null);
   };
 
@@ -193,6 +215,10 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
               </label>
             </div>
           </details>
+          <div className="flex flex-wrap items-center gap-2">
+            {equipped.frame && <button type="button" onClick={() => void unequip('frame')} disabled={busyId === 'free-frame'} className="min-h-9 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-[10px] font-bold text-[var(--text-secondary)] disabled:opacity-50">{ar ? 'إطار مجاني' : 'Use free frame'}</button>}
+            {equipped.banner && <button type="button" onClick={() => void unequip('banner')} disabled={busyId === 'free-banner'} className="min-h-9 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-[10px] font-bold text-[var(--text-secondary)] disabled:opacity-50">{ar ? 'غلاف مجاني' : 'Use free banner'}</button>}
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[10px] text-[var(--text-secondary)]">{ar ? 'العناصر من المتجر تظهر في ملفك بعد فتحها وتطبيقها.' : 'Store cosmetics appear on your profile after unlocking and equipping them.'}</p>
             <button type="button" disabled={saving} onClick={() => void save()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border-b-4 border-[#3442B8] bg-[#5865F2] px-4 py-2 text-xs font-black text-white transition hover:brightness-105 active:translate-y-0.5 disabled:opacity-50">
               {saving ? <Loader2 size={14} className="animate-spin"/> : <Check size={14}/>} {ar ? 'حفظ المظهر' : 'Save profile'}
@@ -201,9 +227,16 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
         </div>
       )}
 
+      {section === 'profile' && earnedBadges.length > 0 && (
+        <section className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-900/60 dark:bg-amber-950/20">
+          <div className="mb-2 flex items-center justify-between gap-2"><h4 className="flex items-center gap-1.5 text-xs font-black text-amber-950 dark:text-amber-100"><Crown size={14}/>{ar ? 'رف إنجازاتك' : 'Achievement showcase'}</h4><span className="text-[10px] font-bold text-amber-800 dark:text-amber-200">{earnedBadges.length} / 8</span></div>
+          <div className="flex flex-wrap gap-2">{earnedBadges.map(badge => <span key={badge.id} className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-white/80 px-2.5 py-1 text-[10px] font-black text-amber-950 dark:bg-slate-900 dark:text-amber-100"><Trophy size={11}/>{ar ? badge.title_ar : badge.title_en}</span>)}</div>
+        </section>
+      )}
+
       {section === 'store' && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? 'متجر المظاهر' : 'Cosmetic store'}</h4><p className="text-[10px] text-[var(--text-secondary)]">{ar ? 'افتح إطارات وأغلفة وشارات وتأثيرات بالنقاط' : 'Unlock frames, banners, badges and effects with points'}</p></div><ShoppingBag size={19} className="text-[#5865F2]"/></div>
+          <div className="flex items-center justify-between gap-2"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? 'متجر المظاهر' : 'Cosmetic store'}</h4><p className="text-[10px] text-[var(--text-secondary)]">{ar ? 'افتح إطارات وأغلفة وشارات وتأثيرات بالنقاط' : 'Unlock frames, banners, badges and effects with points'}</p></div><div className="flex items-center gap-2"><span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-black text-amber-900"><Star size={12} className="mr-1 inline"/>{pointsBalance} {ar ? 'نقطة' : 'pts'}</span><ShoppingBag size={19} className="text-[#5865F2]"/></div></div>
           <div className="grid gap-3 sm:grid-cols-2">
             {catalog.map(item => {
               const owned = unlockedIds.includes(item.id), busy = busyId === item.id;
