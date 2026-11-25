@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Star, BookOpen, ChevronRight, ChevronLeft, Sparkles, AlertCircle, Info, Flame, ArrowDownWideNarrow } from 'lucide-react';
+import { Calendar, Clock, Star, BookOpen, ChevronRight, ChevronLeft, Sparkles, AlertCircle, Info, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   getCopticDate, 
   COPTIC_MONTHS, 
   COPTIC_FEASTS, 
+  getCopticMonthGregorianRange,
   CopticFeast, 
   CopticDateResult 
 } from '../../data/copticCalendarData';
@@ -191,7 +192,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {displayedFeasts.map(({ feast, targetDate }) => {
             const time = timeRemaining[feast.id] || { days: 0, hours: 0, minutes: 0 };
-            const isToday = time.days === 0 && time.hours === 0 && time.minutes === 0;
+            const isToday = targetDate.toDateString() === new Date().toDateString();
 
             return (
               <div
