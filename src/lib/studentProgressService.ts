@@ -486,6 +486,7 @@ export async function getAuthoritativeLeaderboard(options?: {
 }): Promise<{
   success: boolean;
   classGroupId: string | null;
+  availableClassGroupIds: string[];
   timeframe: string;
   leaderboard: any[];
   currentUserEntry: any | null;
@@ -514,6 +515,7 @@ export async function getAuthoritativeLeaderboard(options?: {
     return {
       success: true,
       classGroupId: json.classGroupId,
+      availableClassGroupIds: json.availableClassGroupIds || [],
       timeframe: json.timeframe,
       leaderboard: json.leaderboard || [],
       currentUserEntry: json.currentUserEntry || null,
@@ -527,6 +529,7 @@ export async function getAuthoritativeLeaderboard(options?: {
     return {
       success: false,
       classGroupId: options?.classGroupId || null,
+      availableClassGroupIds: [],
       timeframe: options?.timeframe || 'weekly',
       leaderboard: [],
       currentUserEntry: null,
