@@ -45,3 +45,9 @@ test('multi-day fasts show their full date range and Annunciation follows Holy W
   assert.match(calendarTab, /feastEndDate/);
   assert.match(calendarTab, /Not observed this year/);
 });
+
+test('Holy Pascha is shown as the Monday-to-Wednesday Pascha service period', () => {
+  const holyPascha = calendarData.slice(calendarData.indexOf("id: 'holy_pascha'"), calendarData.indexOf("id: 'resurrection'"));
+  assert.match(holyPascha, /date\.setDate\(date\.getDate\(\) - 6\)/);
+  assert.match(holyPascha, /date\.setDate\(date\.getDate\(\) - 4\)/);
+});
