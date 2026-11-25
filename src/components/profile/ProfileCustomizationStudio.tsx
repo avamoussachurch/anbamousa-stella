@@ -57,7 +57,11 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    if (isGuest || !supabase) { setLoading(false); return; }
+    if (isGuest || !supabase) {
+      setFrame('coptic-gold'); setBanner('desert-dawn'); setTitle(''); setEquipped({});
+      setCatalog([]); setUnlockedIds([]); setEarnedBadges([]); setPointsBalance(points);
+      setLoading(false); return;
+    }
     setLoading(true); setError('');
     try {
       const [customResult, catalogResult, unlockResult, profileResult, badgeUnlockResult] = await Promise.all([
@@ -74,7 +78,9 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
         setBanner(customResult.data.banner_key || 'desert-dawn');
         setTitle(customResult.data.display_title || '');
         setEquipped((customResult.data.equipped_cosmetics || {}) as Equipped);
-      } else setEquipped({});
+      } else {
+        setFrame('coptic-gold'); setBanner('desert-dawn'); setTitle(''); setEquipped({});
+      }
       setCatalog((catalogResult.data || []) as Cosmetic[]);
       setUnlockedIds((unlockResult.data || []).map(row => row.cosmetic_id));
       setPointsBalance(profileResult.data?.points || 0);
@@ -88,7 +94,7 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
     } catch (loadError: any) {
       setError(loadError?.message || (ar ? 'تعذر تحميل المتجر ومظهر الملف.' : 'Could not load the profile store.'));
     } finally { setLoading(false); }
-  }, [userId, ar, isGuest]);
+  }, [userId, ar, isGuest, points]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -103,7 +109,7 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
   const titleItem = titles.find(item => item.id === title);
 
   const save = async () => {
-    if (!supabase) return;
+    if (isGuest || !supabase) { setError(ar ? 'سجّل الدخول أولاً لحفظ المظهر.' : 'Sign in first to save your profile.'); return; }
     setSaving(true); setMessage(''); setError('');
     const { error: saveError } = await supabase.from('profile_customizations').upsert({
       user_id: userId, frame_key: frame, banner_key: banner, display_title: title.trim() || null
@@ -231,7 +237,7 @@ export function ProfileCustomizationStudio({ userId, lang, avatarUrl, displayNam
             {equipped.banner && <button type="button" onClick={() => void unequip('banner')} disabled={busyId === 'free-banner'} className="min-h-9 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-[10px] font-bold text-[var(--text-secondary)] disabled:opacity-50">{ar ? 'غلاف مجاني' : 'Use free banner'}</button>}
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[10px] text-[var(--text-secondary)]">{ar ? 'العناصر من المتجر تظهر في ملفك بعد فتحها وتطبيقها.' : 'Store cosmetics appear on your profile after unlocking and equipping them.'}</p>
-            <button type="button" disabled={saving} onClick={() => void save()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border-b-4 border-[#3442B8] bg-[#5865F2] px-4 py-2 text-xs font-black text-white transition hover:brightness-105 active:translate-y-0.5 disabled:opacity-50">
+            <button type="button" disabled={saving || isGuest || !supabase} onClick={() => void save()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border-b-4 border-[#3442B8] bg-[#5865F2] px-4 py-2 text-xs font-black text-white transition hover:brightness-105 active:translate-y-0.5 disabled:opacity-50">
               {saving ? <Loader2 size={14} className="animate-spin"/> : <Check size={14}/>} {ar ? 'حفظ المظهر' : 'Save profile'}
             </button>
           </div>
