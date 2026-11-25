@@ -112,8 +112,8 @@ grant execute on function public.capture_profile_cosmetic_unlock_achievement_eve
 insert into public.achievement_badges
   (slug,title_en,title_ar,description_en,description_ar,category,icon,style,criteria,points_reward,is_active,display_order)
 values
-('poll-participant','Poll Participant','صوت في استطلاع','Vote in your first community poll.','شارك بصوتك في أول استطلاع مجتمعي.','community','chart-bar','blue','{"event_type":"community_poll_vote","count":1}'::jsonb,25,true,400),
-('poll-regular','Poll Regular','صوت المجتمع','Vote in five different community polls.','شارك في خمسة استطلاعات مجتمعية مختلفة.','community','chart-no-axes-combined','teal','{"event_type":"community_poll_vote","count":5}'::jsonb,75,true,410),
+('poll-participant','Poll Participant','صوت في استطلاع','Vote in your first community poll.','شارك بصوتك في أول استطلاع مجتمعي.','community','clipboard-list','blue','{"event_type":"community_poll_vote","count":1}'::jsonb,25,true,400),
+('poll-regular','Poll Regular','صوت المجتمع','Vote in five different community polls.','شارك في خمسة استطلاعات مجتمعية مختلفة.','community','clipboard-check','teal','{"event_type":"community_poll_vote","count":5}'::jsonb,75,true,410),
 ('event-supporter','Event Supporter','داعم المناسبات','RSVP as attending to your first church event.','أكد حضورك لأول مناسبة كنسية.','community','calendar-check','green','{"event_type":"church_event_rsvp","count":1}'::jsonb,25,true,420),
 ('event-regular','Church Calendar Companion','رفيق المناسبات','RSVP as attending to five church events.','أكد حضورك لخمس مناسبات كنسية.','community','calendar-heart','gold','{"event_type":"church_event_rsvp","count":5}'::jsonb,75,true,430),
 ('profile-stylist','Profile Stylist','منسق الملف الشخصي','Unlock your first profile cosmetic.','افتح أول عنصر لتخصيص ملفك الشخصي.','community','palette','coral','{"event_type":"profile_cosmetic_unlocked","count":1}'::jsonb,35,true,440),
