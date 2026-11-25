@@ -97,7 +97,7 @@ values
 ('first-follow','First Connection','أول تواصل','Follow your first person in the community.','تابع أول شخص في مجتمع أنبا موسى.','community','users','teal','{"event_type":"community_follow","count":1}'::jsonb,20,true,460),
 ('community-connector','Community Connector','حلقة وصل المجتمع','Follow five people in the community.','تابع خمسة أشخاص في المجتمع.','community','users-round','blue','{"event_type":"community_follow","count":5}'::jsonb,60,true,470),
 ('first-bookmark','Saved Treasure','كنز محفوظ','Save your first community post.','احفظ أول منشور يعجبك في المجتمع.','community','bookmark','gold','{"event_type":"community_bookmark","count":1}'::jsonb,20,true,480),
-('memory-keeper','Memory Keeper','حافظ الذكريات','Save five community posts for later.','احفظ خمسة منشورات للرجوع إليها لاحقاً.','community','bookmark-check','coral','{"event_type":"community_bookmark","count":5}'::jsonb,60,true,490)
+('bookmark-keeper','Bookmark Keeper','حافظ الإشارات','Save five community posts for later.','احفظ خمسة منشورات للرجوع إليها لاحقاً.','community','bookmark-check','coral','{"event_type":"community_bookmark","count":5}'::jsonb,60,true,490)
 on conflict (slug) do nothing;
 
 insert into public.achievement_category_milestones
