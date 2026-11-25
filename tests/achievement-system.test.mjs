@@ -26,6 +26,7 @@ const quiz = read('../src/lib/studentQuizService.ts');
 const realtimeMigration = read('../supabase/migrations/20261125184732_achievement_unlock_realtime.sql');
 const milestoneMigration = read('../supabase/migrations/20261125183844_attainable_category_milestones.sql');
 const communityGamificationMigration = read('../supabase/migrations/20261125202000_gamify_community_and_profile_actions.sql');
+const studentGuardMigration = read('../supabase/migrations/20261125203000_guard_community_achievement_student_role.sql');
 
 test('achievement data is persisted with RLS and idempotent unlock records', () => {
   for (const table of ['achievement_badges','achievement_events','achievement_unlocks','achievement_category_milestones','achievement_milestone_awards','reward_catalog']) {
@@ -152,4 +153,11 @@ test('polls, church RSVPs, and cosmetic unlocks create server-verified achieveme
   assert.match(communityGamificationMigration, /poll-participant/);
   assert.match(communityGamificationMigration, /event-supporter/);
   assert.match(communityGamificationMigration, /profile-stylist/);
+});
+
+test('community and cosmetic achievement events are limited to active student role assignments', () => {
+  assert.equal((studentGuardMigration.match(/r\.role = 'student' and r\.revoked_at is null/g) || []).length, 3);
+  assert.match(studentGuardMigration, /capture_community_poll_vote_achievement_event/);
+  assert.match(studentGuardMigration, /capture_church_event_rsvp_achievement_event/);
+  assert.match(studentGuardMigration, /capture_profile_cosmetic_unlock_achievement_event/);
 });
