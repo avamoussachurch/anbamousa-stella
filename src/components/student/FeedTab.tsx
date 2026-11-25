@@ -6,7 +6,7 @@ import {
   MessageCircle, Heart, Share2, Send, CornerDownRight, X, Pin, Trash2, 
   ShieldCheck, Sparkles, Filter, ArrowUpDown, Flame, Clock, Bell, User as UserIcon,
   Image as ImageIcon, Video, Link2, Loader2, Play, Info, ExternalLink, AlertCircle, Check, Maximize2, Mic, Square, Pause,
-  Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning, Flag, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight
+  Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning, Flag, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight, Bookmark, BookmarkCheck, Users, MessagesSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
@@ -39,6 +39,7 @@ import {
 } from '../../lib/feedAttachments';
 
 type SortOption = 'latest' | 'popular' | 'discussed' | 'announcements';
+type FeedView = 'all' | 'following' | 'saved';
 
 const FEED_STORAGE_KEY = 'orthodox_church_feed_posts_v5';
 
@@ -143,6 +144,9 @@ export function FeedTab({ lang }: { lang: Language }) {
 
   // 2. State controls
   const [sortBy, setSortBy] = useState<SortOption>('latest');
+  const [feedView, setFeedView] = useState<FeedView>('all');
+  const [savedPostIds, setSavedPostIds] = useState<Set<string>>(() => new Set());
+  const [followedUserIds, setFollowedUserIds] = useState<Set<string>>(() => new Set());
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [replyTarget, setReplyTarget] = useState<{ commentId: string; replyToAuthor?: string } | null>(null);
@@ -160,6 +164,24 @@ export function FeedTab({ lang }: { lang: Language }) {
   const [selectedTargetGradeGroups, setSelectedTargetGradeGroups] = useState<string[]>([]);
   const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<string[]>([]);
   const [loadingTargetClasses, setLoadingTargetClasses] = useState(false);
+
+  useEffect(() => {
+    if (!supabase || !userData?.id) {
+      setSavedPostIds(new Set());
+      setFollowedUserIds(new Set());
+      return;
+    }
+    let active = true;
+    Promise.all([
+      supabase.from('feed_post_bookmarks').select('post_id').eq('user_id', userData.id),
+      supabase.from('profile_follows').select('followed_id').eq('follower_id', userData.id)
+    ]).then(([savedResult, followingResult]) => {
+      if (!active) return;
+      if (!savedResult.error) setSavedPostIds(new Set((savedResult.data || []).map(row => row.post_id)));
+      if (!followingResult.error) setFollowedUserIds(new Set((followingResult.data || []).map(row => row.followed_id)));
+    }).catch(error => console.warn('Could not load saved/following feed state:', error));
+    return () => { active = false; };
+  }, [userData?.id]);
 
   useEffect(() => {
     if (!isComposeModalOpen || !userData?.id || !supabase) return;
@@ -345,6 +367,36 @@ export function FeedTab({ lang }: { lang: Language }) {
         });
     }
   }, [posts, sortBy]);
+
+  const visiblePosts = useMemo(() => {
+    if (feedView === 'saved') return sortedPosts.filter(post => savedPostIds.has(post.id));
+    if (feedView === 'following') return sortedPosts.filter(post => post.authorId === userData?.id || followedUserIds.has(post.authorId));
+    return sortedPosts;
+  }, [sortedPosts, feedView, savedPostIds, followedUserIds, userData?.id]);
+
+  const togglePostBookmark = async (postId: string) => {
+    if (!supabase || !userData?.id) {
+      setActionError(lang === 'ar' ? 'سجّل الدخول لحفظ المنشورات.' : 'Sign in to save posts.');
+      return;
+    }
+    const wasSaved = savedPostIds.has(postId);
+    setSavedPostIds(previous => {
+      const next = new Set(previous);
+      if (wasSaved) next.delete(postId); else next.add(postId);
+      return next;
+    });
+    const result = wasSaved
+      ? await supabase.from('feed_post_bookmarks').delete().eq('user_id', userData.id).eq('post_id', postId)
+      : await supabase.from('feed_post_bookmarks').insert({ user_id: userData.id, post_id: postId });
+    if (result.error) {
+      setSavedPostIds(previous => {
+        const next = new Set(previous);
+        if (wasSaved) next.add(postId); else next.delete(postId);
+        return next;
+      });
+      setActionError(lang === 'ar' ? 'تعذر حفظ المنشور. جرّب مرة أخرى.' : 'Could not save this post. Please try again.');
+    }
+  };
 
   const submitPostReport = async () => {
     if (!supabase || !userData?.id || !reportingPost) {
@@ -1138,6 +1190,19 @@ export function FeedTab({ lang }: { lang: Language }) {
         </button>
       </motion.div>
 
+      {/* Discord / Instagram-style community views */}
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-2 shadow-xs">
+        <button type="button" onClick={() => setFeedView('all')} aria-pressed={feedView === 'all'} className={'inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 text-xs font-black transition ' + (feedView === 'all' ? 'border-b-4 border-[#3442B8] bg-[#5865F2] text-white shadow-sm' : 'bg-[var(--mousa-sand-100)] text-[var(--mousa-sand-700)] hover:bg-[var(--mousa-sand-200)]')}>
+          <MessagesSquare size={15}/>{lang === 'ar' ? 'كل المجتمع' : 'Community'}
+        </button>
+        <button type="button" onClick={() => setFeedView('following')} aria-pressed={feedView === 'following'} disabled={!userData?.id} className={'inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 text-xs font-black transition disabled:opacity-40 ' + (feedView === 'following' ? 'border-b-4 border-[#3442B8] bg-[#5865F2] text-white shadow-sm' : 'bg-[var(--mousa-sand-100)] text-[var(--mousa-sand-700)] hover:bg-[var(--mousa-sand-200)]')}>
+          <Users size={15}/>{lang === 'ar' ? 'أتابعهم' : 'Following'}<span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[9px]">{followedUserIds.size}</span>
+        </button>
+        <button type="button" onClick={() => setFeedView('saved')} aria-pressed={feedView === 'saved'} disabled={!userData?.id} className={'inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 text-xs font-black transition disabled:opacity-40 ' + (feedView === 'saved' ? 'border-b-4 border-[#3442B8] bg-[#5865F2] text-white shadow-sm' : 'bg-[var(--mousa-sand-100)] text-[var(--mousa-sand-700)] hover:bg-[var(--mousa-sand-200)]')}>
+          <Bookmark size={15}/>{lang === 'ar' ? 'المحفوظات' : 'Saved'}<span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[9px]">{savedPostIds.size}</span>
+        </button>
+      </div>
+
       {/* Sort By Section */}
       <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] p-3 rounded-2xl border-2 border-[var(--mousa-border-sand)] shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-black text-[var(--mousa-sand-500)]">
@@ -1498,7 +1563,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       </AnimatePresence>
 
       {/* Posts List */}
-      {getFeedDisplayState(isFeedLoading, feedLoadError, sortedPosts) === 'loading' ? (
+      {getFeedDisplayState(isFeedLoading, feedLoadError, visiblePosts) === 'loading' ? (
         <div className="space-y-6 md:columns-2 lg:columns-3 md:gap-6 md:space-y-0" aria-label={lang === 'ar' ? 'جارٍ تحميل المنشورات' : 'Loading posts'} aria-busy="true">
           {[0, 1, 2].map(item => (
             <div key={item} className="mb-6 break-inside-avoid animate-pulse rounded-3xl border-2 border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] p-5 dark:bg-[#1E1914]">
@@ -1515,7 +1580,7 @@ export function FeedTab({ lang }: { lang: Language }) {
             </div>
           ))}
         </div>
-      ) : getFeedDisplayState(false, feedLoadError, sortedPosts) === 'error' ? (
+      ) : getFeedDisplayState(false, feedLoadError, visiblePosts) === 'error' ? (
         <div role="alert" className="rounded-3xl border-2 border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-900 dark:bg-rose-950/30">
           <AlertCircle className="mx-auto mb-3 text-rose-600 dark:text-rose-300" size={32} />
           <p className="font-bold text-rose-900 dark:text-rose-100">
@@ -1526,20 +1591,20 @@ export function FeedTab({ lang }: { lang: Language }) {
             {lang === 'ar' ? 'حاول تاني' : 'Try again'}
           </button>
         </div>
-      ) : getFeedDisplayState(false, null, sortedPosts) === 'empty' ? (
+      ) : getFeedDisplayState(false, null, visiblePosts) === 'empty' ? (
         <div className="rounded-3xl border-2 border-dashed border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] px-6 py-12 text-center dark:bg-[#1E1914]">
           <MessageCircle className="mx-auto mb-3 text-[var(--mousa-teal)]" size={34} />
           <p className="font-black text-[var(--mousa-teal-deep)] dark:text-stone-100">
-            {lang === 'ar' ? 'لسه مفيش منشورات هنا.' : 'There are no posts yet.'}
+            {feedView === 'saved' ? (lang === 'ar' ? 'لسه مفيش منشورات محفوظة.' : 'No saved posts yet.') : feedView === 'following' ? (lang === 'ar' ? 'تابع أعضاء الكنيسة عشان تشوف منشوراتهم هنا.' : 'Follow church members to see their posts here.') : (lang === 'ar' ? 'لسه مفيش منشورات هنا.' : 'There are no posts yet.')}
           </p>
           <p className="mt-1 text-sm text-[var(--mousa-sand-600)] dark:text-stone-400">
-            {lang === 'ar' ? 'شارك آية أو كلمة تشجيع مع أسرة الكنيسة.' : 'Share a verse or encouraging thought with your church family.'}
+            {feedView === 'saved' ? (lang === 'ar' ? 'اضغط علامة الحفظ على أي منشور عشان يرجع يظهر هنا.' : 'Tap the bookmark icon on any post to keep it here.') : feedView === 'following' ? (lang === 'ar' ? 'اكتشف الأعضاء من زر People وابدأ المتابعة.' : 'Discover people from the People directory and follow them.') : (lang === 'ar' ? 'شارك آية أو كلمة تشجيع مع أسرة الكنيسة.' : 'Share a verse or encouraging thought with your church family.')}
           </p>
         </div>
       ) : (
       <div className="space-y-6 md:columns-2 lg:columns-3 md:gap-6 md:space-y-0">
         <AnimatePresence mode="popLayout">
-          {sortedPosts.map((post, idx) => (
+          {visiblePosts.map((post, idx) => (
             <motion.div 
               layout
               initial={{ opacity: 0, y: 20, scale: 0.96 }}
@@ -1718,10 +1783,13 @@ export function FeedTab({ lang }: { lang: Language }) {
                   <span>{post.reactions.cross}</span>
                 </motion.button>
                 
+                <button type="button" onClick={() => void togglePostBookmark(post.id)} aria-pressed={savedPostIds.has(post.id)} title={savedPostIds.has(post.id) ? (lang === 'ar' ? 'إزالة من المحفوظات' : 'Remove from saved') : (lang === 'ar' ? 'حفظ المنشور' : 'Save post')} className={'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition ' + (savedPostIds.has(post.id) ? 'bg-[#5865F2] text-white' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100')}>
+                  {savedPostIds.has(post.id) ? <BookmarkCheck size={14}/> : <Bookmark size={14}/>}<span>{lang === 'ar' ? 'حفظ' : 'Save'}</span>
+                </button>
                 <div className="flex-1"></div>
                 
                 <button 
-                  onClick={() => setExpandedPostId(expandedPostId === post.id ? null : post.id)}
+                  onClick={() => setExpandedPostId(expandedPostId === post.id ? null : post.id)
                   className="flex items-center gap-1 text-gray-500 hover:text-[var(--mousa-teal-deep)] font-bold text-xs transition-colors cursor-pointer"
                 >
                   <MessageCircle size={15} />
