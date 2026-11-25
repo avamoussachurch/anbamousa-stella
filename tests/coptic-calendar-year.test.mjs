@@ -51,3 +51,12 @@ test('Holy Pascha is shown as the Monday-to-Wednesday Pascha service period', ()
   assert.match(holyPascha, /date\.setDate\(date\.getDate\(\) - 6\)/);
   assert.match(holyPascha, /date\.setDate\(date\.getDate\(\) - 4\)/);
 });
+
+test('all seven traditional Marian feasts are included in the Egyptian Coptic calendar', () => {
+  for (const feastId of [
+    'st_mary_annunciation_nativity','st_mary_nativity','st_mary_entry_temple',
+    'st_mary_dormition','st_mary_iron_dissolver','st_mary_zeitoun','st_mary_assumption'
+  ]) {
+    assert.match(calendarData, new RegExp("id: '" + feastId + "'"));
+  }
+});
