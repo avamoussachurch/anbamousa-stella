@@ -190,6 +190,7 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
           {displayedFeasts.map(({ feast, targetDate }) => {
             const time = timeRemaining[feast.id] || { days: 0, hours: 0, minutes: 0 };
             const isToday = targetDate.toDateString() === new Date().toDateString();
+            const isPastInCalendarView = sortMode === 'calendar' && targetDate < todayStart;
 
             return (
               <div
@@ -239,6 +240,8 @@ export function CopticCalendarTab({ lang }: { lang: Language }) {
                     <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-extrabold text-xs animate-pulse">
                       {lang === 'ar' ? 'النهارده بنحتفل بالعيد!' : 'Celebrating Today!'}
                     </span>
+                  ) : isPastInCalendarView ? (
+                    <span className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-bold text-gray-500 dark:bg-slate-800 dark:text-gray-400">{lang === 'ar' ? 'انتهى هذا العام' : 'Passed this year'}</span>
                   ) : (
                     <div className="flex items-center gap-1.5 font-bold text-sm">
                       <span className="px-2 py-1 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200">
