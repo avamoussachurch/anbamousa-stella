@@ -527,8 +527,8 @@ export const COPTIC_FEASTS: CopticFeast[] = [
     isFishPermitted: false,
     descriptionAr: 'مرافقة آلام المخلص الفادية على الصليب، ولبس السواد الكنسي وقراءة نبوات الخلاص.',
     descriptionEn: 'Meditating on the Passion of Christ, black church veils, and solemn Pascha hymns.',
-    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 7); return date; },
-    endDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 1); return date; }
+    targetDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 6); return date; },
+    endDateThisYear: (y) => { const date = getOrthodoxEasterDate(y); date.setDate(date.getDate() - 4); return date; }
   },
   {
     id: 'resurrection_feast',
