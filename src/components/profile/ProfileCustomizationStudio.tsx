@@ -18,7 +18,12 @@ const titles = [
   { id: 'sunday-school-star', label: 'Sunday School Star', ar: 'نجم مدارس الأحد' },
   { id: 'saint-story-keeper', label: 'Saint Stories Keeper', ar: 'محب سير القديسين' }
 ];
-const fallbackBanners: Record<string, [string, string]> = {\n  'desert-dawn': ['#6F4935', '#F4DCA6'], 'coptic-pattern': ['#174D4C', '#C59B50'],\n  'olive-garden': ['#244C39', '#C2A96A'], 'golden-church': ['#5B3A27', '#E9CE8A'],\n  'midnight-teal': ['#102F3B', '#327E79']\n};\nconst fallbackFrames: Record<string, string> = {
+const fallbackBanners: Record<string, [string, string]> = {
+  'desert-dawn': ['#6F4935', '#F4DCA6'], 'coptic-pattern': ['#174D4C', '#C59B50'],
+  'olive-garden': ['#244C39', '#C2A96A'], 'golden-church': ['#5B3A27', '#E9CE8A'],
+  'midnight-teal': ['#102F3B', '#327E79']
+};
+const fallbackFrames: Record<string, string> = {
   'coptic-gold': '#D6A84F', 'olive-wreath': '#47734D', 'royal-blue': '#285A9B',
   'desert-sand': '#C58A4A', burgundy: '#762B3A'
 };
