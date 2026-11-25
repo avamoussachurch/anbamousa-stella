@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { hasRole } from '../../lib/workspaces';
 import { supabase } from '../../lib/supabase';
 import { submitRewardRequest } from '../../lib/supabaseDatabase';
+import { evaluateMyAchievements } from '../../lib/achievementService';
 
 type Category = 'learning' | 'hymns' | 'taxis' | 'prayer' | 'quizzes' | 'community' | 'attendance' | 'consistency' | 'service';
 type BadgeRow = {
@@ -87,6 +88,7 @@ export function AchievementRewardsStudio({ mode, initialView = 'badges', lang }:
     if (!supabase || !userData?.id || isGuest) { setLoading(false); return; }
     setLoading(true); setError('');
     try {
+      if (mode === 'student' && hasRole(userData, 'student')) await evaluateMyAchievements();
       const [badgeResult, unlockResult, eventResult, milestoneResult, awardResult, rewardResult] = await Promise.all([
         supabase.from('achievement_badges').select('*').order('display_order'),
         supabase.from('achievement_unlocks').select('badge_id,earned_at,points_awarded').eq('student_id', userData.id),

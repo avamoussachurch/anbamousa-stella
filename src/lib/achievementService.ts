@@ -34,3 +34,16 @@ export async function recordAchievementEvent(
     return { success: false, pointsAwarded: 0, error: error instanceof Error ? error.message : 'Achievement tracking failed.' };
   }
 }
+
+export async function evaluateMyAchievements(): Promise<{ success: boolean; pointsAwarded: number; hasUnlocks: boolean; error?: string }> {
+  if (!supabase) return { success: false, pointsAwarded: 0, hasUnlocks: false, error: 'Supabase is unavailable.' };
+  try {
+    const { data, error } = await supabase.rpc('evaluate_my_achievements');
+    if (error) throw error;
+    const result = dispatchAchievementResult(data);
+    return { success: true, ...result };
+  } catch (error) {
+    console.warn('Achievement evaluation could not be refreshed:', error);
+    return { success: false, pointsAwarded: 0, hasUnlocks: false, error: error instanceof Error ? error.message : 'Achievement evaluation failed.' };
+  }
+}

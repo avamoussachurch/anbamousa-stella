@@ -14,6 +14,8 @@ import { UniversalAudioPlayer } from '../design-system/UniversalAudioPlayer';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
+import { hasRole } from '../../lib/workspaces';
+import { evaluateMyAchievements } from '../../lib/achievementService';
 import { supabase } from '../../lib/supabase';
 import { getFeedDisplayState } from '../../lib/feedDisplayState';
 import { uploadFeedMediaToSupabase, extractEmbedMedia, checkStorageBackendStatus } from '../../lib/supabaseDatabase';
