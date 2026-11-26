@@ -43,7 +43,7 @@ function asChildProfile(child: ParentChildRecord): ChildProfile {
     pointsKnown: child.points !== null,
     rank: 0,
     attendanceRate: 0,
-    screenTimeMinutes: 0,
+    screenTimeMinutes: child.screenTimeTodayMinutes ?? 0,
     completedLessonsCount: 0,
     totalLessonsCount: 0,
     verseMemorizedCount: 0,
