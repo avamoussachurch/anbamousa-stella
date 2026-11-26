@@ -23,6 +23,7 @@ import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
 import { InAppDocumentViewer } from '../sunday-school/viewers/InAppDocumentViewer';
 import { LearningAdventurePanel } from '../common/LearningAdventurePanel';
+import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 
 interface CopticTaxisTabProps {
   lang?: Language;
@@ -44,6 +45,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const [completedRituals, setCompletedRituals] = useState<Record<string, boolean>>({});
   const [reviewedTaxisSteps, setReviewedTaxisSteps] = useState<Record<string, string[]>>({});
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  const [showTaxisCelebration, setShowTaxisCelebration] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -139,13 +141,14 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   };
 
   const handleCompleteRitual = async (ritualId: string) => {
-    if (isMarkingComplete || !selectedItem) return;
+    if (isMarkingComplete || !selectedItem || completedRituals[ritualId]) return;
     setIsMarkingComplete(true);
     setCompletedRituals(prev => ({ ...prev, [ritualId]: true }));
     try {
       localStorage.setItem(`church_taxis_completed_${ritualId}`, 'true');
     } catch (e) {}
 
+    let completionConfirmed = !userData;
     if (userData) {
       try {
         const res = await recordStudentSchoolActivity({
@@ -156,6 +159,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
           titleEn: selectedItem.titleEn || 'Liturgical Order',
           studentId: userData.id
         });
+        if (res.success) completionConfirmed = true;
         if (res.success && setUserDirectly) {
           setUserDirectly({
             ...userData,
@@ -169,6 +173,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
       }
     }
     setIsMarkingComplete(false);
+    if (completionConfirmed) setShowTaxisCelebration(true);
   };
 
   const filteredItems = items.filter(item => {
@@ -520,6 +525,16 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
           )}
         </div>
       </div>
+          <AnimatePresence>
+            {showTaxisCelebration && (
+              <motion.div className="fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto bg-slate-950/75 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowTaxisCelebration(false)} role="dialog" aria-modal="true" aria-label={isAr ? 'احتفال إتمام دراسة الطقس' : 'Ritual study celebration'}>
+                <motion.div initial={{ opacity: 0, y: 28, scale: 0.88 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} onClick={event => event.stopPropagation()} className="w-full max-w-lg rounded-[2rem] border border-violet-300/30 bg-[var(--mousa-cream-surface)] p-6 shadow-2xl dark:bg-[#211B15]">
+                  <RewardCelebration type="trophy" lang={isAr ? 'ar' : 'en'} title="Ritual Quest Complete!" titleAr="ممتاز! أنهيت مغامرة الطقس!" subtitle="You explored the order and strengthened your service knowledge." subtitleAr="فهمك للطقس وخدمتك الكنسية بقوا أقوى." pointsEarned={userData ? 50 : undefined} badgeText="Ritual Explorer" badgeTextAr="مستكشف الطقوس" />
+                  <button type="button" onClick={() => setShowTaxisCelebration(false)} className="mt-5 min-h-11 w-full rounded-2xl bg-[var(--mousa-teal)] px-4 py-3 text-sm font-black text-white shadow-lg">{isAr ? 'استكشف طقس تاني!' : 'Explore another ritual!'}</button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {activeDocument && (
         <InAppDocumentViewer
           documentUrl={activeDocument.url}
