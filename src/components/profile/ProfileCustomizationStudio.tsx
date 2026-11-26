@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Award, Check, Crown, Loader2, Palette, ShoppingBag, Star, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { CopticAchievementSeal, type CopticAchievementCategory } from '../design-system/CopticAchievementSeal';
 
 type CosmeticKind = 'frame' | 'banner' | 'badge' | 'effect';
 type Cosmetic = {
@@ -12,19 +13,18 @@ type Cosmetic = {
 type Equipped = Partial<Record<CosmeticKind, string>>;
 
 function BadgeArtwork({ item, compact = false }: { item: Cosmetic; compact?: boolean }) {
-  const seed = Array.from(item.id).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const petals = Array.from({ length: 8 }, (_, index) => index * 45 + (seed % 23));
-  const glyph = seed % 3;
+  const categoryById: Record<string, CopticAchievementCategory> = {
+    'badge-prayer-flame': 'prayer',
+    'badge-hymn-wreath': 'hymns',
+    'badge-cross-shield': 'taxis',
+    'badge-gospel-light': 'learning',
+    'badge-servant-heart': 'service',
+    'badge-cross-victory': 'consistency'
+  };
+  const category = categoryById[item.id] || 'learning';
   return (
-    <div className={'grid place-items-center overflow-hidden ' + (compact ? 'h-8 w-8' : 'h-full w-full')} style={{ background: `radial-gradient(circle at 50% 45%, ${safeColor(item.preview_end, '#F1D18A')} 0%, ${safeColor(item.preview_start, '#174D4C')} 72%)` }}>
-      <svg viewBox="0 0 100 100" className={compact ? 'h-8 w-8' : 'h-16 w-16 drop-shadow-lg'} aria-label={item.title_en} role="img">
-        <defs><linearGradient id={'badge-' + item.id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={safeColor(item.preview_end, '#F1D18A')}/><stop offset="1" stopColor={safeColor(item.preview_start, '#174D4C')}/></linearGradient></defs>
-        <path d="M50 4 61 13 76 12 82 27 94 39 87 54 91 70 75 79 68 94 50 89 32 94 25 79 9 70 13 54 6 39 18 27 24 12 39 13Z" fill={'url(#badge-' + item.id + ')'} stroke="#F8E7B8" strokeWidth="3"/>
-        <circle cx="50" cy="50" r="31" fill="none" stroke="#FFF4D6" strokeWidth="2.5" strokeDasharray={seed % 2 ? '3 3' : '1 4'}/>
-        {petals.map(angle => <path key={angle} d="M50 18 Q59 31 50 39 Q41 31 50 18Z" fill="#FFF4D6" opacity=".88" transform={`rotate(${angle} 50 50)`}/>)}
-        <circle cx="50" cy="50" r="17" fill="#FFF4D6" stroke="#7C5424" strokeWidth="2"/>
-        {glyph === 0 ? <path d="M50 34 54 45 66 46 57 54 60 66 50 59 40 66 43 54 34 46 46 45Z" fill="#80551F"/> : glyph === 1 ? <path d="M47 35h6v12h12v6H53v12h-6V53H35v-6h12Z" fill="#80551F"/> : <path d="M50 35c-12 0-17 12-9 20 5 5 9 9 9 9s4-4 9-9c8-8 3-20-9-20Z" fill="#80551F"/>}
-      </svg>
+    <div className="grid h-full w-full place-items-center overflow-hidden" style={{ background: 'radial-gradient(circle at 50% 35%, ' + safeColor(item.preview_end, '#E7BD65') + ', ' + safeColor(item.preview_start, '#123F48') + ' 76%)' }}>
+      <CopticAchievementSeal category={category} designKey={item.id} size={compact ? 31 : 84} title={item.title_en}/>
     </div>
   );
 }
@@ -98,6 +98,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
   const [catalog, setCatalog] = useState<Cosmetic[]>([]);
   const [unlocked, setUnlocked] = useState<string[]>([]);
   const [equipped, setEquipped] = useState<Equipped>({});
+  const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const [frame, setFrame] = useState('coptic-gold');
   const [banner, setBanner] = useState('desert-dawn');
   const [title, setTitle] = useState('');
@@ -157,11 +158,13 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
 
   useEffect(() => { void load(); }, [load]);
 
-  const equippedItems = useMemo(() => catalog.filter(item => equipped[item.kind] === item.id), [catalog, equipped]);
-  const selectedFrame = catalog.find(item => item.id === equipped.frame);
-  const selectedBanner = catalog.find(item => item.id === equipped.banner);
-  const selectedEffect = catalog.find(item => item.id === equipped.effect);
-  const selectedBadge = catalog.find(item => item.id === equipped.badge);
+  const previewItem = catalog.find(item => item.id === previewItemId) || null;
+  const previewEquipped: Equipped = previewItem ? { ...equipped, [previewItem.kind]: previewItem.id } : equipped;
+  const equippedItems = useMemo(() => catalog.filter(item => previewEquipped[item.kind] === item.id), [catalog, previewEquipped]);
+  const selectedFrame = catalog.find(item => item.id === previewEquipped.frame);
+  const selectedBanner = catalog.find(item => item.id === previewEquipped.banner);
+  const selectedEffect = catalog.find(item => item.id === previewEquipped.effect);
+  const selectedBadge = catalog.find(item => item.id === previewEquipped.badge);
   const frameColor = selectedFrame ? safeColor(selectedFrame.preview_end, '#D6A84F') : (fallbackFrames[frame] || fallbackFrames['coptic-gold']);
   const bannerStart = selectedBanner ? safeColor(selectedBanner.preview_start, '#173C50') : '#6F4935';
   const bannerEnd = selectedBanner ? safeColor(selectedBanner.preview_end, '#D6A15B') : '#F4DCA6';
@@ -238,6 +241,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
         <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs font-black text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"><Star size={14}/>{points.toLocaleString()} {ar ? 'نقطة' : 'points'}</div>
       </header>
 
+      {previewItem && view === 'store' && <p role="status" className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-200">{ar ? 'معاينة مباشرة: العنصر ظاهر الآن على ملفك بالأعلى فقط، ولم يتم شراؤه أو تطبيقه.' : 'Live preview: this item is shown on your profile above only. It has not been purchased or equipped.'}</p>}
       <div className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)]">
         <div className="relative h-24 sm:h-32 overflow-hidden" style={{ background: 'linear-gradient(115deg,' + bannerStart + ',' + bannerEnd + ')' }}>
           {selectedBanner && <div className="absolute inset-0"><CosmeticArtwork item={selectedBanner}/></div>}
@@ -297,6 +301,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
           return <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)]">
             <div className="relative h-20 overflow-hidden"><CosmeticArtwork item={item}/><span className="absolute end-2 top-2 rounded-full bg-black/45 px-2 py-1 text-[9px] font-black text-white">{ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</span>{isEquipped && <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[9px] font-black text-emerald-800"><Check size={11}/>{ar ? 'مُستخدم' : 'Equipped'}</span>}</div>
             <div className="space-y-2 p-3"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? item.title_ar : item.title_en}</h4><p className="mt-0.5 min-h-8 text-[11px] text-[var(--text-secondary)]">{ar ? item.description_ar : item.description_en}</p></div>
+              <button type="button" onClick={() => setPreviewItemId(previewItemId === item.id ? null : item.id)} aria-pressed={previewItemId === item.id} className={'inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border px-3 text-xs font-black transition ' + (previewItemId === item.id ? 'border-amber-300 bg-amber-300/15 text-amber-700 dark:text-amber-200' : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:border-amber-400')}>{previewItemId === item.id ? (ar ? 'إلغاء المعاينة' : 'Stop preview') : (ar ? 'جرّبه على ملفي' : 'Preview on my profile')}</button>
               <div className="flex items-center justify-between gap-2"><span className="text-xs font-black text-amber-700 dark:text-amber-300">{item.points_cost.toLocaleString()} {ar ? 'نقطة' : 'pts'}</span>
                 {isEquipped ? <button type="button" onClick={() => void unequip(item.kind)} disabled={Boolean(busyId)} className="min-h-9 rounded-lg border px-3 text-xs font-bold">{ar ? 'إزالة' : 'Unequip'}</button>
                   : owned ? <button type="button" onClick={() => void runCosmeticAction(item, 'equip')} disabled={Boolean(busyId)} className="min-h-9 rounded-lg bg-[var(--action-primary)] px-3 text-xs font-black text-[var(--action-primary-text)]">{busyId === item.id ? <Loader2 size={14} className="animate-spin"/> : ar ? 'تطبيق' : 'Equip'}</button>
