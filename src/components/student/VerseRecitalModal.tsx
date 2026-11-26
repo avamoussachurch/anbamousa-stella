@@ -211,14 +211,14 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-black/60 backdrop-blur-sm"
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-amber-200/40 dark:border-slate-800 text-slate-800 dark:text-slate-100"
+        className="relative w-full max-w-xl max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1.5rem)] overscroll-contain overflow-y-auto pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-amber-200/40 dark:border-slate-800 text-slate-800 dark:text-slate-100"
       >
         {/* Close Button */}
         <button
