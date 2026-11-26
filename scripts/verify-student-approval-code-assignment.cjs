@@ -130,38 +130,38 @@ async function run() {
   console.log('✅ PASS: Denied request cleanly removed from pending list.');
 
   console.log('\n--- TEST C: Manual Student Assignment Using Student Code ---');
-  // Use student code 'ST-4921' (David Shenouda) to assign to Grade 4
+  // Use student code 'A7K2M' (David Shenouda) to assign to Grade 4
   const codeAssignRes = await request('POST', '/api/church/student/class', {
-    studentId: 'ST-4921',
+    studentId: 'A7K2M',
     classGroupId: 'primary_2',
     grade: 'Grade 4'
   }, {
     'Authorization': `Bearer ${teacherMinaToken}`
   });
-  assert.strictEqual(codeAssignRes.status, 200, 'Manual assignment using code ST-4921 returns 200');
+  assert.strictEqual(codeAssignRes.status, 200, 'Manual assignment using code A7K2M returns 200');
   assert.strictEqual(codeAssignRes.data.success, true, 'Assignment reports success');
 
   // Check roster for David Shenouda
   const rosterCheck = await request('GET', '/api/church/my-class', null, {
     'Authorization': `Bearer ${teacherMinaToken}`
   });
-  const hasDavid = rosterCheck.data.roster?.some(s => s.id === 'student-david' || s.id === 'ST-4921' || s.name.includes('David'));
-  assert(hasDavid, 'Student David assigned via code ST-4921 is present in the class roster');
-  console.log('✅ PASS: Manual assignment via student code ST-4921 successfully adds student to roster.');
+  const hasDavid = rosterCheck.data.roster?.some(s => s.id === 'student-david' || s.id === 'A7K2M' || s.name.includes('David'));
+  assert(hasDavid, 'Student David assigned via code A7K2M is present in the class roster');
+  console.log('✅ PASS: Manual assignment via student code A7K2M successfully adds student to roster.');
 
-  // Also test with CH-9481 (Mina Emad)
+  // Also test with B6T2N (Mina Emad)
   const codeAssignRes2 = await request('POST', '/api/church/student/class', {
-    studentId: 'CH-9481',
+    studentId: 'B6T2N',
     classGroupId: 'primary_2',
     grade: 'Grade 4'
   }, {
     'Authorization': `Bearer ${teacherMinaToken}`
   });
-  assert.strictEqual(codeAssignRes2.status, 200, 'Manual assignment using code CH-9481 returns 200');
+  assert.strictEqual(codeAssignRes2.status, 200, 'Manual assignment using code B6T2N returns 200');
   const hasMina = (await request('GET', '/api/church/my-class', null, { 'Authorization': `Bearer ${teacherMinaToken}` }))
-    .data.roster?.some(s => s.id === 'c1' || s.id === 'CH-9481' || s.name.includes('Mina Emad'));
-  assert(hasMina, 'Student Mina assigned via code CH-9481 is present in the class roster');
-  console.log('✅ PASS: Manual assignment via student code CH-9481 successfully adds student to roster.');
+    .data.roster?.some(s => s.id === 'c1' || s.id === 'B6T2N' || s.name.includes('Mina Emad'));
+  assert(hasMina, 'Student Mina assigned via code B6T2N is present in the class roster');
+  console.log('✅ PASS: Manual assignment via student code B6T2N successfully adds student to roster.');
 
   console.log('\n🎉 ALL 4 USER SCENARIO CHECKS PASSED PERFECTLY!');
 }
