@@ -65,6 +65,7 @@ export function ProfileTab({
   const [earnedAchievements, setEarnedAchievements] = useState<Array<{ id: string; titleEn: string; titleAr: string; descriptionEn: string; descriptionAr: string; icon: string; style: string; earnedAt: string; pointsAwarded: number }>>([]);
   const [achievementsLoading, setAchievementsLoading] = useState(false);
   const [achievementsError, setAchievementsError] = useState<string | null>(null);
+  const [achievementRefreshTick, setAchievementRefreshTick] = useState(0);
 
   // Church Year & Student Join Code state
   const [churchYear, setChurchYear] = useState<string>('2026 / 2027');
@@ -128,7 +129,16 @@ export function ProfileTab({
       }
     })();
     return () => { active = false; };
-  }, [userData?.id, isGuest]);
+    const channel = supabase.channel('profile-achievements-' + userData.id)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'achievement_unlocks', filter: 'student_id=eq.' + userData.id }, () => {
+        setAchievementRefreshTick(value => value + 1);
+      })
+      .subscribe();
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [userData?.id, isGuest, achievementRefreshTick]);
 
   const isStudent = workspaceRole ? workspaceRole === 'student' : hasRole(userData, 'student');
 
