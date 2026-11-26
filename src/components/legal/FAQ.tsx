@@ -38,6 +38,42 @@ export function FAQ({ lang, onClose }: { lang: Language, onClose: () => void }) 
       aEn: 'Yes, all the hymns in the music player are approved and authentic Coptic Orthodox hymns, gathered from official church sources like St-Takla and Tasbeha.',
       qCop: 'Ⲁⲛ ⲛⲓϩⲱⲥ ⲉⲧϧⲉⲛ ⲡⲁⲓⲥⲕⲉⲩⲟⲥ ϩⲁⲛⲕⲁⲛⲟⲛⲓⲕⲟⲛ ⲛⲉ;',
       aCop: 'Ⲁϩⲁ, ⲛⲓϩⲱⲥ ⲧⲏⲣⲟⲩ ϩⲁⲛϩⲱⲥ ⲛ̀ⲣⲉⲙⲛ̀ⲭⲏⲙⲓ ⲛ̀ⲟⲣⲑⲟⲇⲟⲝⲟⲥ ⲉⲧⲧⲁϫⲣⲏⲟⲩⲧ ⲉ̀ⲃⲟⲗ ϧⲉⲛ ⲛⲓⲡⲏⲅⲏ ⲉⲑⲟⲩⲁⲃ ⲛ̀ⲧⲉ ϯⲉⲕⲕⲗⲏⲥⲓⲁ.'
+    },
+    {
+      qAr: 'إيه هو كود ربط الأسرة؟',
+      aAr: 'كل طالب له كود من ٥ حروف أو أرقام فقط. انسخه كما هو وشاركه مع ولي أمرك فقط، أو استخدم QR. لا تنشره في المنشورات أو المجموعات العامة.',
+      qEn: 'What is my family connection code?',
+      aEn: 'Every student has a five-character code made only of letters and numbers. Copy it exactly and share it only with your parent, or use the QR code. Never post it publicly.'
+    },
+    {
+      qAr: 'هل ولي الأمر يقدر يشوف وقت استخدام التطبيق؟',
+      aAr: 'نعم. وقت النشاط اليومي يُحسب أثناء بقاء التطبيق ظاهراً ونشطاً، ويتوقف عند إخفاء الصفحة. يظهر إجمالي اليوم بتوقيت القاهرة في بوابة ولي الأمر بعد مزامنة البيانات.',
+      qEn: 'Can my parent see my active time?',
+      aEn: 'Yes. Daily active time is counted while the app is visible and pauses when the page is hidden. The Cairo-day total appears in the Parent Portal after it syncs.'
+    },
+    {
+      qAr: 'إزاي أغيّر لغة الإشعارات؟',
+      aAr: 'لغة الإشعارات تتبع لغة التطبيق تلقائياً. لو غيّرت التطبيق للعربية أو الإنجليزية، الإشعارات الجديدة هتستخدم نفس اللغة. تقدر تتحكم في أنواع الإشعارات والهدوء من إعدادات الإشعارات.',
+      qEn: 'How do I change notification language?',
+      aEn: 'Notification language follows the app language automatically. Switch the app to Arabic or English and new notifications will use that language. You can manage categories and quiet hours in Notification Preferences.'
+    },
+    {
+      qAr: 'إزاي أبعت تسجيل تسميع اللحن للخادم؟',
+      aAr: 'بعد ما توقف التسجيل وتسمعه، اضغط «إرسال التسميع للخادم». التسجيل الخاص هيظهر للخدام المكلّفين بفصلك فقط، ويقدروا يسمعوه ويعلّموا إنه اتراجع.',
+      qEn: 'How do I send a hymn practice recording to my teacher?',
+      aEn: 'After stopping and replaying your take, press “Send practice to teacher”. The private recording is available only to servants assigned to your class, who can listen and mark it reviewed.'
+    },
+    {
+      qAr: 'فين الحاجات اللي اشتريتها من متجر الملف الشخصي؟',
+      aAr: 'كل عنصر تشتريه بيتحفظ في المخزون. من المخزون تقدر تطبّقه على ملفك، والمعاينة المباشرة بتوريك شكله على ملفك قبل الشراء أو التطبيق.',
+      qEn: 'Where do my profile store purchases go?',
+      aEn: 'Purchased items are stored in your inventory. You can equip them from there, and the live preview lets you see how an item looks on your profile before buying or equipping it.'
+    },
+    {
+      qAr: 'إزاي أطلب مساعدة من فريق الكنيسة؟',
+      aAr: 'استخدم زر «المساعدة» في الشريط العلوي لإرسال طلب خاص. خدام ومسؤولو المنصة المصرّح لهم يراجعوا الطلب. وللرعاية الروحية، تواصل مباشرة مع خادم فصلك أو الأب الكاهن.',
+      qEn: 'How do I contact the church support team?',
+      aEn: 'Use the Help button in the top bar to send a private support request for review by authorized servants or platform administrators. For pastoral care, speak directly with your class servant or priest.'
     }
   ];
 
@@ -70,11 +106,11 @@ export function FAQ({ lang, onClose }: { lang: Language, onClose: () => void }) 
           {faqs.map((faq, index) => (
             <details key={index} className="group bg-gray-50 rounded-2xl border border-gray-100 [&_summary::-webkit-details-marker]:hidden">
               <summary className="flex items-center justify-between p-5 font-bold text-[var(--color-church-blue)] cursor-pointer hover:bg-gray-100 rounded-2xl transition-colors">
-                <span>{isCop ? faq.qCop : lang === 'ar' ? faq.qAr : faq.qEn}</span>
+                <span>{isCop ? (faq.qCop || faq.qAr) : lang === 'ar' ? faq.qAr : faq.qEn}</span>
                 <ChevronDown size={20} className="text-gray-400 group-open:rotate-180 transition-transform" />
               </summary>
               <div className="px-5 pb-5 text-gray-600 text-sm md:text-base leading-relaxed border-t border-gray-100 pt-4 mt-2">
-                {isCop ? faq.aCop : lang === 'ar' ? faq.aAr : faq.aEn}
+                {isCop ? (faq.aCop || faq.aAr) : lang === 'ar' ? faq.aAr : faq.aEn}
               </div>
             </details>
           ))}
