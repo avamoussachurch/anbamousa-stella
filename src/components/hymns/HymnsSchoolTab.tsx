@@ -200,6 +200,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       setIsPlaying(false);
       return;
     }
+    const practicePlayer = document.querySelector<HTMLAudioElement>('audio[src="' + recordedAudioUrl + '"]');
+    if (practicePlayer && !practicePlayer.paused) practicePlayer.pause();
     setAudioPlaybackError(null);
     try {
       await audioRef.current.play();
@@ -655,10 +657,10 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
               <button
                 type="button"
                 onClick={() => markAsMastered(selectedHymn.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                className={`min-h-12 px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-md ring-2 ring-offset-2 ring-offset-[var(--surface-primary)] ${
                   masteredHymns[selectedHymn.id]
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 hover:bg-amber-100'
+                    ? 'bg-emerald-600 text-white ring-emerald-400/60'
+                    : 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white ring-emerald-400/70 hover:from-emerald-500 hover:to-teal-600 hover:scale-[1.02]'
                 }`}
               >
                 <CheckCircle2 size={16} />
@@ -903,7 +905,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 {practiceRecordingError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800 dark:bg-red-950/40 dark:text-red-200">{practiceRecordingError}</p>}
                 {recordedAudioUrl && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <audio controls src={recordedAudioUrl} className="h-10 w-full max-w-sm" />
+                    <audio controls src={recordedAudioUrl} className="h-10 w-full max-w-sm" onPlay={() => { if (audioRef.current && !audioRef.current.paused) { audioRef.current.pause(); setIsPlaying(false); } }} />
                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                       ✓ {isAr ? 'التسجيل جاهز للاستماع' : 'Recording ready to replay'}
                     </span>
