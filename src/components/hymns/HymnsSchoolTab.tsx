@@ -97,6 +97,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   }, [recordedAudioUrl]);
 
   const [showHymnCelebration, setShowHymnCelebration] = useState(false);
+  const [masteryError, setMasteryError] = useState<string | null>(null);
 
   const assignedLevel = parseHymnsTaxisLevel(userData?.hymnsTaxisLevel);
 
@@ -406,6 +407,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
 
   const markAsMastered = async (hymnId: string) => {
     if (masteredHymns[hymnId]) return;
+    setMasteryError(null);
+    let masteryConfirmed = !userData;
     const updated = { ...masteredHymns, [hymnId]: true };
     setMasteredHymns(updated);
     if (typeof window !== 'undefined') {
@@ -421,6 +424,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           titleEn: selectedHymn?.titleEn || 'Mastered Deacon Hymn',
           studentId: userData.id
         });
+        if (res.success) masteryConfirmed = true;
+        else setMasteryError(res.error || (isAr ? 'تعذر حفظ إتقان اللحن. حاول مرة أخرى.' : 'Could not save hymn mastery. Please try again.'));
         if (res.success && setUserDirectly) {
           setUserDirectly({
             ...userData,
@@ -431,7 +436,15 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         }
       } catch (e) {
         console.warn('Note on hymn activity record:', e);
+        setMasteryError(isAr ? 'تعذر حفظ إتقان اللحن. حاول مرة أخرى.' : 'Could not save hymn mastery. Please try again.');
       }
+    }
+    if (!masteryConfirmed) {
+      const reverted = { ...masteredHymns };
+      delete reverted[hymnId];
+      setMasteredHymns(reverted);
+      try { localStorage.setItem('church_mastered_hymns', JSON.stringify(reverted)); } catch (_) {}
+      return;
     }
     setShowHymnCelebration(true);
   };
@@ -653,6 +666,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
               </button>
             </div>
 
+            {masteryError && <p role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">{masteryError}</p>}
             <LearningAdventurePanel
               lang={isAr ? 'ar' : 'en'}
               accent="gold"
