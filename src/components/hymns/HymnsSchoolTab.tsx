@@ -320,6 +320,11 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     setActiveLineId(1);
     setCurrentTime(0);
     setRecordedAudioUrl(null);
+    setRecordedAudioBlob(null);
+    setRecordedDurationSeconds(0);
+    setPracticeSubmitted(false);
+    setPracticeSubmissionMessage(null);
+    setPracticeSubmissionError(null);
   };
 
   // Voice recording alongside hymn. The waveform is measured from the microphone
