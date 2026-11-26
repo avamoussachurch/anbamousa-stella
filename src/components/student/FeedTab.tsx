@@ -51,7 +51,7 @@ type ComposerAttachment = UploadedFeedAttachment & {
   globalAudioTitle?: string;
 };
 
-export function FeedTab({ lang, initialPostId }: { lang: Language; initialPostId?: string | null }) {
+export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Language; initialPostId?: string | null; initialProfileId?: string | null }) {
   const { userData } = useAuth();
   const workspace = useActiveWorkspace();
   const isCop = lang === 'copt' || lang === 'cop';
@@ -1092,7 +1092,7 @@ export function FeedTab({ lang, initialPostId }: { lang: Language; initialPostId
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-          <FeedPeopleDirectory lang={lang} />
+          <FeedPeopleDirectory lang={lang} initialProfileId={initialProfileId} />
           {isTeacher && (
             <span className="bg-[var(--mousa-coral-soft)] text-[var(--mousa-coral-dark)] border border-[var(--mousa-coral)]/30 px-3 py-1 rounded-full text-xs font-black shadow-2xs flex items-center gap-1">
               <ShieldCheck size={14} />
@@ -1617,7 +1617,7 @@ export function FeedTab({ lang, initialPostId }: { lang: Language; initialPostId
                   />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="font-bold text-sm text-[var(--mousa-teal-deep)]">{post.authorName}</p>
+                      <button type="button" onClick={() => { const url = new URL(window.location.href); url.searchParams.set('tab', 'feed'); url.searchParams.set('profile', post.authorId); window.location.assign(url.toString()); }} className="text-start font-bold text-sm text-[var(--mousa-teal-deep)] hover:text-[var(--mousa-gold)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mousa-gold)]">{post.authorName}</button>
                       {post.isAnnouncement && (
                         <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">
                           {lang === 'ar' ? 'خادم' : 'Servant'}
