@@ -64,7 +64,7 @@ export function ProfileTab({
   const [familyCodeLoading, setFamilyCodeLoading] = useState(false);
   const [familyCodeError, setFamilyCodeError] = useState<string | null>(null);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [earnedAchievements, setEarnedAchievements] = useState<Array<{ id: string; titleEn: string; titleAr: string; descriptionEn: string; descriptionAr: string; icon: string; style: string; category: CopticAchievementCategory; earnedAt: string; pointsAwarded: number }>>([]);
+  const [earnedAchievements, setEarnedAchievements] = useState<Array<{ id: string; slug: string; titleEn: string; titleAr: string; descriptionEn: string; descriptionAr: string; icon: string; style: string; category: CopticAchievementCategory; earnedAt: string; pointsAwarded: number }>>([]);
   const [achievementsLoading, setAchievementsLoading] = useState(false);
   const [achievementsError, setAchievementsError] = useState<string | null>(null);
   const [achievementRefreshTick, setAchievementRefreshTick] = useState(0);
@@ -115,7 +115,7 @@ export function ProfileTab({
       try {
         const [unlockResult, badgeResult] = await Promise.all([
           supabase.from('achievement_unlocks').select('badge_id,earned_at,points_awarded').eq('student_id', userData.id).order('earned_at', { ascending: false }),
-          supabase.from('achievement_badges').select('id,title_en,title_ar,description_en,description_ar,icon,style,category')
+          supabase.from('achievement_badges').select('id,slug,title_en,title_ar,description_en,description_ar,icon,style,category')
         ]);
         if (unlockResult.error) throw unlockResult.error;
         if (badgeResult.error) throw badgeResult.error;
@@ -125,6 +125,7 @@ export function ProfileTab({
           const badge = badgesById.get(unlock.badge_id);
           return badge ? [{
             id: unlock.badge_id,
+            slug: badge.slug || unlock.badge_id,
             titleEn: badge.title_en,
             titleAr: badge.title_ar,
             descriptionEn: badge.description_en,
@@ -633,7 +634,7 @@ export function ProfileTab({
                         : achievementsError ? <p role="status" className="rounded-2xl border border-red-300/50 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-200">{lang === 'ar' ? 'تعذر تحميل الإنجازات. حاول تحديث الصفحة.' : 'Could not load achievements. Please refresh the page.'}</p>
                         : earnedAchievements.length > 0 ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           {earnedAchievements.map(badge => <div key={badge.id} className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-[var(--mousa-gold)]/50 bg-gradient-to-br from-amber-50 to-orange-50 p-3 dark:from-amber-950/40 dark:to-stone-900">
-                            <div className="grid h-16 w-16 shrink-0 place-items-center"><CopticAchievementSeal category={badge.category} designKey={badge.id} size={58} title={lang === 'ar' ? badge.titleAr : badge.titleEn}/></div>
+                            <div className="grid h-16 w-16 shrink-0 place-items-center"><CopticAchievementSeal category={badge.category} designKey={badge.slug || badge.id} size={58} title={lang === 'ar' ? badge.titleAr : badge.titleEn}/></div>
                             <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-stone-900 dark:text-amber-100">{lang === 'ar' ? badge.titleAr : badge.titleEn}</p><p className="mt-0.5 line-clamp-2 text-xs text-stone-700 dark:text-stone-300">{lang === 'ar' ? badge.descriptionAr : badge.descriptionEn}</p><p className="mt-1 text-[10px] font-bold text-amber-800 dark:text-amber-200">{badge.pointsAwarded > 0 ? '+' + badge.pointsAwarded + ' ' + (lang === 'ar' ? 'نقطة' : 'pts') + ' · ' : ''}{new Date(badge.earnedAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</p></div>
                           </div>)}
                         </div> : <p role="status" className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">{lang === 'ar' ? 'لسه مفيش أوسمة مكتسبة. كمّل تحديات رحلتي وهتظهر هنا تلقائيًا!' : 'No badges earned yet. Complete My Trail challenges and they will appear here automatically!'}</p>}
