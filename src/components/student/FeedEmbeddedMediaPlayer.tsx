@@ -17,7 +17,7 @@ export function FeedEmbeddedMediaPlayer({ src, title = 'Community video', onErro
 
   return (
     <div
-      className="relative z-10 mx-auto w-full overflow-hidden bg-black" style={{ aspectRatio: "16 / 9", width: "min(100%, calc(72svh * 16 / 9))" }}
+      className="relative z-10 mx-auto w-full max-w-[1280px] overflow-hidden bg-black" style={{ aspectRatio: "16 / 9" }}
       onClick={event => event.stopPropagation()}
       onPointerDown={event => event.stopPropagation()}
     >
