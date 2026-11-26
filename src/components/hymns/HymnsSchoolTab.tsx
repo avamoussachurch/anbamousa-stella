@@ -126,7 +126,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       if (uploadError) throw uploadError;
       const { error: insertError } = await supabase.from('hymn_practice_submissions').insert({
         student_id: userData.id,
-        student_name: userData.name || (isAr ? 'تلميذ' : 'Student'),
+        student_name: userData.fullName || (isAr ? 'تلميذ' : 'Student'),
         hymn_id: String(selectedHymn.id),
         hymn_title: selectedHymn.titleEn || selectedHymn.title || (isAr ? 'تدريب لحن' : 'Hymn practice'),
         recording_path: path,
