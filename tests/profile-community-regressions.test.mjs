@@ -40,3 +40,13 @@ test('assigned teachers can open a dedicated hymn-practice inbox from their dash
   assert.match(teacher, /activeTab === 'hymnPractice' && <HymnPracticeInbox/);
   assert.match(home, /onOpenWorkspaceTab\('hymn-practice'\)/);
 });
+test('post, comment and reply reactions use the same persistent multi-reaction service', () => {
+  const feed = read('../src/components/student/FeedTab.tsx');
+  const types = read('../src/types.ts');
+  assert.match(feed, /toggleFeedReactionInSupabase\(reactionType, \{ postId \}\)/);
+  assert.match(feed, /toggleFeedReactionInSupabase\(reactionType, \{ commentId \}\)/);
+  assert.match(feed, /toggleFeedReactionInSupabase\(reactionType, \{ commentId: replyId \}\)/);
+  assert.match(feed, /reactionInFlightRef\.current\.has\(lockKey\)/);
+  assert.match(types, /export type FeedReactionKey = 'heart'.*'star'/);
+  assert.match(types, /reactions\?: FeedReactionCounts/);
+});
