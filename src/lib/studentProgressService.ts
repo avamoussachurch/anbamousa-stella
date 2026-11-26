@@ -481,6 +481,7 @@ export async function getAuthoritativeCompletionHistory(
  */
 export async function getAuthoritativeLeaderboard(options?: {
   classGroupId?: string;
+  scope?: 'class' | 'church';
   timeframe?: 'weekly' | 'all_time';
   studentId?: string;
 }): Promise<{
@@ -501,6 +502,7 @@ export async function getAuthoritativeLeaderboard(options?: {
     const headers = await getAuthHeader();
     const query = new URLSearchParams();
     if (options?.classGroupId) query.set('classGroupId', options.classGroupId);
+    if (options?.scope) query.set('scope', options.scope);
     if (options?.timeframe) query.set('timeframe', options.timeframe);
     if (options?.studentId) query.set('studentId', options.studentId);
 
@@ -515,6 +517,7 @@ export async function getAuthoritativeLeaderboard(options?: {
     return {
       success: true,
       classGroupId: json.classGroupId,
+      scope: json.scope || options?.scope || 'class',
       availableClassGroupIds: json.availableClassGroupIds || [],
       timeframe: json.timeframe,
       leaderboard: json.leaderboard || [],
@@ -529,6 +532,7 @@ export async function getAuthoritativeLeaderboard(options?: {
     return {
       success: false,
       classGroupId: options?.classGroupId || null,
+      scope: options?.scope || 'class',
       availableClassGroupIds: [],
       timeframe: options?.timeframe || 'weekly',
       leaderboard: [],
