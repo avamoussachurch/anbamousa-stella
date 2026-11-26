@@ -293,7 +293,7 @@ export function StudentAdventureHome({
         <AdventureStars reduceMotion={Boolean(reduceMotion)} />
         <motion.span aria-hidden="true" className="pointer-events-none absolute end-[12%] top-[18%] z-[1] text-2xl drop-shadow-[0_0_12px_rgba(245,217,140,.75)] sm:end-[18%] sm:top-[20%]" animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-4, 4, -4] }} transition={reduceMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}>🏮</motion.span>
         <div aria-hidden="true" className="absolute -end-14 -top-24 h-72 w-72 rounded-full bg-[#E7B956]/15 blur-[75px]" />
-        <svg aria-hidden="true" viewBox="0 0 800 360" preserveAspectRatio="xMidYMax slice" className="absolute inset-x-0 bottom-0 h-[78%] w-full opacity-90">
+        <svg aria-hidden="true" viewBox="0 0 800 360" preserveAspectRatio="none" className="absolute inset-x-0 bottom-0 h-[78%] w-full opacity-90">
           <defs>
             <linearGradient id="stellaDuneFar" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#28505A" /><stop offset="1" stopColor="#173541" /></linearGradient>
             <linearGradient id="stellaDuneNear" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#A77B46" /><stop offset="1" stopColor="#624B36" /></linearGradient>
