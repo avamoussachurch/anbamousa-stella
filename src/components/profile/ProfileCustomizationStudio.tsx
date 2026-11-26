@@ -11,6 +11,24 @@ type Cosmetic = {
 };
 type Equipped = Partial<Record<CosmeticKind, string>>;
 
+function BadgeArtwork({ item, compact = false }: { item: Cosmetic; compact?: boolean }) {
+  const seed = Array.from(item.id).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const petals = Array.from({ length: 8 }, (_, index) => index * 45 + (seed % 23));
+  const glyph = seed % 3;
+  return (
+    <div className={'grid place-items-center overflow-hidden ' + (compact ? 'h-8 w-8' : 'h-full w-full')} style={{ background: `radial-gradient(circle at 50% 45%, ${safeColor(item.preview_end, '#F1D18A')} 0%, ${safeColor(item.preview_start, '#174D4C')} 72%)` }}>
+      <svg viewBox="0 0 100 100" className={compact ? 'h-8 w-8' : 'h-16 w-16 drop-shadow-lg'} aria-label={item.title_en} role="img">
+        <defs><linearGradient id={'badge-' + item.id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={safeColor(item.preview_end, '#F1D18A')}/><stop offset="1" stopColor={safeColor(item.preview_start, '#174D4C')}/></linearGradient></defs>
+        <path d="M50 4 61 13 76 12 82 27 94 39 87 54 91 70 75 79 68 94 50 89 32 94 25 79 9 70 13 54 6 39 18 27 24 12 39 13Z" fill={'url(#badge-' + item.id + ')'} stroke="#F8E7B8" strokeWidth="3"/>
+        <circle cx="50" cy="50" r="31" fill="none" stroke="#FFF4D6" strokeWidth="2.5" strokeDasharray={seed % 2 ? '3 3' : '1 4'}/>
+        {petals.map(angle => <path key={angle} d="M50 18 Q59 31 50 39 Q41 31 50 18Z" fill="#FFF4D6" opacity=".88" transform={`rotate(${angle} 50 50)`}/>)}
+        <circle cx="50" cy="50" r="17" fill="#FFF4D6" stroke="#7C5424" strokeWidth="2"/>
+        {glyph === 0 ? <path d="M50 34 54 45 66 46 57 54 60 66 50 59 40 66 43 54 34 46 46 45Z" fill="#80551F"/> : glyph === 1 ? <path d="M47 35h6v12h12v6H53v12h-6V53H35v-6h12Z" fill="#80551F"/> : <path d="M50 35c-12 0-17 12-9 20 5 5 9 9 9 9s4-4 9-9c8-8 3-20-9-20Z" fill="#80551F"/>}
+      </svg>
+    </div>
+  );
+}
+
 const titles = [
   { id: 'hymn-explorer', label: 'Hymn Explorer', ar: 'مستكشف الألحان' },
   { id: 'prayer-heart', label: 'Prayer Heart', ar: 'قلب محب للصلاة' },
@@ -43,7 +61,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
   const { syncAuthoritativeProgress } = useAuth();
   const syncProgressRef = useRef(syncAuthoritativeProgress);
   syncProgressRef.current = syncAuthoritativeProgress;
-  const [view, setView] = useState<'profile' | 'store'>(initialView);
+  const [view, setView] = useState<'profile' | 'store' | 'inventory'>(initialView);
   const [category, setCategory] = useState<CosmeticKind>('frame');
   const [catalog, setCatalog] = useState<Cosmetic[]>([]);
   const [unlocked, setUnlocked] = useState<string[]>([]);
@@ -58,6 +76,8 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
   const [profileRole, setProfileRole] = useState('student');
   const [currentStreak, setCurrentStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
   const [message, setMessage] = useState('');
@@ -66,11 +86,13 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
   const load = useCallback(async () => {
     if (!supabase) { setLoading(false); setError(ar ? 'الخدمة غير متاحة حالياً.' : 'Store is unavailable.'); return; }
     setLoading(true); setError('');
-    const [customResult, catalogResult, unlockResult, profileResult] = await Promise.all([
+    const [customResult, catalogResult, unlockResult, profileResult, followersResult, followingResult] = await Promise.all([
       supabase.from('profile_customizations').select('frame_key,banner_key,display_title,equipped_cosmetics').eq('user_id', userId).maybeSingle(),
       supabase.from('profile_cosmetic_catalog').select('*').eq('is_active', true).order('display_order'),
       supabase.from('profile_cosmetic_unlocks').select('cosmetic_id').eq('user_id', userId),
-      supabase.from('profiles').select('name,avatar,role,points,current_streak,longest_streak').eq('id', userId).maybeSingle()
+      supabase.from('profiles').select('name,avatar,role,points,current_streak,longest_streak').eq('id', userId).maybeSingle(),
+      supabase.from('profile_follows').select('*', { count: 'exact', head: true }).eq('followed_id', userId),
+      supabase.from('profile_follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId)
     ]);
     const firstError = customResult.error || catalogResult.error || unlockResult.error || profileResult.error;
     if (firstError) setError(firstError.message);
@@ -96,6 +118,8 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
     setProfileRole(profileResult.data?.role || 'student');
     setCurrentStreak(Number(profileResult.data?.current_streak || 0));
     setLongestStreak(Number(profileResult.data?.longest_streak || 0));
+    setFollowersCount(followersResult.count || 0);
+    setFollowingCount(followingResult.count || 0);
     setLoading(false);
   }, [userId, ar]);
 
@@ -193,7 +217,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
               {avatarUrl && !avatarFailed ? <img src={avatarUrl} alt="" onError={() => setAvatarFailed(true)} className="h-full w-full object-cover"/> : <Crown size={30} style={{ color: frameColor }}/>}
             </div>
             <span className="absolute bottom-0 end-0 h-4 w-4 rounded-full border-[3px] border-[var(--surface-primary)] bg-emerald-500" title={ar ? 'نشط' : 'Online'} />
-            {selectedBadge && <span className="absolute -bottom-2 -start-2 grid h-7 w-7 place-items-center rounded-full border-2 border-[var(--surface-primary)] text-white" style={{ background: 'linear-gradient(135deg,' + safeColor(selectedBadge.preview_start, '#9A6A1F') + ',' + safeColor(selectedBadge.preview_end, '#FDE68A') + ')' }}><Award size={14}/></span>}
+            {selectedBadge && <span className="absolute -bottom-2 -start-2 rounded-full border-2 border-[var(--surface-primary)] shadow-lg"><BadgeArtwork item={selectedBadge} compact /></span>}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2"><p className="truncate text-base font-black text-[var(--text-primary)]">{profileName}</p><span className="rounded-md bg-[#5865F2]/20 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-[#C7CBFF]">{profileRole === 'teacher' ? (ar ? 'خادم' : 'Servant') : profileRole === 'parent' ? (ar ? 'ولي أمر' : 'Parent') : profileRole === 'admin' ? (ar ? 'إدارة' : 'Admin') : (ar ? 'طالب' : 'Student')}</span></div>
@@ -202,16 +226,19 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
           </div>
           <div className="flex flex-wrap gap-1.5">{equippedItems.map(item => <span key={item.id} title={ar ? item.title_ar : item.title_en} className="rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)]">{item.kind === 'frame' ? '✦' : item.kind === 'banner' ? '▰' : item.kind === 'badge' ? '✚' : '✧'}</span>)}</div>
         </div>
-        <div className="grid grid-cols-3 gap-2 px-4 pb-4">
+        <div className="grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-5">
           <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">{points.toLocaleString()}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'النقاط' : 'Points'}</p></div>
           <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">🔥 {currentStreak}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'المواظبة الحالية' : 'Current streak'}</p></div>
           <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">🏆 {longestStreak}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'أطول مواظبة' : 'Longest streak'}</p></div>
+          <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">{followersCount.toLocaleString()}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'المتابعون' : 'Followers'}</p></div>
+          <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">{followingCount.toLocaleString()}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'يتابع' : 'Following'}</p></div>
         </div>
       </div>
 
-      <nav className="grid grid-cols-2 gap-2 rounded-xl bg-[var(--surface-secondary)] p-1">
+      <nav className="grid grid-cols-3 gap-2 rounded-xl bg-[var(--surface-secondary)] p-1">
         <button type="button" onClick={() => setView('profile')} aria-pressed={view === 'profile'} className={'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-black transition ' + (view === 'profile' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-sm' : 'text-[var(--text-secondary)]')}><Crown size={16}/>{ar ? 'ملفي' : 'My profile'}</button>
         <button type="button" onClick={() => setView('store')} aria-pressed={view === 'store'} className={'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-black transition ' + (view === 'store' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-sm' : 'text-[var(--text-secondary)]')}><ShoppingBag size={16}/>{ar ? 'المتجر' : 'Store'}<span className="rounded-full bg-amber-400/20 px-1.5 text-[10px]">{catalog.length}</span></button>
+        <button type="button" onClick={() => setView('inventory')} aria-pressed={view === 'inventory'} className={'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-2 text-xs font-black transition ' + (view === 'inventory' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-sm' : 'text-[var(--text-secondary)]')}><Award size={15}/>{ar ? 'مقتنياتي' : 'Inventory'}<span className="rounded-full bg-emerald-400/20 px-1.5 text-[10px]">{unlocked.length}</span></button>
       </nav>
 
       {view === 'profile' ? <div className="space-y-4">
@@ -221,6 +248,12 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
         </div>
         <label className="block"><span className="mb-1.5 block text-xs font-black text-[var(--text-primary)]">{ar ? 'الغلاف الأساسي' : 'Starter banner'}</span><select value={banner} onChange={event => setBanner(event.target.value)} className="min-h-11 w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-sm"><option value="desert-dawn">{ar ? 'فجر البرية' : 'Desert Dawn'}</option><option value="coptic-pattern">{ar ? 'نقوش قبطية' : 'Coptic Pattern'}</option><option value="olive-garden">{ar ? 'بستان الزيتون' : 'Olive Garden'}</option><option value="golden-church">{ar ? 'الكنيسة الذهبية' : 'Golden Church'}</option><option value="midnight-teal">{ar ? 'فيروزي ليلي' : 'Midnight Teal'}</option></select></label>
         <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-[var(--text-secondary)]">{ar ? 'العناصر اللي فتحتها من المتجر هتظهر في معاينة ملفك.' : 'Items you unlock in the store appear in your profile preview.'}</p><button type="button" disabled={Boolean(busyId)} onClick={() => void saveLegacyStyle()} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--action-primary)] px-4 text-sm font-black text-[var(--action-primary-text)] disabled:opacity-50">{busyId === 'save' ? <Loader2 size={15} className="animate-spin"/> : <Check size={15} />}{ar ? 'حفظ الملف' : 'Save profile'}</button></div>
+      </div> : view === 'inventory' ? <div className="space-y-3">
+        <div className="flex items-center justify-between gap-2"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? 'مجموعتك الخاصة' : 'Your collection'}</h4><p className="text-xs text-[var(--text-secondary)]">{ar ? 'كل ما فتحته محفوظ هنا ويمكنك تطبيقه وقتما تحب.' : 'Everything you have unlocked is kept here and can be equipped any time.'}</p></div><span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-black text-emerald-300">{unlocked.length}</span></div>
+        {catalog.filter(item => unlocked.includes(item.id)).length ? <div className="grid gap-3 sm:grid-cols-2">{catalog.filter(item => unlocked.includes(item.id)).map(item => <article key={item.id} className="flex items-center gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-3">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl">{item.kind === 'badge' ? <BadgeArtwork item={item}/> : <div className="h-full w-full" style={{ background: `linear-gradient(135deg,${safeColor(item.preview_start,'#174D4C')},${safeColor(item.preview_end,'#D6A84F')})` }} />}</div>
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-[var(--text-primary)]">{ar ? item.title_ar : item.title_en}</p><p className="text-[10px] text-[var(--text-secondary)]">{ar ? kindLabels[item.kind][1] : kindLabels[item.kind][0]} · {ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</p><button type="button" disabled={Boolean(busyId) || equipped[item.kind] === item.id} onClick={() => void runCosmeticAction(item, 'equip')} className="mt-2 min-h-9 rounded-lg bg-[var(--action-primary)] px-3 text-xs font-black text-white disabled:opacity-50">{equipped[item.kind] === item.id ? (ar ? 'مُطبّق' : 'Equipped') : (ar ? 'تطبيق' : 'Equip')}</button></div>
+        </article>)}</div> : <p className="rounded-xl border border-dashed p-6 text-center text-sm text-[var(--text-secondary)]">{ar ? 'لسه ما فتحتش أي عناصر. زور المتجر وابدأ مجموعتك.' : 'Your inventory is empty. Visit the store to start your collection.'}</p>}
       </div> : <div className="space-y-3">
         <div className="grid grid-cols-4 gap-1 rounded-xl bg-[var(--surface-secondary)] p-1">{(['frame','banner','badge','effect'] as CosmeticKind[]).map(kind => <button key={kind} type="button" onClick={() => setCategory(kind)} aria-pressed={category === kind} className={'min-h-10 rounded-lg px-1 text-[11px] font-black ' + (category === kind ? 'bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-secondary)]')}>{ar ? kindLabels[kind][1] : kindLabels[kind][0]}</button>)}</div>
         {visibleItems.length ? <div className="grid gap-3 sm:grid-cols-2">{visibleItems.map(item => {
@@ -229,7 +262,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
           const start = safeColor(item.preview_start, '#174D4C');
           const end = safeColor(item.preview_end, '#D6A84F');
           return <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)]">
-            <div className="relative h-16" style={{ background: 'linear-gradient(110deg,' + start + ',' + end + ')' }}><span className="absolute end-2 top-2 rounded-full bg-black/25 px-2 py-1 text-[9px] font-black text-white">{ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</span>{isEquipped && <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[9px] font-black text-emerald-800"><Check size={11}/>{ar ? 'مُستخدم' : 'Equipped'}</span>}</div>
+            <div className="relative h-20 overflow-hidden" style={item.kind === 'badge' ? undefined : { background: 'linear-gradient(110deg,' + start + ',' + end + ')' }}>{item.kind === 'badge' && <BadgeArtwork item={item}/>}<span className="absolute end-2 top-2 rounded-full bg-black/45 px-2 py-1 text-[9px] font-black text-white">{ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</span>{isEquipped && <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[9px] font-black text-emerald-800"><Check size={11}/>{ar ? 'مُستخدم' : 'Equipped'}</span>}</div>
             <div className="space-y-2 p-3"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? item.title_ar : item.title_en}</h4><p className="mt-0.5 min-h-8 text-[11px] text-[var(--text-secondary)]">{ar ? item.description_ar : item.description_en}</p></div>
               <div className="flex items-center justify-between gap-2"><span className="text-xs font-black text-amber-700 dark:text-amber-300">{item.points_cost.toLocaleString()} {ar ? 'نقطة' : 'pts'}</span>
                 {isEquipped ? <button type="button" onClick={() => void unequip(item.kind)} disabled={Boolean(busyId)} className="min-h-9 rounded-lg border px-3 text-xs font-bold">{ar ? 'إزالة' : 'Unequip'}</button>
