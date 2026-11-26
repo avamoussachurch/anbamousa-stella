@@ -6569,16 +6569,9 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       if (assignedLevel === null || hymn.level !== assignedLevel) {
         return res.status(403).json({ success: false, error: "HYMN_LEVEL_ACCESS_DENIED", message: "This hymn is not assigned to your level." });
       }
-      if (hymn.level > 1) {
-        const studentEnrollment = await getStudentHymnsMembership(targetStudentId);
-        if (!studentEnrollment || studentEnrollment.status !== 'approved' || studentEnrollment.level < hymn.level) {
-          return res.status(403).json({
-            success: false,
-            error: "HYMN_LEVEL_ACCESS_DENIED",
-            message: `Hymn requires Deacon Level ${hymn.level}. Student not authorized.`
-          });
-        }
-      }
+      // The shared profile Hymns/Taxis level is the single source of truth.
+      // The separate legacy roster was disabled by the shared-level setup flow;
+      // requiring its old approval row here incorrectly blocks every Level 2/3 hymn.
     } else if (activityType === 'CONTENT_OPENED' && school === 'taxis') {
       const trustedClient = getRoleRequestClient(req);
       const { data: taxisRow, error: taxisReadError } = await trustedClient
@@ -6716,12 +6709,8 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
           if (Number(hymnRow.level) !== assignedLevel) {
             return res.status(403).json({ success: false, error: 'HYMN_LEVEL_ACCESS_DENIED', message: 'This hymn is not assigned to your level.' });
           }
-          if (Number(hymnRow.level) > 1) {
-            const enrollment = await getStudentHymnsMembership(targetStudentId);
-            if (!enrollment || enrollment.status !== 'approved' || enrollment.level < Number(hymnRow.level)) {
-              return res.status(403).json({ success: false, error: 'HYMN_LEVEL_ACCESS_DENIED', message: 'Your deacon level enrollment does not allow this hymn.' });
-            }
-          }
+          // The shared profile level was checked above. Do not require a legacy
+          // Hymns roster row: the former enrollment API is intentionally disabled.
         } else {
           const { data: taxisRow, error: taxisReadError } = await trustedClient
             .from('coptic_taxis_items')
