@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
 import { UniversalAudioPlayer } from '../design-system/UniversalAudioPlayer';
 import { FeedVideoPlayer } from './FeedVideoPlayer';
+import { FeedEmbeddedMediaPlayer } from './FeedEmbeddedMediaPlayer';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -1481,7 +1482,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                             )}
                           </>
                         ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
-                          <iframe src={attachment.mediaUrl} title="Media preview" className="aspect-video w-full bg-black" allowFullScreen />
+                          <FeedEmbeddedMediaPlayer src={attachment.mediaUrl} title="Media preview" />
                         ) : attachment.mediaType === 'video' ? (
                           <FeedVideoPlayer src={attachment.mediaUrl} title={attachment.originalFilename || 'Video preview'} />
                         ) : (
@@ -1667,12 +1668,9 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                           {lang === 'ar' ? 'هذا الملف غير متاح حالياً.' : 'This attachment is currently unavailable.'}
                         </div>
                       ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
-                        <iframe
+                        <FeedEmbeddedMediaPlayer
                           src={attachment.mediaUrl}
                           title={attachment.mediaType === 'youtube' ? 'Church video' : 'Church media'}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="aspect-video w-full bg-black"
                           onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
                         />
                       ) : attachment.mediaType === 'audio' ? (
