@@ -29,6 +29,8 @@ import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
 import { InAppDocumentViewer } from '../sunday-school/viewers/InAppDocumentViewer';
+import { LearningAdventurePanel } from '../common/LearningAdventurePanel';
+import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 
 export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isAr = lang === 'ar';
@@ -93,6 +95,9 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   useEffect(() => () => {
     if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
   }, [recordedAudioUrl]);
+
+  const [showHymnCelebration, setShowHymnCelebration] = useState(false);
+  const [masteryError, setMasteryError] = useState<string | null>(null);
 
   const assignedLevel = parseHymnsTaxisLevel(userData?.hymnsTaxisLevel);
 
@@ -401,6 +406,9 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   };
 
   const markAsMastered = async (hymnId: string) => {
+    if (masteredHymns[hymnId]) return;
+    setMasteryError(null);
+    let masteryConfirmed = !userData;
     const updated = { ...masteredHymns, [hymnId]: true };
     setMasteredHymns(updated);
     if (typeof window !== 'undefined') {
@@ -416,6 +424,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           titleEn: selectedHymn?.titleEn || 'Mastered Deacon Hymn',
           studentId: userData.id
         });
+        if (res.success) masteryConfirmed = true;
+        else setMasteryError(res.error || (isAr ? 'تعذر حفظ إتقان اللحن. حاول مرة أخرى.' : 'Could not save hymn mastery. Please try again.'));
         if (res.success && setUserDirectly) {
           setUserDirectly({
             ...userData,
@@ -426,8 +436,17 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         }
       } catch (e) {
         console.warn('Note on hymn activity record:', e);
+        setMasteryError(isAr ? 'تعذر حفظ إتقان اللحن. حاول مرة أخرى.' : 'Could not save hymn mastery. Please try again.');
       }
     }
+    if (!masteryConfirmed) {
+      const reverted = { ...masteredHymns };
+      delete reverted[hymnId];
+      setMasteredHymns(reverted);
+      try { localStorage.setItem('church_mastered_hymns', JSON.stringify(reverted)); } catch (_) {}
+      return;
+    }
+    setShowHymnCelebration(true);
   };
 
   // Filter hymns
@@ -647,6 +666,36 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
               </button>
             </div>
 
+            {masteryError && <p role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">{masteryError}</p>}
+            <LearningAdventurePanel
+              lang={isAr ? 'ar' : 'en'}
+              accent="gold"
+              title={isAr ? 'تحدي إتقان اللحن' : 'Master This Hymn'}
+              subtitle={isAr
+                ? 'اسمع، اتدرّب، وبعدها احتفل بإتقان اللحن.'
+                : 'Listen closely, practise your delivery, then celebrate mastering the hymn.'}
+              steps={[
+                {
+                  id: 'listen',
+                  title: isAr ? 'اسمع اللحن' : 'Listen to the hymn',
+                  detail: isAr ? 'اسمع ٨٠٪ على الأقل من التسجيل' : 'Listen to at least 80% of the recording',
+                  complete: duration > 0 && currentTime / duration >= 0.8
+                },
+                {
+                  id: 'practice',
+                  title: isAr ? 'سجّل تدريبك' : 'Record your practice',
+                  detail: isAr ? 'سجّل صوتك واسمعه للمراجعة' : 'Make a practice recording and replay it',
+                  complete: Boolean(recordedAudioUrl)
+                },
+                {
+                  id: 'master',
+                  title: isAr ? 'افتح إتقان اللحن' : 'Master the hymn',
+                  detail: isAr ? 'علّم اللحن كمتقن بعد التدريب' : 'Mark the hymn mastered after practising',
+                  complete: Boolean(masteredHymns[selectedHymn.id])
+                }
+              ]}
+            />
+
             {/* Hazat & Performance Explanation */}
             <div className="bg-amber-50/70 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 text-xs text-amber-950 dark:text-amber-200 leading-relaxed font-medium">
               <span className="font-bold text-amber-900 dark:text-amber-300">💡 {isAr ? 'شرح الهزات والتقسيمات النغمية: ' : 'Hazat Guide: '}</span>
@@ -865,6 +914,16 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           </div>
         </div>}
       </div>
+          <AnimatePresence>
+            {showHymnCelebration && (
+              <motion.div className="fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto bg-slate-950/75 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHymnCelebration(false)} role="dialog" aria-modal="true" aria-label={isAr ? 'احتفال إتقان اللحن' : 'Hymn mastery celebration'}>
+                <motion.div initial={{ opacity: 0, y: 28, scale: 0.88 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} onClick={event => event.stopPropagation()} className="w-full max-w-lg rounded-[2rem] border border-amber-300/30 bg-[var(--mousa-cream-surface)] p-6 shadow-2xl dark:bg-[#211B15]">
+                  <RewardCelebration type="star" lang={isAr ? 'ar' : 'en'} title="Hymn Mastered!" titleAr="برافو! أتقنت اللحن!" subtitle="Keep your voice growing with every practice." subtitleAr="كل تدريب بيخلّي صوتك أجمل وأقوى." pointsEarned={userData ? 75 : undefined} badgeText="Hymn Master" badgeTextAr="بطل الألحان" />
+                  <button type="button" onClick={() => setShowHymnCelebration(false)} className="mt-5 min-h-11 w-full rounded-2xl bg-[var(--mousa-teal)] px-4 py-3 text-sm font-black text-white shadow-lg">{isAr ? 'يلا نكمل!' : 'Keep exploring!'}</button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {showSheetMusicViewer && resolvedSheetMusicUrl && (
         <InAppDocumentViewer
           documentUrl={resolvedSheetMusicUrl}

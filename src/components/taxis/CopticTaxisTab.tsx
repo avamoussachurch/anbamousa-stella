@@ -22,6 +22,8 @@ import { hasRole } from '../../lib/workspaces';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
 import { InAppDocumentViewer } from '../sunday-school/viewers/InAppDocumentViewer';
+import { LearningAdventurePanel } from '../common/LearningAdventurePanel';
+import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 
 interface CopticTaxisTabProps {
   lang?: Language;
@@ -41,7 +43,10 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const [documentUrlError, setDocumentUrlError] = useState<string | null>(null);
   const [activeDocument, setActiveDocument] = useState<{ title: string; url: string } | null>(null);
   const [completedRituals, setCompletedRituals] = useState<Record<string, boolean>>({});
+  const [reviewedTaxisSteps, setReviewedTaxisSteps] = useState<Record<string, string[]>>({});
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  const [showTaxisCelebration, setShowTaxisCelebration] = useState(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -137,13 +142,15 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   };
 
   const handleCompleteRitual = async (ritualId: string) => {
-    if (isMarkingComplete || !selectedItem) return;
+    if (isMarkingComplete || !selectedItem || completedRituals[ritualId]) return;
     setIsMarkingComplete(true);
+    setCompletionError(null);
     setCompletedRituals(prev => ({ ...prev, [ritualId]: true }));
     try {
       localStorage.setItem(`church_taxis_completed_${ritualId}`, 'true');
     } catch (e) {}
 
+    let completionConfirmed = !userData;
     if (userData) {
       try {
         const res = await recordStudentSchoolActivity({
@@ -154,6 +161,8 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
           titleEn: selectedItem.titleEn || 'Liturgical Order',
           studentId: userData.id
         });
+        if (res.success) completionConfirmed = true;
+        else setCompletionError(res.error || (isAr ? 'تعذر حفظ إتمام دراسة الطقس. حاول مرة أخرى.' : 'Could not save ritual completion. Please try again.'));
         if (res.success && setUserDirectly) {
           setUserDirectly({
             ...userData,
@@ -164,9 +173,15 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
         }
       } catch (err) {
         console.warn('Note on taxis activity record:', err);
+        setCompletionError(isAr ? 'تعذر حفظ إتمام دراسة الطقس. حاول مرة أخرى.' : 'Could not save ritual completion. Please try again.');
       }
     }
+    if (!completionConfirmed) {
+      setCompletedRituals(prev => ({ ...prev, [ritualId]: false }));
+      try { localStorage.removeItem(`church_taxis_completed_${ritualId}`); } catch (_) {}
+    }
     setIsMarkingComplete(false);
+    if (completionConfirmed) setShowTaxisCelebration(true);
   };
 
   const filteredItems = items.filter(item => {
@@ -349,6 +364,29 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                   </p>
                 )}
 
+                <LearningAdventurePanel
+                  lang={isAr ? 'ar' : 'en'}
+                  accent="violet"
+                  title={isAr ? 'مغامرة اكتشاف الطقس' : 'Ritual Discovery Quest'}
+                  subtitle={isAr
+                    ? 'افهم كل خطوة في ترتيب الطقس، وبعدها سجّل إتمام دراستك.'
+                    : 'Explore each part of the liturgical sequence, then record that you completed your study.'}
+                  steps={[
+                    ...(selectedItem.sections || []).map((step, index) => ({
+                      id: step.id,
+                      title: isAr ? (step.titleAr || `الخطوة ${index + 1}`) : (step.titleEn || `Step ${index + 1}`),
+                      detail: isAr ? 'راجع الشرح ومردات الخدمة' : 'Review the explanation and responses',
+                      complete: (reviewedTaxisSteps[selectedItem.id] || []).includes(step.id)
+                    })),
+                    {
+                      id: 'complete-study',
+                      title: isAr ? 'أكمل دراسة الطقس' : 'Complete ritual study',
+                      detail: isAr ? 'احفظ إتمامك لتحصل على نقاط الدراسة' : 'Save your completion to receive study points',
+                      complete: Boolean(completedRituals[selectedItem.id])
+                    }
+                  ]}
+                />
+
                 {/* References & Documents */}
                 {(selectedItem.references?.length > 0 || selectedItem.documents?.length > 0) && (
                   <div className="pt-2 flex items-center gap-3 flex-wrap text-xs text-stone-500">
@@ -375,6 +413,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                   </div>
                 )}
 
+                {completionError && <p role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">{completionError}</p>}
                 {/* Completion Action & Streak Badge */}
                 <div className="pt-3 flex items-center justify-between gap-3 flex-wrap border-t border-stone-200/60 dark:border-stone-800">
                   <button
@@ -467,6 +506,22 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                           📜 {isAr ? 'إرشاد طقسي:' : 'Rubric:'} {step.rubricNotes}
                         </div>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setReviewedTaxisSteps(current => ({
+                          ...current,
+                          [selectedItem.id]: Array.from(new Set([...(current[selectedItem.id] || []), step.id]))
+                        }))}
+                        disabled={(reviewedTaxisSteps[selectedItem.id] || []).includes(step.id)}
+                        className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-xs font-black transition-all ${(reviewedTaxisSteps[selectedItem.id] || []).includes(step.id)
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200'
+                          : 'bg-violet-100 text-violet-900 hover:bg-violet-200 dark:bg-violet-950/50 dark:text-violet-200'}`}
+                      >
+                        <CheckCircle2 size={15} />
+                        {(reviewedTaxisSteps[selectedItem.id] || []).includes(step.id)
+                          ? (isAr ? 'تمت مراجعة الخطوة' : 'Step reviewed')
+                          : (isAr ? 'راجعت الخطوة دي' : 'I studied this step')}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -479,6 +534,16 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
           )}
         </div>
       </div>
+          <AnimatePresence>
+            {showTaxisCelebration && (
+              <motion.div className="fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto bg-slate-950/75 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowTaxisCelebration(false)} role="dialog" aria-modal="true" aria-label={isAr ? 'احتفال إتمام دراسة الطقس' : 'Ritual study celebration'}>
+                <motion.div initial={{ opacity: 0, y: 28, scale: 0.88 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} onClick={event => event.stopPropagation()} className="w-full max-w-lg rounded-[2rem] border border-violet-300/30 bg-[var(--mousa-cream-surface)] p-6 shadow-2xl dark:bg-[#211B15]">
+                  <RewardCelebration type="trophy" lang={isAr ? 'ar' : 'en'} title="Ritual Quest Complete!" titleAr="ممتاز! أنهيت مغامرة الطقس!" subtitle="You explored the order and strengthened your service knowledge." subtitleAr="فهمك للطقس وخدمتك الكنسية بقوا أقوى." pointsEarned={userData ? 50 : undefined} badgeText="Ritual Explorer" badgeTextAr="مستكشف الطقوس" />
+                  <button type="button" onClick={() => setShowTaxisCelebration(false)} className="mt-5 min-h-11 w-full rounded-2xl bg-[var(--mousa-teal)] px-4 py-3 text-sm font-black text-white shadow-lg">{isAr ? 'استكشف طقس تاني!' : 'Explore another ritual!'}</button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {activeDocument && (
         <InAppDocumentViewer
           documentUrl={activeDocument.url}
