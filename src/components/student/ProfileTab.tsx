@@ -536,7 +536,7 @@ export function ProfileTab({
                       {lang === 'ar' ? 'وقت التعلم النشط اليوم' : 'Active Learning Time Today'}
                     </span>
                     <span className="font-black text-xs md:text-sm text-[var(--mousa-teal-deep)] dark:text-[var(--text-primary)] bg-[var(--mousa-sand-100)] dark:bg-[var(--surface-secondary)] px-3 py-1 rounded-full border border-[var(--mousa-border-sand)] dark:border-[var(--border-default)]">
-                      {formatScreenTime(userData.screenTimeSeconds || 0)}
+                      {formatScreenTime(userData.screenTimeTodaySeconds || 0)}
                     </span>
                   </div>
                 </div>
