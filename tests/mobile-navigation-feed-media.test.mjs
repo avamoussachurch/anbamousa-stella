@@ -9,6 +9,7 @@ const notifications = read('../src/components/layout/NotificationPreferencesButt
 const feed = read('../src/components/student/FeedTab.tsx');
 const video = read('../src/components/student/FeedVideoPlayer.tsx');
 const nav = read('../src/components/layout/BottomNav.tsx');
+const database = read('../src/lib/supabaseDatabase.ts');
 
 test('help and notification dialogs fit the mobile visual viewport and home-indicator safe area', () => {
   for (const source of [help, notifications]) {
@@ -49,4 +50,10 @@ test('feed voice recordings use the in-app audio player rather than browser-defa
   assert.match(feed, /Listen without leaving the post/);
   assert.match(feed, /<UniversalAudioPlayer/);
   assert.match(feed, /accent="teal"/);
+});
+
+test('Vimeo links stay on the provider embed path instead of being passed to the native MP4 player', () => {
+  const vimeo = database.slice(database.indexOf('// 3. Vimeo is a hosted player URL'), database.indexOf('// 4. Direct Audio'));
+  assert.match(vimeo, /mediaType: 'embed'/);
+  assert.match(vimeo, /player\.vimeo\.com\/video/);
 });
