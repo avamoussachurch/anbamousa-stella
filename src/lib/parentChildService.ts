@@ -316,13 +316,16 @@ export function extractSecretCodeFromInput(input: string): string {
                         url.searchParams.get('linkCode') || 
                         url.searchParams.get('code') || 
                         url.searchParams.get('childCode');
-      if (paramCode) return paramCode.trim().toUpperCase();
+      if (paramCode) {
+        const normalized = paramCode.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        return normalized.length === 5 ? normalized : '';
+      }
     }
   } catch (e) {}
 
   // The family secret is exactly five letters/numbers; ignore separators copied from messages.
   const direct = trimmed.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-  return direct.length === 5 ? direct : direct;
+  return direct.length === 5 ? direct : '';
 }
 
 /**
