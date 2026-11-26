@@ -31,6 +31,7 @@ import {
 } from '../../../types';
 import { SundaySchoolAudioPlayer } from '../viewers/SundaySchoolAudioPlayer';
 import { InAppDocumentViewer } from '../viewers/InAppDocumentViewer';
+import { LearningAdventurePanel } from '../../common/LearningAdventurePanel';
 import { formatStudentClassDisplay } from '../../../lib/classGroups';
 import { calculateSectionProgress, canFinishLesson } from '../../../lib/lessonReadingProgress';
 import { getAuthorizedSourceUrl } from '../../../lib/lessonSourceService';
@@ -333,6 +334,41 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           </div>
         </div>
       </div>
+
+      <LearningAdventurePanel
+        lang={isAr ? 'ar' : 'en'}
+        accent="teal"
+        title={isAr ? 'مغامرة الدرس — افتح كل المحطات!' : 'Lesson Adventure — Clear Every Quest!'}
+        subtitle={isAr
+          ? 'كل خطوة بتقربك من إتقان الدرس. تقدمك هنا مرتبط بالإنجازات المسجلة فعلاً.'
+          : 'Every activity moves you closer to mastering this lesson. Progress reflects activities actually completed and saved.'}
+        steps={[
+          {
+            id: 'read',
+            title: isAr ? 'استكشف القصة' : 'Explore the story',
+            detail: isAr ? 'اقرأ كل أقسام الدرس وسجّل إتمامها' : 'Read and complete every lesson section',
+            complete: sections.length === 0 || isAllSectionsRead
+          },
+          ...(eligibleFlashcards.length > 0 ? [{
+            id: 'cards',
+            title: isAr ? 'تحدي بطاقات الذاكرة' : 'Memory-card challenge',
+            detail: isAr ? 'اقلب البطاقات وراجع آخر بطاقة' : 'Flip through the cards and review the final one',
+            complete: activeFlashcardIndex === eligibleFlashcards.length - 1 && isFlashcardFlipped
+          }] : []),
+          ...(hasQuiz ? [{
+            id: 'quiz',
+            title: isAr ? 'اختبار الأبطال' : 'Champion quiz',
+            detail: isAr ? 'جرّب اختبار مراجعة الدرس' : 'Take the lesson review quiz',
+            complete: Boolean(latestQuizAttempt)
+          }] : []),
+          {
+            id: 'finish',
+            title: isAr ? 'افتح شارة إتمام الدرس' : 'Unlock lesson completion',
+            detail: isAr ? 'أكمل المطلوب واحفظ تقدمك' : 'Complete the requirements and save your progress',
+            complete: isContentCompleted
+          }
+        ]}
+      />
 
       {/* 1. Scripture Memory Verse Card: ONLY IF PROVIDED BY TEACHER (No Helena / 1 Cor 1:18 fallback) */}
       {hasMemoryVerse && (
