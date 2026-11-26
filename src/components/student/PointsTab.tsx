@@ -27,7 +27,7 @@ import { usePoints } from '../../context/PointsContext';
 
 export function PointsTab({ lang }: { lang: Language }) {
   const { userData, isGuest } = useAuth();
-  const { leaderboard: displayLeaderboard, streakLeaderboard: displayStreaks } = usePoints();
+  const { leaderboard: displayLeaderboard, streakLeaderboard: displayStreaks, leaderboardScope, setLeaderboardScope } = usePoints();
   
   // Section order:
   // 1. Streak Stars (نجوم المواظبة) — DEFAULT
@@ -453,15 +453,23 @@ export function PointsTab({ lang }: { lang: Language }) {
                <div>
                  <h2 className="text-xl md:text-2xl font-black text-stone-900 dark:text-stone-50 flex items-center gap-2">
                    <Users size={26} className="text-[var(--mousa-gold)]" />
-                   <span>{lang === 'ar' ? 'ترتيب النقاط الأسبوعية' : 'Weekly Points Leaderboard'}</span>
+                   <span>{lang === 'ar' ? 'ترتيب نقاط الكنيسة' : 'Church Points Leaderboard'}</span>
                  </h2>
                  <p className="text-xs sm:text-sm font-bold text-stone-700 dark:text-stone-300">
-                   {lang === 'ar' ? 'ترتيب رفقاء المسيرة بنقاط البركة الحقيقية' : 'Official rankings based on earned milestone blessing points'}
+                   {leaderboardScope === 'church' ? (lang === 'ar' ? 'ترتيب كل أعضاء الكنيسة حسب إجمالي النقاط' : 'All church members ranked by lifetime points') : (lang === 'ar' ? 'ترتيب مجموعتك حسب إجمالي النقاط' : 'Your class group ranked by lifetime points')}
                  </p>
                </div>
                <span className="text-xs font-black px-3 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border border-[var(--mousa-border-sand)]">
                  {userData?.grade || (lang === 'ar' ? 'مرحلة ابتدائي' : 'Elementary')}
                </span>
+             </div>
+
+             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--mousa-border-sand)] bg-white/60 p-3 dark:bg-stone-900/60">
+               <p className="text-xs font-black text-stone-700 dark:text-stone-200">{lang === 'ar' ? 'مين تحب تقارن نقاطك بيهم؟' : 'Who would you like to compare with?'}</p>
+               <div className="inline-flex rounded-xl bg-stone-100 p-1 dark:bg-stone-800" role="group" aria-label={lang === 'ar' ? 'نطاق لوحة المتصدرين' : 'Leaderboard scope'}>
+                 <button type="button" onClick={() => setLeaderboardScope('class')} aria-pressed={leaderboardScope === 'class'} className={`min-h-10 rounded-lg px-3 text-xs font-black transition ${leaderboardScope === 'class' ? 'bg-[var(--mousa-teal)] text-white shadow-sm' : 'text-stone-600 dark:text-stone-300'}`}>{lang === 'ar' ? 'مجموعتي' : 'My class'}</button>
+                 <button type="button" onClick={() => setLeaderboardScope('church')} aria-pressed={leaderboardScope === 'church'} className={`min-h-10 rounded-lg px-3 text-xs font-black transition ${leaderboardScope === 'church' ? 'bg-[var(--mousa-teal)] text-white shadow-sm' : 'text-stone-600 dark:text-stone-300'}`}>{lang === 'ar' ? 'الكنيسة كلها' : 'Whole church'}</button>
+               </div>
              </div>
 
              {displayLeaderboard.length === 0 && (
@@ -478,7 +486,7 @@ export function PointsTab({ lang }: { lang: Language }) {
                  studentId: e.studentId,
                  studentName: e.studentName,
                  avatarUrl: e.avatarUrl,
-                 score: e.pointsThisWeek,
+                 score: e.totalPoints ?? e.pointsThisWeek,
                  rank: e.rank
                }))}
                type="points"
@@ -526,7 +534,7 @@ export function PointsTab({ lang }: { lang: Language }) {
                          </p>
                       </div>
                       <div className="text-right px-2 shrink-0">
-                         <p className="font-black text-xl sm:text-2xl text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)]">{entry.pointsThisWeek}</p>
+                         <p className="font-black text-xl sm:text-2xl text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)]">{entry.totalPoints ?? entry.pointsThisWeek}</p>
                          <p className="text-[10px] font-black text-stone-600 dark:text-stone-400 uppercase">{lang === 'ar' ? 'نقطة' : 'Pts'}</p>
                       </div>
                     </motion.div>
