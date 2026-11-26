@@ -65,8 +65,8 @@ export function HelpFeedbackButton({ lang, workspace }: { lang: Language; worksp
         <LifeBuoy size={18} />
       </button>
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/60 p-2 backdrop-blur-sm sm:items-center sm:p-5" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setOpen(false); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="help-feedback-title" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 text-[var(--text-primary)] shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/60 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:p-5" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="help-feedback-title" className="max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem)] w-full max-w-lg touch-pan-y overscroll-contain overflow-y-auto rounded-3xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-[var(--text-primary)] shadow-2xl">
             <header className="mb-4 flex items-start justify-between gap-3">
               <div><h2 id="help-feedback-title" className="text-lg font-black">{isArabic ? 'إحنا هنا نساعدك' : 'We are here to help'}</h2>
                 <p className="mt-1 text-sm text-[var(--text-secondary)]">{isArabic ? 'قولنا إيه اللي حصل، وفريق الخدمة هيراجع طلبك.' : 'Tell us what happened and the service team will review it.'}</p></div>
