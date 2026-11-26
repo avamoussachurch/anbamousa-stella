@@ -66,7 +66,9 @@ export interface User {
   pushNotificationsEnabled?: boolean;
   notifyLessonCompletion?: boolean;
   notifyEventReminders?: boolean;
-  screenTimeSeconds?: number; // total screen time in seconds
+  screenTimeSeconds?: number; // lifetime app screen time in seconds
+  screenTimeTodaySeconds?: number; // active app time on the current Cairo day
+  screenTimeDate?: string; // YYYY-MM-DD, Africa/Cairo
   lastActive?: string;
 }
 
