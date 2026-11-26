@@ -127,7 +127,7 @@ export async function loginWithSupabase(
     // Fetch user profile from public.profiles table
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('name, grade, avatar, points, current_streak, longest_streak, require_reward_approval, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, screen_time_seconds, hymns_taxis_level')
+      .select('name, grade, avatar, points, current_streak, longest_streak, require_reward_approval, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, screen_time_seconds, screen_time_today_seconds, screen_time_date, hymns_taxis_level')
       .eq('id', userId)
       .single();
 
@@ -155,6 +155,8 @@ export async function loginWithSupabase(
       notifyLessonCompletion: profileData.notify_lesson_completion ?? true,
       notifyEventReminders: profileData.notify_event_reminders ?? true,
       screenTimeSeconds: profileData.screen_time_seconds ?? 0,
+      screenTimeTodaySeconds: profileData.screen_time_date === getCairoDateString() ? (profileData.screen_time_today_seconds ?? 0) : 0,
+      screenTimeDate: getCairoDateString(),
       hymnsTaxisLevel: parseHymnsTaxisLevel(profileData.hymns_taxis_level) || undefined,
     };
 
