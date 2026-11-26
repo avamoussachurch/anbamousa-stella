@@ -76,7 +76,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '4th Grade Elementary',
     gradeAr: 'الصف الرابع الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=church_student_guest',
-    linkCode: 'ST-4921',
+    linkCode: 'A7K2M',
     points: 850,
     rank: 3,
     attendanceRate: 98
@@ -115,7 +115,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '3rd Grade Elementary',
     gradeAr: 'الصف الثالث الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=FadiNabil&backgroundColor=c0aede',
-    linkCode: 'ST-3819',
+    linkCode: 'F4N8Q',
     points: 670,
     rank: 4,
     attendanceRate: 92
@@ -128,7 +128,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '5th Grade Elementary',
     gradeAr: 'الصف الخامس الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MarinaGeorge&backgroundColor=ffdfbf',
-    linkCode: 'ST-6104',
+    linkCode: 'M6R3T',
     points: 890,
     rank: 2,
     attendanceRate: 95
@@ -141,7 +141,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '6th Grade Elementary',
     gradeAr: 'الصف السادس الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=KyrollosRafik&backgroundColor=d1d4f9',
-    linkCode: 'ST-8255',
+    linkCode: 'K9D5W',
     points: 910,
     rank: 1,
     attendanceRate: 97
@@ -320,15 +320,9 @@ export function extractSecretCodeFromInput(input: string): string {
     }
   } catch (e) {}
 
-  // Try regex search for standard code pattern: (ST|CH|SEC)-digits
-  const codeRegex = /\b([A-Za-z]{2,4}[-_]?[0-9]{4,6})\b/;
-  const match = trimmed.match(codeRegex);
-  if (match && match[1]) {
-    return match[1].replace('_', '-').toUpperCase();
-  }
-
-  // Fallback: remove spaces and uppercase
-  return trimmed.replace(/\s+/g, '').toUpperCase();
+  // The family secret is exactly five letters/numbers; ignore separators copied from messages.
+  const direct = trimmed.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  return direct.length === 5 ? direct : direct;
 }
 
 /**
