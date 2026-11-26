@@ -726,14 +726,14 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
               <button
                 type="button"
                 onClick={() => markAsMastered(selectedHymn.id)}
-                className={`min-h-12 px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-md ring-2 ring-offset-2 ring-offset-[var(--surface-primary)] ${
+                className={`min-h-14 w-full sm:w-auto min-w-[13rem] px-5 py-4 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg ring-2 ring-offset-2 ring-offset-[var(--surface-primary)] focus-visible:outline-none focus-visible:ring-4 hover:-translate-y-0.5 ${
                   masteredHymns[selectedHymn.id]
                     ? 'bg-emerald-600 text-white ring-emerald-400/60'
                     : 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white ring-emerald-400/70 hover:from-emerald-500 hover:to-teal-600 hover:scale-[1.02]'
                 }`}
               >
                 <CheckCircle2 size={16} />
-                <span>{masteredHymns[selectedHymn.id] ? (isAr ? 'أتقنت اللحن (٧٥ نقطة)' : 'Mastered (75 pts)') : (isAr ? 'سجّل إنك حفظت اللحن وأتقنته' : 'Mark as Mastered')}</span>
+                <span>{masteredHymns[selectedHymn.id] ? (isAr ? 'أتقنت اللحن (٧٥ نقطة)' : 'Mastered (75 pts)') : (isAr ? 'علّمت اللحن وأتقنته' : 'Mark this hymn as mastered')}</span>
               </button>
             </div>
 
