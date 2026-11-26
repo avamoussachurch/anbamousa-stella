@@ -57,7 +57,6 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const refreshUserName = userData?.fullName;
   const refreshUserAvatar = userData?.avatarUrl;
   const isGuestUser = Boolean(refreshUserId?.startsWith('guest_'));
-  const isStudentUser = userData ? hasRole(userData, 'student') : false;
   const leaderboardUser = useMemo(() => userData, [
     refreshUserId,
     refreshUserRoles,
@@ -122,7 +121,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLeaderboardList([]);
       setStreakList([]);
     });
-  }, [leaderboardUser, refreshUserId, isGuestUser, isStudentUser, userData, leaderboardScope]);
+  }, [leaderboardUser, refreshUserId, isGuestUser, userData, leaderboardScope]);
 
   useEffect(() => {
     refreshScores();
