@@ -95,7 +95,7 @@ function AppContent() {
   const historyRouteRef = React.useRef<string | null>(null);
   const [visitedStudentTabs, setVisitedStudentTabs] = useState<Set<string>>(() => new Set<string>(['home']));
 
-  // Detect incoming child connect link (?connectChild=ST-4921)
+  // Detect incoming child connect link (?connectChild=A7K2M)
   const [incomingChildCode, setIncomingChildCode] = useState<string | null>(() => {
     if (typeof window !== 'undefined' && window.location?.search) {
       const params = new URLSearchParams(window.location.search);
