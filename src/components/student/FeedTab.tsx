@@ -1267,12 +1267,12 @@ export function FeedTab({ lang }: { lang: Language }) {
       {/* Compose Modal */}
       <AnimatePresence>
         {isComposeModalOpen && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-black/60 backdrop-blur-xs overflow-y-auto overscroll-contain">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl p-4 sm:p-5 shadow-2xl relative space-y-4 my-4"
+              className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1.5rem)] overflow-y-auto overscroll-contain rounded-3xl p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:p-5 shadow-2xl relative space-y-4 my-4"
             >
               {/* Hidden file inputs */}
               <input 
@@ -1979,7 +1979,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       )}
 
       {reportingPost && (
-        <div className="fixed inset-0 z-[85] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={lang === 'ar' ? 'الإبلاغ عن منشور' : 'Report a post'} onClick={() => !reportBusy && setReportingPostId(null)}>
+        <div className="fixed inset-0 z-[85] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/65 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={lang === 'ar' ? 'الإبلاغ عن منشور' : 'Report a post'} onClick={() => !reportBusy && setReportingPostId(null)}>
           <motion.form initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} onSubmit={event => { event.preventDefault(); void submitPostReport(); }} onClick={event => event.stopPropagation()} className="w-full max-w-md space-y-4 rounded-3xl bg-white p-5 shadow-2xl dark:bg-slate-900">
             <div className="flex items-start justify-between gap-3">
               <div><h2 className="text-lg font-black text-slate-900 dark:text-white">{lang === 'ar' ? 'إبلاغ عن منشور' : 'Report this post'}</h2><p className="mt-1 text-xs leading-5 text-slate-500">{lang === 'ar' ? 'البلاغ سري، وفريق الخدمة المخوّل فقط يقدر يراجعه.' : 'Reports are private and can only be reviewed by authorized church staff.'}</p></div>
@@ -2010,7 +2010,7 @@ export function FeedTab({ lang }: { lang: Language }) {
         {lightboxAttachment && (
           <div
             onClick={() => setLightboxAttachment(null)}
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 p-3 backdrop-blur-sm sm:p-5"
+            className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/90 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:p-5"
             role="dialog"
             aria-modal="true"
             aria-label={lang === 'ar' ? 'عارض الوسائط' : 'Media viewer'}
