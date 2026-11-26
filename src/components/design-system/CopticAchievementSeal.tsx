@@ -59,7 +59,7 @@ function Emblem({ category, light, designKey }: { category: CopticAchievementCat
     case 'graduation': return <g {...line}><path d="m18 39 32-17 32 17-32 17Z" fill={stroke} fillOpacity=".2"/><path d="M32 48v17q18 14 36 0V48M82 39v22"/><circle cx="82" cy="65" r="3" fill={stroke}/></g>;
     case 'music-note': case 'music-staff': case 'lyre': case 'lyre-crown':
       return <g {...line}>{symbol==='lyre'||symbol==='lyre-crown'?<><path d="M34 27v20q0 24 16 24t16-24V27M34 27q16 15 32 0M40 36v31m7-27v31m7-31v31m7-35v31"/></>:<><path d="M59 25v34q-4-5-12-2-10 4-3 12 12 5 15-8V34l15-4"/></>}{symbol==='lyre-crown'&&<path d="m38 18 6 6 6-10 6 10 6-6 2 13H36Z" fill={stroke} fillOpacity=".35"/>}{symbol==='music-staff'&&<path d="M26 39h48M26 48h48M26 57h48" strokeWidth="1.5"/>}</g>;
-    case 'prayer-heart': case 'prayer-calendar': case 'prayer':
+    case 'prayer-heart': case 'prayer':
       return <g {...line}><path d="M50 20c-5 12-17 17-17 31a17 17 0 0 0 34 0c0-14-12-19-17-31Z" fill={stroke} fillOpacity=".16"/><path d="M50 37v24M41 46h18M39 70h22"/></g>;
     case 'church-rays': case 'church-path': return <g {...line}><path d="M28 70V42l22-18 22 18v28H28Z"/><path d="M43 70V53h14v17M50 24V11m-8 7h16"/>{symbol==='church-path'&&<path d="M18 80q12-12 24 0t24 0t24 0" strokeWidth="2"/>}{symbol==='church-rays'&&<path d="M50 5v-5M24 16l-5-5m57 5 5-5" strokeWidth="2"/>}</g>;
     case 'cross-rays': return <g {...line}><path d="M50 18v55M32 36h36" strokeWidth="5"/><path d="M50 6v8m0 66v8M19 36h8m46 0h8M28 14l6 6m32 32 6 6M72 14l-6 6m-32 32-6 6" strokeWidth="2"/></g>;
