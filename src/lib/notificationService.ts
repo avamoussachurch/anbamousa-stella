@@ -18,7 +18,7 @@ export interface ChurchNotification {
 const CATEGORY_ICONS: Record<string, string> = {
   announcement: '📣', event: '📅', lesson: '📚', assignment: '📝',
   progress: '🌱', streak: '🔥', achievement: '🏅', leaderboard: '🏆',
-  help_request: '🛟', moderation: '🛡️', system: '⚙️', motivation: '✨', community: '👥'
+  help_request: '🛟', prayer: '🙏', daily_verse: '📖', moderation: '🛡️', system: '⚙️', motivation: '✨', community: '👥'
 };
 
 function toChurchNotification(row: any): ChurchNotification {
