@@ -91,7 +91,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '4th Grade Elementary',
     gradeAr: 'الصف الرابع الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MinaEmad&backgroundColor=b6e3f4',
-    linkCode: 'CH-9481',
+    linkCode: 'B6T2N',
     points: 950,
     rank: 2,
     attendanceRate: 96
@@ -104,7 +104,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '2nd Grade Elementary',
     gradeAr: 'الصف الثاني الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MaryEmad&backgroundColor=ffd5dc',
-    linkCode: 'CH-7320',
+    linkCode: 'C8P4R',
     points: 820,
     rank: 1,
     attendanceRate: 100
@@ -208,7 +208,7 @@ export function getLinkedChildren(parentId: string = 'default', activeStudentUse
   if (!list || list.length === 0) {
     list = mockChildrenProfiles.map((c, i) => ({
       ...c,
-      linkCode: i === 0 ? 'CH-9481' : 'CH-7320',
+      linkCode: i === 0 ? 'B6T2N' : 'C8P4R',
       parentId,
       isRealAccount: false,
       dailyScreenTimeLimitMinutes: 60,
@@ -303,8 +303,8 @@ export function saveLinkedChildren(parentId: string = 'default', children: Child
 
 /**
  * Extract clean secret code from either a direct code string or a shared URL
- * e.g., "https://app.church.org/?connectChild=ST-4921" -> "ST-4921"
- * e.g., "ST-4921" -> "ST-4921"
+ * e.g., "https://app.church.org/?connectChild=A7K2M" -> "A7K2M"
+ * e.g., "A7K2M" -> "A7K2M"
  */
 export function extractSecretCodeFromInput(input: string): string {
   if (!input) return '';
@@ -544,7 +544,7 @@ export function linkChildByCode(
 
   return { 
     success: false, 
-    error: `لم يتم العثور على طفل مسجل بالرمز السري "${normalized}". يرجى التأكد من الرمز السري من شاشة حساب طفلك في التطبيق (مثال: ST-4921) أو اطلب من طفلك إرسال رابط الربط المباشر.` 
+    error: `لم يتم العثور على طفل مسجل بالرمز السري "${normalized}". يرجى التأكد من الرمز السري من شاشة حساب طفلك في التطبيق (مثال: A7K2M) أو اطلب من طفلك إرسال رابط الربط المباشر.` 
   };
 }
 
@@ -912,7 +912,7 @@ export function syncStudentSessionToParent(student: Partial<User>) {
   });
 
   if (!found && student.isLinkedToParent) {
-    const code = student.linkCode || 'ST-4921';
+    const code = student.linkCode || 'A7K2M';
     linkChildByCode(parentId, student.parentName || 'Parent', student.parentEmail || 'parent@church.org', code, student as User);
     return;
   }
