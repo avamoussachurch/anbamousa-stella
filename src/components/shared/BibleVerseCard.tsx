@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BookOpen, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Language } from '../../types';
+import { supabase } from '../../lib/supabase';
+import { getCairoDateString } from '../../lib/cairoTime';
 
 const fallbackVerses = [
   { en: "The Lord is my shepherd; I shall not want.", ar: "الرَّبُّ رَاعِيَّ فَلَا يُعْوِزُنِي شَيْءٌ.", referenceEn: "Psalm 23:1", referenceAr: "مزمور ٢٣: ١", type: "comfort" },
@@ -39,9 +41,30 @@ const fallbackVerses = [
 ];
 
 export function BibleVerseCard({ lang }: { lang: Language }) {
-  const date = new Date();
+  const [verses, setVerses] = useState(fallbackVerses);
+  useEffect(() => {
+    let active = true;
+    if (!supabase) return () => { active = false; };
+    void supabase.from('daily_scripture_verses')
+      .select('text_en,text_ar,reference_en,reference_ar')
+      .eq('is_active', true)
+      .order('rotation_order', { ascending: true })
+      .then(({ data, error }) => {
+        if (!active || error || !data?.length) return;
+        setVerses(data.map(row => ({
+          en: row.text_en,
+          ar: row.text_ar,
+          referenceEn: row.reference_en,
+          referenceAr: row.reference_ar,
+          type: 'scripture'
+        })));
+      });
+    return () => { active = false; };
+  }, []);
+  const cairoDate = getCairoDateString();
+  const date = new Date(cairoDate + 'T12:00:00');
   const dayOfYear = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(date.getFullYear(), 0, 0)) / 86400000);
-  const verse = fallbackVerses[dayOfYear % fallbackVerses.length];
+  const verse = verses[(dayOfYear - 1 + verses.length) % verses.length] || fallbackVerses[0];
   const isCoptic = lang === 'cop' || lang === 'copt';
 
   return (
@@ -68,7 +91,7 @@ export function BibleVerseCard({ lang }: { lang: Language }) {
               "{lang === 'ar' ? verse.ar : isCoptic ? (verse.copt || verse.ar) : verse.en}"
             </p>
             <span className="inline-block mt-1 font-extrabold text-xs text-amber-900">
-              ({lang === 'ar' ? verse.referenceAr : isCoptic ? verse.referenceCopt : verse.referenceEn})
+              ({lang === 'ar' ? verse.referenceAr : isCoptic ? (verse.referenceCopt || verse.referenceAr) : verse.referenceEn})
             </span>
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-amber-900/15 pt-2 text-[9px] font-bold text-amber-950/75">
               <a href="https://ebible.org/arb-vd/" target="_blank" rel="noreferrer" className="underline underline-offset-2">{lang === 'ar' ? 'النص العربي: فان دايك' : 'Arabic text: Van Dyck'}</a>
