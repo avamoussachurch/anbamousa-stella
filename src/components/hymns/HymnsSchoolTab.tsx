@@ -340,6 +340,13 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     setPracticeSubmissionError(null);
     audioChunksRef.current = [];
 
+    // Do not record the hymn speaker track into the student's practice take.
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+    if (audioRef.current) audioRef.current.currentTime = 0;
+
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setPracticeRecordingError(isAr
         ? 'التسجيل الصوتي غير مدعوم في المتصفح ده.'
@@ -348,7 +355,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       recordingStreamRef.current = stream;
       recordingStartedAtRef.current = Date.now();
       const supportedMimeType = [
