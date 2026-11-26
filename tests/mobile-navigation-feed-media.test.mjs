@@ -42,6 +42,12 @@ test('uploaded feed videos use a responsive native player with fullscreen and no
   assert.match(video, /playsInline/);
   assert.match(video, /preload="metadata"/);
   assert.match(video, /requestFullscreen/);
+  assert.match(video, /controls=\{false\}/);
+  assert.match(video, /Volume2/);
+  assert.match(video, /aspectRatio/);
+  const voice = readFileSync(new URL('../src/components/student/FeedVoiceMessage.tsx', import.meta.url), 'utf8');
+  assert.match(voice, /32/);
+  assert.doesNotMatch(voice, /playbackRate|speed control|originalFilename/);
   assert.match(video, /video\.videoWidth/);
   assert.doesNotMatch(video, /autoPlay/);
 });
