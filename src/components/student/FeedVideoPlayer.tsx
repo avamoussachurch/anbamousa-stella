@@ -34,7 +34,7 @@ export function FeedVideoPlayer({ src, title, onError }: FeedVideoPlayerProps) {
           Video unavailable. Please try again later.
         </div>
       ) : (
-        <div className="relative mx-auto flex max-h-[76svh] w-full items-center justify-center" style={{ aspectRatio, maxWidth: aspectRatio < 1 ? 'min(100%, 30rem)' : '100%' }}>
+        <div className="relative mx-auto flex max-h-[76svh] w-full items-center justify-center" style={{ aspectRatio, width: aspectRatio < 1 ? `min(100%, calc(76svh * ${aspectRatio}))` : '100%', maxWidth: '100%' }}>
           <video
             ref={videoRef}
             src={src}
