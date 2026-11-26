@@ -732,8 +732,11 @@ export interface Reply {
   authorAvatar?: string;
   content: string;
   createdAt: string;
-  reactions?: { heart: number; candle: number; cross: number };
+  reactions?: FeedReactionCounts;
 }
+
+export type FeedReactionKey = 'heart' | 'candle' | 'cross' | 'laugh' | 'wow' | 'pray' | 'clap' | 'fire' | 'dove' | 'star';
+export type FeedReactionCounts = { heart: number; candle: number; cross: number } & Partial<Record<FeedReactionKey, number>>;
 
 export interface Comment {
   id: string;
@@ -751,7 +754,7 @@ export interface Post {
   authorName: string;
   authorAvatar: string;
   content: string;
-  reactions: { heart: number; candle: number; cross: number };
+  reactions: FeedReactionCounts;
   comments: Comment[];
   createdAt: string;
   mediaType?: 'image' | 'video' | 'youtube' | 'audio' | 'embed';
