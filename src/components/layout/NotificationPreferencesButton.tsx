@@ -101,8 +101,8 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
       <button type="button" onClick={() => { setOpen(true); setMessage(''); }} aria-label={isArabic ? 'إعدادات الإشعارات' : 'Notification settings'} title={isArabic ? 'إعدادات الإشعارات' : 'Notification settings'} className="rounded-xl border border-white/20 bg-white/10 p-2 text-[var(--navigation-text)] transition-colors hover:bg-white/20">
         <Settings2 size={17} />
       </button>
-      {open && <div className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-950/60 p-2 backdrop-blur-sm sm:items-center sm:p-5">
-        <section role="dialog" aria-modal="true" aria-labelledby="notification-preferences-title" className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 text-[var(--text-primary)] shadow-2xl">
+      {open && <div className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-950/60 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:p-5">
+        <section role="dialog" aria-modal="true" aria-labelledby="notification-preferences-title" className="max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem)] w-full max-w-xl touch-pan-y overscroll-contain overflow-y-auto rounded-3xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-[var(--text-primary)] shadow-2xl">
           <header className="mb-4 flex items-start justify-between gap-3">
             <div className="flex items-center gap-2"><BellRing size={20}/><div><h2 id="notification-preferences-title" className="font-black">{isArabic ? 'تفضيلات الإشعارات' : 'Notification preferences'}</h2><p className="text-xs text-[var(--text-secondary)]">{isArabic ? 'اختار إيه اللي تحب يوصلك وإمتى.' : 'Choose what you receive and when.'}</p></div></div>
             <button type="button" onClick={() => setOpen(false)} aria-label={isArabic ? 'إغلاق' : 'Close'} className="rounded-xl p-2 hover:bg-[var(--state-hover)]"><X size={18}/></button>
