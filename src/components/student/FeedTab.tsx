@@ -490,7 +490,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
     }
   };
 
-  const handleReactComment = async (postId: string, commentId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+  const handleReactComment = async (postId: string, commentId: string, reactionType: FeedReactionKey) => {
     const lockKey = `comment:${commentId}:${reactionType}`;
     if (reactionInFlightRef.current.has(lockKey)) return;
     reactionInFlightRef.current.add(lockKey);
@@ -520,36 +520,38 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
   };
 
   // 6. Reply Reactions
-  const handleReactReply = (postId: string, commentId: string, replyId: string, reactionType: 'heart' | 'candle' | 'cross') => {
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          comments: p.comments.map(c => {
-            if (c.id === commentId) {
-              return {
-                ...c,
-                replies: c.replies.map(r => {
-                  if (r.id === replyId) {
-                    const currentReactions = r.reactions || { heart: 0, candle: 0, cross: 0 };
-                    return {
-                      ...r,
-                      reactions: {
-                        ...currentReactions,
-                        [reactionType]: (currentReactions[reactionType] || 0) + 1
-                      }
-                    };
-                  }
-                  return r;
-                })
-              };
+  const handleReactReply = async (postId: string, commentId: string, replyId: string, reactionType: FeedReactionKey) => {
+    // New replies use a temporary id until the server confirms their insert.
+    if (replyId.startsWith('rep-')) return;
+    const lockKey = `reply:${replyId}:${reactionType}`;
+    if (reactionInFlightRef.current.has(lockKey)) return;
+    reactionInFlightRef.current.add(lockKey);
+    setActionError(null);
+    try {
+      const res = await toggleFeedReactionInSupabase(reactionType, { commentId: replyId });
+      if (res.error || !res.action) throw res.error || new Error('Reaction was not confirmed.');
+      const delta = res.action === 'added' ? 1 : res.action === 'removed' ? -1 : 0;
+      setPosts(prev => prev.map(post => post.id === postId ? {
+        ...post,
+        comments: post.comments.map(comment => comment.id === commentId ? {
+          ...comment,
+          replies: comment.replies.map(reply => reply.id === replyId ? {
+            ...reply,
+            reactions: {
+              ...(reply.reactions || { heart: 0, candle: 0, cross: 0 }),
+              [reactionType]: Math.max(0, (reply.reactions?.[reactionType] || 0) + delta)
             }
-            return c;
-          })
-        };
-      }
-      return p;
-    }));
+          } : reply)
+        } : comment)
+      } : post));
+    } catch (error) {
+      console.warn('Reply reaction write note:', error);
+      setActionError(lang === 'ar'
+        ? `مش قادرين نسجّل التفاعل: ${getLocalizedErrorMessage(error instanceof Error ? error.message : '', lang)}`
+        : `Reply reaction failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } finally {
+      reactionInFlightRef.current.delete(lockKey);
+    }
   };
 
   // 7. Add Comment or Reply (Optimistic update with Supabase persistence & rollback)
