@@ -46,6 +46,8 @@ export interface ParentChildRecord {
   classNameAr: string;
   avatarUrl: string;
   points: number | null;
+  screenTimeTodaySeconds?: number;
+  screenTimeTodayMinutes?: number;
   hymnsTaxisLevel: number | null;
   hymnsMembership: {
     level: number;
