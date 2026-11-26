@@ -1515,10 +1515,10 @@ export function ProfileTab({
                         : 'Yes! Daily Agpeya prayers, Coptic hymns, and previously opened lessons are cached locally for offline prayer in the church.'
                     },
                     {
-                      q: lang === 'ar' ? 'كيف يتم احتساب شعلة الأيام ونقاط البركة؟' : 'How are streaks and blessing points calculated?',
+                      q: lang === 'ar' ? 'كيف يتم احتساب شعلة الصلاة وشعلة التعلّم؟' : 'How are prayer and learning streaks calculated?',
                       a: lang === 'ar'
-                        ? 'تزيد شعلة الأيام عند فتح التطبيق والمواظبة على صلوات الأجبية والدروس يومياً. وتكتسب نقاط البركة (+٥٠ إلى +١٥٠) مع إتمام كل درس وتسميع آية اليوم بنجاح.'
-                        : 'Streaks increase with daily consecutive prayer and study. Blessing points (+50 to +150) are awarded for completed lessons and verse recitals.'
+                        ? 'شعلة الصلاة تُحتسب عند إتمام ساعة واحدة من الأجبية أو تسجيل صلاة شخصية في يوم القاهرة. وتظل منفصلة عن شعلة التعلّم، التي تعتمد على نشاط الألحان أو الدروس أو الطقس القبطي. النقاط تُضاف فقط بعد تأكيد النشاط وحفظه بنجاح.'
+                        : 'A prayer day counts after one completed Agpeya hour or one recorded personal prayer, using the Cairo calendar. The learning streak is separate and depends on Hymns, Lessons or Taxis activity. Points are awarded only after the activity is successfully saved.' 
                     }
                   ].map((faq, i) => (
                     <div key={i} className="p-4 rounded-2xl bg-[var(--mousa-sand-50)] dark:bg-stone-900/60 border border-[var(--mousa-border-sand)] space-y-1.5">
@@ -1633,6 +1633,15 @@ export function ProfileTab({
                     <strong>{lang === 'ar' ? 'المسار الروحي والتعليمي:' : 'Spiritual & Educational Progress:'}</strong> {lang === 'ar' ? 'الدروس المكتملة، شعلة صلوات الأجبية، درجات الاختبارات، ونقاط البركة المكتسبة.' : 'Completed lessons, Agpeya prayer streaks, quiz scores, and blessing points.'}
                   </li>
                   <li>
+                    <strong>{lang === 'ar' ? 'المجتمع والوسائط:' : 'Community & Media:'}</strong> {lang === 'ar' ? 'المنشورات والتعليقات والتفاعلات والصور والفيديو والتسجيلات الصوتية التي تختار رفعها.' : 'Posts, comments, reactions, and photos, videos or voice recordings you choose to upload.'}
+                  </li>
+                  <li>
+                    <strong>{lang === 'ar' ? 'وقت الاستخدام والإشعارات:' : 'Usage & Notifications:'}</strong> {lang === 'ar' ? 'وقت نشاط التطبيق اليومي، وتفضيلات الإشعارات ورموز الاشتراك اللازمة لإرسال التنبيهات.' : 'Daily active app time, notification preferences and subscription tokens needed to deliver notifications.'}
+                  </li>
+                  <li>
+                    <strong>{lang === 'ar' ? 'طلبات الذكاء الاصطناعي:' : 'AI Requests:'}</strong> {lang === 'ar' ? 'النص أو المحتوى الذي تختار إرساله عند استخدام ميزات المساعدة بالذكاء الاصطناعي.' : 'Text or content you choose to submit when using AI assistance features.'}
+                  </li>
+                  <li>
                     <strong>{lang === 'ar' ? 'ربط الأسرة والأبناء:' : 'Family Linkage:'}</strong> {lang === 'ar' ? 'الرمز السري الخاص بالطفل لتسهيل متابعة ولي الأمر لوقت الشاشة وتشجيع الطفل.' : 'Unique child link code linking parents to their children for supervision.'}
                   </li>
                 </ul>
@@ -1677,9 +1686,25 @@ export function ProfileTab({
                 </h4>
                 <p className="text-xs text-[var(--mousa-sand-600)] dark:text-[#D5C7B5] leading-relaxed">
                   {lang === 'ar'
-                    ? 'هذا التطبيق مخصص بالكامل لخدمة مدارس الأحد بكنيسة القديس الأنبا موسى الأسود. لا يحتوي التطبيق على أي إعلانات تجارية، ولا يبيع أو يشارك أي بيانات لأي جهة خارجية، وتقتصر كافة المعلومات على الأغراض الرعوية والتعليمية الكنسية.'
-                    : 'This platform is exclusively dedicated to the ministry of St. Moses Coptic Church. It contains zero commercial advertisements, sells zero data, and uses information strictly for pastoral and spiritual growth.'}
+                    ? 'لا نبيع بياناتك ولا نستخدمها للإعلانات التجارية. لكن تشغيل المنصة يتطلب مزودي خدمة: Supabase لاستضافة الحسابات وقاعدة البيانات والملفات، ومزود الذكاء الاصطناعي فقط عند استخدام ميزات الذكاء الاصطناعي، وخدمات المتصفح/الإشعارات لإرسال التنبيهات التي توافق عليها. تُرسل إلى كل خدمة البيانات اللازمة للميزة التي طلبتها فقط؛ لذلك لا تكتب كلمات مرور أو أسراراً أو معلومات شديدة الحساسية في طلبات الذكاء الاصطناعي.'
+                    : 'We do not sell personal data or use it for commercial advertising. Operating the app does require service providers: Supabase for account, database and file hosting; an AI provider only when you use AI features; and browser/push services for notifications you enable. Each provider receives the information needed for the feature you request. Do not enter passwords, secrets or highly sensitive information into AI prompts.'}
                 </p>
+              </div>
+
+              <div className="space-y-2 pt-3 border-t border-[var(--mousa-border-sand)]/60">
+                <h4 className="font-extrabold text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{lang === 'ar' ? '4. حماية الأطفال وحق ولي الأمر' : '4. Child Safety & Parent Rights'}</h4>
+                <p className="text-xs leading-relaxed text-[var(--mousa-sand-600)] dark:text-[#D5C7B5]">{lang === 'ar' ? 'تُستخدم بيانات الطالب في سياق الخدمة الكنسية والتعليمية. يستطيع ولي الأمر متابعة الطفل المرتبط بحسابه، ويجب ألا يشارك الطفل رمز الربط أو بيانات الدخول علناً. صلاحيات الخدام مرتبطة بالفصول والمهام المصرح بها.' : 'Student information is used for church and educational purposes. A parent can monitor a child linked to their account. Children should never share their family link code or login details publicly. Servant access is limited by assigned roles and class permissions.'}</p>
+              </div>
+              <div className="space-y-2 pt-3 border-t border-[var(--mousa-border-sand)]/60">
+                <h4 className="font-extrabold text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{lang === 'ar' ? '5. الاحتفاظ بالبيانات وطلباتك' : '5. Retention & Your Requests'}</h4>
+                <p className="text-xs leading-relaxed text-[var(--mousa-sand-600)] dark:text-[#D5C7B5]">{lang === 'ar' ? 'يمكنك طلب تصحيح بيانات الحساب أو إغلاقه أو طلب حذف البيانات من إدارة الكنيسة. لا تعرض المنصة حالياً مدة احتفاظ موحدة لكل نوع من البيانات؛ يجب على إدارة الكنيسة اعتماد مدة الاحتفاظ والإجراءات الخاصة بالسجلات الكنسية قبل الإطلاق العام.' : 'You may ask the church administrator to correct account information, close an account or request deletion. The app does not currently publish a fixed retention period for every data category; the church must approve retention periods and procedures for ministry records before public launch.'}</p>
+              </div>
+              <div className="space-y-2 pt-3 border-t border-[var(--mousa-border-sand)]/60">
+                <h4 className="font-extrabold text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{lang === 'ar' ? '6. أمان المعلومات' : '6. Information Security'}</h4>
+                <p className="text-xs leading-relaxed text-[var(--mousa-sand-600)] dark:text-[#D5C7B5]">{lang === 'ar' ? 'نستخدم اتصالاً آمناً وضوابط صلاحيات على مستوى الحساب والفصل، لكن لا توجد خدمة إلكترونية يمكن ضمان أمانها بنسبة ١٠٠٪. أبلغ إدارة الكنيسة فوراً إذا لاحظت وصولاً غير مصرح به.' : 'The app uses secure connections and account/class access controls. No online service can guarantee absolute security. Contact the church administrator promptly if you suspect unauthorized access.'}</p>
+              </div>
+              <div className="rounded-xl border border-amber-300/50 bg-amber-50/70 p-3 text-[11px] leading-relaxed text-amber-900 dark:bg-amber-950/25 dark:text-amber-100">
+                {lang === 'ar' ? 'ملاحظة قبل الإطلاق العام: يجب على إدارة الكنيسة إضافة وسيلة تواصل رسمية، واعتماد سياسة موافقة أولياء الأمور ومدد الاحتفاظ والحذف، ومراجعة هذه السياسة قانونياً.' : 'Before public launch: the church must add an official contact route, approve parental consent and retention/deletion procedures, and obtain a legal review of this policy.'}
               </div>
 
               <div className="pt-2 text-center">
