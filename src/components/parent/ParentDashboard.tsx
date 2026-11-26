@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Check, Plus, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
+import { AlertCircle, Check, Clock3, Plus, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { hasRole } from '../../lib/workspaces';
 import {
@@ -19,7 +19,6 @@ import { ParentHomeDashboard } from './ParentHomeDashboard';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { supabase } from '../../lib/supabase';
 import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
-import { Clock3 } from 'lucide-react';
 
 type ParentSection = 'home' | 'children' | 'journey' | 'family' | 'events' | 'leaderboard';
 
