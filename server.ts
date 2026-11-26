@@ -13165,9 +13165,10 @@ app.get("/api/church/parent/children", async (req, res) => {
     if (!isTestRequest) {
       if (linkedChildIds.length === 0) return res.json({ success: true, children: [] });
       const client = getTrustedProgressClient();
+      const todayCairo = getCairoDateString();
       const { data: profiles, error: profilesError } = await client
         .from('profiles')
-        .select('id, name, grade, avatar, points, hymns_taxis_level')
+        .select('id, name, grade, avatar, points, hymns_taxis_level, screen_time_today_seconds, screen_time_date')
         .in('id', linkedChildIds);
       if (profilesError) throw new Error(`Could not load linked child profiles: ${profilesError.message}`);
 
@@ -13223,6 +13224,8 @@ app.get("/api/church/parent/children", async (req, res) => {
             classNameAr: classInstance?.name_ar || '',
             avatarUrl: profile.avatar || '',
             points: Number.isFinite(profile.points) ? profile.points : null,
+            screenTimeTodaySeconds: profile.screen_time_date === todayCairo ? Math.max(0, Number(profile.screen_time_today_seconds) || 0) : 0,
+            screenTimeTodayMinutes: profile.screen_time_date === todayCairo ? Math.floor(Math.max(0, Number(profile.screen_time_today_seconds) || 0) / 60) : 0,
             hymnsTaxisLevel: Number.isInteger(profile.hymns_taxis_level) ? profile.hymns_taxis_level : null,
             hymnsMembership: hymnsMembership ? {
               level: hymnsMembership.level,
