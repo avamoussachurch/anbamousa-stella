@@ -46,6 +46,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const [reviewedTaxisSteps, setReviewedTaxisSteps] = useState<Record<string, string[]>>({});
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   const [showTaxisCelebration, setShowTaxisCelebration] = useState(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -143,6 +144,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const handleCompleteRitual = async (ritualId: string) => {
     if (isMarkingComplete || !selectedItem || completedRituals[ritualId]) return;
     setIsMarkingComplete(true);
+    setCompletionError(null);
     setCompletedRituals(prev => ({ ...prev, [ritualId]: true }));
     try {
       localStorage.setItem(`church_taxis_completed_${ritualId}`, 'true');
@@ -160,6 +162,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
           studentId: userData.id
         });
         if (res.success) completionConfirmed = true;
+        else setCompletionError(res.error || (isAr ? 'تعذر حفظ إتمام دراسة الطقس. حاول مرة أخرى.' : 'Could not save ritual completion. Please try again.'));
         if (res.success && setUserDirectly) {
           setUserDirectly({
             ...userData,
@@ -170,7 +173,12 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
         }
       } catch (err) {
         console.warn('Note on taxis activity record:', err);
+        setCompletionError(isAr ? 'تعذر حفظ إتمام دراسة الطقس. حاول مرة أخرى.' : 'Could not save ritual completion. Please try again.');
       }
+    }
+    if (!completionConfirmed) {
+      setCompletedRituals(prev => ({ ...prev, [ritualId]: false }));
+      try { localStorage.removeItem(`church_taxis_completed_${ritualId}`); } catch (_) {}
     }
     setIsMarkingComplete(false);
     if (completionConfirmed) setShowTaxisCelebration(true);
@@ -405,6 +413,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                   </div>
                 )}
 
+                {completionError && <p role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">{completionError}</p>}
                 {/* Completion Action & Streak Badge */}
                 <div className="pt-3 flex items-center justify-between gap-3 flex-wrap border-t border-stone-200/60 dark:border-stone-800">
                   <button
