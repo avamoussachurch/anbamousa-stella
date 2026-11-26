@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock3,
   GraduationCap,
+  Mic,
   Music2,
   RefreshCw,
   ScrollText,
