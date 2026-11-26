@@ -78,6 +78,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const [masteredHymns, setMasteredHymns] = useState<Record<string, boolean>>({});
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const practiceAudioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingStreamRef = useRef<MediaStream | null>(null);
@@ -246,8 +247,10 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       setIsPlaying(false);
       return;
     }
-    const practicePlayer = document.querySelector<HTMLAudioElement>('audio[src="' + recordedAudioUrl + '"]');
-    if (practicePlayer && !practicePlayer.paused) practicePlayer.pause();
+    if (practiceAudioRef.current && !practiceAudioRef.current.paused) {
+      practiceAudioRef.current.pause();
+      practiceAudioRef.current.currentTime = 0;
+    }
     setAudioPlaybackError(null);
     try {
       await audioRef.current.play();
@@ -973,7 +976,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 {recordedAudioUrl && (
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="flex w-full flex-col gap-2">
-                  <audio controls src={recordedAudioUrl} className="h-10 w-full max-w-sm" onPlay={() => { if (audioRef.current && !audioRef.current.paused) { audioRef.current.pause(); setIsPlaying(false); } }} />
+                  <audio ref={practiceAudioRef} controls src={recordedAudioUrl} className="h-10 w-full max-w-sm" onPlay={() => { if (audioRef.current && !audioRef.current.paused) { audioRef.current.pause(); setIsPlaying(false); } }} />
                   <button type="button" onClick={() => void submitPracticeRecording()} disabled={isSubmittingPractice || practiceSubmitted || !recordedAudioBlob} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-black text-white shadow-md transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">
                     {isSubmittingPractice ? (isAr ? 'جاري الإرسال...' : 'Sending…') : practiceSubmitted ? (isAr ? 'تم الإرسال ✓' : 'Sent to teacher ✓') : (isAr ? 'إرسال التسميع للخادم' : 'Send practice to teacher')}
                   </button>
