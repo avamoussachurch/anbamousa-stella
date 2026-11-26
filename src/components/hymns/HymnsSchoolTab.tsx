@@ -31,6 +31,8 @@ import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
 import { InAppDocumentViewer } from '../sunday-school/viewers/InAppDocumentViewer';
 import { LearningAdventurePanel } from '../common/LearningAdventurePanel';
 import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
+import { supabase } from '../../lib/supabase';
+import { HymnPracticeInbox } from './HymnPracticeInbox';
 
 export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isAr = lang === 'ar';
@@ -65,6 +67,12 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const [isRecordingPractice, setIsRecordingPractice] = useState(false);
   const [isPracticeRecordingPaused, setIsPracticeRecordingPaused] = useState(false);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
+  const [recordedDurationSeconds, setRecordedDurationSeconds] = useState(0);
+  const [isSubmittingPractice, setIsSubmittingPractice] = useState(false);
+  const [practiceSubmitted, setPracticeSubmitted] = useState(false);
+  const [practiceSubmissionMessage, setPracticeSubmissionMessage] = useState<string | null>(null);
+  const [practiceSubmissionError, setPracticeSubmissionError] = useState<string | null>(null);
   const [practiceRecordingError, setPracticeRecordingError] = useState<string | null>(null);
   const [practiceWaveform, setPracticeWaveform] = useState<number[]>(() => Array(32).fill(0.08));
   const [masteredHymns, setMasteredHymns] = useState<Record<string, boolean>>({});
@@ -77,6 +85,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const waveformAnalyserRef = useRef<AnalyserNode | null>(null);
   const waveformFrameRef = useRef<number | null>(null);
   const isUnmountingRef = useRef(false);
+  const recordingStartedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     isUnmountingRef.current = false;
@@ -98,6 +107,43 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
 
   const [showHymnCelebration, setShowHymnCelebration] = useState(false);
   const [masteryError, setMasteryError] = useState<string | null>(null);
+
+  const submitPracticeRecording = async () => {
+    if (!supabase || !userData?.id || !selectedHymn || !recordedAudioBlob) {
+      setPracticeSubmissionError(isAr ? 'سجّل تدريبك وسجّل الدخول قبل الإرسال.' : 'Record a practice take and sign in before sending it.');
+      return;
+    }
+    setIsSubmittingPractice(true);
+    setPracticeSubmissionError(null);
+    setPracticeSubmissionMessage(null);
+    const mimeType = recordedAudioBlob.type || 'audio/webm';
+    const extension = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mpeg') ? 'mp3' : 'webm';
+    const uniqueId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+    const path = userData.id + '/' + String(selectedHymn.id) + '/' + uniqueId + '.' + extension;
+    try {
+      const { error: uploadError } = await supabase.storage.from('hymn-practice-recordings').upload(path, recordedAudioBlob, { contentType: mimeType, upsert: false });
+      if (uploadError) throw uploadError;
+      const { error: insertError } = await supabase.from('hymn_practice_submissions').insert({
+        student_id: userData.id,
+        student_name: userData.name || (isAr ? 'تلميذ' : 'Student'),
+        hymn_id: String(selectedHymn.id),
+        hymn_title: selectedHymn.titleEn || selectedHymn.title || (isAr ? 'تدريب لحن' : 'Hymn practice'),
+        recording_path: path,
+        mime_type: mimeType,
+        duration_seconds: recordedDurationSeconds
+      });
+      if (insertError) {
+        await supabase.storage.from('hymn-practice-recordings').remove([path]);
+        throw insertError;
+      }
+      setPracticeSubmitted(true);
+      setPracticeSubmissionMessage(isAr ? 'اترسل تسجيلك للخادم بنجاح. هيظهر في لوحة متابعة الخدام.' : 'Your practice recording was sent to your teacher successfully.');
+    } catch (error) {
+      setPracticeSubmissionError(error instanceof Error ? error.message : (isAr ? 'تعذر إرسال التسجيل.' : 'Could not send the recording.'));
+    } finally {
+      setIsSubmittingPractice(false);
+    }
+  };
 
   const assignedLevel = parseHymnsTaxisLevel(userData?.hymnsTaxisLevel);
 
@@ -282,6 +328,11 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     if (isRecordingPractice) return;
     setPracticeRecordingError(null);
     setRecordedAudioUrl(null);
+    setRecordedAudioBlob(null);
+    setRecordedDurationSeconds(0);
+    setPracticeSubmitted(false);
+    setPracticeSubmissionMessage(null);
+    setPracticeSubmissionError(null);
     audioChunksRef.current = [];
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
@@ -294,6 +345,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       recordingStreamRef.current = stream;
+      recordingStartedAtRef.current = Date.now();
       const supportedMimeType = [
         'audio/webm;codecs=opus',
         'audio/webm',
@@ -316,6 +368,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         const mimeType = recorder.mimeType || audioChunksRef.current[0]?.type || 'audio/webm';
         const blob = new Blob(audioChunksRef.current, { type: mimeType });
         if (blob.size > 0) {
+          setRecordedAudioBlob(blob);
+          setRecordedDurationSeconds(recordingStartedAtRef.current ? Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000)) : 0);
           setRecordedAudioUrl(URL.createObjectURL(blob));
         } else {
           setPracticeRecordingError(isAr ? 'التسجيل فاضي. اتأكد إن الميكروفون شغال وجرّب تاني.' : 'The recording is empty. Check your microphone and try again.');
@@ -474,6 +528,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       className="pb-28 pt-6 px-4 w-full max-w-7xl mx-auto space-y-6"
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
     >
+      {isTeacherOrAdmin && <HymnPracticeInbox lang={isAr ? 'ar' : 'en'} />}
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0B2E5C] via-[#1E3A8A] to-[#8B1E2E] text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
         <div className="absolute left-0 top-0 opacity-10 pointer-events-none transform -translate-x-6 -translate-y-6">
@@ -905,7 +960,14 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 {practiceRecordingError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800 dark:bg-red-950/40 dark:text-red-200">{practiceRecordingError}</p>}
                 {recordedAudioUrl && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <audio controls src={recordedAudioUrl} className="h-10 w-full max-w-sm" onPlay={() => { if (audioRef.current && !audioRef.current.paused) { audioRef.current.pause(); setIsPlaying(false); } }} />
+                    <div className="flex w-full flex-col gap-2">
+                  <audio controls src={recordedAudioUrl} className="h-10 w-full max-w-sm" onPlay={() => { if (audioRef.current && !audioRef.current.paused) { audioRef.current.pause(); setIsPlaying(false); } }} />
+                  <button type="button" onClick={() => void submitPracticeRecording()} disabled={isSubmittingPractice || practiceSubmitted || !recordedAudioBlob} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-black text-white shadow-md transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">
+                    {isSubmittingPractice ? (isAr ? 'جاري الإرسال...' : 'Sending…') : practiceSubmitted ? (isAr ? 'تم الإرسال ✓' : 'Sent to teacher ✓') : (isAr ? 'إرسال التسميع للخادم' : 'Send practice to teacher')}
+                  </button>
+                  {practiceSubmissionMessage && <p role="status" className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{practiceSubmissionMessage}</p>}
+                  {practiceSubmissionError && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-300">{practiceSubmissionError}</p>}
+                </div>
                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                       ✓ {isAr ? 'التسجيل جاهز للاستماع' : 'Recording ready to replay'}
                     </span>
