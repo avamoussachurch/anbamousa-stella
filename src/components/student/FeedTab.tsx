@@ -1501,7 +1501,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                         ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
                           <FeedEmbeddedMediaPlayer src={attachment.mediaUrl} title="Media preview" />
                         ) : attachment.mediaType === 'video' ? (
-                          <FeedVideoPlayer src={attachment.mediaUrl} title={attachment.originalFilename || 'Video preview'} />
+                          <FeedVideoPlayer src={attachment.mediaUrl} title={attachment.originalFilename || 'Video preview'} lang={lang === 'ar' ? 'ar' : 'en'} />
                         ) : (
                           <img src={attachment.mediaUrl} alt={attachment.originalFilename || 'Attachment preview'} className="aspect-video w-full object-cover" />
                         )}
