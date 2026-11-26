@@ -6570,7 +6570,7 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
         return res.status(403).json({ success: false, error: "HYMN_LEVEL_ACCESS_DENIED", message: "This hymn is not assigned to your level." });
       }
       if (hymn.level > 1) {
-        const studentEnrollment = getStudentHymnsMembership(targetStudentId);
+        const studentEnrollment = await getStudentHymnsMembership(targetStudentId);
         if (!studentEnrollment || studentEnrollment.status !== 'approved' || studentEnrollment.level < hymn.level) {
           return res.status(403).json({
             success: false,
@@ -6717,7 +6717,7 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
             return res.status(403).json({ success: false, error: 'HYMN_LEVEL_ACCESS_DENIED', message: 'This hymn is not assigned to your level.' });
           }
           if (Number(hymnRow.level) > 1) {
-            const enrollment = getStudentHymnsMembership(targetStudentId);
+            const enrollment = await getStudentHymnsMembership(targetStudentId);
             if (!enrollment || enrollment.status !== 'approved' || enrollment.level < Number(hymnRow.level)) {
               return res.status(403).json({ success: false, error: 'HYMN_LEVEL_ACCESS_DENIED', message: 'Your deacon level enrollment does not allow this hymn.' });
             }
@@ -15836,11 +15836,43 @@ app.put("/api/church/hymns-taxis-level", async (req, res) => {
   }
 });
 
-// Helper to get student's approved Hymns School level
-function getStudentHymnsMembership(studentId: string) {
+// Read the approved Hymns roster from Supabase first. The in-memory/persisted
+// server state remains a compatibility fallback for older records during rollout.
+async function getStudentHymnsMembership(studentId: string) {
   if (!studentId) return null;
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      const client = getTrustedProgressClient();
+      const { data, error } = await client
+        .from('hymns_memberships')
+        .select('id,student_id,student_name,level,roster_group,status,notes,reviewed_by,reviewed_at,created_at,updated_at')
+        .eq('student_id', studentId)
+        .neq('status', 'revoked')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        return {
+          id: data.id,
+          studentId: data.student_id,
+          studentName: data.student_name,
+          level: Number(data.level),
+          rosterGroup: data.roster_group,
+          status: data.status,
+          notes: data.notes || '',
+          reviewedBy: data.reviewed_by || undefined,
+          reviewedAt: data.reviewed_at || undefined,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at
+        };
+      }
+    } catch (error) {
+      console.error('Hymns roster lookup failed; checking compatibility state:', error);
+    }
+  }
   const memberships = Object.values(serverReviewState.hymnsMemberships || {});
-  return memberships.find((m: any) => m.studentId === studentId && m.status !== 'revoked') || null;
+  return memberships.find((membership: any) => membership.studentId === studentId && membership.status !== 'revoked') || null;
 }
 
 // 1. Student checks own Hymns School enrollment status
@@ -15858,7 +15890,7 @@ app.get("/api/church/hymns/my-enrollment", async (req, res) => {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Cannot inspect another student's enrollment" });
     }
 
-    const membership = getStudentHymnsMembership(requestedStudentId);
+    const membership = await getStudentHymnsMembership(requestedStudentId);
     return res.json({
       success: true,
       membership: membership || null
