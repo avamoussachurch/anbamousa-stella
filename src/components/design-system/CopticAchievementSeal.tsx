@@ -60,7 +60,8 @@ export function CopticAchievementSeal({
   const safeKey = designKey.replace(/[^a-zA-Z0-9_-]/g, '-');
   const seed = Array.from(designKey).reduce((value, char) => (value * 31 + char.charCodeAt(0)) >>> 0, 7);
   const rotation = seed % 18;
-  const id = 'seal-' + safeKey;
+  const instanceId = React.useId().replace(/:/g, '');
+  const id = 'seal-' + safeKey + '-' + instanceId;
   return (
     <span className={'inline-grid shrink-0 place-items-center ' + className} style={{ width: size, height: size, opacity: earned ? 1 : 0.48 }} title={title}>
       <svg viewBox="0 0 100 100" width="100%" height="100%" role="img" aria-label={title || category}>
