@@ -15,18 +15,7 @@ import { FeedVideoPlayer } from './FeedVideoPlayer';
 import { FeedEmbeddedMediaPlayer } from './FeedEmbeddedMediaPlayer';
 import { FeedVoiceMessage } from './FeedVoiceMessage';
 
-const FEED_REACTIONS: Array<{ key: FeedReactionKey; emoji: string; labelEn: string; labelAr: string }> = [
-  { key: 'heart', emoji: '❤️', labelEn: 'Love', labelAr: 'محبة' },
-  { key: 'candle', emoji: '🕯️', labelEn: 'Prayer', labelAr: 'صلاة' },
-  { key: 'cross', emoji: '✝️', labelEn: 'Faith', labelAr: 'إيمان' },
-  { key: 'pray', emoji: '🙏', labelEn: 'Praying', labelAr: 'بصلي' },
-  { key: 'laugh', emoji: '😂', labelEn: 'Joy', labelAr: 'فرح' },
-  { key: 'wow', emoji: '😮', labelEn: 'Wow', labelAr: 'مندهش' },
-  { key: 'clap', emoji: '👏', labelEn: 'Well done', labelAr: 'برافو' },
-  { key: 'fire', emoji: '🔥', labelEn: 'Inspiring', labelAr: 'ملهم' },
-  { key: 'dove', emoji: '🕊️', labelEn: 'Peace', labelAr: 'سلام' },
-  { key: 'star', emoji: '⭐', labelEn: 'Wonderful', labelAr: 'رائع' }
-];
+
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -53,6 +42,19 @@ import {
   UploadedFeedAttachment,
   uploadFeedAttachmentFile
 } from '../../lib/feedAttachments';
+
+const FEED_REACTIONS: Array<{ key: FeedReactionKey; emoji: string; labelEn: string; labelAr: string }> = [
+  { key: 'heart', emoji: '❤️', labelEn: 'Love', labelAr: 'محبة' },
+  { key: 'candle', emoji: '🕯️', labelEn: 'Prayer', labelAr: 'صلاة' },
+  { key: 'cross', emoji: '✝️', labelEn: 'Faith', labelAr: 'إيمان' },
+  { key: 'pray', emoji: '🙏', labelEn: 'Praying', labelAr: 'بصلي' },
+  { key: 'laugh', emoji: '😂', labelEn: 'Joy', labelAr: 'فرح' },
+  { key: 'wow', emoji: '😮', labelEn: 'Wow', labelAr: 'مندهش' },
+  { key: 'clap', emoji: '👏', labelEn: 'Well done', labelAr: 'برافو' },
+  { key: 'fire', emoji: '🔥', labelEn: 'Inspiring', labelAr: 'ملهم' },
+  { key: 'dove', emoji: '🕊️', labelEn: 'Peace', labelAr: 'سلام' },
+  { key: 'star', emoji: '⭐', labelEn: 'Wonderful', labelAr: 'رائع' }
+];
 
 type SortOption = 'latest' | 'popular' | 'discussed' | 'announcements' | 'saved';
 
