@@ -431,7 +431,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
     try {
       const res = await toggleFeedReactionInSupabase(reactionType, { postId });
       if (res.error || !res.action) throw res.error || new Error('Reaction was not confirmed.');
-      const delta = res.action === 'added' ? 1 : -1;
+      const delta = res.action === 'added' ? 1 : res.action === 'removed' ? -1 : 0;
       setPosts(prev => prev.map(p => p.id === postId ? {
         ...p,
         reactions: { ...p.reactions, [reactionType]: Math.max(0, (p.reactions[reactionType] || 0) + delta) }
