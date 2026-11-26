@@ -13,6 +13,7 @@ import { CLASS_GROUPS, getClassGroupForGrade } from '../../lib/classGroups';
 import { COPTIC_AVATARS, DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
 import { ProfileCustomizationStudio } from '../profile/ProfileCustomizationStudio';
 import { CopticAchievementSeal, type CopticAchievementCategory } from '../design-system/CopticAchievementSeal';
+import { HelpFeedbackButton } from '../layout/HelpFeedbackButton';
 import { getCurrentChurchYear, joinClassWithCode, getStudentActiveMembership } from '../../lib/churchYearService';
 import { Language, ClassGroupId, Role } from '../../types';
 import { hasRole } from '../../lib/workspaces';
@@ -1536,7 +1537,27 @@ export function ProfileTab({
                       q: lang === 'ar' ? 'كيف يتم احتساب شعلة الصلاة وشعلة التعلّم؟' : 'How are prayer and learning streaks calculated?',
                       a: lang === 'ar'
                         ? 'شعلة الصلاة تُحتسب عند إتمام ساعة واحدة من الأجبية أو تسجيل صلاة شخصية في يوم القاهرة. وتظل منفصلة عن شعلة التعلّم، التي تعتمد على نشاط الألحان أو الدروس أو الطقس القبطي. النقاط تُضاف فقط بعد تأكيد النشاط وحفظه بنجاح.'
-                        : 'A prayer day counts after one completed Agpeya hour or one recorded personal prayer, using the Cairo calendar. The learning streak is separate and depends on Hymns, Lessons or Taxis activity. Points are awarded only after the activity is successfully saved.' 
+                        : 'A prayer day counts after one completed Agpeya hour or one recorded personal prayer, using the Cairo calendar. The learning streak is separate and depends on Hymns, Lessons or Taxis activity. Points are awarded only after the activity is successfully saved.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'هل كود الأسرة طويل أو فيه شرطات؟' : 'Is the family code long or does it contain dashes?',
+                      a: lang === 'ar' ? 'لا. كود الأسرة ٥ خانات فقط من الحروف والأرقام، بدون شرطات أو رموز. شاركه مع ولي أمرك فقط.' : 'No. The family code is exactly five letters or numbers, with no dashes or symbols. Share it only with your parent.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'هل ولي الأمر يقدر يشوف وقت النشاط اليومي؟' : 'Can my parent see today’s active time?',
+                      a: lang === 'ar' ? 'نعم. التطبيق يحسب وقت النشاط وهو ظاهر، ويتوقف عند إخفاء الصفحة. يظهر إجمالي اليوم بتوقيت القاهرة في لوحة ولي الأمر بعد المزامنة.' : 'Yes. Active time is counted while the app is visible and pauses when the page is hidden. The Cairo-day total appears in the Parent Portal after syncing.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'إزاي أبعت تسجيل اللحن للخادم؟' : 'How do I send a hymn practice recording to my teacher?',
+                      a: lang === 'ar' ? 'بعد إيقاف التسجيل والاستماع إليه، اضغط زر إرسال التسميع للخادم. التسجيل خاص ويظهر للخدام المكلّفين بفصلك فقط.' : 'After stopping and listening to your take, press Send practice to teacher. The recording is private and visible only to servants assigned to your class.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'هل لغة الإشعارات بتتغير مع لغة التطبيق؟' : 'Do notifications follow my app language?',
+                      a: lang === 'ar' ? 'أيوه. الإشعارات الجديدة بتتبع لغة التطبيق تلقائياً. تقدر تتحكم في الأنواع وساعات الهدوء من إعدادات الإشعارات.' : 'Yes. New notifications follow your app language automatically. You can manage categories and quiet hours in Notification Preferences.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'فين المشتريات بتاعة شكل الملف الشخصي؟' : 'Where are my profile customization purchases?',
+                      a: lang === 'ar' ? 'كل عنصر اشتريته بيتحفظ في المخزون، ومنه تقدر تطبّقه على ملفك. المعاينة بتعرض شكله على ملفك قبل الشراء أو التطبيق.' : 'Purchased items are saved in your inventory, where you can equip them. The preview shows how they look on your profile before buying or applying them.'
                     }
                   ].map((faq, i) => (
                     <div key={i} className="p-4 rounded-2xl bg-[var(--mousa-sand-50)] dark:bg-stone-900/60 border border-[var(--mousa-border-sand)] space-y-1.5">
@@ -1566,6 +1587,10 @@ export function ProfileTab({
                     : 'At St. Moses Coptic Orthodox Church, your servants and fathers are here to support you through established church routes:'}
                 </p>
 
+                {isStudent && <div className="rounded-2xl border border-[var(--mousa-gold)]/40 bg-amber-50/70 p-4 dark:bg-amber-950/20">
+                  <p className="mb-3 text-xs leading-relaxed text-amber-950 dark:text-amber-100">{lang === 'ar' ? 'لو عندك مشكلة في التطبيق أو محتاج مساعدة خاصة، ابعت طلباً من هنا. الطلب هيوصل لفريق الخدمة المصرّح له بالمراجعة.' : 'For app problems or private support, send a request here. It will be reviewed by the authorized service team.'}</p>
+                  <HelpFeedbackButton lang={lang} workspace="student" />
+                </div>}
                 <div className="space-y-3 pt-2">
                   {/* Channel 1: In-App Class Servant Roster */}
                   <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 to-emerald-50/70 dark:from-stone-900 dark:to-stone-850 border border-blue-200 dark:border-stone-700 flex items-start gap-3">
