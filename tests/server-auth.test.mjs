@@ -1115,7 +1115,6 @@ test('student family codes are server-issued, persistent, and required for paren
   const issuedPayload = await issued.json();
   assert.match(issuedPayload.code, /^[A-Z0-9]{5}$/);
   assert.equal(issuedPayload.code.length, 5);
-  assert.equal(issuedPayload.code.length, 5);
   assert.match(issuedPayload.code, /^[A-Z0-9]+$/);
 
   const repeated = await request('/api/church/student/family-code', {
