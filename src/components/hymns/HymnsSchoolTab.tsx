@@ -29,6 +29,7 @@ import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
 import { InAppDocumentViewer } from '../sunday-school/viewers/InAppDocumentViewer';
+import { LearningAdventurePanel } from '../common/LearningAdventurePanel';
 
 export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isAr = lang === 'ar';
@@ -646,6 +647,35 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
                 <span>{masteredHymns[selectedHymn.id] ? (isAr ? 'أتقنت اللحن (٧٥ نقطة)' : 'Mastered (75 pts)') : (isAr ? 'سجّل إنك حفظت اللحن وأتقنته' : 'Mark as Mastered')}</span>
               </button>
             </div>
+
+            <LearningAdventurePanel
+              lang={isAr ? 'ar' : 'en'}
+              accent="gold"
+              title={isAr ? 'تحدي إتقان اللحن' : 'Master This Hymn'}
+              subtitle={isAr
+                ? 'اسمع، اتدرّب، وبعدها احتفل بإتقان اللحن.'
+                : 'Listen closely, practise your delivery, then celebrate mastering the hymn.'}
+              steps={[
+                {
+                  id: 'listen',
+                  title: isAr ? 'اسمع اللحن' : 'Listen to the hymn',
+                  detail: isAr ? 'اسمع ٨٠٪ على الأقل من التسجيل' : 'Listen to at least 80% of the recording',
+                  complete: duration > 0 && currentTime / duration >= 0.8
+                },
+                {
+                  id: 'practice',
+                  title: isAr ? 'سجّل تدريبك' : 'Record your practice',
+                  detail: isAr ? 'سجّل صوتك واسمعه للمراجعة' : 'Make a practice recording and replay it',
+                  complete: Boolean(recordedAudioUrl)
+                },
+                {
+                  id: 'master',
+                  title: isAr ? 'افتح إتقان اللحن' : 'Master the hymn',
+                  detail: isAr ? 'علّم اللحن كمتقن بعد التدريب' : 'Mark the hymn mastered after practising',
+                  complete: Boolean(masteredHymns[selectedHymn.id])
+                }
+              ]}
+            />
 
             {/* Hazat & Performance Explanation */}
             <div className="bg-amber-50/70 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 text-xs text-amber-950 dark:text-amber-200 leading-relaxed font-medium">
