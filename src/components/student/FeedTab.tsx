@@ -1617,7 +1617,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                   />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <button type="button" onClick={() => { const url = new URL(window.location.href); url.searchParams.set('tab', 'feed'); url.searchParams.set('profile', post.authorId); window.location.assign(url.toString()); }} className="text-start font-bold text-sm text-[var(--mousa-teal-deep)] hover:text-[var(--mousa-gold)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mousa-gold)]">{post.authorName}</button>
+                      <button type="button" onClick={() => { const url = new URL(window.location.href); url.searchParams.set('tab', 'feed'); url.searchParams.set('profile', post.authorId); window.location.assign(url.toString()); }} className="text-start font-bold text-sm text-[var(--mousa-teal-deep)] dark:text-[#F8E9C8] hover:text-[var(--mousa-gold)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mousa-gold)]">{post.authorName}</button>
                       {post.isAnnouncement && (
                         <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">
                           {lang === 'ar' ? 'خادم' : 'Servant'}
