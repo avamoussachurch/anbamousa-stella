@@ -9,11 +9,24 @@ import {
   Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning, Flag, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
+import { FeedAttachment, Post, Comment, Reply, Language, FeedReactionKey } from '../../types';
 import { UniversalAudioPlayer } from '../design-system/UniversalAudioPlayer';
 import { FeedVideoPlayer } from './FeedVideoPlayer';
 import { FeedEmbeddedMediaPlayer } from './FeedEmbeddedMediaPlayer';
 import { FeedVoiceMessage } from './FeedVoiceMessage';
+
+const FEED_REACTIONS: Array<{ key: FeedReactionKey; emoji: string; labelEn: string; labelAr: string }> = [
+  { key: 'heart', emoji: '❤️', labelEn: 'Love', labelAr: 'محبة' },
+  { key: 'candle', emoji: '🕯️', labelEn: 'Prayer', labelAr: 'صلاة' },
+  { key: 'cross', emoji: '✝️', labelEn: 'Faith', labelAr: 'إيمان' },
+  { key: 'pray', emoji: '🙏', labelEn: 'Praying', labelAr: 'بصلي' },
+  { key: 'laugh', emoji: '😂', labelEn: 'Joy', labelAr: 'فرح' },
+  { key: 'wow', emoji: '😮', labelEn: 'Wow', labelAr: 'مندهش' },
+  { key: 'clap', emoji: '👏', labelEn: 'Well done', labelAr: 'برافو' },
+  { key: 'fire', emoji: '🔥', labelEn: 'Inspiring', labelAr: 'ملهم' },
+  { key: 'dove', emoji: '🕊️', labelEn: 'Peace', labelAr: 'سلام' },
+  { key: 'star', emoji: '⭐', labelEn: 'Wonderful', labelAr: 'رائع' }
+];
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -408,7 +421,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
   // Reactions are server-authoritative. Serialize taps per post+emoji so rapid
   // taps cannot race two toggle RPCs and leave the UI count out of sync.
   const reactionInFlightRef = useRef(new Set<string>());
-  const handleReactPost = async (postId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+  const handleReactPost = async (postId: string, reactionType: FeedReactionKey) => {
     const lockKey = `post:${postId}:${reactionType}`;
     if (reactionInFlightRef.current.has(lockKey)) return;
     reactionInFlightRef.current.add(lockKey);
@@ -1711,32 +1724,19 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
               
               {/* Post Reactions Bar */}
               <div className="flex items-center gap-2 border-t border-gray-100 pt-3 pb-1 flex-wrap">
-                <motion.button 
-                  whileTap={{ scale: 0.85 }} 
-                  onClick={() => handleReactPost(post.id, 'heart')} 
-                  className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-500 px-2.5 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer"
-                >
-                  <Heart size={14} fill="currentColor" />
-                  <span>{post.reactions.heart}</span>
-                </motion.button>
-                
-                <motion.button 
-                  whileTap={{ scale: 0.85 }} 
-                  onClick={() => handleReactPost(post.id, 'candle')} 
-                  className="flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 text-[var(--mousa-gold)] px-2.5 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer"
-                >
-                  <span className="text-sm leading-none">🕯️</span>
-                  <span>{post.reactions.candle}</span>
-                </motion.button>
-                
-                <motion.button 
-                  whileTap={{ scale: 0.85 }} 
-                  onClick={() => handleReactPost(post.id, 'cross')} 
-                  className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 text-[var(--mousa-teal-deep)] px-2.5 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer"
-                >
-                  <span className="text-sm leading-none">✝️</span>
-                  <span>{post.reactions.cross}</span>
-                </motion.button>
+                {FEED_REACTIONS.map(reaction => (
+                  <motion.button
+                    key={reaction.key}
+                    whileTap={{ scale: 0.88 }}
+                    onClick={() => handleReactPost(post.id, reaction.key)}
+                    aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn}
+                    title={lang === 'ar' ? reaction.labelAr : reaction.labelEn}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-full border border-[var(--border-default)] bg-[var(--surface-secondary)] px-2.5 py-1 text-xs font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--mousa-gold)] hover:bg-[var(--state-hover)]"
+                  >
+                    <span className="text-sm leading-none">{reaction.emoji}</span>
+                    <span className="tabular-nums">{post.reactions[reaction.key] || 0}</span>
+                  </motion.button>
+                ))}
                 
                 <div className="flex-1"></div>
                 
@@ -1806,28 +1806,12 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                             <p className="text-xs text-gray-700 leading-relaxed">{comment.content}</p>
                             
                             {/* Reactions for this Comment */}
-                            <div className="flex items-center gap-1.5 pt-1">
-                              <button 
-                                onClick={() => handleReactComment(post.id, comment.id, 'heart')}
-                                className="text-[10px] bg-white border border-gray-200 hover:bg-red-50 hover:text-red-500 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold text-gray-600 transition-colors cursor-pointer"
-                              >
-                                <span>❤️</span>
-                                <span>{comment.reactions?.heart || 0}</span>
-                              </button>
-                              <button 
-                                onClick={() => handleReactComment(post.id, comment.id, 'candle')}
-                                className="text-[10px] bg-white border border-gray-200 hover:bg-amber-50 hover:text-amber-600 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold text-gray-600 transition-colors cursor-pointer"
-                              >
-                                <span>🕯️</span>
-                                <span>{comment.reactions?.candle || 0}</span>
-                              </button>
-                              <button 
-                                onClick={() => handleReactComment(post.id, comment.id, 'cross')}
-                                className="text-[10px] bg-white border border-gray-200 hover:bg-blue-50 hover:text-blue-600 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold text-gray-600 transition-colors cursor-pointer"
-                              >
-                                <span>✝️</span>
-                                <span>{comment.reactions?.cross || 0}</span>
-                              </button>
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                              {FEED_REACTIONS.map(reaction => (
+                                <button key={reaction.key} type="button" onClick={() => handleReactComment(post.id, comment.id, reaction.key)} aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn} title={lang === 'ar' ? reaction.labelAr : reaction.labelEn} className="inline-flex min-h-7 items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-bold text-gray-700 transition-colors hover:border-[var(--mousa-gold)] hover:bg-amber-50 dark:border-[var(--border-default)] dark:bg-[var(--surface-secondary)] dark:text-[var(--text-primary)]">
+                                  <span>{reaction.emoji}</span><span className="tabular-nums">{comment.reactions?.[reaction.key] || 0}</span>
+                                </button>
+                              ))}
                             </div>
                           </div>
                           
