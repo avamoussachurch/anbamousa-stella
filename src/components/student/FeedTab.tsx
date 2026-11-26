@@ -51,7 +51,7 @@ type ComposerAttachment = UploadedFeedAttachment & {
   globalAudioTitle?: string;
 };
 
-export function FeedTab({ lang }: { lang: Language }) {
+export function FeedTab({ lang, initialPostId }: { lang: Language; initialPostId?: string | null }) {
   const { userData } = useAuth();
   const workspace = useActiveWorkspace();
   const isCop = lang === 'copt' || lang === 'cop';
@@ -71,6 +71,16 @@ export function FeedTab({ lang }: { lang: Language }) {
       console.error('Failed to cache feed posts locally', e);
     }
   }, [posts, hasLoadedFeed]);
+
+  useEffect(() => {
+    if (!initialPostId || !hasLoadedFeed) return;
+    const target = document.getElementById(`feed-post-${initialPostId}`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('ring-2', 'ring-[var(--mousa-gold)]');
+      window.setTimeout(() => target.classList.remove('ring-2', 'ring-[var(--mousa-gold)]'), 2200);
+    }
+  }, [initialPostId, hasLoadedFeed, posts]);
 
   // Server state & notifications
   const [syncStatusText, setSyncStatusText] = useState<string | null>(null);
@@ -393,38 +403,29 @@ export function FeedTab({ lang }: { lang: Language }) {
     window.setTimeout(() => setSyncStatusText(null), 5000);
   };
 
-  // 4. Post Reactions (Optimistic update with Supabase persistence & rollback)
+  // Reactions are server-authoritative. Serialize taps per post+emoji so rapid
+  // taps cannot race two toggle RPCs and leave the UI count out of sync.
+  const reactionInFlightRef = useRef(new Set<string>());
   const handleReactPost = async (postId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+    const lockKey = `post:${postId}:${reactionType}`;
+    if (reactionInFlightRef.current.has(lockKey)) return;
+    reactionInFlightRef.current.add(lockKey);
     setActionError(null);
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          reactions: {
-            ...p.reactions,
-            [reactionType]: (p.reactions[reactionType] || 0) + 1
-          }
-        };
-      }
-      return p;
-    }));
-
-    const res = await toggleFeedReactionInSupabase(reactionType, { postId });
-    if (res.error) {
-      console.warn('Reaction write note:', res.error.message);
-      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل دلوقتي: ${getLocalizedErrorMessage(res.error.message, lang)}` : `Reaction failed: ${res.error.message}`);
-      setPosts(prev => prev.map(p => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            reactions: {
-              ...p.reactions,
-              [reactionType]: Math.max(0, (p.reactions[reactionType] || 1) - 1)
-            }
-          };
-        }
-        return p;
-      }));
+    try {
+      const res = await toggleFeedReactionInSupabase(reactionType, { postId });
+      if (res.error || !res.action) throw res.error || new Error('Reaction was not confirmed.');
+      const delta = res.action === 'added' ? 1 : -1;
+      setPosts(prev => prev.map(p => p.id === postId ? {
+        ...p,
+        reactions: { ...p.reactions, [reactionType]: Math.max(0, (p.reactions[reactionType] || 0) + delta) }
+      } : p));
+    } catch (error) {
+      console.warn('Reaction write note:', error);
+      setActionError(lang === 'ar'
+        ? `مش قادرين نسجّل التفاعل دلوقتي: ${getLocalizedErrorMessage(error instanceof Error ? error.message : '', lang)}`
+        : `Reaction failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } finally {
+      reactionInFlightRef.current.delete(lockKey);
     }
   };
 
@@ -454,7 +455,7 @@ export function FeedTab({ lang }: { lang: Language }) {
 
   const handleSharePost = async (post: Post) => {
     const shareText = (post.content || '').trim().slice(0, 220);
-    const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const shareUrl = typeof window !== 'undefined' ? (() => { const url = new URL(window.location.href); url.searchParams.set('tab', 'feed'); url.searchParams.set('post', post.id); url.hash = `post-${post.id}`; return url.toString(); })() : '';
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share({ title: 'Anba Mousa Community', text: shareText, url: shareUrl });
@@ -471,56 +472,32 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   };
 
-  // 5. Comment Reactions (Optimistic update with Supabase persistence & rollback)
   const handleReactComment = async (postId: string, commentId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+    const lockKey = `comment:${commentId}:${reactionType}`;
+    if (reactionInFlightRef.current.has(lockKey)) return;
+    reactionInFlightRef.current.add(lockKey);
     setActionError(null);
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          comments: p.comments.map(c => {
-            if (c.id === commentId) {
-              const currentReactions = c.reactions || { heart: 0, candle: 0, cross: 0 };
-              return {
-                ...c,
-                reactions: {
-                  ...currentReactions,
-                  [reactionType]: (currentReactions[reactionType] || 0) + 1
-                }
-              };
-            }
-            return c;
-          })
-        };
-      }
-      return p;
-    }));
-
-    const res = await toggleFeedReactionInSupabase(reactionType, { commentId });
-    if (res.error) {
-      console.warn('Comment reaction write note:', res.error.message);
-      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل: ${getLocalizedErrorMessage(res.error.message, lang)}` : `Comment reaction failed: ${res.error.message}`);
-      setPosts(prev => prev.map(p => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            comments: p.comments.map(c => {
-              if (c.id === commentId) {
-                const currentReactions = c.reactions || { heart: 0, candle: 0, cross: 0 };
-                return {
-                  ...c,
-                  reactions: {
-                    ...currentReactions,
-                    [reactionType]: Math.max(0, (currentReactions[reactionType] || 1) - 1)
-                  }
-                };
-              }
-              return c;
-            })
-          };
-        }
-        return p;
-      }));
+    try {
+      const res = await toggleFeedReactionInSupabase(reactionType, { commentId });
+      if (res.error || !res.action) throw res.error || new Error('Reaction was not confirmed.');
+      const delta = res.action === 'added' ? 1 : -1;
+      setPosts(prev => prev.map(p => p.id === postId ? {
+        ...p,
+        comments: p.comments.map(comment => comment.id === commentId ? {
+          ...comment,
+          reactions: {
+            ...(comment.reactions || { heart: 0, candle: 0, cross: 0 }),
+            [reactionType]: Math.max(0, ((comment.reactions || { heart: 0, candle: 0, cross: 0 })[reactionType] || 0) + delta)
+          }
+        } : comment)
+      } : p));
+    } catch (error) {
+      console.warn('Comment reaction write note:', error);
+      setActionError(lang === 'ar'
+        ? `مش قادرين نسجّل التفاعل: ${getLocalizedErrorMessage(error instanceof Error ? error.message : '', lang)}`
+        : `Comment reaction failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } finally {
+      reactionInFlightRef.current.delete(lockKey);
     }
   };
 
@@ -1614,7 +1591,8 @@ export function FeedTab({ lang }: { lang: Language }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.25, delay: idx * 0.03 }}
-              key={post.id} 
+              key={post.id}
+              id={`feed-post-${post.id}`}
               className={`bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] rounded-3xl p-5 shadow-xs border-2 break-inside-avoid mb-6 relative transition-all hover:shadow-sm ${
                 post.isPinned 
                   ? 'border-[var(--mousa-gold)] bg-amber-50/20' 
