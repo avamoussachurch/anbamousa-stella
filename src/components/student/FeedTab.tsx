@@ -11,6 +11,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
 import { UniversalAudioPlayer } from '../design-system/UniversalAudioPlayer';
+import { FeedVideoPlayer } from './FeedVideoPlayer';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -1266,12 +1267,12 @@ export function FeedTab({ lang }: { lang: Language }) {
       {/* Compose Modal */}
       <AnimatePresence>
         {isComposeModalOpen && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-black/60 backdrop-blur-xs overflow-y-auto overscroll-contain">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl p-4 sm:p-5 shadow-2xl relative space-y-4 my-4"
+              className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1.5rem)] overflow-y-auto overscroll-contain rounded-3xl p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:p-5 shadow-2xl relative space-y-4 my-4"
             >
               {/* Hidden file inputs */}
               <input 
@@ -1505,7 +1506,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                         ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
                           <iframe src={attachment.mediaUrl} title="Media preview" className="aspect-video w-full bg-black" allowFullScreen />
                         ) : attachment.mediaType === 'video' ? (
-                          <video src={attachment.mediaUrl} controls playsInline className="aspect-video w-full bg-black object-contain" />
+                          <FeedVideoPlayer src={attachment.mediaUrl} title={attachment.originalFilename || 'Video preview'} />
                         ) : (
                           <img src={attachment.mediaUrl} alt={attachment.originalFilename || 'Attachment preview'} className="aspect-video w-full object-cover" />
                         )}
@@ -1697,38 +1698,28 @@ export function FeedTab({ lang }: { lang: Language }) {
                           onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
                         />
                       ) : attachment.mediaType === 'audio' ? (
-                        <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-amber-50/80 p-4 dark:from-slate-800 dark:to-slate-900">
-                          <div className="mb-3 flex items-center gap-2 text-xs font-bold text-gray-800 dark:text-gray-100">
-                            <Volume2 size={18} />
-                            <span>{attachment.originalFilename || (lang === 'ar' ? 'تسجيل لحن كنسي' : 'Hymn / Spiritual Audio')}</span>
+                        <div className="space-y-3 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 text-white">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-amber-200 ring-1 ring-white/15"><Volume2 size={21} /></div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-black">{attachment.originalFilename || (lang === 'ar' ? 'تسجيل صوتي' : 'Voice recording')}</p>
+                              <p className="mt-0.5 text-[11px] font-medium text-white/60">{lang === 'ar' ? 'استمع للتسجيل داخل المنشور' : 'Listen without leaving the post'}</p>
+                            </div>
                           </div>
-                          <audio
+                          <UniversalAudioPlayer
                             src={attachment.mediaUrl}
-                            controls
-                            preload="metadata"
-                            className="w-full"
-                            onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
+                            title={undefined}
+                            lang={lang === 'ar' ? 'ar' : 'en'}
+                            compact
+                            accent="teal"
                           />
                         </div>
                       ) : attachment.mediaType === 'video' ? (
-                        <div className="relative aspect-video bg-black">
-                          <video
-                            src={attachment.mediaUrl}
-                            controls
-                            playsInline
-                            preload="metadata"
-                            className="h-full w-full object-contain"
-                            onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => openPostMedia(post, attachment)}
-                            aria-label={lang === 'ar' ? 'عرض الفيديو بالحجم الكامل' : 'View video full size'}
-                            className="absolute right-2 top-2 rounded-full bg-black/70 p-2 text-white hover:bg-black"
-                          >
-                            <Maximize2 size={15} />
-                          </button>
-                        </div>
+                        <FeedVideoPlayer
+                          src={attachment.mediaUrl}
+                          title={attachment.originalFilename || (lang === 'ar' ? 'فيديو المجتمع' : 'Community video')}
+                          onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
+                        />
                       ) : (
                         <button
                           type="button"
@@ -1988,7 +1979,7 @@ export function FeedTab({ lang }: { lang: Language }) {
       )}
 
       {reportingPost && (
-        <div className="fixed inset-0 z-[85] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={lang === 'ar' ? 'الإبلاغ عن منشور' : 'Report a post'} onClick={() => !reportBusy && setReportingPostId(null)}>
+        <div className="fixed inset-0 z-[85] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/65 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={lang === 'ar' ? 'الإبلاغ عن منشور' : 'Report a post'} onClick={() => !reportBusy && setReportingPostId(null)}>
           <motion.form initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} onSubmit={event => { event.preventDefault(); void submitPostReport(); }} onClick={event => event.stopPropagation()} className="w-full max-w-md space-y-4 rounded-3xl bg-white p-5 shadow-2xl dark:bg-slate-900">
             <div className="flex items-start justify-between gap-3">
               <div><h2 className="text-lg font-black text-slate-900 dark:text-white">{lang === 'ar' ? 'إبلاغ عن منشور' : 'Report this post'}</h2><p className="mt-1 text-xs leading-5 text-slate-500">{lang === 'ar' ? 'البلاغ سري، وفريق الخدمة المخوّل فقط يقدر يراجعه.' : 'Reports are private and can only be reviewed by authorized church staff.'}</p></div>
@@ -2019,7 +2010,7 @@ export function FeedTab({ lang }: { lang: Language }) {
         {lightboxAttachment && (
           <div
             onClick={() => setLightboxAttachment(null)}
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 p-3 backdrop-blur-sm sm:p-5"
+            className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/90 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:p-5"
             role="dialog"
             aria-modal="true"
             aria-label={lang === 'ar' ? 'عارض الوسائط' : 'Media viewer'}
@@ -2059,7 +2050,9 @@ export function FeedTab({ lang }: { lang: Language }) {
                 </>
               )}
               {lightboxAttachment.mediaType === 'video' ? (
-                <video src={lightboxAttachment.mediaUrl} controls autoPlay playsInline className="max-h-[82dvh] max-w-full rounded-2xl object-contain" />
+                <div className="w-[min(92vw,64rem)] overflow-hidden rounded-2xl bg-black shadow-2xl">
+                  <FeedVideoPlayer src={lightboxAttachment.mediaUrl} title={lightboxAttachment.originalFilename || 'Community video'} />
+                </div>
               ) : (
                 <img
                   src={lightboxAttachment.mediaUrl}

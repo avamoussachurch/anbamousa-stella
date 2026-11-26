@@ -180,7 +180,7 @@ test('feed voice controls use recorder lifecycle events and a live microphone wa
 
 test('feed composer uses a wider scrollable dialog and full-width attachment previews', () => {
   const feed = read('../src/components/student/FeedTab.tsx');
-  assert.match(feed, /max-w-2xl max-h-\[calc\(100dvh-2rem\)\] overflow-y-auto/);
+  assert.match(feed, /max-h-\[calc\(100dvh-env\(safe-area-inset-top\)-env\(safe-area-inset-bottom\)-1\.5rem\)\] overflow-y-auto overscroll-contain/);
   assert.match(feed, /className="grid grid-cols-1 gap-3"/);
   assert.match(feed, /getLocalizedErrorMessage\(attachment\.error, lang\)/);
 });

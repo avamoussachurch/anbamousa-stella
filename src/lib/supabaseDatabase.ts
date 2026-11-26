@@ -439,11 +439,12 @@ export function extractEmbedMedia(inputUrl: string): {
     };
   }
 
-  // 3. Vimeo detection
+  // 3. Vimeo is a hosted player URL, not a raw MP4/WebM stream.
+  // Keep it on the provider iframe path; native <video> cannot play Vimeo embed URLs.
   const vimeoMatch = trimmed.match(/(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)([0-9]+)/i);
   if (vimeoMatch && vimeoMatch[1]) {
     return {
-      mediaType: 'video',
+      mediaType: 'embed',
       embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
       originalUrl: trimmed
     };

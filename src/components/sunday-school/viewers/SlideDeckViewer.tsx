@@ -49,7 +49,7 @@ export const SlideDeckViewer: React.FC<SlideDeckViewerProps> = ({
 
   return (
     <div className={`bg-stone-900 text-stone-100 rounded-2xl shadow-2xl border border-stone-800 overflow-hidden flex flex-col ${
-      isFullscreen ? 'fixed inset-0 z-50 rounded-none h-screen' : 'h-[750px] max-h-[85vh]'
+      isFullscreen ? 'fixed inset-0 z-50 rounded-none h-dvh max-h-dvh' : 'h-[750px] max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-bottom)-1rem))]'
     }`}>
       {/* Top Header */}
       <div className="bg-stone-950 px-4 py-3 border-b border-stone-800 flex items-center justify-between flex-wrap gap-3">

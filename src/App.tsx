@@ -86,7 +86,11 @@ function AppContent() {
     return new URLSearchParams(window.location.search).get('workspace') as Workspace | null;
   });
   const [navigationError, setNavigationError] = useState<string | null>(null);
-  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return new URLSearchParams(window.location.search).get('lesson');
+  });
+  const historyRouteRef = React.useRef<string | null>(null);
   const [visitedStudentTabs, setVisitedStudentTabs] = useState<Set<string>>(() => new Set<string>(['home']));
 
   // Detect incoming child connect link (?connectChild=ST-4921)
@@ -176,14 +180,29 @@ function AppContent() {
   }, [userData?.id, userData?.roles, userData?.grade, activeWorkspace, showStudentOnboardingModal]);
 
   React.useEffect(() => {
-    const handlePopState = () => {
+    const routeKeyFromLocation = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const handlePopState = (event: PopStateEvent) => {
       const params = new URLSearchParams(window.location.search);
       const resolved = resolveWorkspace(userData?.roles || [], params.get('workspace'));
+      const requestedTab = params.get('tab') || 'home';
+      const safeTab = canAccessWorkspaceTab(userData?.roles || [], resolved, requestedTab) ? requestedTab : 'home';
+      const lessonId = resolved === 'student' && safeTab === 'lessons' ? params.get('lesson') : null;
+      historyRouteRef.current = routeKeyFromLocation();
       setActiveWorkspace(resolved);
-      setActiveTab(canAccessWorkspaceTab(userData?.roles || [], resolved, params.get('tab') || 'home')
-        ? params.get('tab') || 'home'
-        : 'home');
-      setActiveLessonId(null);
+      setActiveTab(safeTab);
+      setActiveLessonId(lessonId);
+      setNavigationError(null);
+
+      // Keep one in-app history entry at the app root so Back cannot leave the
+      // installed/web app accidentally. Internal destinations remain normal history steps.
+      if (event.state?.anbaMousaAppRoot && !event.state?.anbaMousaAppGuard) {
+        window.history.pushState(
+          { anbaMousaApp: true, anbaMousaAppRoot: true, anbaMousaAppGuard: true, routeKey: routeKeyFromLocation() },
+          '',
+          routeKeyFromLocation()
+        );
+        historyRouteRef.current = routeKeyFromLocation();
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -194,9 +213,26 @@ function AppContent() {
     const params = new URLSearchParams(window.location.search);
     params.set('workspace', activeWorkspace);
     params.set('tab', activeTab);
+    if (activeLessonId && activeWorkspace === 'student' && activeTab === 'lessons') params.set('lesson', activeLessonId);
+    else params.delete('lesson');
     const query = params.toString();
-    window.history.replaceState(window.history.state, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
-  }, [activeWorkspace, activeTab, userData?.roles]);
+    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+    const routeKey = nextUrl;
+
+    if (historyRouteRef.current === null) {
+      historyRouteRef.current = routeKey;
+      // Duplicate the app entry once: the lower entry is the safe root fallback.
+      window.history.replaceState({ ...(window.history.state || {}), anbaMousaApp: true, anbaMousaAppRoot: true, routeKey }, '', nextUrl);
+      window.history.pushState({ anbaMousaApp: true, anbaMousaAppRoot: true, anbaMousaAppGuard: true, routeKey }, '', nextUrl);
+      return;
+    }
+    if (historyRouteRef.current !== routeKey) {
+      window.history.pushState({ anbaMousaApp: true, routeKey }, '', nextUrl);
+      historyRouteRef.current = routeKey;
+    } else {
+      window.history.replaceState({ ...(window.history.state || {}), anbaMousaApp: true, routeKey }, '', nextUrl);
+    }
+  }, [activeWorkspace, activeTab, activeLessonId, userData?.id, userData?.roles]);
 
   if (loading) {
     return <AnbaMousaSplashScreen lang={lang} />;
@@ -326,7 +362,10 @@ function AppContent() {
         {activeLessonId && (
           <LessonView
             lessonId={activeLessonId}
-            onBack={() => setActiveLessonId(null)}
+            onBack={() => {
+              if (window.history.state?.anbaMousaApp && !window.history.state?.anbaMousaAppRoot) window.history.back();
+              else setActiveLessonId(null);
+            }}
             lang={lang}
           />
         )}
@@ -434,7 +473,7 @@ function AppContent() {
       )}
       
       {/* Container for responsive layout */}
-      <div className="mx-auto w-full min-w-0 px-2 md:px-4 md:pt-4 pb-20 lg:pb-8">
+      <div className="mx-auto w-full min-w-0 px-2 md:px-4 md:pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
         {navigationError && <p role="alert" className="mx-auto my-2 max-w-3xl rounded-xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-900">{navigationError}</p>}
         <motion.div
           initial={false}
