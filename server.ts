@@ -13271,13 +13271,10 @@ async function issueStudentFamilyCode(studentId: string, rotate = false): Promis
   }
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
-    // 10 URL-safe random characters (~59 bits of entropy), not derived from a user ID.
-    const suffix = randomBytes(16).toString('base64url')
-      .replace(/[^A-Z0-9]/gi, '')
-      .toUpperCase()
-      .slice(0, 10);
-    if (suffix.length !== 10) continue;
-    const code = `ST-${suffix}`;
+    // Five readable, random alphanumeric characters; never derive a code from a student ID.
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const random = randomBytes(8);
+    const code = Array.from(random.slice(0, 5), byte => alphabet[byte % alphabet.length]).join('');
 
     if (rotate) {
       const { data: updated, error: updateError } = await client
@@ -13359,7 +13356,7 @@ app.post("/api/church/parent/connect-child", async (req, res) => {
     const childCode = typeof req.body?.childCode === 'string'
       ? req.body.childCode.trim().toUpperCase()
       : '';
-    if (!/^ST-[A-Z0-9]{10}$/.test(childCode)) {
+    if (!/^[A-Z0-9]{5}$/.test(childCode)) {
       return res.status(400).json({ success: false, error: "INVALID_CHILD_CODE", message: "Enter a valid student family code." });
     }
 
