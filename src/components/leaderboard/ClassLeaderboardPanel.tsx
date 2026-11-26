@@ -64,7 +64,7 @@ export function ClassLeaderboardPanel({ lang, audience = 'parent', childId, chil
             <ol className="space-y-2">{entries.map((entry: any) => <li key={entry.studentId} className={`flex items-center gap-3 rounded-xl p-3 ${entry.studentId === currentId ? 'bg-amber-100/70 dark:bg-amber-950/30 ring-1 ring-amber-400' : 'bg-[var(--surface-secondary)]'}`}>
               <span className="w-8 text-center text-sm font-black">#{entry.rank}</span>
               <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{entry.studentName}</p><p className="text-xs text-[var(--text-secondary)]">{entry.grade || ''}</p></div>
-              <span className="text-sm font-black tabular-nums">{timeframe === 'weekly' ? (entry.totalPoints ?? entry.pointsThisWeek) : entry.totalPoints} {isArabic ? 'نقطة' : 'pts'}</span>
+              <span className="text-sm font-black tabular-nums">{timeframe === 'weekly' ? entry.pointsThisWeek : entry.totalPoints} {isArabic ? 'نقطة' : 'pts'}</span>
             </li>)}</ol>
           </section>
           <section className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-4">
