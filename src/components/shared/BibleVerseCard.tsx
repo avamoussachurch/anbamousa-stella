@@ -70,6 +70,10 @@ export function BibleVerseCard({ lang }: { lang: Language }) {
             <span className="inline-block mt-1 font-extrabold text-xs text-amber-900">
               ({lang === 'ar' ? verse.referenceAr : isCoptic ? verse.referenceCopt : verse.referenceEn})
             </span>
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-amber-900/15 pt-2 text-[9px] font-bold text-amber-950/75">
+              <a href="https://ebible.org/arb-vd/" target="_blank" rel="noreferrer" className="underline underline-offset-2">{lang === 'ar' ? 'النص العربي: فان دايك' : 'Arabic text: Van Dyck'}</a>
+              <a href="https://st-takla.org/Bibles/BibleSearch/" target="_blank" rel="noreferrer" className="underline underline-offset-2">{lang === 'ar' ? 'اقرأ التفاسير القبطية في الأنبا تكلا' : 'Coptic Orthodox study at St-Takla'}</a>
+            </div>
           </div>
         </div>
       </motion.div>
