@@ -696,7 +696,7 @@ export function ProfileTab({
                           <span className="text-[10px] font-bold text-gray-600 dark:text-[var(--text-muted)] uppercase tracking-wider block">
                             {lang === 'ar' ? 'الرمز السري الخاص بالطفل' : 'Child Unique Secret Code'}
                           </span>
-                          <span className="font-mono font-black text-lg text-[var(--mousa-teal-deep)] tracking-wider">
+                          <span className="font-mono font-black text-lg text-[var(--mousa-teal-deep)] dark:text-amber-100 tracking-wider">
                             {familyCodeLoading
                               ? (lang === 'ar' ? 'بنجهّز الكود...' : 'Loading secure code…')
                               : studentLinkCode || familyCodeError || (lang === 'ar' ? 'الكود غير متاح حالياً' : 'Code unavailable')}
