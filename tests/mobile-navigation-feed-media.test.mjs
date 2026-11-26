@@ -53,9 +53,11 @@ test('uploaded feed videos use a responsive native player with fullscreen and no
 });
 
 test('feed voice recordings use the in-app audio player rather than browser-default audio controls', () => {
-  assert.match(feed, /Listen without leaving the post/);
-  assert.match(feed, /<UniversalAudioPlayer/);
-  assert.match(feed, /accent="teal"/);
+  assert.match(feed, /<FeedVoiceMessage/);
+  const voice = read('../src/components/student/FeedVoiceMessage.tsx');
+  assert.match(voice, /aria-label=.*Voice message waveform/);
+  assert.match(voice, /<audio/);
+  assert.doesNotMatch(voice, /controls=\{true\}|playbackRate|originalFilename/);
 });
 
 test('Vimeo links stay on the provider embed path instead of being passed to the native MP4 player', () => {
