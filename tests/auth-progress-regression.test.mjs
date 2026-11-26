@@ -36,7 +36,9 @@ test('cached profile fields cannot override points, streaks, role, or another us
     phone: undefined,
     grade: undefined,
     parentPin: undefined,
-    screenTimeSeconds: undefined
+    screenTimeSeconds: undefined,
+    screenTimeTodaySeconds: undefined,
+    screenTimeDate: undefined
   });
   assert.deepEqual(getCachedProfileFields(cached, 'student-2'), {});
 });

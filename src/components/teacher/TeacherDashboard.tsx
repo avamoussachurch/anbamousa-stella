@@ -49,6 +49,7 @@ import { TeacherProgressReport } from './TeacherProgressReport';
 import { TeacherAttendanceWorkspace } from './TeacherAttendanceWorkspace';
 import { TeacherModerationQueue } from './TeacherModerationQueue';
 import { AchievementRewardsStudio } from '../achievements/AchievementRewardsStudio';
+import { HymnPracticeInbox } from '../hymns/HymnPracticeInbox';
 
 interface TeacherDashboardProps {
   onOpenParentPortal?: () => void;
@@ -57,7 +58,7 @@ interface TeacherDashboardProps {
   onNavigate?: (tab: string) => void;
 }
 
-type TeacherTab = 'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation' | 'helpRequests' | 'leaderboard' | 'preview' | 'communication' | 'achievements';
+type TeacherTab = 'overview' | 'attendance' | 'sundaySchool' | 'sources' | 'mastery' | 'classManagement' | 'ai' | 'lessons' | 'moderation' | 'helpRequests' | 'leaderboard' | 'preview' | 'communication' | 'achievements' | 'hymnPractice';
 
 const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
   overview: { en: 'Servant Studio', ar: 'استوديو الخادم' },
@@ -73,7 +74,8 @@ const teacherTabTitles: Record<TeacherTab, { en: string; ar: string }> = {
   leaderboard: { en: 'Class leaderboards', ar: 'ترتيب الفصل' },
   preview: { en: 'Student experience preview', ar: 'معاينة تجربة التلميذ' },
   communication: { en: 'Community feed', ar: 'منشورات المجتمع' },
-  achievements: { en: 'Achievements & Bazaar', ar: 'الأوسمة وبازار النقاط' }
+  achievements: { en: 'Achievements & Bazaar', ar: 'الأوسمة وبازار النقاط' },
+  hymnPractice: { en: 'Hymn practice review', ar: 'مراجعة تسميع الألحان' }
 };
 
 const routeToTeacherTab: Record<string, TeacherTab> = {
@@ -92,7 +94,8 @@ const routeToTeacherTab: Record<string, TeacherTab> = {
   leaderboard: 'leaderboard',
   preview: 'preview',
   communication: 'communication',
-  achievements: 'achievements'
+  achievements: 'achievements',
+  'hymn-practice': 'hymnPractice'
 };
 
 export function TeacherDashboard({ 
@@ -143,7 +146,7 @@ export function TeacherDashboard({
       setLocalActiveTab(nextTab);
       return;
     }
-    onNavigate(nextTab === 'overview' ? 'home' : nextTab === 'sundaySchool' ? 'studio' : nextTab === 'helpRequests' ? 'help-requests' : nextTab);
+    onNavigate(nextTab === 'overview' ? 'home' : nextTab === 'sundaySchool' ? 'studio' : nextTab === 'helpRequests' ? 'help-requests' : nextTab === 'hymnPractice' ? 'hymn-practice' : nextTab);
   };
   const [previewLessonId, setPreviewLessonId] = useState<string | null>(null);
   const [publishingModeToOpen, setPublishingModeToOpen] = useState<PublishingMode>('sunday_school');
@@ -1119,6 +1122,7 @@ export function TeacherDashboard({
       {activeTab === 'helpRequests' && <HelpRequestsPanel lang={lang} />}
       {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} audience="staff" />}
       {activeTab === 'achievements' && <AchievementRewardsStudio mode="manage" lang={lang} />}
+      {activeTab === 'hymnPractice' && <HymnPracticeInbox lang={lang} />}
 
       {activeTab === 'moderation' && <TeacherModerationQueue lang={lang} />}
 

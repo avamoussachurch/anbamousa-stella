@@ -16,6 +16,8 @@ export interface PointsContextType {
   longestStreak: number;
   leaderboard: LeaderboardEntry[];
   streakLeaderboard: StreakLeaderboardEntry[];
+  leaderboardScope: 'class' | 'church';
+  setLeaderboardScope: (scope: 'class' | 'church') => void;
   addPoints: (pointsDelta: number) => Promise<number>;
   syncStreak: (currentStreak: number, longestStreak?: number) => Promise<void>;
   refreshScores: () => void;
@@ -27,6 +29,8 @@ const PointsContext = createContext<PointsContextType>({
   longestStreak: 0,
   leaderboard: [],
   streakLeaderboard: [],
+  leaderboardScope: 'class',
+  setLeaderboardScope: () => {},
   addPoints: async () => 0,
   syncStreak: async () => {},
   refreshScores: () => {}
@@ -40,6 +44,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [leaderboardList, setLeaderboardList] = useState<LeaderboardEntry[]>(() => getLeaderboard(userData));
   const [streakList, setStreakList] = useState<StreakLeaderboardEntry[]>(() => getStreakLeaderboard(userData));
   const refreshRequestRef = useRef(0);
+  const [leaderboardScope, setLeaderboardScope] = useState<'class' | 'church'>('class');
 
   // Only values that affect leaderboard results belong in these dependencies.
   // AuthContext also updates screenTimeSeconds every 10 seconds; depending on the
@@ -52,7 +57,9 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const refreshUserName = userData?.fullName;
   const refreshUserAvatar = userData?.avatarUrl;
   const isGuestUser = Boolean(refreshUserId?.startsWith('guest_'));
-  const isStudentUser = userData ? hasRole(userData, 'student') : false;
+  const isStudentUser = Boolean(userData && hasRole(userData, 'student'));
+  const isTeacherUser = Boolean(userData && hasRole(userData, 'teacher'));
+  const isAdminUser = Boolean(userData && hasRole(userData, 'admin'));
   const leaderboardUser = useMemo(() => userData, [
     refreshUserId,
     refreshUserRoles,
@@ -77,13 +84,14 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    if (!isStudentUser) {
+    const canViewLeaderboard = isStudentUser || isTeacherUser || isAdminUser;
+    if (!canViewLeaderboard) {
       setLeaderboardList([]);
       setStreakList([]);
       return;
     }
 
-    void getAuthoritativeLeaderboard({ timeframe: 'weekly' }).then(result => {
+    void getAuthoritativeLeaderboard({ timeframe: 'all_time', scope: leaderboardScope }).then(result => {
       if (requestId !== refreshRequestRef.current) return;
       if (!result.success) {
         setLeaderboardList([]);
@@ -96,7 +104,8 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         studentId: entry.studentId,
         studentName: entry.studentName,
         avatarUrl: entry.avatarUrl,
-        pointsThisWeek: entry.pointsThisWeek,
+        pointsThisWeek: Number(entry.totalPoints ?? entry.pointsThisWeek ?? 0),
+        totalPoints: Number(entry.totalPoints ?? entry.pointsThisWeek ?? 0),
         rank: entry.rank
       }));
       setLeaderboardList(entries);
@@ -115,7 +124,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLeaderboardList([]);
       setStreakList([]);
     });
-  }, [leaderboardUser, refreshUserId, isGuestUser, isStudentUser]);
+  }, [leaderboardUser, refreshUserId, isGuestUser, isStudentUser, isTeacherUser, isAdminUser, leaderboardScope]);
 
   useEffect(() => {
     refreshScores();
@@ -158,7 +167,8 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           studentId: userData.id,
           studentName: userData.fullName.split(' ')[0] + ' ' + (userData.fullName.split(' ')[1]?.[0] || '') + '.',
           avatarUrl: userData.avatarUrl || entry.avatarUrl,
-          pointsThisWeek: currentPoints
+          pointsThisWeek: currentPoints,
+          totalPoints: currentPoints
         };
       }
       return entry;
@@ -239,6 +249,8 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       longestStreak,
       leaderboard: unifiedLeaderboard,
       streakLeaderboard: unifiedStreakLeaderboard,
+      leaderboardScope,
+      setLeaderboardScope,
       addPoints,
       syncStreak,
       refreshScores

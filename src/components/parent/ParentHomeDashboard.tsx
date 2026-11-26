@@ -55,7 +55,7 @@ interface ParentHomeDashboardProps {
 
 function FamilyIllustration({ lang }: { lang: Language }) {
   return (
-    <svg viewBox="0 0 440 250" role="img" aria-label={lang === 'ar' ? 'رسمة لعيلة في طريقها للكنيسة' : 'Illustration of a family walking toward church'} className="w-full max-w-[25rem]">
+    <svg viewBox="0 0 440 250" role="img" aria-label={lang === 'ar' ? 'رسمة لعيلة في طريقها للكنيسة' : 'Illustration of a family walking toward church'} className="h-auto w-full max-w-none">
       <defs>
         <linearGradient id="family-sky" x1="0" x2="1" y1="0" y2="1">
           <stop offset="0" stopColor="#20565a" />
@@ -84,6 +84,14 @@ function FamilyIllustration({ lang }: { lang: Language }) {
       <circle cx="197" cy="68" r="3" fill="#fff3d3" /><circle cx="286" cy="76" r="3" fill="#fff3d3" />
     </svg>
   );
+}
+
+function formatActiveTime(minutes: number, isArabic: boolean) {
+  const safeMinutes = Math.max(0, Math.floor(Number(minutes) || 0));
+  const hours = Math.floor(safeMinutes / 60);
+  const remainder = safeMinutes % 60;
+  if (hours === 0) return isArabic ? `${remainder} دقيقة` : `${remainder} min`;
+  return isArabic ? `${hours} س ${remainder} د` : `${hours}h ${remainder}m`;
 }
 
 function SectionHeading({ icon: Icon, eyebrow, title, action }: { icon: LucideIcon; eyebrow: string; title: string; action?: React.ReactNode }) {
@@ -177,6 +185,7 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
     weeklyComplete: 'دروس خلّصها واتسجلت الأسبوع ده',
     className: 'فصل مدارس الأحد',
     hymns: 'مستوى الألحان والطقس',
+    activeTime: 'وقت الاستخدام النشط اليوم',
     openJourney: 'شوف رحلة التعلّم',
     noChildren: 'لسه مفيش أطفال مرتبطين بحسابك',
     noChildrenText: 'اربط حساب ابنك بكود التحقق عشان تتابع بياناته المسجلة.',
@@ -207,6 +216,7 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
     weeklyComplete: 'Recorded completions this week',
     className: 'Sunday School class',
     hymns: 'Hymns & Taxis level',
+    activeTime: 'Active time today',
     openJourney: 'View learning journey',
     noChildren: 'No children linked to this account yet',
     noChildrenText: 'Connect a child with a verified connection code to see their real records.',
@@ -303,6 +313,10 @@ export function ParentHomeDashboard(props: ParentHomeDashboardProps) {
                     <div className="mt-4 grid grid-cols-2 gap-2 border-y border-[var(--border-default)] py-3 text-xs">
                       <div><p className="text-[var(--text-tertiary)]">{labels.className}</p><p className="mt-1 truncate font-bold text-[var(--text-primary)]">{isArabic ? child.classNameAr || 'مش متسجل' : child.className || 'Not recorded'}</p></div>
                       <div><p className="text-[var(--text-tertiary)]">{labels.hymns}</p><p className="mt-1 truncate font-bold text-[var(--text-primary)]">{child.hymnsTaxisLevel ? (isArabic ? `المستوى ${child.hymnsTaxisLevel}` : `Level ${child.hymnsTaxisLevel}`) : (isArabic ? 'مش متاح' : 'Not available')}</p></div>
+                      <div className="col-span-2 flex items-center justify-between gap-2 rounded-xl bg-[var(--surface-primary)]/75 px-3 py-2">
+                        <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]"><Clock3 size={13}/>{labels.activeTime}</span>
+                        <strong className="tabular-nums text-[var(--text-primary)]">{formatActiveTime(child.screenTimeTodayMinutes || 0, isArabic)}</strong>
+                      </div>
                     </div>
 
                     {reviewState === 'ready' && result.data && (

@@ -3651,17 +3651,17 @@ function resolveClassByCode(code: string): { classGroupId: string; instance: any
 }
 
 const KNOWN_STUDENT_DIRECTORY = [
-  { id: 'student-david', linkCode: 'ST-4921', nameEn: 'David Shenouda', nameAr: 'ديفيد شنودة', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
-  { id: 'c1', linkCode: 'CH-9481', nameEn: 'Mina Emad', nameAr: 'مينا عماد', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
-  { id: 'c2', linkCode: 'CH-7320', nameEn: 'Mary Emad', nameAr: 'مريم عماد', gradeEn: 'Grade 2', classGroupId: 'primary_1' },
-  { id: 'student-fadi', linkCode: 'ST-3819', nameEn: 'Fadi Nabil', nameAr: 'فادي نبيل', gradeEn: 'Grade 3', classGroupId: 'primary_1' },
-  { id: 'student-marina', linkCode: 'ST-6104', nameEn: 'Marina George', nameAr: 'مارينا جورج', gradeEn: 'Grade 5', classGroupId: 'primary_2' },
-  { id: 'student-kyrollos', linkCode: 'ST-8255', nameEn: 'Kyrollos Rafik', nameAr: 'كيرلس رفيق', gradeEn: 'Grade 6', classGroupId: 'primary_2' },
-  { id: 'mark', linkCode: 'ST-1001', nameEn: 'Mark Bassem', nameAr: 'مارك باسم', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
-  { id: 'u1', linkCode: 'ST-1002', nameEn: 'Mark Student', nameAr: 'مارك', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
-  { id: 'user_student_mark_101', linkCode: 'ST-1003', nameEn: 'Mark Student', nameAr: 'مارك', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
-  { id: 'other', linkCode: 'ST-2001', nameEn: 'Other Student', nameAr: 'طالب آخر', gradeEn: 'Prep 1', classGroupId: 'preparatory' },
-  { id: 'user_student_other_102', linkCode: 'ST-2002', nameEn: 'Other Student', nameAr: 'طالب آخر', gradeEn: 'Prep 1', classGroupId: 'preparatory' }
+  { id: 'student-david', linkCode: 'A7K2M', nameEn: 'David Shenouda', nameAr: 'ديفيد شنودة', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
+  { id: 'c1', linkCode: 'B6T2N', nameEn: 'Mina Emad', nameAr: 'مينا عماد', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
+  { id: 'c2', linkCode: 'C8P4R', nameEn: 'Mary Emad', nameAr: 'مريم عماد', gradeEn: 'Grade 2', classGroupId: 'primary_1' },
+  { id: 'student-fadi', linkCode: 'F4N8Q', nameEn: 'Fadi Nabil', nameAr: 'فادي نبيل', gradeEn: 'Grade 3', classGroupId: 'primary_1' },
+  { id: 'student-marina', linkCode: 'M6R3T', nameEn: 'Marina George', nameAr: 'مارينا جورج', gradeEn: 'Grade 5', classGroupId: 'primary_2' },
+  { id: 'student-kyrollos', linkCode: 'K9D5W', nameEn: 'Kyrollos Rafik', nameAr: 'كيرلس رفيق', gradeEn: 'Grade 6', classGroupId: 'primary_2' },
+  { id: 'mark', linkCode: 'P3V7X', nameEn: 'Mark Bassem', nameAr: 'مارك باسم', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
+  { id: 'u1', linkCode: 'R5C8J', nameEn: 'Mark Student', nameAr: 'مارك', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
+  { id: 'user_student_mark_101', linkCode: 'T2H6Q', nameEn: 'Mark Student', nameAr: 'مارك', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
+  { id: 'other', linkCode: 'V4N9K', nameEn: 'Other Student', nameAr: 'طالب آخر', gradeEn: 'Prep 1', classGroupId: 'preparatory' },
+  { id: 'user_student_other_102', linkCode: 'W7D3M', nameEn: 'Other Student', nameAr: 'طالب آخر', gradeEn: 'Prep 1', classGroupId: 'preparatory' }
 ];
 
 function resolveStudentByIdentifier(identifier?: string | null) {
@@ -6569,16 +6569,9 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
       if (assignedLevel === null || hymn.level !== assignedLevel) {
         return res.status(403).json({ success: false, error: "HYMN_LEVEL_ACCESS_DENIED", message: "This hymn is not assigned to your level." });
       }
-      if (hymn.level > 1) {
-        const studentEnrollment = getStudentHymnsMembership(targetStudentId);
-        if (!studentEnrollment || studentEnrollment.status !== 'approved' || studentEnrollment.level < hymn.level) {
-          return res.status(403).json({
-            success: false,
-            error: "HYMN_LEVEL_ACCESS_DENIED",
-            message: `Hymn requires Deacon Level ${hymn.level}. Student not authorized.`
-          });
-        }
-      }
+      // The shared profile Hymns/Taxis level is the single source of truth.
+      // The separate legacy roster was disabled by the shared-level setup flow;
+      // requiring its old approval row here incorrectly blocks every Level 2/3 hymn.
     } else if (activityType === 'CONTENT_OPENED' && school === 'taxis') {
       const trustedClient = getRoleRequestClient(req);
       const { data: taxisRow, error: taxisReadError } = await trustedClient
@@ -6716,12 +6709,8 @@ app.post("/api/church/student-progress/record-activity", async (req, res) => {
           if (Number(hymnRow.level) !== assignedLevel) {
             return res.status(403).json({ success: false, error: 'HYMN_LEVEL_ACCESS_DENIED', message: 'This hymn is not assigned to your level.' });
           }
-          if (Number(hymnRow.level) > 1) {
-            const enrollment = getStudentHymnsMembership(targetStudentId);
-            if (!enrollment || enrollment.status !== 'approved' || enrollment.level < Number(hymnRow.level)) {
-              return res.status(403).json({ success: false, error: 'HYMN_LEVEL_ACCESS_DENIED', message: 'Your deacon level enrollment does not allow this hymn.' });
-            }
-          }
+          // The shared profile level was checked above. Do not require a legacy
+          // Hymns roster row: the former enrollment API is intentionally disabled.
         } else {
           const { data: taxisRow, error: taxisReadError } = await trustedClient
             .from('coptic_taxis_items')
@@ -7363,6 +7352,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
     const requestedClassGroupId = req.query.classGroupId ? String(req.query.classGroupId) : undefined;
+    const scope = req.query.scope === 'church' ? 'church' : 'class';
     const timeframe = req.query.timeframe === 'all_time' ? 'all_time' : 'weekly';
 
     if (authContext.isAuthenticated && authContext.userId && isUuidStudentId(authContext.userId)) {
@@ -7384,6 +7374,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
       const emptyLeaderboard = (classGroupId: string | null) => res.json({
         success: true,
         classGroupId,
+        scope,
         availableClassGroupIds: permittedGroupIds,
         timeframe,
         leaderboard: [],
@@ -7434,7 +7425,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         const assignedInstanceIds = Array.from(new Set((assignments || [])
           .map((assignment: any) => assignment.class_instance_id)
           .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
-        if (assignedInstanceIds.length === 0) return emptyLeaderboard(null);
+        if (assignedInstanceIds.length === 0 && scope !== 'church') return emptyLeaderboard(null);
 
         const { data, error } = await client
           .from('class_instances')
@@ -7481,7 +7472,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         const childInstanceIds = Array.from(new Set((childMemberships || [])
           .map((membership: any) => membership.class_instance_id)
           .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
-        if (childInstanceIds.length === 0) return emptyLeaderboard(null);
+        if (childInstanceIds.length === 0 && scope !== 'church') return emptyLeaderboard(null);
         const { data, error } = await client
           .from('class_instances')
           .select('id, class_group_id')
@@ -7507,7 +7498,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         const ownInstanceIds = Array.from(new Set((ownMemberships || [])
           .map((membership: any) => membership.class_instance_id)
           .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
-        if (ownInstanceIds.length === 0) return emptyLeaderboard(null);
+        if (ownInstanceIds.length === 0 && scope !== 'church') return emptyLeaderboard(null);
 
         const { data, error } = await client
           .from('class_instances')
@@ -7521,22 +7512,33 @@ app.get("/api/church/leaderboard", async (req, res) => {
         allInstances = data || [];
       }
 
+      if (scope === 'church') {
+        const { data: churchInstances, error: churchInstancesError } = await client
+          .from('class_instances')
+          .select('id, class_group_id')
+          .eq('church_year_id', activeYear.id);
+        if (churchInstancesError) {
+          console.error('Church-wide leaderboard class lookup failed:', churchInstancesError.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Church rankings are temporarily unavailable.' });
+        }
+        allInstances = churchInstances || [];
+      }
       permittedGroupIds = Array.from(new Set(allInstances
         .map((instance: any) => instance.class_group_id)
         .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
       permittedGroupIds.sort();
-      if (requestedClassGroupId && !permittedGroupIds.includes(requestedClassGroupId)) {
+      if (scope === 'class' && requestedClassGroupId && !permittedGroupIds.includes(requestedClassGroupId)) {
         return res.status(403).json({
           success: false,
           error: 'FORBIDDEN_CLASS_LEADERBOARD',
           message: 'You can only view rankings for a class you belong to or are assigned to.'
         });
       }
-      const effectiveClassGroup = requestedClassGroupId || permittedGroupIds[0] || null;
-      if (!effectiveClassGroup) return emptyLeaderboard(null);
+      const effectiveClassGroup = scope === 'church' ? null : (requestedClassGroupId || permittedGroupIds[0] || null);
+      if (scope === 'class' && !effectiveClassGroup) return emptyLeaderboard(null);
 
       const classInstanceIds = (allInstances || [])
-        .filter((instance: any) => instance.class_group_id === effectiveClassGroup)
+        .filter((instance: any) => scope === 'church' || instance.class_group_id === effectiveClassGroup)
         .map((instance: any) => instance.id);
       if (classInstanceIds.length === 0) return emptyLeaderboard(effectiveClassGroup);
 
@@ -13152,9 +13154,10 @@ app.get("/api/church/parent/children", async (req, res) => {
     if (!isTestRequest) {
       if (linkedChildIds.length === 0) return res.json({ success: true, children: [] });
       const client = getTrustedProgressClient();
+      const todayCairo = getCairoDateString();
       const { data: profiles, error: profilesError } = await client
         .from('profiles')
-        .select('id, name, grade, avatar, points, hymns_taxis_level')
+        .select('id, name, grade, avatar, points, hymns_taxis_level, screen_time_today_seconds, screen_time_date')
         .in('id', linkedChildIds);
       if (profilesError) throw new Error(`Could not load linked child profiles: ${profilesError.message}`);
 
@@ -13210,6 +13213,8 @@ app.get("/api/church/parent/children", async (req, res) => {
             classNameAr: classInstance?.name_ar || '',
             avatarUrl: profile.avatar || '',
             points: Number.isFinite(profile.points) ? profile.points : null,
+            screenTimeTodaySeconds: profile.screen_time_date === todayCairo ? Math.max(0, Number(profile.screen_time_today_seconds) || 0) : 0,
+            screenTimeTodayMinutes: profile.screen_time_date === todayCairo ? Math.floor(Math.max(0, Number(profile.screen_time_today_seconds) || 0) / 60) : 0,
             hymnsTaxisLevel: Number.isInteger(profile.hymns_taxis_level) ? profile.hymns_taxis_level : null,
             hymnsMembership: hymnsMembership ? {
               level: hymnsMembership.level,
@@ -13271,13 +13276,10 @@ async function issueStudentFamilyCode(studentId: string, rotate = false): Promis
   }
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
-    // 10 URL-safe random characters (~59 bits of entropy), not derived from a user ID.
-    const suffix = randomBytes(16).toString('base64url')
-      .replace(/[^A-Z0-9]/gi, '')
-      .toUpperCase()
-      .slice(0, 10);
-    if (suffix.length !== 10) continue;
-    const code = `ST-${suffix}`;
+    // Five readable, random alphanumeric characters; never derive a code from a student ID.
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const random = randomBytes(8);
+    const code = Array.from(random.slice(0, 5), byte => alphabet[byte % alphabet.length]).join('');
 
     if (rotate) {
       const { data: updated, error: updateError } = await client
@@ -13359,7 +13361,7 @@ app.post("/api/church/parent/connect-child", async (req, res) => {
     const childCode = typeof req.body?.childCode === 'string'
       ? req.body.childCode.trim().toUpperCase()
       : '';
-    if (!/^ST-[A-Z0-9]{10}$/.test(childCode)) {
+    if (!/^[A-Z0-9]{5}$/.test(childCode)) {
       return res.status(400).json({ success: false, error: "INVALID_CHILD_CODE", message: "Enter a valid student family code." });
     }
 
@@ -15839,11 +15841,43 @@ app.put("/api/church/hymns-taxis-level", async (req, res) => {
   }
 });
 
-// Helper to get student's approved Hymns School level
-function getStudentHymnsMembership(studentId: string) {
+// Read the approved Hymns roster from Supabase first. The in-memory/persisted
+// server state remains a compatibility fallback for older records during rollout.
+async function getStudentHymnsMembership(studentId: string) {
   if (!studentId) return null;
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      const client = getTrustedProgressClient();
+      const { data, error } = await client
+        .from('hymns_memberships')
+        .select('id,student_id,student_name,level,roster_group,status,notes,reviewed_by,reviewed_at,created_at,updated_at')
+        .eq('student_id', studentId)
+        .neq('status', 'revoked')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        return {
+          id: data.id,
+          studentId: data.student_id,
+          studentName: data.student_name,
+          level: Number(data.level),
+          rosterGroup: data.roster_group,
+          status: data.status,
+          notes: data.notes || '',
+          reviewedBy: data.reviewed_by || undefined,
+          reviewedAt: data.reviewed_at || undefined,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at
+        };
+      }
+    } catch (error) {
+      console.error('Hymns roster lookup failed; checking compatibility state:', error);
+    }
+  }
   const memberships = Object.values(serverReviewState.hymnsMemberships || {});
-  return memberships.find((m: any) => m.studentId === studentId && m.status !== 'revoked') || null;
+  return memberships.find((membership: any) => membership.studentId === studentId && membership.status !== 'revoked') || null;
 }
 
 // 1. Student checks own Hymns School enrollment status
@@ -15861,7 +15895,7 @@ app.get("/api/church/hymns/my-enrollment", async (req, res) => {
       return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Cannot inspect another student's enrollment" });
     }
 
-    const membership = getStudentHymnsMembership(requestedStudentId);
+    const membership = await getStudentHymnsMembership(requestedStudentId);
     return res.json({
       success: true,
       membership: membership || null

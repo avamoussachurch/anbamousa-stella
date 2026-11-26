@@ -9,9 +9,13 @@ import {
   Volume2, Database, HardDrive, Music, HelpCircle, CheckCircle2, Server, CloudLightning, Flag, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
+import { FeedAttachment, Post, Comment, Reply, Language, FeedReactionKey } from '../../types';
 import { UniversalAudioPlayer } from '../design-system/UniversalAudioPlayer';
 import { FeedVideoPlayer } from './FeedVideoPlayer';
+import { FeedEmbeddedMediaPlayer } from './FeedEmbeddedMediaPlayer';
+import { FeedVoiceMessage } from './FeedVoiceMessage';
+
+
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -39,6 +43,19 @@ import {
   uploadFeedAttachmentFile
 } from '../../lib/feedAttachments';
 
+const FEED_REACTIONS: Array<{ key: FeedReactionKey; emoji: string; labelEn: string; labelAr: string }> = [
+  { key: 'heart', emoji: '❤️', labelEn: 'Love', labelAr: 'محبة' },
+  { key: 'candle', emoji: '🕯️', labelEn: 'Prayer', labelAr: 'صلاة' },
+  { key: 'cross', emoji: '✝️', labelEn: 'Faith', labelAr: 'إيمان' },
+  { key: 'pray', emoji: '🙏', labelEn: 'Praying', labelAr: 'بصلي' },
+  { key: 'laugh', emoji: '😂', labelEn: 'Joy', labelAr: 'فرح' },
+  { key: 'wow', emoji: '😮', labelEn: 'Wow', labelAr: 'مندهش' },
+  { key: 'clap', emoji: '👏', labelEn: 'Well done', labelAr: 'برافو' },
+  { key: 'fire', emoji: '🔥', labelEn: 'Inspiring', labelAr: 'ملهم' },
+  { key: 'dove', emoji: '🕊️', labelEn: 'Peace', labelAr: 'سلام' },
+  { key: 'star', emoji: '⭐', labelEn: 'Wonderful', labelAr: 'رائع' }
+];
+
 type SortOption = 'latest' | 'popular' | 'discussed' | 'announcements' | 'saved';
 
 const FEED_STORAGE_KEY = 'orthodox_church_feed_posts_v5';
@@ -51,7 +68,7 @@ type ComposerAttachment = UploadedFeedAttachment & {
   globalAudioTitle?: string;
 };
 
-export function FeedTab({ lang }: { lang: Language }) {
+export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Language; initialPostId?: string | null; initialProfileId?: string | null }) {
   const { userData } = useAuth();
   const workspace = useActiveWorkspace();
   const isCop = lang === 'copt' || lang === 'cop';
@@ -72,9 +89,20 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   }, [posts, hasLoadedFeed]);
 
+  useEffect(() => {
+    if (!initialPostId || !hasLoadedFeed) return;
+    const target = document.getElementById(`feed-post-${initialPostId}`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('ring-2', 'ring-[var(--mousa-gold)]');
+      window.setTimeout(() => target.classList.remove('ring-2', 'ring-[var(--mousa-gold)]'), 2200);
+    }
+  }, [initialPostId, hasLoadedFeed, posts]);
+
   // Server state & notifications
   const [syncStatusText, setSyncStatusText] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reactionPickerTarget, setReactionPickerTarget] = useState<string | null>(null);
   const [reportingPostId, setReportingPostId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState<'spam' | 'harassment' | 'inappropriate' | 'privacy' | 'other'>('inappropriate');
   const [reportDetails, setReportDetails] = useState('');
@@ -393,38 +421,29 @@ export function FeedTab({ lang }: { lang: Language }) {
     window.setTimeout(() => setSyncStatusText(null), 5000);
   };
 
-  // 4. Post Reactions (Optimistic update with Supabase persistence & rollback)
-  const handleReactPost = async (postId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+  // Reactions are server-authoritative. Serialize taps per post+emoji so rapid
+  // taps cannot race two toggle RPCs and leave the UI count out of sync.
+  const reactionInFlightRef = useRef(new Set<string>());
+  const handleReactPost = async (postId: string, reactionType: FeedReactionKey) => {
+    const lockKey = `post:${postId}:${reactionType}`;
+    if (reactionInFlightRef.current.has(lockKey)) return;
+    reactionInFlightRef.current.add(lockKey);
     setActionError(null);
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          reactions: {
-            ...p.reactions,
-            [reactionType]: (p.reactions[reactionType] || 0) + 1
-          }
-        };
-      }
-      return p;
-    }));
-
-    const res = await toggleFeedReactionInSupabase(reactionType, { postId });
-    if (res.error) {
-      console.warn('Reaction write note:', res.error.message);
-      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل دلوقتي: ${getLocalizedErrorMessage(res.error.message, lang)}` : `Reaction failed: ${res.error.message}`);
-      setPosts(prev => prev.map(p => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            reactions: {
-              ...p.reactions,
-              [reactionType]: Math.max(0, (p.reactions[reactionType] || 1) - 1)
-            }
-          };
-        }
-        return p;
-      }));
+    try {
+      const res = await toggleFeedReactionInSupabase(reactionType, { postId });
+      if (res.error || !res.action) throw res.error || new Error('Reaction was not confirmed.');
+      const delta = res.action === 'added' ? 1 : res.action === 'removed' ? -1 : 0;
+      setPosts(prev => prev.map(p => p.id === postId ? {
+        ...p,
+        reactions: { ...p.reactions, [reactionType]: Math.max(0, (p.reactions[reactionType] || 0) + delta) }
+      } : p));
+    } catch (error) {
+      console.warn('Reaction write note:', error);
+      setActionError(lang === 'ar'
+        ? `مش قادرين نسجّل التفاعل دلوقتي: ${getLocalizedErrorMessage(error instanceof Error ? error.message : '', lang)}`
+        : `Reaction failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } finally {
+      reactionInFlightRef.current.delete(lockKey);
     }
   };
 
@@ -454,7 +473,7 @@ export function FeedTab({ lang }: { lang: Language }) {
 
   const handleSharePost = async (post: Post) => {
     const shareText = (post.content || '').trim().slice(0, 220);
-    const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const shareUrl = typeof window !== 'undefined' ? (() => { const url = new URL(window.location.href); url.searchParams.set('tab', 'feed'); url.searchParams.set('post', post.id); url.hash = `post-${post.id}`; return url.toString(); })() : '';
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share({ title: 'Anba Mousa Community', text: shareText, url: shareUrl });
@@ -471,90 +490,68 @@ export function FeedTab({ lang }: { lang: Language }) {
     }
   };
 
-  // 5. Comment Reactions (Optimistic update with Supabase persistence & rollback)
-  const handleReactComment = async (postId: string, commentId: string, reactionType: 'heart' | 'candle' | 'cross') => {
+  const handleReactComment = async (postId: string, commentId: string, reactionType: FeedReactionKey) => {
+    const lockKey = `comment:${commentId}:${reactionType}`;
+    if (reactionInFlightRef.current.has(lockKey)) return;
+    reactionInFlightRef.current.add(lockKey);
     setActionError(null);
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          comments: p.comments.map(c => {
-            if (c.id === commentId) {
-              const currentReactions = c.reactions || { heart: 0, candle: 0, cross: 0 };
-              return {
-                ...c,
-                reactions: {
-                  ...currentReactions,
-                  [reactionType]: (currentReactions[reactionType] || 0) + 1
-                }
-              };
-            }
-            return c;
-          })
-        };
-      }
-      return p;
-    }));
-
-    const res = await toggleFeedReactionInSupabase(reactionType, { commentId });
-    if (res.error) {
-      console.warn('Comment reaction write note:', res.error.message);
-      setActionError(lang === 'ar' ? `مش قادرين نسجّل التفاعل: ${getLocalizedErrorMessage(res.error.message, lang)}` : `Comment reaction failed: ${res.error.message}`);
-      setPosts(prev => prev.map(p => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            comments: p.comments.map(c => {
-              if (c.id === commentId) {
-                const currentReactions = c.reactions || { heart: 0, candle: 0, cross: 0 };
-                return {
-                  ...c,
-                  reactions: {
-                    ...currentReactions,
-                    [reactionType]: Math.max(0, (currentReactions[reactionType] || 1) - 1)
-                  }
-                };
-              }
-              return c;
-            })
-          };
-        }
-        return p;
-      }));
+    try {
+      const res = await toggleFeedReactionInSupabase(reactionType, { commentId });
+      if (res.error || !res.action) throw res.error || new Error('Reaction was not confirmed.');
+      const delta = res.action === 'added' ? 1 : res.action === 'removed' ? -1 : 0;
+      setPosts(prev => prev.map(p => p.id === postId ? {
+        ...p,
+        comments: p.comments.map(comment => comment.id === commentId ? {
+          ...comment,
+          reactions: {
+            ...(comment.reactions || { heart: 0, candle: 0, cross: 0 }),
+            [reactionType]: Math.max(0, ((comment.reactions || { heart: 0, candle: 0, cross: 0 })[reactionType] || 0) + delta)
+          }
+        } : comment)
+      } : p));
+    } catch (error) {
+      console.warn('Comment reaction write note:', error);
+      setActionError(lang === 'ar'
+        ? `مش قادرين نسجّل التفاعل: ${getLocalizedErrorMessage(error instanceof Error ? error.message : '', lang)}`
+        : `Comment reaction failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } finally {
+      reactionInFlightRef.current.delete(lockKey);
     }
   };
 
   // 6. Reply Reactions
-  const handleReactReply = (postId: string, commentId: string, replyId: string, reactionType: 'heart' | 'candle' | 'cross') => {
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          comments: p.comments.map(c => {
-            if (c.id === commentId) {
-              return {
-                ...c,
-                replies: c.replies.map(r => {
-                  if (r.id === replyId) {
-                    const currentReactions = r.reactions || { heart: 0, candle: 0, cross: 0 };
-                    return {
-                      ...r,
-                      reactions: {
-                        ...currentReactions,
-                        [reactionType]: (currentReactions[reactionType] || 0) + 1
-                      }
-                    };
-                  }
-                  return r;
-                })
-              };
+  const handleReactReply = async (postId: string, commentId: string, replyId: string, reactionType: FeedReactionKey) => {
+    // New replies use a temporary id until the server confirms their insert.
+    if (replyId.startsWith('rep-')) return;
+    const lockKey = `reply:${replyId}:${reactionType}`;
+    if (reactionInFlightRef.current.has(lockKey)) return;
+    reactionInFlightRef.current.add(lockKey);
+    setActionError(null);
+    try {
+      const res = await toggleFeedReactionInSupabase(reactionType, { commentId: replyId });
+      if (res.error || !res.action) throw res.error || new Error('Reaction was not confirmed.');
+      const delta = res.action === 'added' ? 1 : res.action === 'removed' ? -1 : 0;
+      setPosts(prev => prev.map(post => post.id === postId ? {
+        ...post,
+        comments: post.comments.map(comment => comment.id === commentId ? {
+          ...comment,
+          replies: comment.replies.map(reply => reply.id === replyId ? {
+            ...reply,
+            reactions: {
+              ...(reply.reactions || { heart: 0, candle: 0, cross: 0 }),
+              [reactionType]: Math.max(0, (reply.reactions?.[reactionType] || 0) + delta)
             }
-            return c;
-          })
-        };
-      }
-      return p;
-    }));
+          } : reply)
+        } : comment)
+      } : post));
+    } catch (error) {
+      console.warn('Reply reaction write note:', error);
+      setActionError(lang === 'ar'
+        ? `مش قادرين نسجّل التفاعل: ${getLocalizedErrorMessage(error instanceof Error ? error.message : '', lang)}`
+        : `Reply reaction failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } finally {
+      reactionInFlightRef.current.delete(lockKey);
+    }
   };
 
   // 7. Add Comment or Reply (Optimistic update with Supabase persistence & rollback)
@@ -1115,7 +1112,7 @@ export function FeedTab({ lang }: { lang: Language }) {
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-          <FeedPeopleDirectory lang={lang} />
+          <FeedPeopleDirectory lang={lang} initialProfileId={initialProfileId} />
           {isTeacher && (
             <span className="bg-[var(--mousa-coral-soft)] text-[var(--mousa-coral-dark)] border border-[var(--mousa-coral)]/30 px-3 py-1 rounded-full text-xs font-black shadow-2xs flex items-center gap-1">
               <ShieldCheck size={14} />
@@ -1504,9 +1501,9 @@ export function FeedTab({ lang }: { lang: Language }) {
                             )}
                           </>
                         ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
-                          <iframe src={attachment.mediaUrl} title="Media preview" className="aspect-video w-full bg-black" allowFullScreen />
+                          <FeedEmbeddedMediaPlayer src={attachment.mediaUrl} title="Media preview" />
                         ) : attachment.mediaType === 'video' ? (
-                          <FeedVideoPlayer src={attachment.mediaUrl} title={attachment.originalFilename || 'Video preview'} />
+                          <FeedVideoPlayer src={attachment.mediaUrl} title={attachment.originalFilename || 'Video preview'} lang={lang === 'ar' ? 'ar' : 'en'} />
                         ) : (
                           <img src={attachment.mediaUrl} alt={attachment.originalFilename || 'Attachment preview'} className="aspect-video w-full object-cover" />
                         )}
@@ -1614,7 +1611,8 @@ export function FeedTab({ lang }: { lang: Language }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.25, delay: idx * 0.03 }}
-              key={post.id} 
+              key={post.id}
+              id={`feed-post-${post.id}`}
               className={`bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] rounded-3xl p-5 shadow-xs border-2 break-inside-avoid mb-6 relative transition-all hover:shadow-sm ${
                 post.isPinned 
                   ? 'border-[var(--mousa-gold)] bg-amber-50/20' 
@@ -1639,7 +1637,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                   />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="font-bold text-sm text-[var(--mousa-teal-deep)]">{post.authorName}</p>
+                      <button type="button" onClick={() => { const url = new URL(window.location.href); url.searchParams.set('tab', 'feed'); url.searchParams.set('profile', post.authorId); window.location.assign(url.toString()); }} className="text-start font-bold text-sm text-[var(--mousa-teal-deep)] dark:text-[#F8E9C8] hover:text-[var(--mousa-gold)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mousa-gold)]">{post.authorName}</button>
                       {post.isAnnouncement && (
                         <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">
                           {lang === 'ar' ? 'خادم' : 'Servant'}
@@ -1689,31 +1687,13 @@ export function FeedTab({ lang }: { lang: Language }) {
                           {lang === 'ar' ? 'هذا الملف غير متاح حالياً.' : 'This attachment is currently unavailable.'}
                         </div>
                       ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
-                        <iframe
+                        <FeedEmbeddedMediaPlayer
                           src={attachment.mediaUrl}
                           title={attachment.mediaType === 'youtube' ? 'Church video' : 'Church media'}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="aspect-video w-full bg-black"
                           onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
                         />
                       ) : attachment.mediaType === 'audio' ? (
-                        <div className="space-y-3 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 text-white">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-amber-200 ring-1 ring-white/15"><Volume2 size={21} /></div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-black">{attachment.originalFilename || (lang === 'ar' ? 'تسجيل صوتي' : 'Voice recording')}</p>
-                              <p className="mt-0.5 text-[11px] font-medium text-white/60">{lang === 'ar' ? 'استمع للتسجيل داخل المنشور' : 'Listen without leaving the post'}</p>
-                            </div>
-                          </div>
-                          <UniversalAudioPlayer
-                            src={attachment.mediaUrl}
-                            title={undefined}
-                            lang={lang === 'ar' ? 'ar' : 'en'}
-                            compact
-                            accent="teal"
-                          />
-                        </div>
+                        <FeedVoiceMessage src={attachment.mediaUrl} lang={lang === 'ar' ? 'ar' : 'en'} />
                       ) : attachment.mediaType === 'video' ? (
                         <FeedVideoPlayer
                           src={attachment.mediaUrl}
@@ -1748,33 +1728,22 @@ export function FeedTab({ lang }: { lang: Language }) {
               )}
               
               {/* Post Reactions Bar */}
-              <div className="flex items-center gap-2 border-t border-gray-100 pt-3 pb-1 flex-wrap">
-                <motion.button 
-                  whileTap={{ scale: 0.85 }} 
-                  onClick={() => handleReactPost(post.id, 'heart')} 
-                  className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-500 px-2.5 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer"
-                >
-                  <Heart size={14} fill="currentColor" />
-                  <span>{post.reactions.heart}</span>
-                </motion.button>
-                
-                <motion.button 
-                  whileTap={{ scale: 0.85 }} 
-                  onClick={() => handleReactPost(post.id, 'candle')} 
-                  className="flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 text-[var(--mousa-gold)] px-2.5 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer"
-                >
-                  <span className="text-sm leading-none">🕯️</span>
-                  <span>{post.reactions.candle}</span>
-                </motion.button>
-                
-                <motion.button 
-                  whileTap={{ scale: 0.85 }} 
-                  onClick={() => handleReactPost(post.id, 'cross')} 
-                  className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 text-[var(--mousa-teal-deep)] px-2.5 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer"
-                >
-                  <span className="text-sm leading-none">✝️</span>
-                  <span>{post.reactions.cross}</span>
-                </motion.button>
+              <div className="relative flex items-center gap-2 border-t border-gray-100 pt-3 pb-1 flex-wrap">
+                {FEED_REACTIONS.filter(reaction => ['heart', 'candle', 'cross'].includes(reaction.key) || (post.reactions[reaction.key] || 0) > 0).map(reaction => (
+                  <motion.button
+                    key={reaction.key}
+                    whileTap={{ scale: 0.88 }}
+                    onClick={() => handleReactPost(post.id, reaction.key)}
+                    aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn}
+                    title={lang === 'ar' ? reaction.labelAr : reaction.labelEn}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-full border border-[var(--border-default)] bg-[var(--surface-secondary)] px-2.5 py-1 text-xs font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--mousa-gold)] hover:bg-[var(--state-hover)]"
+                  >
+                    <span className="text-sm leading-none">{reaction.emoji}</span>
+                    <span className="tabular-nums">{post.reactions[reaction.key] || 0}</span>
+                  </motion.button>
+                ))}
+                <button type="button" onClick={() => setReactionPickerTarget(reactionPickerTarget === 'post:' + post.id ? null : 'post:' + post.id)} aria-label={lang === 'ar' ? 'إضافة تفاعل' : 'Add reaction'} title={lang === 'ar' ? 'إضافة تفاعل' : 'Add reaction'} className="grid h-8 w-8 place-items-center rounded-full border border-dashed border-[var(--border-default)] text-base font-black text-[var(--text-secondary)] hover:border-[var(--mousa-gold)] hover:text-[var(--mousa-gold)]">＋</button>
+                {reactionPickerTarget === 'post:' + post.id && <div className="absolute bottom-full start-0 z-30 mb-2 grid grid-cols-5 gap-1 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-2 shadow-xl">{FEED_REACTIONS.map(reaction => <button key={reaction.key} type="button" onClick={() => { void handleReactPost(post.id, reaction.key); setReactionPickerTarget(null); }} title={lang === 'ar' ? reaction.labelAr : reaction.labelEn} aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn} className="grid h-9 w-9 place-items-center rounded-xl text-lg hover:bg-[var(--state-hover)]">{reaction.emoji}</button>)}</div>}
                 
                 <div className="flex-1"></div>
                 
@@ -1844,28 +1813,14 @@ export function FeedTab({ lang }: { lang: Language }) {
                             <p className="text-xs text-gray-700 leading-relaxed">{comment.content}</p>
                             
                             {/* Reactions for this Comment */}
-                            <div className="flex items-center gap-1.5 pt-1">
-                              <button 
-                                onClick={() => handleReactComment(post.id, comment.id, 'heart')}
-                                className="text-[10px] bg-white border border-gray-200 hover:bg-red-50 hover:text-red-500 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold text-gray-600 transition-colors cursor-pointer"
-                              >
-                                <span>❤️</span>
-                                <span>{comment.reactions?.heart || 0}</span>
-                              </button>
-                              <button 
-                                onClick={() => handleReactComment(post.id, comment.id, 'candle')}
-                                className="text-[10px] bg-white border border-gray-200 hover:bg-amber-50 hover:text-amber-600 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold text-gray-600 transition-colors cursor-pointer"
-                              >
-                                <span>🕯️</span>
-                                <span>{comment.reactions?.candle || 0}</span>
-                              </button>
-                              <button 
-                                onClick={() => handleReactComment(post.id, comment.id, 'cross')}
-                                className="text-[10px] bg-white border border-gray-200 hover:bg-blue-50 hover:text-blue-600 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold text-gray-600 transition-colors cursor-pointer"
-                              >
-                                <span>✝️</span>
-                                <span>{comment.reactions?.cross || 0}</span>
-                              </button>
+                            <div className="relative flex flex-wrap items-center gap-1.5 pt-1">
+                              {FEED_REACTIONS.filter(reaction => ['heart', 'candle', 'cross'].includes(reaction.key) || (comment.reactions?.[reaction.key] || 0) > 0).map(reaction => (
+                                <button key={reaction.key} type="button" onClick={() => handleReactComment(post.id, comment.id, reaction.key)} aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn} title={lang === 'ar' ? reaction.labelAr : reaction.labelEn} className="inline-flex min-h-7 items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-bold text-gray-700 transition-colors hover:border-[var(--mousa-gold)] hover:bg-amber-50 dark:border-[var(--border-default)] dark:bg-[var(--surface-secondary)] dark:text-[var(--text-primary)]">
+                                  <span>{reaction.emoji}</span><span className="tabular-nums">{comment.reactions?.[reaction.key] || 0}</span>
+                                </button>
+                              ))}
+                              <button type="button" onClick={() => setReactionPickerTarget(reactionPickerTarget === 'comment:' + comment.id ? null : 'comment:' + comment.id)} aria-label={lang === 'ar' ? 'إضافة تفاعل' : 'Add reaction'} className="grid h-7 w-7 place-items-center rounded-full border border-dashed border-gray-300 text-sm font-black text-gray-500 hover:border-[var(--mousa-gold)] hover:text-[var(--mousa-gold)]">＋</button>
+                              {reactionPickerTarget === 'comment:' + comment.id && <div className="absolute bottom-full start-0 z-30 mb-2 grid grid-cols-5 gap-1 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-2 shadow-xl">{FEED_REACTIONS.map(reaction => <button key={reaction.key} type="button" onClick={() => { void handleReactComment(post.id, comment.id, reaction.key); setReactionPickerTarget(null); }} title={lang === 'ar' ? reaction.labelAr : reaction.labelEn} aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn} className="grid h-8 w-8 place-items-center rounded-xl text-base hover:bg-[var(--state-hover)]">{reaction.emoji}</button>)}</div>}
                             </div>
                           </div>
                           

@@ -5,12 +5,15 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useGlobalAudio } from '../../context/AudioContext';
 import { updateSupabaseProfile, uploadAvatarToSupabase } from '../../lib/supabaseDatabase';
+import { supabase } from '../../lib/supabase';
 import { getShareableChildLink, getWhatsAppShareUrl, getStudentFamilyLinkCode } from '../../lib/parentChildService';
 import { ChildQrCodeModal } from '../common/ChildQrCodeModal';
 import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { CLASS_GROUPS, getClassGroupForGrade } from '../../lib/classGroups';
 import { COPTIC_AVATARS, DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
 import { ProfileCustomizationStudio } from '../profile/ProfileCustomizationStudio';
+import { CopticAchievementSeal, type CopticAchievementCategory } from '../design-system/CopticAchievementSeal';
+import { HelpFeedbackButton } from '../layout/HelpFeedbackButton';
 import { getCurrentChurchYear, joinClassWithCode, getStudentActiveMembership } from '../../lib/churchYearService';
 import { Language, ClassGroupId, Role } from '../../types';
 import { hasRole } from '../../lib/workspaces';
@@ -61,6 +64,10 @@ export function ProfileTab({
   const [familyCodeLoading, setFamilyCodeLoading] = useState(false);
   const [familyCodeError, setFamilyCodeError] = useState<string | null>(null);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [earnedAchievements, setEarnedAchievements] = useState<Array<{ id: string; slug: string; titleEn: string; titleAr: string; descriptionEn: string; descriptionAr: string; icon: string; style: string; category: CopticAchievementCategory; earnedAt: string; pointsAwarded: number }>>([]);
+  const [achievementsLoading, setAchievementsLoading] = useState(false);
+  const [achievementsError, setAchievementsError] = useState<string | null>(null);
+  const [achievementRefreshTick, setAchievementRefreshTick] = useState(0);
 
   // Church Year & Student Join Code state
   const [churchYear, setChurchYear] = useState<string>('2026 / 2027');
@@ -84,6 +91,64 @@ export function ProfileTab({
     membershipId?: string;
   } | null>(null);
   const [loadingMembership, setLoadingMembership] = useState<boolean>(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!userData?.id || isGuest || !supabase) {
+      setEarnedAchievements([]);
+      setAchievementsLoading(false);
+      return () => { active = false; };
+    }
+
+    const channel = supabase.channel('profile-achievements-' + userData.id)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'achievement_unlocks',
+        filter: 'student_id=eq.' + userData.id
+      }, () => setAchievementRefreshTick(value => value + 1))
+      .subscribe();
+
+    setAchievementsLoading(true);
+    setAchievementsError(null);
+    void (async () => {
+      try {
+        const [unlockResult, badgeResult] = await Promise.all([
+          supabase.from('achievement_unlocks').select('badge_id,earned_at,points_awarded').eq('student_id', userData.id).order('earned_at', { ascending: false }),
+          supabase.from('achievement_badges').select('id,slug,title_en,title_ar,description_en,description_ar,icon,style,category')
+        ]);
+        if (unlockResult.error) throw unlockResult.error;
+        if (badgeResult.error) throw badgeResult.error;
+        if (!active) return;
+        const badgesById = new Map((badgeResult.data || []).map(badge => [badge.id, badge]));
+        setEarnedAchievements((unlockResult.data || []).flatMap(unlock => {
+          const badge = badgesById.get(unlock.badge_id);
+          return badge ? [{
+            id: unlock.badge_id,
+            slug: badge.slug || unlock.badge_id,
+            titleEn: badge.title_en,
+            titleAr: badge.title_ar,
+            descriptionEn: badge.description_en,
+            descriptionAr: badge.description_ar,
+            icon: badge.icon,
+            style: badge.style,
+            category: badge.category as CopticAchievementCategory,
+            earnedAt: unlock.earned_at,
+            pointsAwarded: unlock.points_awarded
+          }] : [];
+        }));
+      } catch (error) {
+        if (active) setAchievementsError(error instanceof Error ? error.message : 'Could not load achievements.');
+      } finally {
+        if (active) setAchievementsLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [userData?.id, isGuest, achievementRefreshTick]);
 
   const isStudent = workspaceRole ? workspaceRole === 'student' : hasRole(userData, 'student');
 
@@ -491,7 +556,7 @@ export function ProfileTab({
                       {lang === 'ar' ? 'وقت التعلم النشط اليوم' : 'Active Learning Time Today'}
                     </span>
                     <span className="font-black text-xs md:text-sm text-[var(--mousa-teal-deep)] dark:text-[var(--text-primary)] bg-[var(--mousa-sand-100)] dark:bg-[var(--surface-secondary)] px-3 py-1 rounded-full border border-[var(--mousa-border-sand)] dark:border-[var(--border-default)]">
-                      {formatScreenTime(userData.screenTimeSeconds || 0)}
+                      {formatScreenTime(userData.screenTimeTodaySeconds || 0)}
                     </span>
                   </div>
                 </div>
@@ -564,11 +629,16 @@ export function ProfileTab({
                     </div>
                   )}
                   {!isGuest && (
-                    <p role="status" className="mt-4 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">
-                      {lang === 'ar'
-                        ? 'لا توجد إنجازات موثقة متاحة لهذا الحساب حتى الآن.'
-                        : 'Verified achievements are not available for this account yet.'}
-                    </p>
+                    <div className="mt-4 space-y-3">
+                      {achievementsLoading ? <div className="flex items-center justify-center gap-2 rounded-2xl bg-[var(--surface-secondary)] p-5 text-sm text-[var(--text-secondary)]"><Loader2 size={17} className="animate-spin"/>{lang === 'ar' ? 'بنحمّل إنجازاتك...' : 'Loading your achievements…'}</div>
+                        : achievementsError ? <p role="status" className="rounded-2xl border border-red-300/50 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-200">{lang === 'ar' ? 'تعذر تحميل الإنجازات. حاول تحديث الصفحة.' : 'Could not load achievements. Please refresh the page.'}</p>
+                        : earnedAchievements.length > 0 ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {earnedAchievements.map(badge => <div key={badge.id} className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-[var(--mousa-gold)]/50 bg-gradient-to-br from-amber-50 to-orange-50 p-3 dark:from-amber-950/40 dark:to-stone-900">
+                            <div className="grid h-16 w-16 shrink-0 place-items-center"><CopticAchievementSeal category={badge.category} designKey={badge.slug || badge.id} size={58} title={lang === 'ar' ? badge.titleAr : badge.titleEn}/></div>
+                            <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-stone-900 dark:text-amber-100">{lang === 'ar' ? badge.titleAr : badge.titleEn}</p><p className="mt-0.5 line-clamp-2 text-xs text-stone-700 dark:text-stone-300">{lang === 'ar' ? badge.descriptionAr : badge.descriptionEn}</p><p className="mt-1 text-[10px] font-bold text-amber-800 dark:text-amber-200">{badge.pointsAwarded > 0 ? '+' + badge.pointsAwarded + ' ' + (lang === 'ar' ? 'نقطة' : 'pts') + ' · ' : ''}{new Date(badge.earnedAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</p></div>
+                          </div>)}
+                        </div> : <p role="status" className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">{lang === 'ar' ? 'لسه مفيش أوسمة مكتسبة. كمّل تحديات رحلتي وهتظهر هنا تلقائيًا!' : 'No badges earned yet. Complete My Trail challenges and they will appear here automatically!'}</p>}
+                    </div>
                   )}
                 </div>
               </div>
@@ -646,7 +716,7 @@ export function ProfileTab({
                           <span className="text-[10px] font-bold text-gray-600 dark:text-[var(--text-muted)] uppercase tracking-wider block">
                             {lang === 'ar' ? 'الرمز السري الخاص بالطفل' : 'Child Unique Secret Code'}
                           </span>
-                          <span className="font-mono font-black text-lg text-[var(--mousa-teal-deep)] tracking-wider">
+                          <span className="font-mono font-black text-lg text-[var(--mousa-teal-deep)] dark:text-amber-100 tracking-wider">
                             {familyCodeLoading
                               ? (lang === 'ar' ? 'بنجهّز الكود...' : 'Loading secure code…')
                               : studentLinkCode || familyCodeError || (lang === 'ar' ? 'الكود غير متاح حالياً' : 'Code unavailable')}
@@ -1455,8 +1525,8 @@ export function ProfileTab({
                     {
                       q: lang === 'ar' ? 'كيف يربط ولي الأمر حسابه بحساب طفله؟' : 'How can a parent link their account with their child?',
                       a: lang === 'ar'
-                        ? 'يمتلك كل طالب رمزاً سرياً فريداً (مثال: ST-4921) وكود QR في حسابه. يقوم ولي الأمر بفتح "بوابة الأهل" وإدخال الرمز أو مسح الكود، لتتم المزامنة وتظهر متابعة الطفل فوراً.'
-                        : 'Every student has a unique secret code (e.g., ST-4921) and QR code in their profile. Parents enter this code in the Parent Portal to link.'
+                        ? 'يمتلك كل طالب رمزاً سرياً فريداً (مثال: A7K2M) وكود QR في حسابه. يقوم ولي الأمر بفتح "بوابة الأهل" وإدخال الرمز أو مسح الكود، لتتم المزامنة وتظهر متابعة الطفل فوراً.'
+                        : 'Every student has a unique secret code (e.g., A7K2M) and QR code in their profile. Parents enter this code in the Parent Portal to link.'
                     },
                     {
                       q: lang === 'ar' ? 'هل يعمل التطبيق أثناء التواجد في الكنيسة بدون اتصال إنترنت؟' : 'Does the platform work offline in the sanctuary?',
@@ -1465,10 +1535,30 @@ export function ProfileTab({
                         : 'Yes! Daily Agpeya prayers, Coptic hymns, and previously opened lessons are cached locally for offline prayer in the church.'
                     },
                     {
-                      q: lang === 'ar' ? 'كيف يتم احتساب شعلة الأيام ونقاط البركة؟' : 'How are streaks and blessing points calculated?',
+                      q: lang === 'ar' ? 'كيف يتم احتساب شعلة الصلاة وشعلة التعلّم؟' : 'How are prayer and learning streaks calculated?',
                       a: lang === 'ar'
-                        ? 'تزيد شعلة الأيام عند فتح التطبيق والمواظبة على صلوات الأجبية والدروس يومياً. وتكتسب نقاط البركة (+٥٠ إلى +١٥٠) مع إتمام كل درس وتسميع آية اليوم بنجاح.'
-                        : 'Streaks increase with daily consecutive prayer and study. Blessing points (+50 to +150) are awarded for completed lessons and verse recitals.'
+                        ? 'شعلة الصلاة تُحتسب عند إتمام ساعة واحدة من الأجبية أو تسجيل صلاة شخصية في يوم القاهرة. وتظل منفصلة عن شعلة التعلّم، التي تعتمد على نشاط الألحان أو الدروس أو الطقس القبطي. النقاط تُضاف فقط بعد تأكيد النشاط وحفظه بنجاح.'
+                        : 'A prayer day counts after one completed Agpeya hour or one recorded personal prayer, using the Cairo calendar. The learning streak is separate and depends on Hymns, Lessons or Taxis activity. Points are awarded only after the activity is successfully saved.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'هل كود الأسرة طويل أو فيه شرطات؟' : 'Is the family code long or does it contain dashes?',
+                      a: lang === 'ar' ? 'لا. كود الأسرة ٥ خانات فقط من الحروف والأرقام، بدون شرطات أو رموز. شاركه مع ولي أمرك فقط.' : 'No. The family code is exactly five letters or numbers, with no dashes or symbols. Share it only with your parent.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'هل ولي الأمر يقدر يشوف وقت النشاط اليومي؟' : 'Can my parent see today’s active time?',
+                      a: lang === 'ar' ? 'نعم. التطبيق يحسب وقت النشاط وهو ظاهر، ويتوقف عند إخفاء الصفحة. يظهر إجمالي اليوم بتوقيت القاهرة في لوحة ولي الأمر بعد المزامنة.' : 'Yes. Active time is counted while the app is visible and pauses when the page is hidden. The Cairo-day total appears in the Parent Portal after syncing.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'إزاي أبعت تسجيل اللحن للخادم؟' : 'How do I send a hymn practice recording to my teacher?',
+                      a: lang === 'ar' ? 'بعد إيقاف التسجيل والاستماع إليه، اضغط زر إرسال التسميع للخادم. التسجيل خاص ويظهر للخدام المكلّفين بفصلك فقط.' : 'After stopping and listening to your take, press Send practice to teacher. The recording is private and visible only to servants assigned to your class.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'هل لغة الإشعارات بتتغير مع لغة التطبيق؟' : 'Do notifications follow my app language?',
+                      a: lang === 'ar' ? 'أيوه. الإشعارات الجديدة بتتبع لغة التطبيق تلقائياً. تقدر تتحكم في الأنواع وساعات الهدوء من إعدادات الإشعارات.' : 'Yes. New notifications follow your app language automatically. You can manage categories and quiet hours in Notification Preferences.'
+                    },
+                    {
+                      q: lang === 'ar' ? 'فين المشتريات بتاعة شكل الملف الشخصي؟' : 'Where are my profile customization purchases?',
+                      a: lang === 'ar' ? 'كل عنصر اشتريته بيتحفظ في المخزون، ومنه تقدر تطبّقه على ملفك. المعاينة بتعرض شكله على ملفك قبل الشراء أو التطبيق.' : 'Purchased items are saved in your inventory, where you can equip them. The preview shows how they look on your profile before buying or applying them.'
                     }
                   ].map((faq, i) => (
                     <div key={i} className="p-4 rounded-2xl bg-[var(--mousa-sand-50)] dark:bg-stone-900/60 border border-[var(--mousa-border-sand)] space-y-1.5">
@@ -1498,6 +1588,10 @@ export function ProfileTab({
                     : 'At St. Moses Coptic Orthodox Church, your servants and fathers are here to support you through established church routes:'}
                 </p>
 
+                {isStudent && <div className="rounded-2xl border border-[var(--mousa-gold)]/40 bg-amber-50/70 p-4 dark:bg-amber-950/20">
+                  <p className="mb-3 text-xs leading-relaxed text-amber-950 dark:text-amber-100">{lang === 'ar' ? 'لو عندك مشكلة في التطبيق أو محتاج مساعدة خاصة، ابعت طلباً من هنا. الطلب هيوصل لفريق الخدمة المصرّح له بالمراجعة.' : 'For app problems or private support, send a request here. It will be reviewed by the authorized service team.'}</p>
+                  <HelpFeedbackButton lang={lang} workspace="student" />
+                </div>}
                 <div className="space-y-3 pt-2">
                   {/* Channel 1: In-App Class Servant Roster */}
                   <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 to-emerald-50/70 dark:from-stone-900 dark:to-stone-850 border border-blue-200 dark:border-stone-700 flex items-start gap-3">
@@ -1583,6 +1677,15 @@ export function ProfileTab({
                     <strong>{lang === 'ar' ? 'المسار الروحي والتعليمي:' : 'Spiritual & Educational Progress:'}</strong> {lang === 'ar' ? 'الدروس المكتملة، شعلة صلوات الأجبية، درجات الاختبارات، ونقاط البركة المكتسبة.' : 'Completed lessons, Agpeya prayer streaks, quiz scores, and blessing points.'}
                   </li>
                   <li>
+                    <strong>{lang === 'ar' ? 'المجتمع والوسائط:' : 'Community & Media:'}</strong> {lang === 'ar' ? 'المنشورات والتعليقات والتفاعلات والصور والفيديو والتسجيلات الصوتية التي تختار رفعها.' : 'Posts, comments, reactions, and photos, videos or voice recordings you choose to upload.'}
+                  </li>
+                  <li>
+                    <strong>{lang === 'ar' ? 'وقت الاستخدام والإشعارات:' : 'Usage & Notifications:'}</strong> {lang === 'ar' ? 'وقت نشاط التطبيق اليومي، وتفضيلات الإشعارات ورموز الاشتراك اللازمة لإرسال التنبيهات.' : 'Daily active app time, notification preferences and subscription tokens needed to deliver notifications.'}
+                  </li>
+                  <li>
+                    <strong>{lang === 'ar' ? 'طلبات الذكاء الاصطناعي:' : 'AI Requests:'}</strong> {lang === 'ar' ? 'النص أو المحتوى الذي تختار إرساله عند استخدام ميزات المساعدة بالذكاء الاصطناعي.' : 'Text or content you choose to submit when using AI assistance features.'}
+                  </li>
+                  <li>
                     <strong>{lang === 'ar' ? 'ربط الأسرة والأبناء:' : 'Family Linkage:'}</strong> {lang === 'ar' ? 'الرمز السري الخاص بالطفل لتسهيل متابعة ولي الأمر لوقت الشاشة وتشجيع الطفل.' : 'Unique child link code linking parents to their children for supervision.'}
                   </li>
                 </ul>
@@ -1627,9 +1730,25 @@ export function ProfileTab({
                 </h4>
                 <p className="text-xs text-[var(--mousa-sand-600)] dark:text-[#D5C7B5] leading-relaxed">
                   {lang === 'ar'
-                    ? 'هذا التطبيق مخصص بالكامل لخدمة مدارس الأحد بكنيسة القديس الأنبا موسى الأسود. لا يحتوي التطبيق على أي إعلانات تجارية، ولا يبيع أو يشارك أي بيانات لأي جهة خارجية، وتقتصر كافة المعلومات على الأغراض الرعوية والتعليمية الكنسية.'
-                    : 'This platform is exclusively dedicated to the ministry of St. Moses Coptic Church. It contains zero commercial advertisements, sells zero data, and uses information strictly for pastoral and spiritual growth.'}
+                    ? 'لا نبيع بياناتك ولا نستخدمها للإعلانات التجارية. لكن تشغيل المنصة يتطلب مزودي خدمة: Supabase لاستضافة الحسابات وقاعدة البيانات والملفات، ومزود الذكاء الاصطناعي فقط عند استخدام ميزات الذكاء الاصطناعي، وخدمات المتصفح/الإشعارات لإرسال التنبيهات التي توافق عليها. تُرسل إلى كل خدمة البيانات اللازمة للميزة التي طلبتها فقط؛ لذلك لا تكتب كلمات مرور أو أسراراً أو معلومات شديدة الحساسية في طلبات الذكاء الاصطناعي.'
+                    : 'We do not sell personal data or use it for commercial advertising. Operating the app does require service providers: Supabase for account, database and file hosting; an AI provider only when you use AI features; and browser/push services for notifications you enable. Each provider receives the information needed for the feature you request. Do not enter passwords, secrets or highly sensitive information into AI prompts.'}
                 </p>
+              </div>
+
+              <div className="space-y-2 pt-3 border-t border-[var(--mousa-border-sand)]/60">
+                <h4 className="font-extrabold text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{lang === 'ar' ? '4. حماية الأطفال وحق ولي الأمر' : '4. Child Safety & Parent Rights'}</h4>
+                <p className="text-xs leading-relaxed text-[var(--mousa-sand-600)] dark:text-[#D5C7B5]">{lang === 'ar' ? 'تُستخدم بيانات الطالب في سياق الخدمة الكنسية والتعليمية. يستطيع ولي الأمر متابعة الطفل المرتبط بحسابه، ويجب ألا يشارك الطفل رمز الربط أو بيانات الدخول علناً. صلاحيات الخدام مرتبطة بالفصول والمهام المصرح بها.' : 'Student information is used for church and educational purposes. A parent can monitor a child linked to their account. Children should never share their family link code or login details publicly. Servant access is limited by assigned roles and class permissions.'}</p>
+              </div>
+              <div className="space-y-2 pt-3 border-t border-[var(--mousa-border-sand)]/60">
+                <h4 className="font-extrabold text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{lang === 'ar' ? '5. الاحتفاظ بالبيانات وطلباتك' : '5. Retention & Your Requests'}</h4>
+                <p className="text-xs leading-relaxed text-[var(--mousa-sand-600)] dark:text-[#D5C7B5]">{lang === 'ar' ? 'يمكنك طلب تصحيح بيانات الحساب أو إغلاقه أو طلب حذف البيانات من إدارة الكنيسة. لا تعرض المنصة حالياً مدة احتفاظ موحدة لكل نوع من البيانات؛ يجب على إدارة الكنيسة اعتماد مدة الاحتفاظ والإجراءات الخاصة بالسجلات الكنسية قبل الإطلاق العام.' : 'You may ask the church administrator to correct account information, close an account or request deletion. The app does not currently publish a fixed retention period for every data category; the church must approve retention periods and procedures for ministry records before public launch.'}</p>
+              </div>
+              <div className="space-y-2 pt-3 border-t border-[var(--mousa-border-sand)]/60">
+                <h4 className="font-extrabold text-sm text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{lang === 'ar' ? '6. أمان المعلومات' : '6. Information Security'}</h4>
+                <p className="text-xs leading-relaxed text-[var(--mousa-sand-600)] dark:text-[#D5C7B5]">{lang === 'ar' ? 'نستخدم اتصالاً آمناً وضوابط صلاحيات على مستوى الحساب والفصل، لكن لا توجد خدمة إلكترونية يمكن ضمان أمانها بنسبة ١٠٠٪. أبلغ إدارة الكنيسة فوراً إذا لاحظت وصولاً غير مصرح به.' : 'The app uses secure connections and account/class access controls. No online service can guarantee absolute security. Contact the church administrator promptly if you suspect unauthorized access.'}</p>
+              </div>
+              <div className="rounded-xl border border-amber-300/50 bg-amber-50/70 p-3 text-[11px] leading-relaxed text-amber-900 dark:bg-amber-950/25 dark:text-amber-100">
+                {lang === 'ar' ? 'ملاحظة قبل الإطلاق العام: يجب على إدارة الكنيسة إضافة وسيلة تواصل رسمية، واعتماد سياسة موافقة أولياء الأمور ومدد الاحتفاظ والحذف، ومراجعة هذه السياسة قانونياً.' : 'Before public launch: the church must add an official contact route, approve parental consent and retention/deletion procedures, and obtain a legal review of this policy.'}
               </div>
 
               <div className="pt-2 text-center">

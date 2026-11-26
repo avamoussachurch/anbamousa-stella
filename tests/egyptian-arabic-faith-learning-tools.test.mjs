@@ -11,7 +11,7 @@ test('Hymns and Coptic Taxis learning guidance uses friendly Egyptian Arabic', a
   ]);
 
   assert.match(hymns, /المستوى التاني/);
-  assert.match(hymns, /سجّل إنك حفظت اللحن وأتقنته/);
+  assert.match(hymns, /علّمت اللحن وأتقنته/);
   assert.match(hymns, /شغّل اللحن وردّد وراه/);
   assert.match(taxis, /كل الطقوس/);
   assert.match(taxis, /اختار طقس من القائمة عشان تشوف تفاصيله/);

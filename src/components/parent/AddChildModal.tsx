@@ -345,8 +345,8 @@ export function AddChildModal({
                       <Smartphone size={16} className="text-amber-700 shrink-0 mt-0.5" />
                       <span>
                         {lang === 'ar' 
-                          ? 'يفتح الطفل التطبيق > تبويب "حسابي" > يجد الرمز السري المخصص له (مثل ST-4921).' 
-                          : 'The child opens app > Profile tab > finds their Secret Code (e.g. ST-4921).'}
+                          ? 'يفتح الطفل التطبيق > تبويب "حسابي" > يجد الرمز السري المخصص له (مثل A7K2M).' 
+                          : 'The child opens app > Profile tab > finds their Secret Code (e.g. A7K2M).'}
                       </span>
                     </div>
 
@@ -359,7 +359,7 @@ export function AddChildModal({
                           type="text"
                           value={codeInputValue}
                           onChange={(e) => handleCodeChange(e.target.value)}
-                          placeholder="ST-4921"
+                          placeholder="A7K2M"
                           className="w-full text-center tracking-widest text-xl font-mono font-extrabold bg-gray-50 border-2 border-gray-200 rounded-2xl py-3 px-4 outline-none focus:border-[var(--color-church-blue)] focus:bg-white transition-all uppercase placeholder:text-gray-300"
                           maxLength={12}
                           autoFocus
@@ -445,8 +445,8 @@ export function AddChildModal({
                           value={linkInputValue}
                           onChange={(e) => handleLinkPasteChange(e.target.value)}
                           placeholder={lang === 'ar' 
-                            ? 'الصق هنا الرابط الذي أرسله لك ابنك، مثلاً:\nhttps://.../?connectChild=ST-4921' 
-                            : 'Paste the link sent by your child here, e.g.:\nhttps://.../?connectChild=ST-4921'}
+                            ? 'الصق هنا الرابط الذي أرسله لك ابنك، مثلاً:\nhttps://.../?connectChild=A7K2M' 
+                            : 'Paste the link sent by your child here, e.g.:\nhttps://.../?connectChild=A7K2M'}
                           rows={3}
                           className="w-full text-xs font-mono bg-gray-50 border-2 border-gray-200 rounded-2xl p-3 outline-none focus:border-[var(--color-church-blue)] focus:bg-white transition-all resize-none"
                           autoFocus

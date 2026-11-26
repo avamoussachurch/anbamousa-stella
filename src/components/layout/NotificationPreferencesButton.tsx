@@ -10,12 +10,12 @@ const categories = [
   ['lesson','New lessons','الدروس الجديدة'],['assignment','Assignments','التكليفات'],
   ['progress','Progress updates','تحديثات التقدم'],['streak','Streak reminders','تذكيرات الاستمرارية'],
   ['achievement','Achievements','الإنجازات'],['leaderboard','Leaderboard changes','تغييرات الترتيب'],
-  ['help_request','Help requests','طلبات المساعدة'],['moderation','Moderation','الإشراف'],
+  ['help_request','Help requests','طلبات المساعدة'],['prayer','Prayer reminders','تذكيرات الصلاة'],['daily_verse','Verse of the day','آية اليوم'],['moderation','Moderation','الإشراف'],
   ['system','System updates','تحديثات النظام'],['motivation','Encouragement','رسائل التشجيع'],['community','New followers','متابعون جدد']
 ] as const;
 
 export function NotificationPreferencesButton({ lang }: { lang: Language }) {
-  const { userData } = useAuth();
+  const { userData, isGuest } = useAuth();
   const isArabic = lang === 'ar';
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -50,6 +50,20 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
       });
     return () => { active = false; };
   }, [open, userData?.id, isArabic]);
+
+  useEffect(() => {
+    if (!userData?.id || isGuest || !supabase) return;
+    const nextLanguage: 'en' | 'ar' = lang === 'en' ? 'en' : 'ar';
+    setLanguage(nextLanguage);
+    void supabase.from('notification_preferences').upsert({
+      user_id: userData.id,
+      language: nextLanguage,
+      timezone: 'Africa/Cairo',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' }).then(({ error }) => {
+      if (error) console.warn('Could not sync notification language with app language:', error.message);
+    });
+  }, [userData?.id, isGuest, lang]);
 
   const setCategory = (key: string, enabled: boolean) =>
     setCategorySettings(previous => ({ ...previous, [key]: enabled }));
@@ -115,7 +129,7 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
             <h3 className="mt-5 mb-2 text-sm font-black">{isArabic ? 'أنواع الإشعارات' : 'Notification categories'}</h3>
             <div className="grid gap-2 sm:grid-cols-2">{categories.map(([key,en,ar]) => <label key={key} className="flex min-h-11 items-center justify-between rounded-xl bg-[var(--surface-secondary)] px-3 py-2 text-sm"><span>{isArabic ? ar : en}</span><input type="checkbox" checked={categorySettings[key] !== false} onChange={event => setCategory(key,event.target.checked)} /></label>)}</div>
             <h3 className="mt-5 mb-2 text-sm font-black">{isArabic ? 'لغة الإشعارات' : 'Notification language'}</h3>
-            <select value={language} onChange={event => setLanguage(event.target.value as 'en' | 'ar')} className="min-h-11 w-full rounded-xl border bg-[var(--surface-secondary)] px-3 text-sm"><option value="en">English</option><option value="ar">العربية</option></select>
+            <p className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 py-3 text-sm text-[var(--text-secondary)]">{language === 'ar' ? 'العربية — تتبع لغة التطبيق تلقائياً' : 'English — automatically follows the app language'}</p>
             <h3 className="mt-5 mb-2 text-sm font-black">{isArabic ? 'ساعات الهدوء (بتوقيت القاهرة)' : 'Quiet hours (Cairo time)'}</h3>
             <div className="grid grid-cols-2 gap-3">
               <label className="text-xs font-bold">{isArabic ? 'من' : 'From'}<input type="time" value={quietStart} onChange={event => setQuietStart(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border bg-[var(--surface-secondary)] px-3 text-sm"/></label>

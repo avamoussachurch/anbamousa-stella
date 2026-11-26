@@ -885,7 +885,7 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                       type="text"
                       value={studentIdInput}
                       onChange={(e) => setStudentIdInput(e.target.value)}
-                      placeholder={isAr ? 'مثال: ST-4921 أو mark أو c1' : 'e.g. ST-4921, mark, or c1'}
+                      placeholder={isAr ? 'مثال: A7K2M أو mark أو c1' : 'e.g. A7K2M, mark, or c1'}
                       className="w-full bg-stone-950 border border-stone-800 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-stone-100 placeholder-stone-600 outline-none transition-colors font-mono"
                       disabled={isSubmitting || loading}
                     />
@@ -893,12 +893,12 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                     {/* Instant Student Code Recognition Preview */}
                     {(() => {
                       const KNOWN_STUDENT_HINTS = [
-                        { code: 'ST-4921', id: 'student-david', name: 'David Shenouda (ديفيد شنودة)', grade: 'Grade 4' },
-                        { code: 'CH-9481', id: 'c1', name: 'Mina Emad (مينا عماد)', grade: 'Grade 4' },
-                        { code: 'CH-7320', id: 'c2', name: 'Mary Emad (مريم عماد)', grade: 'Grade 2' },
-                        { code: 'ST-3819', id: 'student-fadi', name: 'Fadi Nabil (فادي نبيل)', grade: 'Grade 3' },
-                        { code: 'ST-6104', id: 'student-marina', name: 'Marina George (مارينا جورج)', grade: 'Grade 5' },
-                        { code: 'ST-8255', id: 'student-kyrollos', name: 'Kyrollos Rafik (كيرلس رفيق)', grade: 'Grade 6' },
+                        { code: 'A7K2M', id: 'student-david', name: 'David Shenouda (ديفيد شنودة)', grade: 'Grade 4' },
+                        { code: 'B6T2N', id: 'c1', name: 'Mina Emad (مينا عماد)', grade: 'Grade 4' },
+                        { code: 'C8P4R', id: 'c2', name: 'Mary Emad (مريم عماد)', grade: 'Grade 2' },
+                        { code: 'F4N8Q', id: 'student-fadi', name: 'Fadi Nabil (فادي نبيل)', grade: 'Grade 3' },
+                        { code: 'M6R3T', id: 'student-marina', name: 'Marina George (مارينا جورج)', grade: 'Grade 5' },
+                        { code: 'K9D5W', id: 'student-kyrollos', name: 'Kyrollos Rafik (كيرلس رفيق)', grade: 'Grade 6' },
                         { code: 'ST-1001', id: 'mark', name: 'Mark Bassem (مارك باسم)', grade: 'Grade 4' },
                       ];
                       const matched = studentIdInput.trim() ? KNOWN_STUDENT_HINTS.find(

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Award, Check, Crown, Loader2, Palette, ShoppingBag, Star, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { CopticAchievementSeal, type CopticAchievementCategory } from '../design-system/CopticAchievementSeal';
 
 type CosmeticKind = 'frame' | 'banner' | 'badge' | 'effect';
 type Cosmetic = {
@@ -10,6 +11,125 @@ type Cosmetic = {
   points_cost: number; rarity: 'common' | 'rare' | 'epic' | 'legendary'; display_order: number;
 };
 type Equipped = Partial<Record<CosmeticKind, string>>;
+
+function BadgeArtwork({ item, compact = false }: { item: Cosmetic; compact?: boolean }) {
+  const categoryById: Record<string, CopticAchievementCategory> = {
+    'badge-prayer-flame': 'prayer',
+    'badge-hymn-wreath': 'hymns',
+    'badge-cross-shield': 'taxis',
+    'badge-gospel-light': 'learning',
+    'badge-servant-heart': 'service',
+    'badge-cross-victory': 'consistency'
+  };
+  const category = categoryById[item.id] || 'learning';
+  return (
+    <div className="grid h-full w-full place-items-center overflow-hidden" style={{ background: 'radial-gradient(circle at 50% 35%, ' + safeColor(item.preview_end, '#E7BD65') + ', ' + safeColor(item.preview_start, '#123F48') + ' 76%)' }}>
+      <CopticAchievementSeal category={category} designKey={item.id} size={compact ? 31 : 84} title={item.title_en}/>
+    </div>
+  );
+}
+
+function CosmeticArtwork({ item }: { item: Cosmetic }) {
+  if (item.kind === 'badge') return <BadgeArtwork item={item} />;
+  const seed = Array.from(item.id).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const accent = safeColor(item.preview_end, '#D6A84F');
+  const base = safeColor(item.preview_start, '#174D4C');
+  const svgId = 'art-' + item.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const banner = item.kind === 'banner';
+  return (
+    <div className="grid h-full w-full place-items-center overflow-hidden" style={{ background: 'linear-gradient(125deg,' + base + ',' + accent + ')' }}>
+      <svg viewBox="0 0 220 90" preserveAspectRatio="xMidYMid slice" className="h-full w-full" aria-hidden="true">
+        <defs>
+          <linearGradient id={svgId + '-gold'} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#FFF2C8"/><stop offset=".55" stopColor={accent}/><stop offset="1" stopColor={base}/></linearGradient>
+          <radialGradient id={svgId + '-glow'}><stop stopColor="#FFF4D2" stopOpacity=".9"/><stop offset="1" stopColor="#FFF4D2" stopOpacity="0"/></radialGradient>
+        </defs>
+        {banner && item.id === 'banner-kiahk-stars' && <>
+          <circle cx="176" cy="20" r="24" fill={'url(#' + svgId + '-glow)'}/>
+          <path d="M0 70Q45 48 92 67T220 57V90H0Z" fill="#07152F" opacity=".7"/>
+          <path d="M18 65 35 48 52 65M35 48v-9m-4 4h8M135 68V42h20v26m-25-26 15-13 15 13m-11-13V15" fill="none" stroke="#F9E7B5" strokeWidth="2"/>
+          {Array.from({length:18},(_,i)=><path key={i} d="M0 -4V4" stroke="#FFF2C8" strokeWidth={i%3===0?2:1} transform={'translate('+(8+(i*37)%205)+' '+(8+(i*19)%36)+') rotate('+(i*23)+' )'}/>)}
+        </>}
+        {banner && item.id === 'banner-desert-dawn' && <>
+          <circle cx="172" cy="28" r="26" fill={'url(#' + svgId + '-glow)'}/><circle cx="172" cy="28" r="13" fill="#FFE3A0"/>
+          <path d="M0 66Q44 35 90 63T220 54V90H0Z" fill="#6A3C2B"/><path d="M0 76Q56 58 110 76T220 69V90H0Z" fill="#382B2C"/>
+          <path d="M42 67V40h18v27M36 40l15-13 15 13M50 27V16m-5 5h10" fill="none" stroke="#FFF0C7" strokeWidth="2.5"/>
+        </>}
+        {banner && item.id === 'banner-pascha-light' && <>
+          <circle cx="110" cy="45" r="43" fill={'url(#' + svgId + '-glow)'}/>
+          <path d="M110 12v50M94 28h32M110 60l-8 10h16Z" fill="none" stroke="#FFE9A9" strokeWidth="4" strokeLinecap="round"/>
+          <path d="M54 42v30m-11-19h22M166 42v30m-11-19h22" stroke="#E8C47A" strokeWidth="3" strokeLinecap="round"/>
+          <path d="M0 78Q50 61 110 78T220 78V90H0Z" fill="#240D1A" opacity=".65"/>
+        </>}
+        {banner && item.id === 'banner-heavenly-blue' && <>
+          <circle cx="42" cy="24" r="20" fill={'url(#' + svgId + '-glow)'}/>
+          <path d="M0 58Q30 38 57 56T110 53T165 55T220 50V90H0Z" fill="#D6ECF6" opacity=".28"/>
+          <path d="M80 34q10-14 20 0 10-14 20 0M125 27q8-11 16 0 8-11 16 0" fill="none" stroke="#FFF" strokeWidth="3" strokeLinecap="round"/>
+          <path d="M0 77Q60 60 110 78T220 70V90H0Z" fill="#103B67" opacity=".7"/>
+        </>}
+        {banner && item.id === 'banner-nile-moonlight' && <>
+          <circle cx="174" cy="21" r="19" fill="#D9F2F1"/><circle cx="183" cy="14" r="18" fill={base}/>
+          <path d="M0 55Q38 43 74 58T146 55T220 54" fill="none" stroke="#A7F1E6" strokeWidth="3"/>
+          <path d="M0 69Q45 52 88 70T164 66T220 66V90H0Z" fill="#092C42" opacity=".75"/>
+          {Array.from({length:7},(_,i)=><circle key={i} cx={12+i*31} cy={12+(i%3)*9} r="1.7" fill="#F3FFFF"/>)}
+        </>}
+        {banner && item.id === 'banner-kiahk-candlelight' && <>
+          <circle cx="110" cy="25" r="34" fill={'url(#' + svgId + '-glow)'}/>
+          {[70,110,150].map((x,i)=><g key={x}><rect x={x-6} y={48+(i%2)*7} width="12" height="30" rx="3" fill="#F4D79B"/><path d={'M'+x+' 46q-8-11 0-19 8 8 0 19Z'} fill="#FFF0B7"/><path d={'M'+x+' 51v-5'} stroke="#8C5A2B" strokeWidth="1.5"/></g>)}
+          <path d="M0 82H220" stroke="#F7D99C" strokeWidth="2" opacity=".7"/>
+        </>}
+        {banner && item.id === 'banner-golden-desert' && <>
+          <circle cx="175" cy="20" r="22" fill="#FFF0BF"/>
+          <path d="M0 62Q48 35 96 65T220 58V90H0Z" fill="#A76D36"/><path d="M0 78Q56 55 112 78T220 72V90H0Z" fill="#543A2C"/>
+          <path d="M48 68q-2-26 2-38m0 6q-17-13-24-3 15 0 24 12m0-10q15-15 26-6-15 4-24 17" fill="none" stroke="#E8D08A" strokeWidth="3" strokeLinecap="round"/>
+          <path d="M139 67V42h18v25m-23-25 14-13 14 13" fill="none" stroke="#FFF1C9" strokeWidth="2.2"/>
+        </>}
+        {!banner && item.kind === 'frame' && <>
+          <rect x="78" y="5" width="64" height="80" rx="20" fill="#091A28" opacity=".3" stroke={'url(#' + svgId + '-gold)'} strokeWidth="5"/>
+          <rect x="85" y="12" width="50" height="66" rx="15" fill="none" stroke="#FFF1C7" strokeWidth="1.8" strokeDasharray={seed%2?'3 3':'1 4'}/>
+          {item.id === 'frame-halo-gold' && <><circle cx="110" cy="45" r="17" fill="none" stroke="#FFF0B8" strokeWidth="3"/><path d="M110 20v-9m-7 4h14m-7 60v9m-7-4h14" stroke="#FFF0B8" strokeWidth="2"/></>}
+          {item.id === 'frame-desert-royal' && <><path d="M110 10l7 9 11 2-8 8 2 11-12-6-12 6 2-11-8-8 11-2Z" fill="#F4D69B"/><path d="M84 29h-9m61 0h9M84 60h-9m61 0h9" stroke="#F4D69B" strokeWidth="3"/></>}
+          {item.id === 'frame-midnight-coptic' && <><path d="M110 13v22m-10-12h20m-10 22v17m-8-9h16" stroke="#C8F2F0" strokeWidth="3" strokeLinecap="round"/><circle cx="110" cy="45" r="29" fill="none" stroke="#B4E7E2" strokeDasharray="1 6" strokeWidth="2"/></>}
+          {item.id === 'frame-pascha-radiance' && <><path d="M110 15v29m-13-16h26m-13 16v27m-13-13h26" stroke="#FFE3A0" strokeWidth="4" strokeLinecap="round"/><path d="M95 17l-8-7m38 7 8-7M95 73l-8 7m38-7 8 7" stroke="#F9C96D" strokeWidth="2"/></>}
+          {item.id === 'frame-archangel-sapphire' && <><path d="M88 51q-18-22-10-34 17 8 24 29M132 51q18-22 10-34-17 8-24 29" fill="none" stroke="#C5E5FF" strokeWidth="4" strokeLinecap="round"/><path d="M110 13l7 8-7 8-7-8Z" fill="#B9D8FF"/></>}
+          {item.id === 'frame-martyr-ruby' && <><path d="M85 64q-18-13-9-35 5 15 18 20M135 64q18-13 9-35-5 15-18 20" fill="none" stroke="#FFC3C3" strokeWidth="3"/><path d="M110 11l8 12-8 12-8-12Z" fill="#FFB2B2"/></>}
+          {item.id === 'frame-olive-crown' && <><path d="M83 66q-18-24 3-47 0 16 10 19 5-15 17-24 0 17 10 24 11-5 12-19 19 23 2 47" fill="none" stroke="#D7EBA0" strokeWidth="3"/><circle cx="110" cy="13" r="5" fill="#F3E9B6"/></>}
+        </>}
+        {!banner && item.kind === 'effect' && <>
+          <circle cx="110" cy="45" r="34" fill="none" stroke="#FFF2C8" strokeWidth="2" opacity=".9"/>
+          {item.id === 'effect-stardust' && <>{Array.from({length:9},(_,i)=><path key={i} d="M0 -5 2 -1 6 0 2 2 0 6 -2 2 -6 0 -2 -1Z" fill="#F6E7FF" transform={'translate('+(110+Math.cos(i*0.7)*35)+' '+(45+Math.sin(i*0.7)*35)+') scale('+(i%2?.7:1.2)+')'}/>)}</>}
+          {item.id === 'effect-emerald-aura' && <>{Array.from({length:8},(_,i)=><path key={i} d="M0 0q-12-15 0-24 12 9 0 24Z" fill="#A7F3D0" opacity=".9" transform={'translate('+(110+Math.cos(i*Math.PI/4)*34)+' '+(45+Math.sin(i*Math.PI/4)*34)+') rotate('+(i*45)+')'}/>)}</>}
+          {item.id === 'effect-golden-radiance' && <>{Array.from({length:16},(_,i)=><path key={i} d="M0 -42v-8" stroke="#FFF0B5" strokeWidth={i%2?1.5:3} strokeLinecap="round" transform={'rotate('+(i*22.5)+' 110 45)'}/>)}</>}
+          {item.id === 'effect-celestial-blue' && <><path d="M118 17a22 22 0 1 0 22 36 19 19 0 0 1-22-36Z" fill="#E0E7FF"/><path d="m74 24 3 7 7 3-7 3-3 7-3-7-7-3 7-3Zm78 35 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#E0E7FF"/></>}
+        </>}
+      </svg>
+    </div>
+  );
+}
+
+function ProfileFrameOverlay({ item }: { item: Cosmetic }) {
+  const id = item.id;
+  const color = safeColor(item.preview_end, '#E7BD65');
+  return <svg viewBox="0 0 100 100" className="pointer-events-none absolute -inset-3 z-20 h-[calc(100%+24px)] w-[calc(100%+24px)] overflow-visible" aria-hidden="true">
+    <circle cx="50" cy="50" r="46" fill="none" stroke={color} strokeWidth="4"/>
+    <circle cx="50" cy="50" r="42" fill="none" stroke="#FFF1C7" strokeWidth="1.4" opacity=".9"/>
+    {id === 'frame-halo-gold' && <>{Array.from({length:12},(_,i)=><path key={i} d="M50 1v8" stroke="#FFF0B8" strokeWidth={i%3===0?3:1.5} transform={'rotate('+(i*30)+' 50 50)'}/>)}</>}
+    {id === 'frame-desert-royal' && <><path d="M50 1l5 8 9 1-7 7 2 9-9-5-9 5 2-9-7-7 9-1Z" fill="#F4D69B"/><circle cx="4" cy="50" r="3" fill={color}/><circle cx="96" cy="50" r="3" fill={color}/></>}
+    {id === 'frame-midnight-coptic' && <><path d="M50 1v17m-8-9h16M50 82v17m-8-9h16" stroke="#C8F2F0" strokeWidth="3" strokeLinecap="round"/>{Array.from({length:8},(_,i)=><circle key={i} cx={50+Math.cos(i*Math.PI/4)*45} cy={50+Math.sin(i*Math.PI/4)*45} r="1.8" fill="#D8FFFF"/>)}</>}
+    {id === 'frame-pascha-radiance' && <><path d="M50 0v22m-9-9h18M50 78v22m-9-9h18" stroke="#FFE3A0" strokeWidth="4" strokeLinecap="round"/><path d="M5 50h12m66 0h12" stroke="#F9C96D" strokeWidth="3"/></>}
+    {id === 'frame-archangel-sapphire' && <><path d="M18 50Q2 25 15 9q19 7 25 28M82 50Q98 25 85 9q-19 7-25 28" fill="none" stroke="#C5E5FF" strokeWidth="3" strokeLinecap="round"/><path d="M50 0l5 8-5 8-5-8Z" fill="#B9D8FF"/></>}
+    {id === 'frame-martyr-ruby' && <><path d="M20 72Q0 50 18 22q2 20 17 28M80 72q20-22 2-50-2 20-17 28" fill="none" stroke="#FFC3C3" strokeWidth="3"/><path d="M50 0l6 9-6 9-6-9Z" fill="#FFB2B2"/></>}
+    {id === 'frame-olive-crown' && <><path d="M14 70Q0 42 20 15q0 18 13 22 5-17 17-25 12 8 17 25 13-4 13-22 20 27 6 55" fill="none" stroke="#D7EBA0" strokeWidth="3"/><circle cx="50" cy="6" r="4" fill="#F3E9B6"/></>}
+  </svg>;
+}
+
+function ProfileEffectOverlay({ item }: { item: Cosmetic }) {
+  return <svg viewBox="0 0 120 120" className="pointer-events-none absolute -inset-6 z-30 h-[calc(100%+48px)] w-[calc(100%+48px)] overflow-visible" aria-hidden="true">
+    {item.id === 'effect-stardust' && <>{Array.from({length:14},(_,i)=><path key={i} d="M0 -4 1.5 -1 4 0 1.5 1 0 4 -1.5 1 -4 0 -1.5 -1Z" fill="#E9D5FF" transform={'translate('+(60+Math.cos(i*0.45)*52)+' '+(60+Math.sin(i*0.45)*52)+')'}/>)}</>}
+    {item.id === 'effect-emerald-aura' && <>{Array.from({length:10},(_,i)=><path key={i} d="M0 0q-12-16 0-26 12 10 0 26Z" fill="#6EE7B7" opacity=".85" transform={'translate('+(60+Math.cos(i*Math.PI/5)*50)+' '+(60+Math.sin(i*Math.PI/5)*50)+') rotate('+(i*36)+')'}/>)}</>}
+    {item.id === 'effect-golden-radiance' && <>{Array.from({length:20},(_,i)=><path key={i} d="M60 3v-7" stroke="#FDE68A" strokeWidth={i%2?1.5:3} strokeLinecap="round" transform={'rotate('+(i*18)+' 60 60)'}/>)}</>}
+    {item.id === 'effect-celestial-blue' && <><circle cx="20" cy="25" r="8" fill="#C7D2FE"/><path d="M21 10a11 11 0 1 0 11 18 9 9 0 0 1-11-18Z" fill="#E0E7FF"/>{Array.from({length:8},(_,i)=><circle key={i} cx={60+Math.cos(i*Math.PI/4)*52} cy={60+Math.sin(i*Math.PI/4)*52} r="1.7" fill="#E0E7FF"/>)}</>}
+  </svg>;
+}
 
 const titles = [
   { id: 'hymn-explorer', label: 'Hymn Explorer', ar: 'مستكشف الألحان' },
@@ -43,11 +163,12 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
   const { syncAuthoritativeProgress } = useAuth();
   const syncProgressRef = useRef(syncAuthoritativeProgress);
   syncProgressRef.current = syncAuthoritativeProgress;
-  const [view, setView] = useState<'profile' | 'store'>(initialView);
+  const [view, setView] = useState<'profile' | 'store' | 'inventory'>(initialView);
   const [category, setCategory] = useState<CosmeticKind>('frame');
   const [catalog, setCatalog] = useState<Cosmetic[]>([]);
   const [unlocked, setUnlocked] = useState<string[]>([]);
   const [equipped, setEquipped] = useState<Equipped>({});
+  const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const [frame, setFrame] = useState('coptic-gold');
   const [banner, setBanner] = useState('desert-dawn');
   const [title, setTitle] = useState('');
@@ -58,6 +179,8 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
   const [profileRole, setProfileRole] = useState('student');
   const [currentStreak, setCurrentStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
   const [message, setMessage] = useState('');
@@ -66,11 +189,13 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
   const load = useCallback(async () => {
     if (!supabase) { setLoading(false); setError(ar ? 'الخدمة غير متاحة حالياً.' : 'Store is unavailable.'); return; }
     setLoading(true); setError('');
-    const [customResult, catalogResult, unlockResult, profileResult] = await Promise.all([
+    const [customResult, catalogResult, unlockResult, profileResult, followersResult, followingResult] = await Promise.all([
       supabase.from('profile_customizations').select('frame_key,banner_key,display_title,equipped_cosmetics').eq('user_id', userId).maybeSingle(),
       supabase.from('profile_cosmetic_catalog').select('*').eq('is_active', true).order('display_order'),
       supabase.from('profile_cosmetic_unlocks').select('cosmetic_id').eq('user_id', userId),
-      supabase.from('profiles').select('name,avatar,role,points,current_streak,longest_streak').eq('id', userId).maybeSingle()
+      supabase.from('profiles').select('name,avatar,role,points,current_streak,longest_streak').eq('id', userId).maybeSingle(),
+      supabase.from('profile_follows').select('*', { count: 'exact', head: true }).eq('followed_id', userId),
+      supabase.from('profile_follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId)
     ]);
     const firstError = customResult.error || catalogResult.error || unlockResult.error || profileResult.error;
     if (firstError) setError(firstError.message);
@@ -96,16 +221,20 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
     setProfileRole(profileResult.data?.role || 'student');
     setCurrentStreak(Number(profileResult.data?.current_streak || 0));
     setLongestStreak(Number(profileResult.data?.longest_streak || 0));
+    setFollowersCount(followersResult.count || 0);
+    setFollowingCount(followingResult.count || 0);
     setLoading(false);
   }, [userId, ar]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const equippedItems = useMemo(() => catalog.filter(item => equipped[item.kind] === item.id), [catalog, equipped]);
-  const selectedFrame = catalog.find(item => item.id === equipped.frame);
-  const selectedBanner = catalog.find(item => item.id === equipped.banner);
-  const selectedEffect = catalog.find(item => item.id === equipped.effect);
-  const selectedBadge = catalog.find(item => item.id === equipped.badge);
+  const previewItem = catalog.find(item => item.id === previewItemId) || null;
+  const previewEquipped: Equipped = previewItem ? { ...equipped, [previewItem.kind]: previewItem.id } : equipped;
+  const equippedItems = useMemo(() => catalog.filter(item => previewEquipped[item.kind] === item.id), [catalog, previewEquipped]);
+  const selectedFrame = catalog.find(item => item.id === previewEquipped.frame);
+  const selectedBanner = catalog.find(item => item.id === previewEquipped.banner);
+  const selectedEffect = catalog.find(item => item.id === previewEquipped.effect);
+  const selectedBadge = catalog.find(item => item.id === previewEquipped.badge);
   const frameColor = selectedFrame ? safeColor(selectedFrame.preview_end, '#D6A84F') : (fallbackFrames[frame] || fallbackFrames['coptic-gold']);
   const bannerStart = selectedBanner ? safeColor(selectedBanner.preview_start, '#173C50') : '#6F4935';
   const bannerEnd = selectedBanner ? safeColor(selectedBanner.preview_end, '#D6A15B') : '#F4DCA6';
@@ -182,8 +311,10 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
         <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs font-black text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"><Star size={14}/>{points.toLocaleString()} {ar ? 'نقطة' : 'points'}</div>
       </header>
 
+      {previewItem && view === 'store' && <p role="status" className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-200">{ar ? 'معاينة مباشرة: العنصر ظاهر الآن على ملفك بالأعلى فقط، ولم يتم شراؤه أو تطبيقه.' : 'Live preview: this item is shown on your profile above only. It has not been purchased or equipped.'}</p>}
       <div className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)]">
-        <div className="relative h-24 sm:h-32" style={{ background: 'linear-gradient(115deg,' + bannerStart + ',' + bannerEnd + ')' }}>
+        <div className="relative h-24 sm:h-32 overflow-hidden" style={{ background: 'linear-gradient(115deg,' + bannerStart + ',' + bannerEnd + ')' }}>
+          {selectedBanner && <div className="absolute inset-0"><CosmeticArtwork item={selectedBanner}/></div>}
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, white 0 1px, transparent 2px), radial-gradient(circle at 75% 60%, white 0 1px, transparent 2px)', backgroundSize: '28px 28px' }}/>
           <div className="absolute end-3 top-3 rounded-full bg-black/20 px-2.5 py-1 text-[10px] font-black text-white">{ar ? 'ملف أنبا موسى' : 'ANBA MOUSA PROFILE'}</div>
         </div>
@@ -192,26 +323,31 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
             <div className="grid h-full w-full place-items-center overflow-hidden rounded-[19px] bg-[var(--surface-secondary)]">
               {avatarUrl && !avatarFailed ? <img src={avatarUrl} alt="" onError={() => setAvatarFailed(true)} className="h-full w-full object-cover"/> : <Crown size={30} style={{ color: frameColor }}/>}
             </div>
+            {selectedFrame && <ProfileFrameOverlay item={selectedFrame}/>}
+            {selectedEffect && <ProfileEffectOverlay item={selectedEffect}/>}
             <span className="absolute bottom-0 end-0 h-4 w-4 rounded-full border-[3px] border-[var(--surface-primary)] bg-emerald-500" title={ar ? 'نشط' : 'Online'} />
-            {selectedBadge && <span className="absolute -bottom-2 -start-2 grid h-7 w-7 place-items-center rounded-full border-2 border-[var(--surface-primary)] text-white" style={{ background: 'linear-gradient(135deg,' + safeColor(selectedBadge.preview_start, '#9A6A1F') + ',' + safeColor(selectedBadge.preview_end, '#FDE68A') + ')' }}><Award size={14}/></span>}
+            {selectedBadge && <span className="absolute -bottom-2 -start-2 rounded-full border-2 border-[var(--surface-primary)] shadow-lg"><BadgeArtwork item={selectedBadge} compact /></span>}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2"><p className="truncate text-base font-black text-[var(--text-primary)]">{profileName}</p><span className="rounded-md bg-[#5865F2]/20 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-[#C7CBFF]">{profileRole === 'teacher' ? (ar ? 'خادم' : 'Servant') : profileRole === 'parent' ? (ar ? 'ولي أمر' : 'Parent') : profileRole === 'admin' ? (ar ? 'إدارة' : 'Admin') : (ar ? 'طالب' : 'Student')}</span></div>
             <p className="mt-0.5 text-xs font-bold text-[var(--text-secondary)]">{titles.find(item => item.id === title)?.[ar ? 'ar' : 'label'] || (ar ? 'رحلة نمو في الإيمان والمحبة' : 'Growing in Faith, Learning in Love')}</p>
             <p className="mt-1 text-[10px] text-[var(--text-secondary)]">{ar ? 'مجتمع • إيمان • تعلّم • خدمة' : 'Community • Faith • Learning • Service'}</p>
           </div>
-          <div className="flex flex-wrap gap-1.5">{equippedItems.map(item => <span key={item.id} title={ar ? item.title_ar : item.title_en} className="rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)]">{item.kind === 'frame' ? '✦' : item.kind === 'banner' ? '▰' : item.kind === 'badge' ? '✚' : '✧'}</span>)}</div>
+          <div className="flex max-w-full flex-wrap gap-1.5">{equippedItems.map(item => <span key={item.id} title={ar ? item.title_ar : item.title_en} className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-1.5 py-1 text-[9px] font-bold text-[var(--text-secondary)]"><span className="h-5 w-5 shrink-0 overflow-hidden rounded-md"><CosmeticArtwork item={item}/></span><span className="max-w-20 truncate">{ar ? item.title_ar : item.title_en}</span></span>)}</div>
         </div>
-        <div className="grid grid-cols-3 gap-2 px-4 pb-4">
+        <div className="grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-5">
           <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">{points.toLocaleString()}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'النقاط' : 'Points'}</p></div>
           <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">🔥 {currentStreak}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'المواظبة الحالية' : 'Current streak'}</p></div>
           <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">🏆 {longestStreak}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'أطول مواظبة' : 'Longest streak'}</p></div>
+          <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">{followersCount.toLocaleString()}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'المتابعون' : 'Followers'}</p></div>
+          <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">{followingCount.toLocaleString()}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'يتابع' : 'Following'}</p></div>
         </div>
       </div>
 
-      <nav className="grid grid-cols-2 gap-2 rounded-xl bg-[var(--surface-secondary)] p-1">
+      <nav className="grid grid-cols-3 gap-2 rounded-xl bg-[var(--surface-secondary)] p-1">
         <button type="button" onClick={() => setView('profile')} aria-pressed={view === 'profile'} className={'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-black transition ' + (view === 'profile' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-sm' : 'text-[var(--text-secondary)]')}><Crown size={16}/>{ar ? 'ملفي' : 'My profile'}</button>
         <button type="button" onClick={() => setView('store')} aria-pressed={view === 'store'} className={'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-black transition ' + (view === 'store' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-sm' : 'text-[var(--text-secondary)]')}><ShoppingBag size={16}/>{ar ? 'المتجر' : 'Store'}<span className="rounded-full bg-amber-400/20 px-1.5 text-[10px]">{catalog.length}</span></button>
+        <button type="button" onClick={() => setView('inventory')} aria-pressed={view === 'inventory'} className={'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-2 text-xs font-black transition ' + (view === 'inventory' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-sm' : 'text-[var(--text-secondary)]')}><Award size={15}/>{ar ? 'مقتنياتي' : 'Inventory'}<span className="rounded-full bg-emerald-400/20 px-1.5 text-[10px]">{unlocked.length}</span></button>
       </nav>
 
       {view === 'profile' ? <div className="space-y-4">
@@ -221,6 +357,12 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
         </div>
         <label className="block"><span className="mb-1.5 block text-xs font-black text-[var(--text-primary)]">{ar ? 'الغلاف الأساسي' : 'Starter banner'}</span><select value={banner} onChange={event => setBanner(event.target.value)} className="min-h-11 w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] px-3 text-sm"><option value="desert-dawn">{ar ? 'فجر البرية' : 'Desert Dawn'}</option><option value="coptic-pattern">{ar ? 'نقوش قبطية' : 'Coptic Pattern'}</option><option value="olive-garden">{ar ? 'بستان الزيتون' : 'Olive Garden'}</option><option value="golden-church">{ar ? 'الكنيسة الذهبية' : 'Golden Church'}</option><option value="midnight-teal">{ar ? 'فيروزي ليلي' : 'Midnight Teal'}</option></select></label>
         <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-[var(--text-secondary)]">{ar ? 'العناصر اللي فتحتها من المتجر هتظهر في معاينة ملفك.' : 'Items you unlock in the store appear in your profile preview.'}</p><button type="button" disabled={Boolean(busyId)} onClick={() => void saveLegacyStyle()} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--action-primary)] px-4 text-sm font-black text-[var(--action-primary-text)] disabled:opacity-50">{busyId === 'save' ? <Loader2 size={15} className="animate-spin"/> : <Check size={15} />}{ar ? 'حفظ الملف' : 'Save profile'}</button></div>
+      </div> : view === 'inventory' ? <div className="space-y-3">
+        <div className="flex items-center justify-between gap-2"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? 'مجموعتك الخاصة' : 'Your collection'}</h4><p className="text-xs text-[var(--text-secondary)]">{ar ? 'كل ما فتحته محفوظ هنا ويمكنك تطبيقه وقتما تحب.' : 'Everything you have unlocked is kept here and can be equipped any time.'}</p></div><span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-black text-emerald-300">{unlocked.length}</span></div>
+        {catalog.filter(item => unlocked.includes(item.id)).length ? <div className="grid gap-3 sm:grid-cols-2">{catalog.filter(item => unlocked.includes(item.id)).map(item => <article key={item.id} className="flex items-center gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-3">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl"><CosmeticArtwork item={item}/></div>
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-[var(--text-primary)]">{ar ? item.title_ar : item.title_en}</p><p className="text-[10px] text-[var(--text-secondary)]">{ar ? kindLabels[item.kind][1] : kindLabels[item.kind][0]} · {ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</p><button type="button" disabled={Boolean(busyId) || equipped[item.kind] === item.id} onClick={() => void runCosmeticAction(item, 'equip')} className="mt-2 min-h-9 rounded-lg bg-[var(--action-primary)] px-3 text-xs font-black text-white disabled:opacity-50">{equipped[item.kind] === item.id ? (ar ? 'مُطبّق' : 'Equipped') : (ar ? 'تطبيق' : 'Equip')}</button></div>
+        </article>)}</div> : <p className="rounded-xl border border-dashed p-6 text-center text-sm text-[var(--text-secondary)]">{ar ? 'لسه ما فتحتش أي عناصر. زور المتجر وابدأ مجموعتك.' : 'Your inventory is empty. Visit the store to start your collection.'}</p>}
       </div> : <div className="space-y-3">
         <div className="grid grid-cols-4 gap-1 rounded-xl bg-[var(--surface-secondary)] p-1">{(['frame','banner','badge','effect'] as CosmeticKind[]).map(kind => <button key={kind} type="button" onClick={() => setCategory(kind)} aria-pressed={category === kind} className={'min-h-10 rounded-lg px-1 text-[11px] font-black ' + (category === kind ? 'bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-secondary)]')}>{ar ? kindLabels[kind][1] : kindLabels[kind][0]}</button>)}</div>
         {visibleItems.length ? <div className="grid gap-3 sm:grid-cols-2">{visibleItems.map(item => {
@@ -229,8 +371,9 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
           const start = safeColor(item.preview_start, '#174D4C');
           const end = safeColor(item.preview_end, '#D6A84F');
           return <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)]">
-            <div className="relative h-16" style={{ background: 'linear-gradient(110deg,' + start + ',' + end + ')' }}><span className="absolute end-2 top-2 rounded-full bg-black/25 px-2 py-1 text-[9px] font-black text-white">{ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</span>{isEquipped && <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[9px] font-black text-emerald-800"><Check size={11}/>{ar ? 'مُستخدم' : 'Equipped'}</span>}</div>
+            <div className="relative h-20 overflow-hidden"><CosmeticArtwork item={item}/><span className="absolute end-2 top-2 rounded-full bg-black/45 px-2 py-1 text-[9px] font-black text-white">{ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</span>{isEquipped && <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[9px] font-black text-emerald-800"><Check size={11}/>{ar ? 'مُستخدم' : 'Equipped'}</span>}</div>
             <div className="space-y-2 p-3"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? item.title_ar : item.title_en}</h4><p className="mt-0.5 min-h-8 text-[11px] text-[var(--text-secondary)]">{ar ? item.description_ar : item.description_en}</p></div>
+              <button type="button" onClick={() => setPreviewItemId(previewItemId === item.id ? null : item.id)} aria-pressed={previewItemId === item.id} className={'inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border px-3 text-xs font-black transition ' + (previewItemId === item.id ? 'border-amber-300 bg-amber-300/15 text-amber-700 dark:text-amber-200' : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:border-amber-400')}>{previewItemId === item.id ? (ar ? 'إلغاء المعاينة' : 'Stop preview') : (ar ? 'جرّبه على ملفي' : 'Preview on my profile')}</button>
               <div className="flex items-center justify-between gap-2"><span className="text-xs font-black text-amber-700 dark:text-amber-300">{item.points_cost.toLocaleString()} {ar ? 'نقطة' : 'pts'}</span>
                 {isEquipped ? <button type="button" onClick={() => void unequip(item.kind)} disabled={Boolean(busyId)} className="min-h-9 rounded-lg border px-3 text-xs font-bold">{ar ? 'إزالة' : 'Unequip'}</button>
                   : owned ? <button type="button" onClick={() => void runCosmeticAction(item, 'equip')} disabled={Boolean(busyId)} className="min-h-9 rounded-lg bg-[var(--action-primary)] px-3 text-xs font-black text-[var(--action-primary-text)]">{busyId === item.id ? <Loader2 size={14} className="animate-spin"/> : ar ? 'تطبيق' : 'Equip'}</button>

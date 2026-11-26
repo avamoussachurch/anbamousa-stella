@@ -66,7 +66,9 @@ export interface User {
   pushNotificationsEnabled?: boolean;
   notifyLessonCompletion?: boolean;
   notifyEventReminders?: boolean;
-  screenTimeSeconds?: number; // total screen time in seconds
+  screenTimeSeconds?: number; // lifetime app screen time in seconds
+  screenTimeTodaySeconds?: number; // active app time on the current Cairo day
+  screenTimeDate?: string; // YYYY-MM-DD, Africa/Cairo
   lastActive?: string;
 }
 
@@ -730,8 +732,11 @@ export interface Reply {
   authorAvatar?: string;
   content: string;
   createdAt: string;
-  reactions?: { heart: number; candle: number; cross: number };
+  reactions?: FeedReactionCounts;
 }
+
+export type FeedReactionKey = 'heart' | 'candle' | 'cross' | 'laugh' | 'wow' | 'pray' | 'clap' | 'fire' | 'dove' | 'star';
+export type FeedReactionCounts = { heart: number; candle: number; cross: number } & Partial<Record<FeedReactionKey, number>>;
 
 export interface Comment {
   id: string;
@@ -740,7 +745,7 @@ export interface Comment {
   content: string;
   replies: Reply[];
   createdAt: string;
-  reactions?: { heart: number; candle: number; cross: number };
+  reactions?: FeedReactionCounts;
 }
 
 export interface Post {
@@ -749,7 +754,7 @@ export interface Post {
   authorName: string;
   authorAvatar: string;
   content: string;
-  reactions: { heart: number; candle: number; cross: number };
+  reactions: FeedReactionCounts;
   comments: Comment[];
   createdAt: string;
   mediaType?: 'image' | 'video' | 'youtube' | 'audio' | 'embed';
@@ -785,6 +790,7 @@ export interface LeaderboardEntry {
   studentName: string;
   avatarUrl: string;
   pointsThisWeek: number;
+  totalPoints?: number;
   rank: number;
 }
 

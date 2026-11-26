@@ -49,7 +49,7 @@ const roleLabel = (role: string, ar: boolean) => {
   return ar ? pair[1] : pair[0];
 };
 
-export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) {
+export function FeedPeopleDirectory({ lang, initialProfileId }: { lang: 'en'|'ar'|'cop'|'copt'; initialProfileId?: string | null }) {
   const ar = lang === 'ar';
   const [open,setOpen] = useState(false);
   const [query,setQuery] = useState('');
@@ -69,6 +69,17 @@ export function FeedPeopleDirectory({ lang }: { lang: 'en'|'ar'|'cop'|'copt' }) 
   },[ar]);
 
   useEffect(() => { if (open) void load(query); },[open,load]);
+  useEffect(() => {
+    if (!initialProfileId) return;
+    setOpen(true);
+    setSelected(null);
+    void load('');
+  }, [initialProfileId, load]);
+  useEffect(() => {
+    if (!initialProfileId || !people.length) return;
+    const match = people.find(person => person.user_id === initialProfileId);
+    if (match) setSelected(match);
+  }, [initialProfileId, people]);
 
   const toggleFollow = async (person: DirectoryProfile) => {
     if (!supabase || busyId) return;

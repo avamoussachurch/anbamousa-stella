@@ -8,7 +8,8 @@ type Result = Awaited<ReturnType<typeof getAuthoritativeLeaderboard>>;
 
 export function ClassLeaderboardPanel({ lang, audience = 'parent', childId, childName, childOptions }: { lang: Language; audience?: 'parent' | 'staff'; childId?: string; childName?: string; childOptions?: Array<{ id: string; name: string }> }) {
   const isArabic = lang === 'ar';
-  const [timeframe, setTimeframe] = useState<'weekly' | 'all_time'>('weekly');
+  const [timeframe, setTimeframe] = useState<'weekly' | 'all_time'>('all_time');
+  const [scope, setScope] = useState<'class' | 'church'>('class');
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -25,13 +26,13 @@ export function ClassLeaderboardPanel({ lang, audience = 'parent', childId, chil
     if (!canLoadLeaderboard) { setResult(null); setLoading(false); return; }
     setLoading(true);
     setResult(null);
-    getAuthoritativeLeaderboard({ timeframe, ...(isParentView ? { studentId: effectiveChildId } : selectedClassGroupId ? { classGroupId: selectedClassGroupId } : {}) }).then(value => {
+    getAuthoritativeLeaderboard({ timeframe, scope, ...(isParentView ? { studentId: effectiveChildId } : selectedClassGroupId && scope === 'class' ? { classGroupId: selectedClassGroupId } : {}) }).then(value => {
       if (!active) return;
       setResult(value);
       setLoading(false);
     });
     return () => { active = false; };
-  }, [canLoadLeaderboard, effectiveChildId, isParentView, selectedClassGroupId, timeframe, refreshTick]);
+  }, [canLoadLeaderboard, effectiveChildId, isParentView, selectedClassGroupId, timeframe, scope, refreshTick]);
 
   const entries = result?.leaderboard || [];
   const streaks = result?.streakLeaderboard || [];
@@ -40,15 +41,19 @@ export function ClassLeaderboardPanel({ lang, audience = 'parent', childId, chil
   return (
     <section className="mx-auto w-full max-w-6xl space-y-5 px-3 py-5 sm:px-5">
       <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-4">
-        <div className="flex items-center gap-3"><Trophy className="text-amber-500" size={25}/><div><h2 className="font-black">{isArabic ? 'ترتيب الفصل' : 'Class leaderboards'}</h2><p className="text-sm text-[var(--text-secondary)]">{effectiveChildName ? (isArabic ? `ترتيب ${effectiveChildName} في فصله` : `${effectiveChildName}’s class ranking`) : (isArabic ? 'ترتيب النقاط والاستمرارية للفصل المكلّف به.' : 'Points and streak rankings for your assigned class.')}</p></div></div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3"><Trophy className="text-amber-500" size={25}/><div><h2 className="font-black">{scope === 'church' ? (isArabic ? 'ترتيب الكنيسة' : 'Church leaderboards') : (isArabic ? 'ترتيب الفصل' : 'Class leaderboards')}</h2><p className="text-sm text-[var(--text-secondary)]">{scope === 'church' ? (effectiveChildName ? (isArabic ? `ترتيب ${effectiveChildName} بين كل الكنيسة` : `${effectiveChildName}’s church-wide ranking`) : (isArabic ? 'ترتيب كل أعضاء الكنيسة.' : 'Rankings across the whole church.')) : (effectiveChildName ? (isArabic ? `ترتيب ${effectiveChildName} في فصله` : `${effectiveChildName}’s class ranking`) : (isArabic ? 'ترتيب النقاط والاستمرارية للفصل المكلّف به.' : 'Points and streak rankings for your assigned class.'))}</p></div></div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-xl bg-[var(--surface-secondary)] p-1" role="group" aria-label={isArabic ? 'نطاق الترتيب' : 'Leaderboard scope'}>
+            <button type="button" onClick={() => setScope('class')} aria-pressed={scope === 'class'} className={`min-h-9 rounded-lg px-3 text-xs font-black ${scope === 'class' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)]' : 'text-[var(--text-secondary)]'}`}>{isArabic ? 'فصلي' : 'My class'}</button>
+            <button type="button" onClick={() => setScope('church')} aria-pressed={scope === 'church'} className={`min-h-9 rounded-lg px-3 text-xs font-black ${scope === 'church' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)]' : 'text-[var(--text-secondary)]'}`}>{isArabic ? 'الكنيسة كلها' : 'Whole church'}</button>
+          </div>
           <button type="button" onClick={() => setTimeframe('weekly')} aria-pressed={timeframe === 'weekly'} className={`min-h-10 rounded-xl px-3 text-xs font-black ${timeframe === 'weekly' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)]' : 'border'}`}>{isArabic ? 'الأسبوع' : 'Weekly'}</button>
           <button type="button" onClick={() => setTimeframe('all_time')} aria-pressed={timeframe === 'all_time'} className={`min-h-10 rounded-xl px-3 text-xs font-black ${timeframe === 'all_time' ? 'bg-[var(--action-primary)] text-[var(--action-primary-text)]' : 'border'}`}>{isArabic ? 'الإجمالي' : 'All-time'}</button>
           <button type="button" onClick={() => setRefreshTick(value => value + 1)} aria-label={isArabic ? 'تحديث الترتيب' : 'Refresh leaderboard'} className="rounded-xl border p-2"><RefreshCw size={16}/></button>
         </div>
       </header>
       {isParentView && childOptions?.length ? <label className="block text-sm font-bold">{isArabic ? 'اختر ابنك أو بنتك' : 'Choose a child'}<select value={selectedChildId} onChange={event => setSelectedChildId(event.target.value)} className="mt-1 min-h-11 w-full max-w-sm rounded-xl border bg-[var(--surface-primary)] px-3">{childOptions.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label> : null}
-      {!isParentView && (result?.availableClassGroupIds?.length || 0) > 0 ? <label className="block text-sm font-bold">{isArabic ? 'اختر الفصل' : 'Choose a class'}<select value={selectedClassGroupId || result?.classGroupId || ''} onChange={event => setSelectedClassGroupId(event.target.value)} className="mt-1 min-h-11 w-full max-w-sm rounded-xl border bg-[var(--surface-primary)] px-3">{result?.availableClassGroupIds.map(id => <option key={id} value={id}>{CLASS_GROUPS[id as keyof typeof CLASS_GROUPS]?.name?.[isArabic ? 'ar' : 'en'] || id}</option>)}</select></label> : null}
+      {!isParentView && scope === 'class' && (result?.availableClassGroupIds?.length || 0) > 0 ? <label className="block text-sm font-bold">{isArabic ? 'اختر الفصل' : 'Choose a class'}<select value={selectedClassGroupId || result?.classGroupId || ''} onChange={event => setSelectedClassGroupId(event.target.value)} className="mt-1 min-h-11 w-full max-w-sm rounded-xl border bg-[var(--surface-primary)] px-3">{result?.availableClassGroupIds.map(id => <option key={id} value={id}>{CLASS_GROUPS[id as keyof typeof CLASS_GROUPS]?.name?.[isArabic ? 'ar' : 'en'] || id}</option>)}</select></label> : null}
       {!canLoadLeaderboard ? <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'اربط حساب ابنك أو بنتك أولاً لعرض ترتيبهم.' : 'Link a child account first to view their ranking.'}</p>
         : loading ? <p role="status" className="p-8 text-center text-sm">{isArabic ? 'بنحمّل الترتيب الرسمي...' : 'Loading verified rankings...'}</p>
         : result?.error ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{result.error}</p>

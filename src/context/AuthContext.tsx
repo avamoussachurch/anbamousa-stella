@@ -8,6 +8,7 @@ import { parseHymnsTaxisLevel } from '../lib/hymnsTaxisLevel';
 import { getCompatibilityRole } from '../lib/workspaces';
 import type { Role } from '../types';
 import { fetchAssignedRoles } from '../lib/roleService';
+import { getCairoDateString } from '../lib/cairoTime';
 
 interface AuthContextType {
   currentUser: { uid: string; email?: string | null } | null;
@@ -54,6 +55,8 @@ export function getCachedProfileFields(raw: string | null, userId: string): Part
       grade: cached.grade,
       parentPin: cached.parentPin,
       screenTimeSeconds: cached.screenTimeSeconds,
+      screenTimeTodaySeconds: cached.screenTimeTodaySeconds,
+      screenTimeDate: cached.screenTimeDate,
     };
   } catch (error) {
     console.warn('Could not read cached profile fields:', error);
@@ -95,6 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [loading, setLoading] = useState(true);
   const screenTimeTimer = useRef<NodeJS.Timeout | null>(null);
+  const screenTimeSyncTicksRef = useRef(0);
   const sessionHydrationId = useRef(0);
 
   const setUserDirectly = (user: User) => {
@@ -411,40 +415,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (screenTimeTimer.current) {
       clearInterval(screenTimeTimer.current);
     }
+    screenTimeSyncTicksRef.current = 0;
 
     screenTimeTimer.current = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) {
         return; // Pause counter if user minimized or switched tab
       }
 
+      screenTimeSyncTicksRef.current += 1;
+      const shouldPersistLocally = screenTimeSyncTicksRef.current % 3 === 0;
+      const shouldSyncToSupabase = screenTimeSyncTicksRef.current % 6 === 0;
+      const cairoDate = getCairoDateString();
       setUserData((prev) => {
         if (!prev) return null;
-        const currentSecs = prev.screenTimeSeconds || 0;
-        const nextSecs = currentSecs + 10;
+        const nextSecs = Math.max(0, prev.screenTimeSeconds || 0) + 10;
+        const previousDailySeconds = prev.screenTimeDate === cairoDate ? Math.max(0, prev.screenTimeTodaySeconds || 0) : 0;
+        const nextDailySeconds = previousDailySeconds + 10;
 
-        // Persist to localStorage every 30 seconds to reduce write overhead
-        if (nextSecs % 30 === 0) {
+        // Persist every three visible ticks (30 seconds), independent of lifetime counter alignment.
+        if (shouldPersistLocally) {
           try {
             const key = isGuest ? 'church_guest_user' : 'church_auth_user';
             const saved = localStorage.getItem(key);
             if (saved) {
               const parsed = JSON.parse(saved);
               parsed.screenTimeSeconds = nextSecs;
+              parsed.screenTimeTodaySeconds = nextDailySeconds;
+              parsed.screenTimeDate = cairoDate;
               localStorage.setItem(key, JSON.stringify(parsed));
             }
           } catch (e) {}
         }
 
-        // Sync to Supabase every 60 seconds
-        if (nextSecs % 60 === 0 && !isGuest && isSupabaseConfigured && supabase) {
-          updateSupabaseProfile(prev.id, { screen_time_seconds: nextSecs }).then(result => {
+        // Sync lifetime and Cairo-day active time every six visible ticks (60 seconds).
+        if (shouldSyncToSupabase && !isGuest && isSupabaseConfigured && supabase) {
+          updateSupabaseProfile(prev.id, {
+            screen_time_seconds: nextSecs,
+            screen_time_today_seconds: nextDailySeconds,
+            screen_time_date: cairoDate
+          }).then(result => {
             if (result.error) console.warn('Could not synchronize screen time:', result.error);
           }).catch(error => {
             console.warn('Could not synchronize screen time:', error);
           });
         }
 
-        return { ...prev, screenTimeSeconds: nextSecs };
+        return { ...prev, screenTimeSeconds: nextSecs, screenTimeTodaySeconds: nextDailySeconds, screenTimeDate: cairoDate };
       });
     }, 10000);
 

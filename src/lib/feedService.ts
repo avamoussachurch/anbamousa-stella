@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { FeedAttachment, Post, Comment, Reply, User } from '../types';
+import type { FeedReactionKey, FeedReactionCounts } from '../types';
 import { buildFeedPostAttachmentRows, mapFeedAttachmentRow, MAX_FEED_ATTACHMENTS } from './feedAttachments';
 import type { FeedPostAttachmentInput } from './feedAttachments';
 import { parseStorageReference } from './mediaStorageReference';
@@ -45,11 +46,6 @@ export async function fetchGlobalFeedAudioTracks(): Promise<{ data: GlobalFeedAu
   }
 }
 
-export interface FeedReactionCounts {
-  heart: number;
-  candle: number;
-  cross: number;
-}
 
 const FEED_CACHE_KEY = 'orthodox_church_feed_posts_v5';
 const MIGRATED_LOG_KEY = 'church_feed_migrated_post_ids_v1';
@@ -216,11 +212,11 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
     const postReactionsMap = new Map<string, FeedReactionCounts>();
     for (const r of postReactionsData || []) {
       if (!postReactionsMap.has(r.post_id)) {
-        postReactionsMap.set(r.post_id, { heart: 0, candle: 0, cross: 0 });
+        postReactionsMap.set(r.post_id, { heart: 0, candle: 0, cross: 0, laugh: 0, wow: 0, pray: 0, clap: 0, fire: 0, dove: 0, star: 0 });
       }
       const counts = postReactionsMap.get(r.post_id)!;
       if (r.reaction_type in counts) {
-        counts[r.reaction_type as keyof FeedReactionCounts]++;
+        counts[r.reaction_type as FeedReactionKey] = (counts[r.reaction_type as FeedReactionKey] || 0) + 1;
       }
     }
 
@@ -228,11 +224,11 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
     const commentReactionsMap = new Map<string, FeedReactionCounts>();
     for (const r of commentReactionsData) {
       if (!commentReactionsMap.has(r.comment_id)) {
-        commentReactionsMap.set(r.comment_id, { heart: 0, candle: 0, cross: 0 });
+        commentReactionsMap.set(r.comment_id, { heart: 0, candle: 0, cross: 0, laugh: 0, wow: 0, pray: 0, clap: 0, fire: 0, dove: 0, star: 0 });
       }
       const counts = commentReactionsMap.get(r.comment_id)!;
       if (r.reaction_type in counts) {
-        counts[r.reaction_type as keyof FeedReactionCounts]++;
+        counts[r.reaction_type as FeedReactionKey] = (counts[r.reaction_type as FeedReactionKey] || 0) + 1;
       }
     }
 
@@ -577,9 +573,9 @@ export async function deleteFeedPostFromSupabase(
  * Toggle post or comment reaction via secure scoped function
  */
 export async function toggleFeedReactionInSupabase(
-  reactionType: 'heart' | 'candle' | 'cross',
+  reactionType: FeedReactionKey,
   target: { postId?: string; commentId?: string }
-): Promise<{ action: 'added' | 'removed' | null; error: Error | null }> {
+): Promise<{ action: 'added' | 'removed' | 'unchanged' | null; error: Error | null }> {
   if (!supabase) {
     return { action: null, error: new Error('Supabase client not initialized') };
   }

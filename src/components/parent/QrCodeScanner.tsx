@@ -429,17 +429,17 @@ export function QrCodeScanner({
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
-            onClick={() => handleSuccessfulScan('ST-4921')}
+            onClick={() => handleSuccessfulScan('A7K2M')}
             className="px-2.5 py-1 rounded-xl bg-white hover:bg-blue-100 border border-blue-300 font-bold text-[11px] text-[var(--color-church-blue)] transition-colors cursor-pointer shadow-2xs"
           >
-            David (ST-4921)
+            David (A7K2M)
           </button>
           <button
             type="button"
-            onClick={() => handleSuccessfulScan('CH-9481')}
+            onClick={() => handleSuccessfulScan('B6T2N')}
             className="px-2.5 py-1 rounded-xl bg-white hover:bg-blue-100 border border-blue-300 font-bold text-[11px] text-[var(--color-church-blue)] transition-colors cursor-pointer shadow-2xs"
           >
-            Mina (CH-9481)
+            Mina (B6T2N)
           </button>
         </div>
       </div>
@@ -453,7 +453,7 @@ export function QrCodeScanner({
             className="text-xs text-[var(--color-church-blue)] hover:underline font-bold inline-flex items-center gap-1.5 cursor-pointer"
           >
             <KeyRound size={14} />
-            <span>{lang === 'ar' ? 'أو اكتب الكود السري بنفسك (ST-4921)' : 'Or type alphanumeric secret code'}</span>
+            <span>{lang === 'ar' ? 'أو اكتب الكود السري بنفسك (A7K2M)' : 'Or type alphanumeric secret code'}</span>
           </button>
         </div>
       )}

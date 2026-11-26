@@ -81,6 +81,8 @@ function AppContent() {
     if (typeof window === 'undefined') return 'home';
     return new URLSearchParams(window.location.search).get('tab') || 'home';
   });
+  const [sharedPostId] = useState<string | null>(() => typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('post'));
+  const [sharedProfileId] = useState<string | null>(() => typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('profile'));
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(() => {
     if (typeof window === 'undefined') return null;
     return new URLSearchParams(window.location.search).get('workspace') as Workspace | null;
@@ -93,7 +95,7 @@ function AppContent() {
   const historyRouteRef = React.useRef<string | null>(null);
   const [visitedStudentTabs, setVisitedStudentTabs] = useState<Set<string>>(() => new Set<string>(['home']));
 
-  // Detect incoming child connect link (?connectChild=ST-4921)
+  // Detect incoming child connect link (?connectChild=A7K2M)
   const [incomingChildCode, setIncomingChildCode] = useState<string | null>(() => {
     if (typeof window !== 'undefined' && window.location?.search) {
       const params = new URLSearchParams(window.location.search);
@@ -305,7 +307,7 @@ function AppContent() {
       if (activeTab === 'profile') {
         return <RoleAccountProfile role="parent" lang={lang} setLang={setLang} onNavigate={navigate} onLogout={handleLogout} />;
       }
-      if (activeTab === 'feed') return <FeedTab lang={lang} />;
+      if (activeTab === 'feed') return <FeedTab lang={lang} initialPostId={sharedPostId} initialProfileId={sharedProfileId} />;
       return (
         <ParentDashboard
           lang={lang}
@@ -319,7 +321,7 @@ function AppContent() {
       if (activeTab === 'profile') {
         return <RoleAccountProfile role="teacher" lang={lang} setLang={setLang} onNavigate={navigate} onLogout={handleLogout} />;
       }
-      if (activeTab === 'feed') return <FeedTab lang={lang} />;
+      if (activeTab === 'feed') return <FeedTab lang={lang} initialPostId={sharedPostId} initialProfileId={sharedProfileId} />;
       return (
         <TeacherDashboard
           lang={lang}
@@ -344,7 +346,7 @@ function AppContent() {
         case 'points':
           return <PointsTab lang={lang} />;
         case 'feed':
-          return <FeedTab lang={lang} />;
+          return <FeedTab lang={lang} initialPostId={sharedPostId} initialProfileId={sharedProfileId} />;
         case 'profile':
           return <ProfileTab onLogout={handleLogout} onNavigate={navigate} workspaceRole="student" lang={lang} setLang={setLang} />;
         default:

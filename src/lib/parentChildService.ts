@@ -46,6 +46,8 @@ export interface ParentChildRecord {
   classNameAr: string;
   avatarUrl: string;
   points: number | null;
+  screenTimeTodaySeconds?: number;
+  screenTimeTodayMinutes?: number;
   hymnsTaxisLevel: number | null;
   hymnsMembership: {
     level: number;
@@ -76,7 +78,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '4th Grade Elementary',
     gradeAr: 'الصف الرابع الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=church_student_guest',
-    linkCode: 'ST-4921',
+    linkCode: 'A7K2M',
     points: 850,
     rank: 3,
     attendanceRate: 98
@@ -89,7 +91,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '4th Grade Elementary',
     gradeAr: 'الصف الرابع الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MinaEmad&backgroundColor=b6e3f4',
-    linkCode: 'CH-9481',
+    linkCode: 'B6T2N',
     points: 950,
     rank: 2,
     attendanceRate: 96
@@ -102,7 +104,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '2nd Grade Elementary',
     gradeAr: 'الصف الثاني الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MaryEmad&backgroundColor=ffd5dc',
-    linkCode: 'CH-7320',
+    linkCode: 'C8P4R',
     points: 820,
     rank: 1,
     attendanceRate: 100
@@ -115,7 +117,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '3rd Grade Elementary',
     gradeAr: 'الصف الثالث الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=FadiNabil&backgroundColor=c0aede',
-    linkCode: 'ST-3819',
+    linkCode: 'F4N8Q',
     points: 670,
     rank: 4,
     attendanceRate: 92
@@ -128,7 +130,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '5th Grade Elementary',
     gradeAr: 'الصف الخامس الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MarinaGeorge&backgroundColor=ffdfbf',
-    linkCode: 'ST-6104',
+    linkCode: 'M6R3T',
     points: 890,
     rank: 2,
     attendanceRate: 95
@@ -141,7 +143,7 @@ export const sundaySchoolRoster: RosterStudent[] = [
     gradeEn: '6th Grade Elementary',
     gradeAr: 'الصف السادس الابتدائي',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=KyrollosRafik&backgroundColor=d1d4f9',
-    linkCode: 'ST-8255',
+    linkCode: 'K9D5W',
     points: 910,
     rank: 1,
     attendanceRate: 97
@@ -206,7 +208,7 @@ export function getLinkedChildren(parentId: string = 'default', activeStudentUse
   if (!list || list.length === 0) {
     list = mockChildrenProfiles.map((c, i) => ({
       ...c,
-      linkCode: i === 0 ? 'CH-9481' : 'CH-7320',
+      linkCode: i === 0 ? 'B6T2N' : 'C8P4R',
       parentId,
       isRealAccount: false,
       dailyScreenTimeLimitMinutes: 60,
@@ -301,8 +303,8 @@ export function saveLinkedChildren(parentId: string = 'default', children: Child
 
 /**
  * Extract clean secret code from either a direct code string or a shared URL
- * e.g., "https://app.church.org/?connectChild=ST-4921" -> "ST-4921"
- * e.g., "ST-4921" -> "ST-4921"
+ * e.g., "https://app.church.org/?connectChild=A7K2M" -> "A7K2M"
+ * e.g., "A7K2M" -> "A7K2M"
  */
 export function extractSecretCodeFromInput(input: string): string {
   if (!input) return '';
@@ -316,19 +318,16 @@ export function extractSecretCodeFromInput(input: string): string {
                         url.searchParams.get('linkCode') || 
                         url.searchParams.get('code') || 
                         url.searchParams.get('childCode');
-      if (paramCode) return paramCode.trim().toUpperCase();
+      if (paramCode) {
+        const normalized = paramCode.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        return normalized.length === 5 ? normalized : '';
+      }
     }
   } catch (e) {}
 
-  // Try regex search for standard code pattern: (ST|CH|SEC)-digits
-  const codeRegex = /\b([A-Za-z]{2,4}[-_]?[0-9]{4,6})\b/;
-  const match = trimmed.match(codeRegex);
-  if (match && match[1]) {
-    return match[1].replace('_', '-').toUpperCase();
-  }
-
-  // Fallback: remove spaces and uppercase
-  return trimmed.replace(/\s+/g, '').toUpperCase();
+  // The family secret is exactly five letters/numbers; ignore separators copied from messages.
+  const direct = trimmed.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  return direct.length === 5 ? direct : '';
 }
 
 /**
@@ -545,7 +544,7 @@ export function linkChildByCode(
 
   return { 
     success: false, 
-    error: `لم يتم العثور على طفل مسجل بالرمز السري "${normalized}". يرجى التأكد من الرمز السري من شاشة حساب طفلك في التطبيق (مثال: ST-4921) أو اطلب من طفلك إرسال رابط الربط المباشر.` 
+    error: `لم يتم العثور على طفل مسجل بالرمز السري "${normalized}". يرجى التأكد من الرمز السري من شاشة حساب طفلك في التطبيق (مثال: A7K2M) أو اطلب من طفلك إرسال رابط الربط المباشر.` 
   };
 }
 
@@ -913,7 +912,7 @@ export function syncStudentSessionToParent(student: Partial<User>) {
   });
 
   if (!found && student.isLinkedToParent) {
-    const code = student.linkCode || 'ST-4921';
+    const code = student.linkCode || 'A7K2M';
     linkChildByCode(parentId, student.parentName || 'Parent', student.parentEmail || 'parent@church.org', code, student as User);
     return;
   }

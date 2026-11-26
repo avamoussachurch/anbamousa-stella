@@ -729,12 +729,12 @@ export interface EnrollStudentResult {
  * For offline/guest mode: falls back to the server endpoint.
  */
 export const KNOWN_STUDENT_DIRECTORY = [
-  { id: 'student-david', linkCode: 'ST-4921', nameEn: 'David Shenouda', nameAr: 'ديفيد شنودة', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
-  { id: 'c1', linkCode: 'CH-9481', nameEn: 'Mina Emad', nameAr: 'مينا عماد', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
-  { id: 'c2', linkCode: 'CH-7320', nameEn: 'Mary Emad', nameAr: 'مريم عماد', gradeEn: 'Grade 2', classGroupId: 'primary_1' },
-  { id: 'student-fadi', linkCode: 'ST-3819', nameEn: 'Fadi Nabil', nameAr: 'فادي نبيل', gradeEn: 'Grade 3', classGroupId: 'primary_1' },
-  { id: 'student-marina', linkCode: 'ST-6104', nameEn: 'Marina George', nameAr: 'مارينا جورج', gradeEn: 'Grade 5', classGroupId: 'primary_2' },
-  { id: 'student-kyrollos', linkCode: 'ST-8255', nameEn: 'Kyrollos Rafik', nameAr: 'كيرلس رفيق', gradeEn: 'Grade 6', classGroupId: 'primary_2' },
+  { id: 'student-david', linkCode: 'A7K2M', nameEn: 'David Shenouda', nameAr: 'ديفيد شنودة', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
+  { id: 'c1', linkCode: 'B6T2N', nameEn: 'Mina Emad', nameAr: 'مينا عماد', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
+  { id: 'c2', linkCode: 'C8P4R', nameEn: 'Mary Emad', nameAr: 'مريم عماد', gradeEn: 'Grade 2', classGroupId: 'primary_1' },
+  { id: 'student-fadi', linkCode: 'F4N8Q', nameEn: 'Fadi Nabil', nameAr: 'فادي نبيل', gradeEn: 'Grade 3', classGroupId: 'primary_1' },
+  { id: 'student-marina', linkCode: 'M6R3T', nameEn: 'Marina George', nameAr: 'مارينا جورج', gradeEn: 'Grade 5', classGroupId: 'primary_2' },
+  { id: 'student-kyrollos', linkCode: 'K9D5W', nameEn: 'Kyrollos Rafik', nameAr: 'كيرلس رفيق', gradeEn: 'Grade 6', classGroupId: 'primary_2' },
   { id: 'mark', linkCode: 'ST-1001', nameEn: 'Mark Bassem', nameAr: 'مارك باسم', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
   { id: 'u1', linkCode: 'ST-1002', nameEn: 'Mark Student', nameAr: 'مارك', gradeEn: 'Grade 4', classGroupId: 'primary_2' },
   { id: 'user_student_mark_101', linkCode: 'ST-1003', nameEn: 'Mark Student', nameAr: 'مارك', gradeEn: 'Grade 4', classGroupId: 'primary_2' },

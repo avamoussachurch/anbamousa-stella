@@ -60,6 +60,8 @@ export async function updateSupabaseProfile(
     name: string;
     avatar: string;
     screen_time_seconds: number;
+    screen_time_today_seconds: number;
+    screen_time_date: string;
     require_reward_approval: boolean;
     push_notifications_enabled: boolean;
     notify_lesson_completion: boolean;
@@ -83,6 +85,8 @@ export async function updateSupabaseProfile(
     if (updates.name !== undefined) dbPayload.name = updates.name;
     if (updates.avatar !== undefined) dbPayload.avatar = updates.avatar;
     if (updates.screen_time_seconds !== undefined) dbPayload.screen_time_seconds = updates.screen_time_seconds;
+    if (updates.screen_time_today_seconds !== undefined) dbPayload.screen_time_today_seconds = updates.screen_time_today_seconds;
+    if (updates.screen_time_date !== undefined) dbPayload.screen_time_date = updates.screen_time_date;
     if (updates.require_reward_approval !== undefined) dbPayload.require_reward_approval = updates.require_reward_approval;
     if (updates.push_notifications_enabled !== undefined) dbPayload.push_notifications_enabled = updates.push_notifications_enabled;
     if (updates.notify_lesson_completion !== undefined) dbPayload.notify_lesson_completion = updates.notify_lesson_completion;

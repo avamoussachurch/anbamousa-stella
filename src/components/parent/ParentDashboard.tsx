@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Check, Plus, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
+import { AlertCircle, Check, Clock3, Plus, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { hasRole } from '../../lib/workspaces';
 import {
@@ -29,6 +29,14 @@ interface ParentDashboardProps {
   initialChildCode?: string;
 }
 
+function formatParentActiveTime(minutes: number, isArabic: boolean) {
+  const safeMinutes = Math.max(0, Math.floor(Number(minutes) || 0));
+  const hours = Math.floor(safeMinutes / 60);
+  const remainder = safeMinutes % 60;
+  if (hours === 0) return isArabic ? `${remainder} دقيقة` : `${remainder} min`;
+  return isArabic ? `${hours} س ${remainder} د` : `${hours}h ${remainder}m`;
+}
+
 function asChildProfile(child: ParentChildRecord): ChildProfile {
   return {
     id: child.id,
@@ -43,7 +51,7 @@ function asChildProfile(child: ParentChildRecord): ChildProfile {
     pointsKnown: child.points !== null,
     rank: 0,
     attendanceRate: 0,
-    screenTimeMinutes: 0,
+    screenTimeMinutes: child.screenTimeTodayMinutes ?? 0,
     completedLessonsCount: 0,
     totalLessonsCount: 0,
     verseMemorizedCount: 0,
@@ -103,26 +111,43 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     }
   }, [activeTab]);
 
-  const refreshChildren = useCallback(async () => {
+  const refreshChildren = useCallback(async (silent = false) => {
     if (!isParent) {
       setChildren([]);
       setChildrenLoading(false);
       setChildrenError(null);
       return;
     }
-    setChildrenLoading(true);
+    if (!silent) setChildrenLoading(true);
     setChildrenError(null);
     const result = await getAuthoritativeParentChildren();
     if (result.error || !result.data) {
       setChildren([]);
       setChildrenError(getLocalizedErrorMessage(result.error?.message, lang) || (isArabic ? 'مش قادرين نحمّل بيانات الأولاد المرتبطين بالحساب.' : 'Unable to load linked children.'));
-      setChildrenLoading(false);
+      if (!silent) setChildrenLoading(false);
       return;
     }
     setChildren(result.data);
     setSelectedChildId(current => result.data?.some(child => child.id === current) ? current : (result.data?.[0]?.id || ''));
-    setChildrenLoading(false);
+    if (!silent) setChildrenLoading(false);
   }, [isParent, isArabic]);
+
+  // Refresh linked child stats quietly while the parent workspace is open so
+  // Cairo-day active learning time stays current without a page reload.
+  useEffect(() => {
+    if (!isParent || children.length === 0) return;
+    const refreshIfVisible = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        void refreshChildren(true);
+      }
+    };
+    const interval = window.setInterval(refreshIfVisible, 60_000);
+    window.addEventListener('focus', refreshIfVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshIfVisible);
+    };
+  }, [isParent, children.length, refreshChildren]);
 
   const refreshEvents = useCallback(async () => {
     setEventsLoading(true);
@@ -290,6 +315,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
             <dl className="mt-4 space-y-2 border-t border-[var(--border-default)] pt-3 text-sm">
               <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'فصل مدارس الأحد' : 'Sunday School class'}</dt><dd className="font-semibold text-[var(--text-primary)]">{isArabic ? child.classNameAr || 'مش متسجل' : child.className || 'Not recorded'}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'مستوى الألحان والطقس' : 'Hymns & Taxis level'}</dt><dd className="font-semibold text-[var(--text-primary)]">{child.hymnsTaxisLevel ? (isArabic ? `المستوى ${child.hymnsTaxisLevel}` : `Level ${child.hymnsTaxisLevel}`) : (isArabic ? 'مش متاح' : 'Not available')}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]"><Clock3 size={13}/>{isArabic ? 'وقت الاستخدام النشط اليوم' : 'Active time today'}</dt><dd className="font-semibold tabular-nums text-[var(--text-primary)]">{formatParentActiveTime(child.screenTimeTodayMinutes || 0, isArabic)}</dd></div>
             </dl>
             {child.points !== null && <p className="mt-3 text-xs font-bold text-[var(--text-secondary)]">{isArabic ? `النقاط المسجلة دلوقتي: ${child.points}` : `Recorded current points: ${child.points}`}</p>}
           </article>
