@@ -364,6 +364,14 @@ export function ServantHomeDashboard({
                 <button type="button" onClick={() => onOpenWorkspaceTab('ai')} className="rounded-xl border border-[var(--border-default)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--state-hover)]">{isArabic ? 'إنشاء بمساعدة الصوت' : 'Voice-assisted draft'}</button>
               </div>
             </article>
+            <article className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-emerald-300/40 bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)]">
+              <div>
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-900 dark:bg-emerald-300/10 dark:text-emerald-200"><Mic size={19}/></span>
+                <h3 className="mt-3 font-black text-[var(--text-primary)]">{isArabic ? 'تسميعات الألحان' : 'Hymn practice review'}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">{isArabic ? 'اسمع تسجيلات التلاميذ المكلّف بفصولهم، وعلّم التسميعات التي راجعتها.' : 'Listen to recordings from students in your assigned classes and mark practices reviewed.'}</p>
+              </div>
+              <button type="button" onClick={() => onOpenWorkspaceTab('hymn-practice')} className="self-start rounded-xl border border-emerald-600/30 px-3 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-emerald-500/10">{isArabic ? 'افتح التسميعات' : 'Open practice inbox'}</button>
+            </article>
             <article className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)]">
               <div>
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--state-selected)] text-[var(--action-primary)]"><GraduationCap size={19} /></span>
