@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User } from '../types';
 import { isValidSundaySchoolGrade, parseHymnsTaxisLevel, type HymnsTaxisLevel } from './hymnsTaxisLevel';
 import { parsePersistentMediaUploadResponse } from './mediaUploadResponse';
+import { getCairoDateString } from './cairoTime';
 
 export interface SupabaseAuthResult {
   success: boolean;
