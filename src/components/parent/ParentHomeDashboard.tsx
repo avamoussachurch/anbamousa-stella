@@ -55,7 +55,7 @@ interface ParentHomeDashboardProps {
 
 function FamilyIllustration({ lang }: { lang: Language }) {
   return (
-    <svg viewBox="0 0 440 250" role="img" aria-label={lang === 'ar' ? 'رسمة لعيلة في طريقها للكنيسة' : 'Illustration of a family walking toward church'} className="w-full max-w-[25rem]">
+    <svg viewBox="0 0 440 250" role="img" aria-label={lang === 'ar' ? 'رسمة لعيلة في طريقها للكنيسة' : 'Illustration of a family walking toward church'} className="h-auto w-full max-w-none">
       <defs>
         <linearGradient id="family-sky" x1="0" x2="1" y1="0" y2="1">
           <stop offset="0" stopColor="#20565a" />
