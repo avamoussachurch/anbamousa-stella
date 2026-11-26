@@ -745,7 +745,7 @@ export interface Comment {
   content: string;
   replies: Reply[];
   createdAt: string;
-  reactions?: { heart: number; candle: number; cross: number };
+  reactions?: FeedReactionCounts;
 }
 
 export interface Post {
