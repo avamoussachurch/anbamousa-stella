@@ -222,8 +222,8 @@ function AppContent() {
     if (historyRouteRef.current === null) {
       historyRouteRef.current = routeKey;
       // Duplicate the app entry once: the lower entry is the safe root fallback.
-      window.history.replaceState({ ...(window.history.state || {}), anbaMousaApp: true, routeKey }, '', nextUrl);
-      window.history.pushState({ anbaMousaApp: true, anbaMousaAppRoot: true, routeKey }, '', nextUrl);
+      window.history.replaceState({ ...(window.history.state || {}), anbaMousaApp: true, anbaMousaAppRoot: true, routeKey }, '', nextUrl);
+      window.history.pushState({ anbaMousaApp: true, anbaMousaAppRoot: true, anbaMousaAppGuard: true, routeKey }, '', nextUrl);
       return;
     }
     if (historyRouteRef.current !== routeKey) {
