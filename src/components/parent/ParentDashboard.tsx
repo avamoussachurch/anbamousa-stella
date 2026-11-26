@@ -19,6 +19,7 @@ import { ParentHomeDashboard } from './ParentHomeDashboard';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { supabase } from '../../lib/supabase';
 import { ClassLeaderboardPanel } from '../leaderboard/ClassLeaderboardPanel';
+import { Clock3 } from 'lucide-react';
 
 type ParentSection = 'home' | 'children' | 'journey' | 'family' | 'events' | 'leaderboard';
 
@@ -27,6 +28,14 @@ interface ParentDashboardProps {
   activeTab: string;
   onNavigate: (tab: string) => void;
   initialChildCode?: string;
+}
+
+function formatParentActiveTime(minutes: number, isArabic: boolean) {
+  const safeMinutes = Math.max(0, Math.floor(Number(minutes) || 0));
+  const hours = Math.floor(safeMinutes / 60);
+  const remainder = safeMinutes % 60;
+  if (hours === 0) return isArabic ? `${remainder} دقيقة` : `${remainder} min`;
+  return isArabic ? `${hours} س ${remainder} د` : `${hours}h ${remainder}m`;
 }
 
 function asChildProfile(child: ParentChildRecord): ChildProfile {
@@ -307,6 +316,7 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
             <dl className="mt-4 space-y-2 border-t border-[var(--border-default)] pt-3 text-sm">
               <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'فصل مدارس الأحد' : 'Sunday School class'}</dt><dd className="font-semibold text-[var(--text-primary)]">{isArabic ? child.classNameAr || 'مش متسجل' : child.className || 'Not recorded'}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-[var(--text-secondary)]">{isArabic ? 'مستوى الألحان والطقس' : 'Hymns & Taxis level'}</dt><dd className="font-semibold text-[var(--text-primary)]">{child.hymnsTaxisLevel ? (isArabic ? `المستوى ${child.hymnsTaxisLevel}` : `Level ${child.hymnsTaxisLevel}`) : (isArabic ? 'مش متاح' : 'Not available')}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]"><Clock3 size={13}/>{isArabic ? 'وقت الاستخدام النشط اليوم' : 'Active time today'}</dt><dd className="font-semibold tabular-nums text-[var(--text-primary)]">{formatParentActiveTime(child.screenTimeTodayMinutes || 0, isArabic)}</dd></div>
             </dl>
             {child.points !== null && <p className="mt-3 text-xs font-bold text-[var(--text-secondary)]">{isArabic ? `النقاط المسجلة دلوقتي: ${child.points}` : `Recorded current points: ${child.points}`}</p>}
           </article>
