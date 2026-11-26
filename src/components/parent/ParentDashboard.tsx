@@ -103,26 +103,43 @@ export function ParentDashboard({ lang, activeTab, onNavigate, initialChildCode 
     }
   }, [activeTab]);
 
-  const refreshChildren = useCallback(async () => {
+  const refreshChildren = useCallback(async (silent = false) => {
     if (!isParent) {
       setChildren([]);
       setChildrenLoading(false);
       setChildrenError(null);
       return;
     }
-    setChildrenLoading(true);
+    if (!silent) setChildrenLoading(true);
     setChildrenError(null);
     const result = await getAuthoritativeParentChildren();
     if (result.error || !result.data) {
       setChildren([]);
       setChildrenError(getLocalizedErrorMessage(result.error?.message, lang) || (isArabic ? 'مش قادرين نحمّل بيانات الأولاد المرتبطين بالحساب.' : 'Unable to load linked children.'));
-      setChildrenLoading(false);
+      if (!silent) setChildrenLoading(false);
       return;
     }
     setChildren(result.data);
     setSelectedChildId(current => result.data?.some(child => child.id === current) ? current : (result.data?.[0]?.id || ''));
-    setChildrenLoading(false);
+    if (!silent) setChildrenLoading(false);
   }, [isParent, isArabic]);
+
+  // Refresh linked child stats quietly while the parent workspace is open so
+  // Cairo-day active learning time stays current without a page reload.
+  useEffect(() => {
+    if (!isParent || children.length === 0) return;
+    const refreshIfVisible = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        void refreshChildren(true);
+      }
+    };
+    const interval = window.setInterval(refreshIfVisible, 60_000);
+    window.addEventListener('focus', refreshIfVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshIfVisible);
+    };
+  }, [isParent, children.length, refreshChildren]);
 
   const refreshEvents = useCallback(async () => {
     setEventsLoading(true);
