@@ -487,6 +487,7 @@ export async function getAuthoritativeLeaderboard(options?: {
 }): Promise<{
   success: boolean;
   classGroupId: string | null;
+  scope: 'class' | 'church';
   availableClassGroupIds: string[];
   timeframe: string;
   leaderboard: any[];
