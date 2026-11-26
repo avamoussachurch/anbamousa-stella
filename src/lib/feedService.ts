@@ -228,7 +228,7 @@ export async function fetchFeedPostsFromSupabase(): Promise<{
       }
       const counts = commentReactionsMap.get(r.comment_id)!;
       if (r.reaction_type in counts) {
-        counts[r.reaction_type as keyof FeedReactionCounts]++;
+        counts[r.reaction_type as FeedReactionKey] = (counts[r.reaction_type as FeedReactionKey] || 0) + 1;
       }
     }
 
