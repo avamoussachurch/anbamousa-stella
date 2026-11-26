@@ -22,6 +22,7 @@ import { hasRole } from '../../lib/workspaces';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
 import { InAppDocumentViewer } from '../sunday-school/viewers/InAppDocumentViewer';
+import { LearningAdventurePanel } from '../common/LearningAdventurePanel';
 
 interface CopticTaxisTabProps {
   lang?: Language;
@@ -41,6 +42,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
   const [documentUrlError, setDocumentUrlError] = useState<string | null>(null);
   const [activeDocument, setActiveDocument] = useState<{ title: string; url: string } | null>(null);
   const [completedRituals, setCompletedRituals] = useState<Record<string, boolean>>({});
+  const [reviewedTaxisSteps, setReviewedTaxisSteps] = useState<Record<string, string[]>>({});
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
   useEffect(() => {
@@ -349,6 +351,29 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                   </p>
                 )}
 
+                <LearningAdventurePanel
+                  lang={isAr ? 'ar' : 'en'}
+                  accent="violet"
+                  title={isAr ? 'مغامرة اكتشاف الطقس' : 'Ritual Discovery Quest'}
+                  subtitle={isAr
+                    ? 'افهم كل خطوة في ترتيب الطقس، وبعدها سجّل إتمام دراستك.'
+                    : 'Explore each part of the liturgical sequence, then record that you completed your study.'}
+                  steps={[
+                    ...(selectedItem.sections || []).map((step, index) => ({
+                      id: step.id,
+                      title: isAr ? (step.titleAr || `الخطوة ${index + 1}`) : (step.titleEn || `Step ${index + 1}`),
+                      detail: isAr ? 'راجع الشرح ومردات الخدمة' : 'Review the explanation and responses',
+                      complete: (reviewedTaxisSteps[selectedItem.id] || []).includes(step.id)
+                    })),
+                    {
+                      id: 'complete-study',
+                      title: isAr ? 'أكمل دراسة الطقس' : 'Complete ritual study',
+                      detail: isAr ? 'احفظ إتمامك لتحصل على نقاط الدراسة' : 'Save your completion to receive study points',
+                      complete: Boolean(completedRituals[selectedItem.id])
+                    }
+                  ]}
+                />
+
                 {/* References & Documents */}
                 {(selectedItem.references?.length > 0 || selectedItem.documents?.length > 0) && (
                   <div className="pt-2 flex items-center gap-3 flex-wrap text-xs text-stone-500">
@@ -467,6 +492,22 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
                           📜 {isAr ? 'إرشاد طقسي:' : 'Rubric:'} {step.rubricNotes}
                         </div>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setReviewedTaxisSteps(current => ({
+                          ...current,
+                          [selectedItem.id]: Array.from(new Set([...(current[selectedItem.id] || []), step.id]))
+                        }))}
+                        disabled={(reviewedTaxisSteps[selectedItem.id] || []).includes(step.id)}
+                        className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-xs font-black transition-all ${(reviewedTaxisSteps[selectedItem.id] || []).includes(step.id)
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200'
+                          : 'bg-violet-100 text-violet-900 hover:bg-violet-200 dark:bg-violet-950/50 dark:text-violet-200'}`}
+                      >
+                        <CheckCircle2 size={15} />
+                        {(reviewedTaxisSteps[selectedItem.id] || []).includes(step.id)
+                          ? (isAr ? 'تمت مراجعة الخطوة' : 'Step reviewed')
+                          : (isAr ? 'راجعت الخطوة دي' : 'I studied this step')}
+                      </button>
                     </div>
                   ))}
                 </div>
