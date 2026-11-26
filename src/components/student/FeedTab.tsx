@@ -102,6 +102,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
   // Server state & notifications
   const [syncStatusText, setSyncStatusText] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reactionPickerTarget, setReactionPickerTarget] = useState<string | null>(null);
   const [reportingPostId, setReportingPostId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState<'spam' | 'harassment' | 'inappropriate' | 'privacy' | 'other'>('inappropriate');
   const [reportDetails, setReportDetails] = useState('');
@@ -1725,8 +1726,8 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
               )}
               
               {/* Post Reactions Bar */}
-              <div className="flex items-center gap-2 border-t border-gray-100 pt-3 pb-1 flex-wrap">
-                {FEED_REACTIONS.map(reaction => (
+              <div className="relative flex items-center gap-2 border-t border-gray-100 pt-3 pb-1 flex-wrap">
+                {FEED_REACTIONS.filter(reaction => ['heart', 'candle', 'cross'].includes(reaction.key) || (post.reactions[reaction.key] || 0) > 0).map(reaction => (
                   <motion.button
                     key={reaction.key}
                     whileTap={{ scale: 0.88 }}
@@ -1739,6 +1740,8 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                     <span className="tabular-nums">{post.reactions[reaction.key] || 0}</span>
                   </motion.button>
                 ))}
+                <button type="button" onClick={() => setReactionPickerTarget(reactionPickerTarget === 'post:' + post.id ? null : 'post:' + post.id)} aria-label={lang === 'ar' ? 'إضافة تفاعل' : 'Add reaction'} title={lang === 'ar' ? 'إضافة تفاعل' : 'Add reaction'} className="grid h-8 w-8 place-items-center rounded-full border border-dashed border-[var(--border-default)] text-base font-black text-[var(--text-secondary)] hover:border-[var(--mousa-gold)] hover:text-[var(--mousa-gold)]">＋</button>
+                {reactionPickerTarget === 'post:' + post.id && <div className="absolute bottom-full start-0 z-30 mb-2 grid grid-cols-5 gap-1 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-2 shadow-xl">{FEED_REACTIONS.map(reaction => <button key={reaction.key} type="button" onClick={() => { void handleReactPost(post.id, reaction.key); setReactionPickerTarget(null); }} title={lang === 'ar' ? reaction.labelAr : reaction.labelEn} aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn} className="grid h-9 w-9 place-items-center rounded-xl text-lg hover:bg-[var(--state-hover)]">{reaction.emoji}</button>)}</div>}
                 
                 <div className="flex-1"></div>
                 
@@ -1808,12 +1811,14 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                             <p className="text-xs text-gray-700 leading-relaxed">{comment.content}</p>
                             
                             {/* Reactions for this Comment */}
-                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                              {FEED_REACTIONS.map(reaction => (
+                            <div className="relative flex flex-wrap items-center gap-1.5 pt-1">
+                              {FEED_REACTIONS.filter(reaction => ['heart', 'candle', 'cross'].includes(reaction.key) || (comment.reactions?.[reaction.key] || 0) > 0).map(reaction => (
                                 <button key={reaction.key} type="button" onClick={() => handleReactComment(post.id, comment.id, reaction.key)} aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn} title={lang === 'ar' ? reaction.labelAr : reaction.labelEn} className="inline-flex min-h-7 items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-bold text-gray-700 transition-colors hover:border-[var(--mousa-gold)] hover:bg-amber-50 dark:border-[var(--border-default)] dark:bg-[var(--surface-secondary)] dark:text-[var(--text-primary)]">
                                   <span>{reaction.emoji}</span><span className="tabular-nums">{comment.reactions?.[reaction.key] || 0}</span>
                                 </button>
                               ))}
+                              <button type="button" onClick={() => setReactionPickerTarget(reactionPickerTarget === 'comment:' + comment.id ? null : 'comment:' + comment.id)} aria-label={lang === 'ar' ? 'إضافة تفاعل' : 'Add reaction'} className="grid h-7 w-7 place-items-center rounded-full border border-dashed border-gray-300 text-sm font-black text-gray-500 hover:border-[var(--mousa-gold)] hover:text-[var(--mousa-gold)]">＋</button>
+                              {reactionPickerTarget === 'comment:' + comment.id && <div className="absolute bottom-full start-0 z-30 mb-2 grid grid-cols-5 gap-1 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-2 shadow-xl">{FEED_REACTIONS.map(reaction => <button key={reaction.key} type="button" onClick={() => { void handleReactComment(post.id, comment.id, reaction.key); setReactionPickerTarget(null); }} title={lang === 'ar' ? reaction.labelAr : reaction.labelEn} aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn} className="grid h-8 w-8 place-items-center rounded-xl text-base hover:bg-[var(--state-hover)]">{reaction.emoji}</button>)}</div>}
                             </div>
                           </div>
                           
