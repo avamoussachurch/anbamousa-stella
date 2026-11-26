@@ -256,6 +256,10 @@ export function ChildrenLessonsProgress({
             <Star size={14} className="fill-current" />
             <strong>{selectedChild.points}</strong> {lang === 'ar' ? 'نقطة' : 'pts'}
           </span>}
+          {selectedChild.isRealAccount && <span className="flex items-center gap-1 text-[var(--text-secondary)]">
+            <Clock size={14}/>
+            <strong>{selectedChild.screenTimeMinutes || 0}</strong> {lang === 'ar' ? 'دقيقة نشطة اليوم' : 'active min today'}
+          </span>}
         </div>
       </div>
 
