@@ -19,7 +19,9 @@ test('HomeTab does not create a progress-summary feedback loop', () => {
 });
 
 test('screen-time updates do not force a whole-app render every second', () => {
-  assert.match(auth, /const nextSecs = currentSecs \+ 10;/);
+  assert.match(auth, /const nextSecs = Math\.max\(0, prev\.screenTimeSeconds \|\| 0\) \+ 10;/);
+  assert.match(auth, /const nextDailySeconds = previousDailySeconds \+ 10;/);
+  assert.match(auth, /screen_time_today_seconds: nextDailySeconds/);
   assert.match(auth, /\}, 10000\);/);
 });
 
