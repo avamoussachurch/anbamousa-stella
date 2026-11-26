@@ -15,7 +15,7 @@ const categories = [
 ] as const;
 
 export function NotificationPreferencesButton({ lang }: { lang: Language }) {
-  const { userData } = useAuth();
+  const { userData, isGuest } = useAuth();
   const isArabic = lang === 'ar';
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,7 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
   }, [open, userData?.id, isArabic]);
 
   useEffect(() => {
-    if (!userData?.id || !supabase) return;
+    if (!userData?.id || isGuest || !supabase) return;
     const nextLanguage: 'en' | 'ar' = lang === 'en' ? 'en' : 'ar';
     setLanguage(nextLanguage);
     void supabase.from('notification_preferences').upsert({
@@ -63,7 +63,7 @@ export function NotificationPreferencesButton({ lang }: { lang: Language }) {
     }, { onConflict: 'user_id' }).then(({ error }) => {
       if (error) console.warn('Could not sync notification language with app language:', error.message);
     });
-  }, [userData?.id, lang]);
+  }, [userData?.id, isGuest, lang]);
 
   const setCategory = (key: string, enabled: boolean) =>
     setCategorySettings(previous => ({ ...previous, [key]: enabled }));
