@@ -195,9 +195,9 @@ function AppContent() {
 
       // Keep one in-app history entry at the app root so Back cannot leave the
       // installed/web app accidentally. Internal destinations remain normal history steps.
-      if (!event.state?.anbaMousaApp) {
+      if (event.state?.anbaMousaAppRoot && !event.state?.anbaMousaAppGuard) {
         window.history.pushState(
-          { anbaMousaApp: true, anbaMousaAppRoot: true, routeKey: routeKeyFromLocation() },
+          { anbaMousaApp: true, anbaMousaAppRoot: true, anbaMousaAppGuard: true, routeKey: routeKeyFromLocation() },
           '',
           routeKeyFromLocation()
         );
@@ -470,7 +470,7 @@ function AppContent() {
       )}
       
       {/* Container for responsive layout */}
-      <div className="mx-auto w-full min-w-0 px-2 md:px-4 md:pt-4 pb-20 lg:pb-8">
+      <div className="mx-auto w-full min-w-0 px-2 md:px-4 md:pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
         {navigationError && <p role="alert" className="mx-auto my-2 max-w-3xl rounded-xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-900">{navigationError}</p>}
         <motion.div
           initial={false}
