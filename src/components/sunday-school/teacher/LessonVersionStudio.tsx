@@ -2283,6 +2283,39 @@ export const LessonVersionStudio: React.FC<LessonVersionStudioProps> = ({
               </div>
             </div>
 
+            <section className="overflow-hidden rounded-2xl border border-violet-500/30 bg-gradient-to-br from-[#201638] via-[#25204A] to-[#173B46] p-5 text-white shadow-lg">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/20 bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-violet-100">
+                    <Sparkles size={12} /> Student game experience
+                  </span>
+                  <h3 className="mt-2 text-lg font-black">Build the student's learning adventure</h3>
+                  <p className="mt-1 max-w-2xl text-xs leading-relaxed text-white/65">
+                    The student lesson automatically turns your published sections, approved flashcards and review quiz into quest steps. Only real saved progress completes the journey; rewards are not fabricated in preview.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-black/15 px-3 py-2 text-center">
+                  <div className="text-xl font-black">{currentVersion.sections?.length || 0}</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-white/55">Lesson stages</div>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <button type="button" onClick={() => setActiveTab('sections')} className="rounded-xl border border-white/15 bg-white/10 px-3 py-3 text-start transition hover:-translate-y-0.5 hover:bg-white/15">
+                  <span className="block text-xs font-black">1. Story stages</span>
+                  <span className="mt-1 block text-[10px] text-white/60">{currentVersion.sections?.length || 0} sections · edit the adventure path</span>
+                </button>
+                <button type="button" onClick={() => setActiveTab('materials')} className="rounded-xl border border-white/15 bg-white/10 px-3 py-3 text-start transition hover:-translate-y-0.5 hover:bg-white/15">
+                  <span className="block text-xs font-black">2. Memory power-ups</span>
+                  <span className="mt-1 block text-[10px] text-white/60">{currentVersion.flashcards?.length || materialsPacket?.flashcards?.length || 0} flashcards · review and approve</span>
+                </button>
+                <button type="button" onClick={() => setActiveTab('quiz')} className="rounded-xl border border-white/15 bg-white/10 px-3 py-3 text-start transition hover:-translate-y-0.5 hover:bg-white/15">
+                  <span className="block text-xs font-black">3. Boss challenge</span>
+                  <span className="mt-1 block text-[10px] text-white/60">{currentVersion.quizDraft?.questions?.length || 0} quiz questions · shape the final challenge</span>
+                </button>
+              </div>
+              <p className="mt-3 text-[10px] font-semibold text-white/45">Teacher and admin preview uses the same student-facing adventure UI. Changes still follow the existing review and publish workflow.</p>
+            </section>
+
             {/* Empty State */}
             {!materialsPacket && !isLoadingMaterials && (
               <div className="p-8 text-center bg-stone-950 rounded-2xl border border-stone-800 space-y-3">
