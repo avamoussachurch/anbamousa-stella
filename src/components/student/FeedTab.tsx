@@ -1506,7 +1506,7 @@ export function FeedTab({ lang }: { lang: Language }) {
                         ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
                           <iframe src={attachment.mediaUrl} title="Media preview" className="aspect-video w-full bg-black" allowFullScreen />
                         ) : attachment.mediaType === 'video' ? (
-                          <video src={attachment.mediaUrl} controls playsInline className="aspect-video w-full bg-black object-contain" />
+                          <FeedVideoPlayer src={attachment.mediaUrl} title={attachment.originalFilename || 'Video preview'} />
                         ) : (
                           <img src={attachment.mediaUrl} alt={attachment.originalFilename || 'Attachment preview'} className="aspect-video w-full object-cover" />
                         )}
