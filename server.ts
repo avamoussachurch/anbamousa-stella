@@ -7552,7 +7552,6 @@ app.get("/api/church/leaderboard", async (req, res) => {
         .filter((instance: any) => scope === 'church' || instance.class_group_id === effectiveClassGroup)
         .map((instance: any) => instance.id);
       if (classInstanceIds.length === 0) return emptyLeaderboard(effectiveClassGroup);
-      if (classInstanceIds.length === 0) return emptyLeaderboard(effectiveClassGroup);
 
       const { data: memberships, error: classMembershipError } = await client
         .from('class_memberships')
