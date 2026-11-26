@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import { FeedAttachment, Post, Comment, Reply, User, FeedReactionKey, FeedReactionCounts } from '../types';
+import { FeedAttachment, Post, Comment, Reply, User } from '../types';
+import type { FeedReactionKey, FeedReactionCounts } from '../types';
 import { buildFeedPostAttachmentRows, mapFeedAttachmentRow, MAX_FEED_ATTACHMENTS } from './feedAttachments';
 import type { FeedPostAttachmentInput } from './feedAttachments';
 import { parseStorageReference } from './mediaStorageReference';
@@ -45,7 +46,6 @@ export async function fetchGlobalFeedAudioTracks(): Promise<{ data: GlobalFeedAu
   }
 }
 
-export type { FeedReactionCounts } from '../types';
 
 const FEED_CACHE_KEY = 'orthodox_church_feed_posts_v5';
 const MIGRATED_LOG_KEY = 'church_feed_migrated_post_ids_v1';
