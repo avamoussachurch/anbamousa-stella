@@ -13,6 +13,7 @@ import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
 import { UniversalAudioPlayer } from '../design-system/UniversalAudioPlayer';
 import { FeedVideoPlayer } from './FeedVideoPlayer';
 import { FeedEmbeddedMediaPlayer } from './FeedEmbeddedMediaPlayer';
+import { FeedVoiceMessage } from './FeedVoiceMessage';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -1674,22 +1675,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                           onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
                         />
                       ) : attachment.mediaType === 'audio' ? (
-                        <div className="space-y-3 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 text-white">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-amber-200 ring-1 ring-white/15"><Volume2 size={21} /></div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-black">{attachment.originalFilename || (lang === 'ar' ? 'تسجيل صوتي' : 'Voice recording')}</p>
-                              <p className="mt-0.5 text-[11px] font-medium text-white/60">{lang === 'ar' ? 'استمع للتسجيل داخل المنشور' : 'Listen without leaving the post'}</p>
-                            </div>
-                          </div>
-                          <UniversalAudioPlayer
-                            src={attachment.mediaUrl}
-                            title={undefined}
-                            lang={lang === 'ar' ? 'ar' : 'en'}
-                            compact
-                            accent="teal"
-                          />
-                        </div>
+                        <FeedVoiceMessage src={attachment.mediaUrl} lang={lang === 'ar' ? 'ar' : 'en'} />
                       ) : attachment.mediaType === 'video' ? (
                         <FeedVideoPlayer
                           src={attachment.mediaUrl}
