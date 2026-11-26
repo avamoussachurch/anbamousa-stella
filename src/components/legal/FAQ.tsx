@@ -47,9 +47,9 @@ export function FAQ({ lang, onClose }: { lang: Language, onClose: () => void }) 
     },
     {
       qAr: 'هل ولي الأمر يقدر يشوف وقت استخدام التطبيق؟',
-      aAr: 'نعم. وقت النشاط اليومي يُحسب أثناء بقاء التطبيق ظاهراً ونشطاً، ويتوقف عند إخفاء الصفحة. يظهر إجمالي اليوم بتوقيت القاهرة في بوابة ولي الأمر بعد مزامنة البيانات.',
+      aAr: 'نعم. وقت النشاط اليومي بيتحسب لما التطبيق يكون ظاهر وفيه تفاعل منك خلال آخر دقيقتين، أو أثناء تشغيل صوت أو فيديو. بيتوقف لو الصفحة اتخفت أو مفيش نشاط. إجمالي اليوم بتوقيت القاهرة بيظهر في بوابة ولي الأمر بعد المزامنة.',
       qEn: 'Can my parent see my active time?',
-      aEn: 'Yes. Daily active time is counted while the app is visible and pauses when the page is hidden. The Cairo-day total appears in the Parent Portal after it syncs.'
+      aEn: 'Yes. Daily active time is counted while the app is visible and you have interacted within the last two minutes, or while audio/video is playing. It pauses when the page is hidden or idle. The Cairo-day total appears in the Parent Portal after syncing.'
     },
     {
       qAr: 'إزاي أغيّر لغة الإشعارات؟',
