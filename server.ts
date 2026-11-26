@@ -7363,6 +7363,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
   try {
     const authContext = await verifyServerRequestAuth(req);
     const requestedClassGroupId = req.query.classGroupId ? String(req.query.classGroupId) : undefined;
+    const scope = req.query.scope === 'church' ? 'church' : 'class';
     const timeframe = req.query.timeframe === 'all_time' ? 'all_time' : 'weekly';
 
     if (authContext.isAuthenticated && authContext.userId && isUuidStudentId(authContext.userId)) {
@@ -7384,6 +7385,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
       const emptyLeaderboard = (classGroupId: string | null) => res.json({
         success: true,
         classGroupId,
+        scope,
         availableClassGroupIds: permittedGroupIds,
         timeframe,
         leaderboard: [],
@@ -7434,7 +7436,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         const assignedInstanceIds = Array.from(new Set((assignments || [])
           .map((assignment: any) => assignment.class_instance_id)
           .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
-        if (assignedInstanceIds.length === 0) return emptyLeaderboard(null);
+        if (assignedInstanceIds.length === 0 && scope !== 'church') return emptyLeaderboard(null);
 
         const { data, error } = await client
           .from('class_instances')
@@ -7481,7 +7483,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         const childInstanceIds = Array.from(new Set((childMemberships || [])
           .map((membership: any) => membership.class_instance_id)
           .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
-        if (childInstanceIds.length === 0) return emptyLeaderboard(null);
+        if (childInstanceIds.length === 0 && scope !== 'church') return emptyLeaderboard(null);
         const { data, error } = await client
           .from('class_instances')
           .select('id, class_group_id')
@@ -7507,7 +7509,7 @@ app.get("/api/church/leaderboard", async (req, res) => {
         const ownInstanceIds = Array.from(new Set((ownMemberships || [])
           .map((membership: any) => membership.class_instance_id)
           .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
-        if (ownInstanceIds.length === 0) return emptyLeaderboard(null);
+        if (ownInstanceIds.length === 0 && scope !== 'church') return emptyLeaderboard(null);
 
         const { data, error } = await client
           .from('class_instances')
@@ -7521,23 +7523,35 @@ app.get("/api/church/leaderboard", async (req, res) => {
         allInstances = data || [];
       }
 
+      if (scope === 'church') {
+        const { data: churchInstances, error: churchInstancesError } = await client
+          .from('class_instances')
+          .select('id, class_group_id')
+          .eq('church_year_id', activeYear.id);
+        if (churchInstancesError) {
+          console.error('Church-wide leaderboard class lookup failed:', churchInstancesError.message);
+          return res.status(503).json({ success: false, error: 'LEADERBOARD_UNAVAILABLE', message: 'Church rankings are temporarily unavailable.' });
+        }
+        allInstances = churchInstances || [];
+      }
       permittedGroupIds = Array.from(new Set(allInstances
         .map((instance: any) => instance.class_group_id)
         .filter((value: any): value is string => typeof value === 'string' && value.length > 0)));
       permittedGroupIds.sort();
-      if (requestedClassGroupId && !permittedGroupIds.includes(requestedClassGroupId)) {
+      if (scope === 'class' && requestedClassGroupId && !permittedGroupIds.includes(requestedClassGroupId)) {
         return res.status(403).json({
           success: false,
           error: 'FORBIDDEN_CLASS_LEADERBOARD',
           message: 'You can only view rankings for a class you belong to or are assigned to.'
         });
       }
-      const effectiveClassGroup = requestedClassGroupId || permittedGroupIds[0] || null;
-      if (!effectiveClassGroup) return emptyLeaderboard(null);
+      const effectiveClassGroup = scope === 'church' ? null : (requestedClassGroupId || permittedGroupIds[0] || null);
+      if (scope === 'class' && !effectiveClassGroup) return emptyLeaderboard(null);
 
       const classInstanceIds = (allInstances || [])
-        .filter((instance: any) => instance.class_group_id === effectiveClassGroup)
+        .filter((instance: any) => scope === 'church' || instance.class_group_id === effectiveClassGroup)
         .map((instance: any) => instance.id);
+      if (classInstanceIds.length === 0) return emptyLeaderboard(effectiveClassGroup);
       if (classInstanceIds.length === 0) return emptyLeaderboard(effectiveClassGroup);
 
       const { data: memberships, error: classMembershipError } = await client
