@@ -30,6 +30,7 @@ import { useActiveWorkspace } from '../../context/WorkspaceContext';
 import { resolveCurriculumMediaUrl } from '../../lib/curriculumMediaUrl';
 import { InAppDocumentViewer } from '../sunday-school/viewers/InAppDocumentViewer';
 import { LearningAdventurePanel } from '../common/LearningAdventurePanel';
+import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 
 export function HymnsSchoolTab({ lang }: { lang: Language }) {
   const isAr = lang === 'ar';
@@ -94,6 +95,8 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   useEffect(() => () => {
     if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
   }, [recordedAudioUrl]);
+
+  const [showHymnCelebration, setShowHymnCelebration] = useState(false);
 
   const assignedLevel = parseHymnsTaxisLevel(userData?.hymnsTaxisLevel);
 
@@ -402,6 +405,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
   };
 
   const markAsMastered = async (hymnId: string) => {
+    if (masteredHymns[hymnId]) return;
     const updated = { ...masteredHymns, [hymnId]: true };
     setMasteredHymns(updated);
     if (typeof window !== 'undefined') {
@@ -429,6 +433,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         console.warn('Note on hymn activity record:', e);
       }
     }
+    setShowHymnCelebration(true);
   };
 
   // Filter hymns
@@ -895,6 +900,16 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           </div>
         </div>}
       </div>
+          <AnimatePresence>
+            {showHymnCelebration && (
+              <motion.div className="fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto bg-slate-950/75 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHymnCelebration(false)} role="dialog" aria-modal="true" aria-label={isAr ? 'احتفال إتقان اللحن' : 'Hymn mastery celebration'}>
+                <motion.div initial={{ opacity: 0, y: 28, scale: 0.88 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} onClick={event => event.stopPropagation()} className="w-full max-w-lg rounded-[2rem] border border-amber-300/30 bg-[var(--mousa-cream-surface)] p-6 shadow-2xl dark:bg-[#211B15]">
+                  <RewardCelebration type="star" lang={isAr ? 'ar' : 'en'} title="Hymn Mastered!" titleAr="برافو! أتقنت اللحن!" subtitle="Keep your voice growing with every practice." subtitleAr="كل تدريب بيخلّي صوتك أجمل وأقوى." pointsEarned={userData ? 75 : undefined} badgeText="Hymn Master" badgeTextAr="بطل الألحان" />
+                  <button type="button" onClick={() => setShowHymnCelebration(false)} className="mt-5 min-h-11 w-full rounded-2xl bg-[var(--mousa-teal)] px-4 py-3 text-sm font-black text-white shadow-lg">{isAr ? 'يلا نكمل!' : 'Keep exploring!'}</button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {showSheetMusicViewer && resolvedSheetMusicUrl && (
         <InAppDocumentViewer
           documentUrl={resolvedSheetMusicUrl}
