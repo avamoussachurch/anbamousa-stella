@@ -575,7 +575,7 @@ export async function deleteFeedPostFromSupabase(
 export async function toggleFeedReactionInSupabase(
   reactionType: FeedReactionKey,
   target: { postId?: string; commentId?: string }
-): Promise<{ action: 'added' | 'removed' | null; error: Error | null }> {
+): Promise<{ action: 'added' | 'removed' | 'unchanged' | null; error: Error | null }> {
   if (!supabase) {
     return { action: null, error: new Error('Supabase client not initialized') };
   }
