@@ -1455,8 +1455,8 @@ export function ProfileTab({
                     {
                       q: lang === 'ar' ? 'كيف يربط ولي الأمر حسابه بحساب طفله؟' : 'How can a parent link their account with their child?',
                       a: lang === 'ar'
-                        ? 'يمتلك كل طالب رمزاً سرياً فريداً (مثال: ST-4921) وكود QR في حسابه. يقوم ولي الأمر بفتح "بوابة الأهل" وإدخال الرمز أو مسح الكود، لتتم المزامنة وتظهر متابعة الطفل فوراً.'
-                        : 'Every student has a unique secret code (e.g., ST-4921) and QR code in their profile. Parents enter this code in the Parent Portal to link.'
+                        ? 'يمتلك كل طالب رمزاً سرياً فريداً (مثال: A7K2M) وكود QR في حسابه. يقوم ولي الأمر بفتح "بوابة الأهل" وإدخال الرمز أو مسح الكود، لتتم المزامنة وتظهر متابعة الطفل فوراً.'
+                        : 'Every student has a unique secret code (e.g., A7K2M) and QR code in their profile. Parents enter this code in the Parent Portal to link.'
                     },
                     {
                       q: lang === 'ar' ? 'هل يعمل التطبيق أثناء التواجد في الكنيسة بدون اتصال إنترنت؟' : 'Does the platform work offline in the sanctuary?',
