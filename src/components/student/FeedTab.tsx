@@ -11,6 +11,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { FeedAttachment, Post, Comment, Reply, Language } from '../../types';
 import { UniversalAudioPlayer } from '../design-system/UniversalAudioPlayer';
+import { FeedVideoPlayer } from './FeedVideoPlayer';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveWorkspace } from '../../context/WorkspaceContext';
@@ -1697,38 +1698,28 @@ export function FeedTab({ lang }: { lang: Language }) {
                           onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
                         />
                       ) : attachment.mediaType === 'audio' ? (
-                        <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-amber-50/80 p-4 dark:from-slate-800 dark:to-slate-900">
-                          <div className="mb-3 flex items-center gap-2 text-xs font-bold text-gray-800 dark:text-gray-100">
-                            <Volume2 size={18} />
-                            <span>{attachment.originalFilename || (lang === 'ar' ? 'تسجيل لحن كنسي' : 'Hymn / Spiritual Audio')}</span>
+                        <div className="space-y-3 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 text-white">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-amber-200 ring-1 ring-white/15"><Volume2 size={21} /></div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-black">{attachment.originalFilename || (lang === 'ar' ? 'تسجيل صوتي' : 'Voice recording')}</p>
+                              <p className="mt-0.5 text-[11px] font-medium text-white/60">{lang === 'ar' ? 'استمع للتسجيل داخل المنشور' : 'Listen without leaving the post'}</p>
+                            </div>
                           </div>
-                          <audio
+                          <UniversalAudioPlayer
                             src={attachment.mediaUrl}
-                            controls
-                            preload="metadata"
-                            className="w-full"
-                            onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
+                            title={undefined}
+                            lang={lang === 'ar' ? 'ar' : 'en'}
+                            compact
+                            accent="teal"
                           />
                         </div>
                       ) : attachment.mediaType === 'video' ? (
-                        <div className="relative aspect-video bg-black">
-                          <video
-                            src={attachment.mediaUrl}
-                            controls
-                            playsInline
-                            preload="metadata"
-                            className="h-full w-full object-contain"
-                            onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => openPostMedia(post, attachment)}
-                            aria-label={lang === 'ar' ? 'عرض الفيديو بالحجم الكامل' : 'View video full size'}
-                            className="absolute right-2 top-2 rounded-full bg-black/70 p-2 text-white hover:bg-black"
-                          >
-                            <Maximize2 size={15} />
-                          </button>
-                        </div>
+                        <FeedVideoPlayer
+                          src={attachment.mediaUrl}
+                          title={attachment.originalFilename || (lang === 'ar' ? 'فيديو المجتمع' : 'Community video')}
+                          onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
+                        />
                       ) : (
                         <button
                           type="button"
@@ -2059,7 +2050,9 @@ export function FeedTab({ lang }: { lang: Language }) {
                 </>
               )}
               {lightboxAttachment.mediaType === 'video' ? (
-                <video src={lightboxAttachment.mediaUrl} controls autoPlay playsInline className="max-h-[82dvh] max-w-full rounded-2xl object-contain" />
+                <div className="w-[min(92vw,64rem)] overflow-hidden rounded-2xl bg-black shadow-2xl">
+                  <FeedVideoPlayer src={lightboxAttachment.mediaUrl} title={lightboxAttachment.originalFilename || 'Community video'} />
+                </div>
               ) : (
                 <img
                   src={lightboxAttachment.mediaUrl}
