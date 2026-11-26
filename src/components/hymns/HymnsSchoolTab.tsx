@@ -117,7 +117,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     setIsSubmittingPractice(true);
     setPracticeSubmissionError(null);
     setPracticeSubmissionMessage(null);
-    const mimeType = recordedAudioBlob.type || 'audio/webm';
+    const mimeType = (recordedAudioBlob.type || 'audio/webm').split(';')[0].trim().toLowerCase();
     const extension = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mpeg') ? 'mp3' : 'webm';
     const uniqueId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
     const path = userData.id + '/' + String(selectedHymn.id) + '/' + uniqueId + '.' + extension;
