@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Clock, Headphones, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { FeedVoiceMessage } from '../student/FeedVoiceMessage';
 
 type Submission = {
   id: string;
@@ -74,7 +75,7 @@ export function HymnPracticeInbox({ lang }: { lang: 'ar' | 'en' }) {
         : items.length === 0 ? <p className="rounded-2xl border border-dashed border-[var(--border-default)] p-5 text-center text-sm text-[var(--text-secondary)]">{isArabic ? 'لسه مفيش تسميعات وصلت من التلاميذ.' : 'No student recordings have been submitted yet.'}</p>
         : <div className="grid gap-3 md:grid-cols-2">{items.map(item => <article key={item.id} className="space-y-3 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-3">
           <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-black text-[var(--text-primary)]">{item.student_name}</p><p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">{item.hymn_title}</p><p className="mt-1 flex items-center gap-1 text-[10px] text-[var(--text-secondary)]"><Clock size={11}/>{new Date(item.submitted_at).toLocaleString(isArabic ? 'ar-EG' : 'en-US')} · {Math.max(0,Math.floor(item.duration_seconds/60))}:{String(Math.max(0,item.duration_seconds%60)).padStart(2,'0')}</p></div><span className={'shrink-0 rounded-full px-2 py-1 text-[9px] font-black ' + (item.status === 'reviewed' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-amber-500/15 text-amber-700 dark:text-amber-200')}>{item.status === 'reviewed' ? (isArabic ? 'تمت المراجعة' : 'Reviewed') : (isArabic ? 'جديد' : 'New')}</span></div>
-          {item.signedUrl ? <audio controls preload="none" src={item.signedUrl} className="h-10 w-full" aria-label={isArabic ? 'تسجيل تسميع الطالب' : 'Student hymn practice recording'}/> : <p className="text-xs text-red-600 dark:text-red-300">{isArabic ? 'تعذر فتح التسجيل.' : 'Could not open this recording.'}</p>}
+          {item.signedUrl ? <FeedVoiceMessage src={item.signedUrl} lang={isArabic ? 'ar' : 'en'} /> : <p className="text-xs text-red-600 dark:text-red-300">{isArabic ? 'تعذر فتح التسجيل.' : 'Could not open this recording.'}</p>}
           {item.status !== 'reviewed' && <button type="button" disabled={busyId === item.id} onClick={() => void markReviewed(item.id)} className="inline-flex min-h-9 items-center gap-2 rounded-xl bg-emerald-700 px-3 text-xs font-black text-white disabled:opacity-50"><CheckCircle2 size={14}/>{isArabic ? 'تمت المراجعة' : 'Mark reviewed'}</button>}
         </article>)}</div>}
     </section>
