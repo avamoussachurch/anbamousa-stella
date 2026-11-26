@@ -17,7 +17,7 @@ export function FeedEmbeddedMediaPlayer({ src, title = 'Community video', onErro
 
   return (
     <div
-      className="relative z-10 mx-auto aspect-video w-full max-h-[72svh] min-h-[200px] overflow-hidden bg-black"
+      className="relative z-10 mx-auto w-full overflow-hidden bg-black" style={{ aspectRatio: "16 / 9", width: "min(100%, calc(72svh * 16 / 9))" }}
       onClick={event => event.stopPropagation()}
       onPointerDown={event => event.stopPropagation()}
     >
@@ -28,7 +28,7 @@ export function FeedEmbeddedMediaPlayer({ src, title = 'Community video', onErro
         allowFullScreen
         loading="lazy"
         referrerPolicy="strict-origin-when-cross-origin"
-        className="absolute inset-0 z-10 block h-full w-full border-0 bg-black"
+        className="pointer-events-auto absolute inset-0 z-10 block h-full w-full border-0 bg-black"
         onError={() => { setFailed(true); onError?.(); }}
       />
     </div>
