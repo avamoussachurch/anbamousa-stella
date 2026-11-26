@@ -239,7 +239,8 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
       </header>
 
       <div className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)]">
-        <div className="relative h-24 sm:h-32" style={{ background: 'linear-gradient(115deg,' + bannerStart + ',' + bannerEnd + ')' }}>
+        <div className="relative h-24 sm:h-32 overflow-hidden" style={{ background: 'linear-gradient(115deg,' + bannerStart + ',' + bannerEnd + ')' }}>
+          {selectedBanner && <div className="absolute inset-0"><CosmeticArtwork item={selectedBanner}/></div>}
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, white 0 1px, transparent 2px), radial-gradient(circle at 75% 60%, white 0 1px, transparent 2px)', backgroundSize: '28px 28px' }}/>
           <div className="absolute end-3 top-3 rounded-full bg-black/20 px-2.5 py-1 text-[10px] font-black text-white">{ar ? 'ملف أنبا موسى' : 'ANBA MOUSA PROFILE'}</div>
         </div>
@@ -256,7 +257,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
             <p className="mt-0.5 text-xs font-bold text-[var(--text-secondary)]">{titles.find(item => item.id === title)?.[ar ? 'ar' : 'label'] || (ar ? 'رحلة نمو في الإيمان والمحبة' : 'Growing in Faith, Learning in Love')}</p>
             <p className="mt-1 text-[10px] text-[var(--text-secondary)]">{ar ? 'مجتمع • إيمان • تعلّم • خدمة' : 'Community • Faith • Learning • Service'}</p>
           </div>
-          <div className="flex flex-wrap gap-1.5">{equippedItems.map(item => <span key={item.id} title={ar ? item.title_ar : item.title_en} className="rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-2 py-1 text-[10px] font-bold text-[var(--text-secondary)]">{item.kind === 'frame' ? '✦' : item.kind === 'banner' ? '▰' : item.kind === 'badge' ? '✚' : '✧'}</span>)}</div>
+          <div className="flex max-w-full flex-wrap gap-1.5">{equippedItems.map(item => <span key={item.id} title={ar ? item.title_ar : item.title_en} className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-1.5 py-1 text-[9px] font-bold text-[var(--text-secondary)]"><span className="h-5 w-5 shrink-0 overflow-hidden rounded-md"><CosmeticArtwork item={item}/></span><span className="max-w-20 truncate">{ar ? item.title_ar : item.title_en}</span></span>)}</div>
         </div>
         <div className="grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-5">
           <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">{points.toLocaleString()}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'النقاط' : 'Points'}</p></div>
