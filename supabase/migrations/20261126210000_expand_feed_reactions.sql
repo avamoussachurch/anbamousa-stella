@@ -21,6 +21,7 @@ AS $function$
 DECLARE
   v_user_id uuid;
   v_deleted boolean := false;
+  v_inserted integer := 0;
 BEGIN
   v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
@@ -59,11 +60,17 @@ BEGIN
       INSERT INTO public.feed_reactions (post_id, user_id, reaction_type)
       VALUES (p_post_id, v_user_id, p_reaction_type)
       ON CONFLICT (post_id, user_id, reaction_type) DO NOTHING;
+      GET DIAGNOSTICS v_inserted = ROW_COUNT;
     ELSE
       INSERT INTO public.feed_reactions (comment_id, user_id, reaction_type)
       VALUES (p_comment_id, v_user_id, p_reaction_type)
       ON CONFLICT (comment_id, user_id, reaction_type) DO NOTHING;
+      GET DIAGNOSTICS v_inserted = ROW_COUNT;
     END IF;
+  END IF;
+
+  IF NOT v_deleted AND v_inserted = 0 THEN
+    RETURN jsonb_build_object('success', true, 'action', 'unchanged', 'reaction_type', p_reaction_type);
   END IF;
 
   RETURN jsonb_build_object(
