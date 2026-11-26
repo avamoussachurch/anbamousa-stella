@@ -362,7 +362,10 @@ function AppContent() {
         {activeLessonId && (
           <LessonView
             lessonId={activeLessonId}
-            onBack={() => setActiveLessonId(null)}
+            onBack={() => {
+              if (window.history.state?.anbaMousaApp && !window.history.state?.anbaMousaAppRoot) window.history.back();
+              else setActiveLessonId(null);
+            }}
             lang={lang}
           />
         )}
