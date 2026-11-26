@@ -99,6 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const screenTimeTimer = useRef<NodeJS.Timeout | null>(null);
   const screenTimeSyncTicksRef = useRef(0);
+  const lastScreenActivityAtRef = useRef(Date.now());
   const sessionHydrationId = useRef(0);
 
   const setUserDirectly = (user: User) => {
@@ -416,11 +417,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearInterval(screenTimeTimer.current);
     }
     screenTimeSyncTicksRef.current = 0;
+    lastScreenActivityAtRef.current = Date.now();
+
+    // Count active engagement, not an unattended tab left open in the background.
+    const markScreenActivity = () => { lastScreenActivityAtRef.current = Date.now(); };
+    const activityEvents: Array<keyof DocumentEventMap> = ['pointerdown', 'keydown', 'touchstart', 'wheel', 'scroll'];
+    activityEvents.forEach(eventName => document.addEventListener(eventName, markScreenActivity, { passive: true }));
 
     screenTimeTimer.current = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) {
         return; // Pause counter if user minimized or switched tab
       }
+      const mediaIsPlaying = typeof document !== 'undefined' && Array.from(document.querySelectorAll('audio, video')).some(media => {
+        const element = media as HTMLMediaElement;
+        return !element.paused && !element.ended;
+      });
+      const recentlyActive = Date.now() - lastScreenActivityAtRef.current <= 120000;
+      if (!recentlyActive && !mediaIsPlaying) return;
 
       screenTimeSyncTicksRef.current += 1;
       const shouldPersistLocally = screenTimeSyncTicksRef.current % 3 === 0;
@@ -468,6 +481,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (screenTimeTimer.current) {
         clearInterval(screenTimeTimer.current);
       }
+      activityEvents.forEach(eventName => document.removeEventListener(eventName, markScreenActivity));
     };
   }, [userData?.id, isGuest]);
 
