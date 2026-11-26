@@ -19,7 +19,7 @@ test('authenticated leaderboard refresh ignores unrelated screen-time user objec
 
   const callback = pointsContext.slice(callbackStart, effectStart);
   assert.match(pointsContext, /const leaderboardUser = useMemo\(\(\) => userData/);
-  assert.match(callback, /\}, \[leaderboardUser, refreshUserId, isGuestUser, isStudentUser\]\);/);
+  assert.match(callback, /\}, \[leaderboardUser, refreshUserId, isGuestUser, isStudentUser, isTeacherUser, isAdminUser, leaderboardScope\]\);/);
 
   const callbackDependencies = callback.match(/\}, \[([^\]]+)\]\);/)?.[1] || '';
   assert.ok(callbackDependencies.length > 0, 'callback dependency list exists');
