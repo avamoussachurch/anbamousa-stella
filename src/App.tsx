@@ -81,6 +81,7 @@ function AppContent() {
     if (typeof window === 'undefined') return 'home';
     return new URLSearchParams(window.location.search).get('tab') || 'home';
   });
+  const [sharedPostId] = useState<string | null>(() => typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('post'));
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(() => {
     if (typeof window === 'undefined') return null;
     return new URLSearchParams(window.location.search).get('workspace') as Workspace | null;
@@ -305,7 +306,7 @@ function AppContent() {
       if (activeTab === 'profile') {
         return <RoleAccountProfile role="parent" lang={lang} setLang={setLang} onNavigate={navigate} onLogout={handleLogout} />;
       }
-      if (activeTab === 'feed') return <FeedTab lang={lang} />;
+      if (activeTab === 'feed') return <FeedTab lang={lang} initialPostId={sharedPostId} />;
       return (
         <ParentDashboard
           lang={lang}
@@ -319,7 +320,7 @@ function AppContent() {
       if (activeTab === 'profile') {
         return <RoleAccountProfile role="teacher" lang={lang} setLang={setLang} onNavigate={navigate} onLogout={handleLogout} />;
       }
-      if (activeTab === 'feed') return <FeedTab lang={lang} />;
+      if (activeTab === 'feed') return <FeedTab lang={lang} initialPostId={sharedPostId} />;
       return (
         <TeacherDashboard
           lang={lang}
@@ -344,7 +345,7 @@ function AppContent() {
         case 'points':
           return <PointsTab lang={lang} />;
         case 'feed':
-          return <FeedTab lang={lang} />;
+          return <FeedTab lang={lang} initialPostId={sharedPostId} />;
         case 'profile':
           return <ProfileTab onLogout={handleLogout} onNavigate={navigate} workspaceRole="student" lang={lang} setLang={setLang} />;
         default:
