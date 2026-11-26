@@ -21,7 +21,7 @@ test('help and notification dialogs fit the mobile visual viewport and home-indi
 
 test('mobile app content reserves room for the fixed bottom navigation and safe area', () => {
   assert.match(app, /pb-\[calc\(5rem\+env\(safe-area-inset-bottom\)\)\] lg:pb-8/);
-  assert.match(nav, /padding-bottom: max\(0\.5rem, env\(safe-area-inset-bottom, 0px\)\)/);
+  assert.match(nav, /app-bottom-nav fixed inset-x-0 bottom-0[\s\S]*pb-safe/);
 });
 
 test('browser Back restores previous workspace, tab, and lesson instead of exiting from the app root', () => {
