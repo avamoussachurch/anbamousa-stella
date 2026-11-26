@@ -40,3 +40,13 @@ test('Taxis adventure tracks reviewed steps and celebrates only confirmed server
   assert.match(taxis, /if \(completionConfirmed\) setShowTaxisCelebration\(true\)/);
   assert.match(taxis, /RewardCelebration/);
 });
+
+test('teacher studio exposes controls for the same story, flashcard and quiz activities used by student quests', () => {
+  const studio = read('../src/components/sunday-school/teacher/LessonVersionStudio.tsx');
+  assert.match(studio, /Build the student's learning adventure/);
+  assert.match(studio, /setActiveTab\('sections'\)/);
+  assert.match(studio, /setActiveTab\('materials'\)/);
+  assert.match(studio, /setActiveTab\('quiz'\)/);
+  assert.match(studio, /currentVersion\.flashcards/);
+  assert.match(studio, /currentVersion\.quizDraft\?\.questions/);
+});
