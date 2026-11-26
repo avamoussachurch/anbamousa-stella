@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useGlobalAudio } from '../../context/AudioContext';
 import { updateSupabaseProfile, uploadAvatarToSupabase } from '../../lib/supabaseDatabase';
+import { supabase } from '../../lib/supabase';
 import { getShareableChildLink, getWhatsAppShareUrl, getStudentFamilyLinkCode } from '../../lib/parentChildService';
 import { ChildQrCodeModal } from '../common/ChildQrCodeModal';
 import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
@@ -61,6 +62,9 @@ export function ProfileTab({
   const [familyCodeLoading, setFamilyCodeLoading] = useState(false);
   const [familyCodeError, setFamilyCodeError] = useState<string | null>(null);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [earnedAchievements, setEarnedAchievements] = useState<Array<{ id: string; titleEn: string; titleAr: string; descriptionEn: string; descriptionAr: string; icon: string; style: string; earnedAt: string; pointsAwarded: number }>>([]);
+  const [achievementsLoading, setAchievementsLoading] = useState(false);
+  const [achievementsError, setAchievementsError] = useState<string | null>(null);
 
   // Church Year & Student Join Code state
   const [churchYear, setChurchYear] = useState<string>('2026 / 2027');
@@ -84,6 +88,47 @@ export function ProfileTab({
     membershipId?: string;
   } | null>(null);
   const [loadingMembership, setLoadingMembership] = useState<boolean>(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!userData?.id || isGuest || !supabase) {
+      setEarnedAchievements([]);
+      return () => { active = false; };
+    }
+    setAchievementsLoading(true);
+    setAchievementsError(null);
+    void (async () => {
+      try {
+        const [unlockResult, badgeResult] = await Promise.all([
+          supabase.from('achievement_unlocks').select('badge_id,earned_at,points_awarded').eq('student_id', userData.id).order('earned_at', { ascending: false }),
+          supabase.from('achievement_badges').select('id,title_en,title_ar,description_en,description_ar,icon,style')
+        ]);
+        if (unlockResult.error) throw unlockResult.error;
+        if (badgeResult.error) throw badgeResult.error;
+        if (!active) return;
+        const badgesById = new Map((badgeResult.data || []).map(badge => [badge.id, badge]));
+        setEarnedAchievements((unlockResult.data || []).flatMap(unlock => {
+          const badge = badgesById.get(unlock.badge_id);
+          return badge ? [{
+            id: unlock.badge_id,
+            titleEn: badge.title_en,
+            titleAr: badge.title_ar,
+            descriptionEn: badge.description_en,
+            descriptionAr: badge.description_ar,
+            icon: badge.icon,
+            style: badge.style,
+            earnedAt: unlock.earned_at,
+            pointsAwarded: unlock.points_awarded
+          }] : [];
+        }));
+      } catch (error) {
+        if (active) setAchievementsError(error instanceof Error ? error.message : 'Could not load achievements.');
+      } finally {
+        if (active) setAchievementsLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [userData?.id, isGuest]);
 
   const isStudent = workspaceRole ? workspaceRole === 'student' : hasRole(userData, 'student');
 
@@ -564,11 +609,16 @@ export function ProfileTab({
                     </div>
                   )}
                   {!isGuest && (
-                    <p role="status" className="mt-4 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">
-                      {lang === 'ar'
-                        ? 'لا توجد إنجازات موثقة متاحة لهذا الحساب حتى الآن.'
-                        : 'Verified achievements are not available for this account yet.'}
-                    </p>
+                    <div className="mt-4 space-y-3">
+                      {achievementsLoading ? <div className="flex items-center justify-center gap-2 rounded-2xl bg-[var(--surface-secondary)] p-5 text-sm text-[var(--text-secondary)]"><Loader2 size={17} className="animate-spin"/>{lang === 'ar' ? 'بنحمّل إنجازاتك...' : 'Loading your achievements…'}</div>
+                        : achievementsError ? <p role="status" className="rounded-2xl border border-red-300/50 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-200">{lang === 'ar' ? 'تعذر تحميل الإنجازات. حاول تحديث الصفحة.' : 'Could not load achievements. Please refresh the page.'}</p>
+                        : earnedAchievements.length > 0 ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {earnedAchievements.map(badge => <div key={badge.id} className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-[var(--mousa-gold)]/50 bg-gradient-to-br from-amber-50 to-orange-50 p-3 dark:from-amber-950/40 dark:to-stone-900">
+                            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-amber-300/70 bg-gradient-to-br from-[#F8D989] to-[#A66B2D] text-2xl text-[#54320F] shadow-md">{badge.icon}</div>
+                            <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-stone-900 dark:text-amber-100">{lang === 'ar' ? badge.titleAr : badge.titleEn}</p><p className="mt-0.5 line-clamp-2 text-xs text-stone-700 dark:text-stone-300">{lang === 'ar' ? badge.descriptionAr : badge.descriptionEn}</p><p className="mt-1 text-[10px] font-bold text-amber-800 dark:text-amber-200">{badge.pointsAwarded > 0 ? '+' + badge.pointsAwarded + ' ' + (lang === 'ar' ? 'نقطة' : 'pts') + ' · ' : ''}{new Date(badge.earnedAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</p></div>
+                          </div>)}
+                        </div> : <p role="status" className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-4 text-sm font-medium text-[var(--text-secondary)]">{lang === 'ar' ? 'لسه مفيش أوسمة مكتسبة. كمّل تحديات رحلتي وهتظهر هنا تلقائيًا!' : 'No badges earned yet. Complete My Trail challenges and they will appear here automatically!'}</p>}
+                    </div>
                   )}
                 </div>
               </div>
