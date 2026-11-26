@@ -29,6 +29,38 @@ function BadgeArtwork({ item, compact = false }: { item: Cosmetic; compact?: boo
   );
 }
 
+function CosmeticArtwork({ item }: { item: Cosmetic }) {
+  if (item.kind === 'badge') return <BadgeArtwork item={item} />;
+  const seed = Array.from(item.id).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const accent = safeColor(item.preview_end, '#D6A84F');
+  const base = safeColor(item.preview_start, '#174D4C');
+  return (
+    <div className="grid h-full w-full place-items-center overflow-hidden" style={{ background: `linear-gradient(125deg,${base},${accent})` }}>
+      <svg viewBox="0 0 220 90" className="h-full w-full" aria-hidden="true">
+        <defs><linearGradient id={'cosmetic-' + item.id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={accent}/><stop offset="1" stopColor={base}/></linearGradient></defs>
+        {item.kind === 'banner' ? <>
+          <circle cx={170 + (seed % 22)} cy="22" r="15" fill="#FFF1C7" opacity=".9"/>
+          <path d="M0 64 Q45 34 88 62 T176 55 T220 58 V90 H0Z" fill="#102F39" opacity=".62"/>
+          <path d="M0 74 Q40 52 80 72 T160 68 T220 70 V90 H0Z" fill="#0C252D" opacity=".58"/>
+          <path d="M92 64V36h28v28M86 36l20-15 20 15M104 22V10h5v12" fill="none" stroke="#FFF1C7" strokeWidth="2.5" strokeLinejoin="round"/>
+          <path d="M106 10V2m-4 4h8" stroke="#FFF1C7" strokeWidth="2" strokeLinecap="round"/>
+          {Array.from({length:7},(_,i)=><circle key={i} cx={18+i*27+(seed%8)} cy={12+(i%3)*9} r="1.8" fill="#FFF1C7" opacity=".8"/>)}
+        </> : item.kind === 'frame' ? <>
+          <rect x="78" y="8" width="64" height="74" rx="20" fill="#102F39" opacity=".35" stroke="#FFF1C7" strokeWidth="4"/>
+          <rect x="85" y="15" width="50" height="60" rx="15" fill="none" stroke="#FFF1C7" strokeWidth="1.8" strokeDasharray={seed%2?'3 3':'1 4'}/>
+          <path d="M110 4l5 8 9 1-7 7 2 9-9-5-9 5 2-9-7-7 9-1Z" fill="#FFF1C7" opacity=".9"/>
+          <path d="M68 45h10m64 0h10M110 80v7" stroke="#FFF1C7" strokeWidth="3" strokeLinecap="round"/>
+        </> : <>
+          <circle cx="110" cy="45" r="33" fill="none" stroke="#FFF1C7" strokeWidth="2" opacity=".9"/>
+          <circle cx="110" cy="45" r="24" fill="none" stroke="#FFF1C7" strokeWidth="1.5" strokeDasharray="2 5"/>
+          {Array.from({length:12},(_,i)=><path key={i} d="M110 3v10" stroke="#FFF1C7" strokeWidth={i%3===0?3:1.5} strokeLinecap="round" transform={`rotate(${i*30+(seed%15)} 110 45)`}/>)}
+          <path d="M110 25l5 13 14 1-11 9 4 14-12-8-12 8 4-14-11-9 14-1Z" fill="#FFF1C7" opacity=".9"/>
+        </>}
+      </svg>
+    </div>
+  );
+}
+
 const titles = [
   { id: 'hymn-explorer', label: 'Hymn Explorer', ar: 'مستكشف الألحان' },
   { id: 'prayer-heart', label: 'Prayer Heart', ar: 'قلب محب للصلاة' },
@@ -251,7 +283,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
       </div> : view === 'inventory' ? <div className="space-y-3">
         <div className="flex items-center justify-between gap-2"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? 'مجموعتك الخاصة' : 'Your collection'}</h4><p className="text-xs text-[var(--text-secondary)]">{ar ? 'كل ما فتحته محفوظ هنا ويمكنك تطبيقه وقتما تحب.' : 'Everything you have unlocked is kept here and can be equipped any time.'}</p></div><span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-black text-emerald-300">{unlocked.length}</span></div>
         {catalog.filter(item => unlocked.includes(item.id)).length ? <div className="grid gap-3 sm:grid-cols-2">{catalog.filter(item => unlocked.includes(item.id)).map(item => <article key={item.id} className="flex items-center gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-3">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl">{item.kind === 'badge' ? <BadgeArtwork item={item}/> : <div className="h-full w-full" style={{ background: `linear-gradient(135deg,${safeColor(item.preview_start,'#174D4C')},${safeColor(item.preview_end,'#D6A84F')})` }} />}</div>
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl"><CosmeticArtwork item={item}/></div>
           <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-[var(--text-primary)]">{ar ? item.title_ar : item.title_en}</p><p className="text-[10px] text-[var(--text-secondary)]">{ar ? kindLabels[item.kind][1] : kindLabels[item.kind][0]} · {ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</p><button type="button" disabled={Boolean(busyId) || equipped[item.kind] === item.id} onClick={() => void runCosmeticAction(item, 'equip')} className="mt-2 min-h-9 rounded-lg bg-[var(--action-primary)] px-3 text-xs font-black text-white disabled:opacity-50">{equipped[item.kind] === item.id ? (ar ? 'مُطبّق' : 'Equipped') : (ar ? 'تطبيق' : 'Equip')}</button></div>
         </article>)}</div> : <p className="rounded-xl border border-dashed p-6 text-center text-sm text-[var(--text-secondary)]">{ar ? 'لسه ما فتحتش أي عناصر. زور المتجر وابدأ مجموعتك.' : 'Your inventory is empty. Visit the store to start your collection.'}</p>}
       </div> : <div className="space-y-3">
@@ -262,7 +294,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
           const start = safeColor(item.preview_start, '#174D4C');
           const end = safeColor(item.preview_end, '#D6A84F');
           return <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)]">
-            <div className="relative h-20 overflow-hidden" style={item.kind === 'badge' ? undefined : { background: 'linear-gradient(110deg,' + start + ',' + end + ')' }}>{item.kind === 'badge' && <BadgeArtwork item={item}/>}<span className="absolute end-2 top-2 rounded-full bg-black/45 px-2 py-1 text-[9px] font-black text-white">{ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</span>{isEquipped && <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[9px] font-black text-emerald-800"><Check size={11}/>{ar ? 'مُستخدم' : 'Equipped'}</span>}</div>
+            <div className="relative h-20 overflow-hidden"><CosmeticArtwork item={item}/><span className="absolute end-2 top-2 rounded-full bg-black/45 px-2 py-1 text-[9px] font-black text-white">{ar ? rarityLabels[item.rarity]?.[1] : rarityLabels[item.rarity]?.[0]}</span>{isEquipped && <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[9px] font-black text-emerald-800"><Check size={11}/>{ar ? 'مُستخدم' : 'Equipped'}</span>}</div>
             <div className="space-y-2 p-3"><div><h4 className="text-sm font-black text-[var(--text-primary)]">{ar ? item.title_ar : item.title_en}</h4><p className="mt-0.5 min-h-8 text-[11px] text-[var(--text-secondary)]">{ar ? item.description_ar : item.description_en}</p></div>
               <div className="flex items-center justify-between gap-2"><span className="text-xs font-black text-amber-700 dark:text-amber-300">{item.points_cost.toLocaleString()} {ar ? 'نقطة' : 'pts'}</span>
                 {isEquipped ? <button type="button" onClick={() => void unequip(item.kind)} disabled={Boolean(busyId)} className="min-h-9 rounded-lg border px-3 text-xs font-bold">{ar ? 'إزالة' : 'Unequip'}</button>
