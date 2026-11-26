@@ -216,10 +216,10 @@ export function LessonEditModal({ lesson, isOpen, onClose, onSave, lang, isNew =
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4 overflow-y-auto overscroll-contain"
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full p-6 space-y-6 max-h-[90vh] overflow-y-auto text-start my-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full p-6 space-y-6 max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1.5rem)] overflow-y-auto overscroll-contain pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-start my-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800">
