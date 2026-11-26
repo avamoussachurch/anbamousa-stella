@@ -785,6 +785,7 @@ export interface LeaderboardEntry {
   studentName: string;
   avatarUrl: string;
   pointsThisWeek: number;
+  totalPoints?: number;
   rank: number;
 }
 
