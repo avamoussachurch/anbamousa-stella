@@ -32,3 +32,11 @@ test('achievement seals use distinct item slugs and the live cosmetic preview', 
   assert.match(store, /ProfileEffectOverlay/);
   assert.match(achievements, /CopticAchievementSeal/);
 });
+
+test('assigned teachers can open a dedicated hymn-practice inbox from their dashboard', () => {
+  const teacher = read('../src/components/teacher/TeacherDashboard.tsx');
+  const home = read('../src/components/teacher/ServantHomeDashboard.tsx');
+  assert.match(teacher, /'hymn-practice': 'hymnPractice'/);
+  assert.match(teacher, /activeTab === 'hymnPractice' && <HymnPracticeInbox/);
+  assert.match(home, /onOpenWorkspaceTab\('hymn-practice'\)/);
+});
