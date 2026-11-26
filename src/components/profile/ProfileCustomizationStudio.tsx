@@ -34,31 +34,101 @@ function CosmeticArtwork({ item }: { item: Cosmetic }) {
   const seed = Array.from(item.id).reduce((sum, char) => sum + char.charCodeAt(0), 0);
   const accent = safeColor(item.preview_end, '#D6A84F');
   const base = safeColor(item.preview_start, '#174D4C');
+  const svgId = 'art-' + item.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const banner = item.kind === 'banner';
   return (
-    <div className="grid h-full w-full place-items-center overflow-hidden" style={{ background: `linear-gradient(125deg,${base},${accent})` }}>
-      <svg viewBox="0 0 220 90" className="h-full w-full" aria-hidden="true">
-        <defs><linearGradient id={'cosmetic-' + item.id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={accent}/><stop offset="1" stopColor={base}/></linearGradient></defs>
-        {item.kind === 'banner' ? <>
-          <circle cx={170 + (seed % 22)} cy="22" r="15" fill="#FFF1C7" opacity=".9"/>
-          <path d="M0 64 Q45 34 88 62 T176 55 T220 58 V90 H0Z" fill="#102F39" opacity=".62"/>
-          <path d="M0 74 Q40 52 80 72 T160 68 T220 70 V90 H0Z" fill="#0C252D" opacity=".58"/>
-          <path d="M92 64V36h28v28M86 36l20-15 20 15M104 22V10h5v12" fill="none" stroke="#FFF1C7" strokeWidth="2.5" strokeLinejoin="round"/>
-          <path d="M106 10V2m-4 4h8" stroke="#FFF1C7" strokeWidth="2" strokeLinecap="round"/>
-          {Array.from({length:7},(_,i)=><circle key={i} cx={18+i*27+(seed%8)} cy={12+(i%3)*9} r="1.8" fill="#FFF1C7" opacity=".8"/>)}
-        </> : item.kind === 'frame' ? <>
-          <rect x="78" y="8" width="64" height="74" rx="20" fill="#102F39" opacity=".35" stroke="#FFF1C7" strokeWidth="4"/>
-          <rect x="85" y="15" width="50" height="60" rx="15" fill="none" stroke="#FFF1C7" strokeWidth="1.8" strokeDasharray={seed%2?'3 3':'1 4'}/>
-          <path d="M110 4l5 8 9 1-7 7 2 9-9-5-9 5 2-9-7-7 9-1Z" fill="#FFF1C7" opacity=".9"/>
-          <path d="M68 45h10m64 0h10M110 80v7" stroke="#FFF1C7" strokeWidth="3" strokeLinecap="round"/>
-        </> : <>
-          <circle cx="110" cy="45" r="33" fill="none" stroke="#FFF1C7" strokeWidth="2" opacity=".9"/>
-          <circle cx="110" cy="45" r="24" fill="none" stroke="#FFF1C7" strokeWidth="1.5" strokeDasharray="2 5"/>
-          {Array.from({length:12},(_,i)=><path key={i} d="M110 3v10" stroke="#FFF1C7" strokeWidth={i%3===0?3:1.5} strokeLinecap="round" transform={`rotate(${i*30+(seed%15)} 110 45)`}/>)}
-          <path d="M110 25l5 13 14 1-11 9 4 14-12-8-12 8 4-14-11-9 14-1Z" fill="#FFF1C7" opacity=".9"/>
+    <div className="grid h-full w-full place-items-center overflow-hidden" style={{ background: 'linear-gradient(125deg,' + base + ',' + accent + ')' }}>
+      <svg viewBox="0 0 220 90" preserveAspectRatio="xMidYMid slice" className="h-full w-full" aria-hidden="true">
+        <defs>
+          <linearGradient id={svgId + '-gold'} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#FFF2C8"/><stop offset=".55" stopColor={accent}/><stop offset="1" stopColor={base}/></linearGradient>
+          <radialGradient id={svgId + '-glow'}><stop stopColor="#FFF4D2" stopOpacity=".9"/><stop offset="1" stopColor="#FFF4D2" stopOpacity="0"/></radialGradient>
+        </defs>
+        {banner && item.id === 'banner-kiahk-stars' && <>
+          <circle cx="176" cy="20" r="24" fill={'url(#' + svgId + '-glow)'}/>
+          <path d="M0 70Q45 48 92 67T220 57V90H0Z" fill="#07152F" opacity=".7"/>
+          <path d="M18 65 35 48 52 65M35 48v-9m-4 4h8M135 68V42h20v26m-25-26 15-13 15 13m-11-13V15" fill="none" stroke="#F9E7B5" strokeWidth="2"/>
+          {Array.from({length:18},(_,i)=><path key={i} d="M0 -4V4" stroke="#FFF2C8" strokeWidth={i%3===0?2:1} transform={'translate('+(8+(i*37)%205)+' '+(8+(i*19)%36)+') rotate('+(i*23)+' )'}/>)}
+        </>}
+        {banner && item.id === 'banner-desert-dawn' && <>
+          <circle cx="172" cy="28" r="26" fill={'url(#' + svgId + '-glow)'}/><circle cx="172" cy="28" r="13" fill="#FFE3A0"/>
+          <path d="M0 66Q44 35 90 63T220 54V90H0Z" fill="#6A3C2B"/><path d="M0 76Q56 58 110 76T220 69V90H0Z" fill="#382B2C"/>
+          <path d="M42 67V40h18v27M36 40l15-13 15 13M50 27V16m-5 5h10" fill="none" stroke="#FFF0C7" strokeWidth="2.5"/>
+        </>}
+        {banner && item.id === 'banner-pascha-light' && <>
+          <circle cx="110" cy="45" r="43" fill={'url(#' + svgId + '-glow)'}/>
+          <path d="M110 12v50M94 28h32M110 60l-8 10h16Z" fill="none" stroke="#FFE9A9" strokeWidth="4" strokeLinecap="round"/>
+          <path d="M54 42v30m-11-19h22M166 42v30m-11-19h22" stroke="#E8C47A" strokeWidth="3" strokeLinecap="round"/>
+          <path d="M0 78Q50 61 110 78T220 78V90H0Z" fill="#240D1A" opacity=".65"/>
+        </>}
+        {banner && item.id === 'banner-heavenly-blue' && <>
+          <circle cx="42" cy="24" r="20" fill={'url(#' + svgId + '-glow)'}/>
+          <path d="M0 58Q30 38 57 56T110 53T165 55T220 50V90H0Z" fill="#D6ECF6" opacity=".28"/>
+          <path d="M80 34q10-14 20 0 10-14 20 0M125 27q8-11 16 0 8-11 16 0" fill="none" stroke="#FFF" strokeWidth="3" strokeLinecap="round"/>
+          <path d="M0 77Q60 60 110 78T220 70V90H0Z" fill="#103B67" opacity=".7"/>
+        </>}
+        {banner && item.id === 'banner-nile-moonlight' && <>
+          <circle cx="174" cy="21" r="19" fill="#D9F2F1"/><circle cx="183" cy="14" r="18" fill={base}/>
+          <path d="M0 55Q38 43 74 58T146 55T220 54" fill="none" stroke="#A7F1E6" strokeWidth="3"/>
+          <path d="M0 69Q45 52 88 70T164 66T220 66V90H0Z" fill="#092C42" opacity=".75"/>
+          {Array.from({length:7},(_,i)=><circle key={i} cx={12+i*31} cy={12+(i%3)*9} r="1.7" fill="#F3FFFF"/>)}
+        </>}
+        {banner && item.id === 'banner-kiahk-candlelight' && <>
+          <circle cx="110" cy="25" r="34" fill={'url(#' + svgId + '-glow)'}/>
+          {[70,110,150].map((x,i)=><g key={x}><rect x={x-6} y={48+(i%2)*7} width="12" height="30" rx="3" fill="#F4D79B"/><path d={'M'+x+' 46q-8-11 0-19 8 8 0 19Z'} fill="#FFF0B7"/><path d={'M'+x+' 51v-5'} stroke="#8C5A2B" strokeWidth="1.5"/></g>)}
+          <path d="M0 82H220" stroke="#F7D99C" strokeWidth="2" opacity=".7"/>
+        </>}
+        {banner && item.id === 'banner-golden-desert' && <>
+          <circle cx="175" cy="20" r="22" fill="#FFF0BF"/>
+          <path d="M0 62Q48 35 96 65T220 58V90H0Z" fill="#A76D36"/><path d="M0 78Q56 55 112 78T220 72V90H0Z" fill="#543A2C"/>
+          <path d="M48 68q-2-26 2-38m0 6q-17-13-24-3 15 0 24 12m0-10q15-15 26-6-15 4-24 17" fill="none" stroke="#E8D08A" strokeWidth="3" strokeLinecap="round"/>
+          <path d="M139 67V42h18v25m-23-25 14-13 14 13" fill="none" stroke="#FFF1C9" strokeWidth="2.2"/>
+        </>}
+        {!banner && item.kind === 'frame' && <>
+          <rect x="78" y="5" width="64" height="80" rx="20" fill="#091A28" opacity=".3" stroke={'url(#' + svgId + '-gold)'} strokeWidth="5"/>
+          <rect x="85" y="12" width="50" height="66" rx="15" fill="none" stroke="#FFF1C7" strokeWidth="1.8" strokeDasharray={seed%2?'3 3':'1 4'}/>
+          {item.id === 'frame-halo-gold' && <><circle cx="110" cy="45" r="17" fill="none" stroke="#FFF0B8" strokeWidth="3"/><path d="M110 20v-9m-7 4h14m-7 60v9m-7-4h14" stroke="#FFF0B8" strokeWidth="2"/></>}
+          {item.id === 'frame-desert-royal' && <><path d="M110 10l7 9 11 2-8 8 2 11-12-6-12 6 2-11-8-8 11-2Z" fill="#F4D69B"/><path d="M84 29h-9m61 0h9M84 60h-9m61 0h9" stroke="#F4D69B" strokeWidth="3"/></>}
+          {item.id === 'frame-midnight-coptic' && <><path d="M110 13v22m-10-12h20m-10 22v17m-8-9h16" stroke="#C8F2F0" strokeWidth="3" strokeLinecap="round"/><circle cx="110" cy="45" r="29" fill="none" stroke="#B4E7E2" strokeDasharray="1 6" strokeWidth="2"/></>}
+          {item.id === 'frame-pascha-radiance' && <><path d="M110 15v29m-13-16h26m-13 16v27m-13-13h26" stroke="#FFE3A0" strokeWidth="4" strokeLinecap="round"/><path d="M95 17l-8-7m38 7 8-7M95 73l-8 7m38-7 8 7" stroke="#F9C96D" strokeWidth="2"/></>}
+          {item.id === 'frame-archangel-sapphire' && <><path d="M88 51q-18-22-10-34 17 8 24 29M132 51q18-22 10-34-17 8-24 29" fill="none" stroke="#C5E5FF" strokeWidth="4" strokeLinecap="round"/><path d="M110 13l7 8-7 8-7-8Z" fill="#B9D8FF"/></>}
+          {item.id === 'frame-martyr-ruby' && <><path d="M85 64q-18-13-9-35 5 15 18 20M135 64q18-13 9-35-5 15-18 20" fill="none" stroke="#FFC3C3" strokeWidth="3"/><path d="M110 11l8 12-8 12-8-12Z" fill="#FFB2B2"/></>}
+          {item.id === 'frame-olive-crown' && <><path d="M83 66q-18-24 3-47 0 16 10 19 5-15 17-24 0 17 10 24 11-5 12-19 19 23 2 47" fill="none" stroke="#D7EBA0" strokeWidth="3"/><circle cx="110" cy="13" r="5" fill="#F3E9B6"/></>}
+        </>}
+        {!banner && item.kind === 'effect' && <>
+          <circle cx="110" cy="45" r="34" fill="none" stroke="#FFF2C8" strokeWidth="2" opacity=".9"/>
+          {item.id === 'effect-stardust' && <>{Array.from({length:9},(_,i)=><path key={i} d="M0 -5 2 -1 6 0 2 2 0 6 -2 2 -6 0 -2 -1Z" fill="#F6E7FF" transform={'translate('+(110+Math.cos(i*0.7)*35)+' '+(45+Math.sin(i*0.7)*35)+') scale('+(i%2?.7:1.2)+')'}/>)}</>}
+          {item.id === 'effect-emerald-aura' && <>{Array.from({length:8},(_,i)=><path key={i} d="M0 0q-12-15 0-24 12 9 0 24Z" fill="#A7F3D0" opacity=".9" transform={'translate('+(110+Math.cos(i*Math.PI/4)*34)+' '+(45+Math.sin(i*Math.PI/4)*34)+') rotate('+(i*45)+')'}/>)}</>}
+          {item.id === 'effect-golden-radiance' && <>{Array.from({length:16},(_,i)=><path key={i} d="M0 -42v-8" stroke="#FFF0B5" strokeWidth={i%2?1.5:3} strokeLinecap="round" transform={'rotate('+(i*22.5)+' 110 45)'}/>)}</>}
+          {item.id === 'effect-celestial-blue' && <><path d="M118 17a22 22 0 1 0 22 36 19 19 0 0 1-22-36Z" fill="#E0E7FF"/><path d="m74 24 3 7 7 3-7 3-3 7-3-7-7-3 7-3Zm78 35 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#E0E7FF"/></>}
         </>}
       </svg>
     </div>
   );
+}
+
+function ProfileFrameOverlay({ item }: { item: Cosmetic }) {
+  const id = item.id;
+  const color = safeColor(item.preview_end, '#E7BD65');
+  return <svg viewBox="0 0 100 100" className="pointer-events-none absolute -inset-3 z-20 h-[calc(100%+24px)] w-[calc(100%+24px)] overflow-visible" aria-hidden="true">
+    <circle cx="50" cy="50" r="46" fill="none" stroke={color} strokeWidth="4"/>
+    <circle cx="50" cy="50" r="42" fill="none" stroke="#FFF1C7" strokeWidth="1.4" opacity=".9"/>
+    {id === 'frame-halo-gold' && <>{Array.from({length:12},(_,i)=><path key={i} d="M50 1v8" stroke="#FFF0B8" strokeWidth={i%3===0?3:1.5} transform={'rotate('+(i*30)+' 50 50)'}/>)}</>}
+    {id === 'frame-desert-royal' && <><path d="M50 1l5 8 9 1-7 7 2 9-9-5-9 5 2-9-7-7 9-1Z" fill="#F4D69B"/><circle cx="4" cy="50" r="3" fill={color}/><circle cx="96" cy="50" r="3" fill={color}/></>}
+    {id === 'frame-midnight-coptic' && <><path d="M50 1v17m-8-9h16M50 82v17m-8-9h16" stroke="#C8F2F0" strokeWidth="3" strokeLinecap="round"/>{Array.from({length:8},(_,i)=><circle key={i} cx={50+Math.cos(i*Math.PI/4)*45} cy={50+Math.sin(i*Math.PI/4)*45} r="1.8" fill="#D8FFFF"/>)}</>}
+    {id === 'frame-pascha-radiance' && <><path d="M50 0v22m-9-9h18M50 78v22m-9-9h18" stroke="#FFE3A0" strokeWidth="4" strokeLinecap="round"/><path d="M5 50h12m66 0h12" stroke="#F9C96D" strokeWidth="3"/></>}
+    {id === 'frame-archangel-sapphire' && <><path d="M18 50Q2 25 15 9q19 7 25 28M82 50Q98 25 85 9q-19 7-25 28" fill="none" stroke="#C5E5FF" strokeWidth="3" strokeLinecap="round"/><path d="M50 0l5 8-5 8-5-8Z" fill="#B9D8FF"/></>}
+    {id === 'frame-martyr-ruby' && <><path d="M20 72Q0 50 18 22q2 20 17 28M80 72q20-22 2-50-2 20-17 28" fill="none" stroke="#FFC3C3" strokeWidth="3"/><path d="M50 0l6 9-6 9-6-9Z" fill="#FFB2B2"/></>}
+    {id === 'frame-olive-crown' && <><path d="M14 70Q0 42 20 15q0 18 13 22 5-17 17-25 12 8 17 25 13-4 13-22 20 27 6 55" fill="none" stroke="#D7EBA0" strokeWidth="3"/><circle cx="50" cy="6" r="4" fill="#F3E9B6"/></>}
+  </svg>;
+}
+
+function ProfileEffectOverlay({ item }: { item: Cosmetic }) {
+  return <svg viewBox="0 0 120 120" className="pointer-events-none absolute -inset-6 z-30 h-[calc(100%+48px)] w-[calc(100%+48px)] overflow-visible" aria-hidden="true">
+    {item.id === 'effect-stardust' && <>{Array.from({length:14},(_,i)=><path key={i} d="M0 -4 1.5 -1 4 0 1.5 1 0 4 -1.5 1 -4 0 -1.5 -1Z" fill="#E9D5FF" transform={'translate('+(60+Math.cos(i*0.45)*52)+' '+(60+Math.sin(i*0.45)*52)+')'}/>)}</>}
+    {item.id === 'effect-emerald-aura' && <>{Array.from({length:10},(_,i)=><path key={i} d="M0 0q-12-16 0-26 12 10 0 26Z" fill="#6EE7B7" opacity=".85" transform={'translate('+(60+Math.cos(i*Math.PI/5)*50)+' '+(60+Math.sin(i*Math.PI/5)*50)+') rotate('+(i*36)+')'}/>)}</>}
+    {item.id === 'effect-golden-radiance' && <>{Array.from({length:20},(_,i)=><path key={i} d="M60 3v-7" stroke="#FDE68A" strokeWidth={i%2?1.5:3} strokeLinecap="round" transform={'rotate('+(i*18)+' 60 60)'}/>)}</>}
+    {item.id === 'effect-celestial-blue' && <><circle cx="20" cy="25" r="8" fill="#C7D2FE"/><path d="M21 10a11 11 0 1 0 11 18 9 9 0 0 1-11-18Z" fill="#E0E7FF"/>{Array.from({length:8},(_,i)=><circle key={i} cx={60+Math.cos(i*Math.PI/4)*52} cy={60+Math.sin(i*Math.PI/4)*52} r="1.7" fill="#E0E7FF"/>)}</>}
+  </svg>;
 }
 
 const titles = [
@@ -253,6 +323,8 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
             <div className="grid h-full w-full place-items-center overflow-hidden rounded-[19px] bg-[var(--surface-secondary)]">
               {avatarUrl && !avatarFailed ? <img src={avatarUrl} alt="" onError={() => setAvatarFailed(true)} className="h-full w-full object-cover"/> : <Crown size={30} style={{ color: frameColor }}/>}
             </div>
+            {selectedFrame && <ProfileFrameOverlay item={selectedFrame}/>}
+            {selectedEffect && <ProfileEffectOverlay item={selectedEffect}/>}
             <span className="absolute bottom-0 end-0 h-4 w-4 rounded-full border-[3px] border-[var(--surface-primary)] bg-emerald-500" title={ar ? 'نشط' : 'Online'} />
             {selectedBadge && <span className="absolute -bottom-2 -start-2 rounded-full border-2 border-[var(--surface-primary)] shadow-lg"><BadgeArtwork item={selectedBadge} compact /></span>}
           </div>
