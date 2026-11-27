@@ -20,6 +20,71 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const [isLoadingHymns, setIsLoadingHymns] = useState(false);
   const [hymnsError, setHymnsError] = useState<string | null>(null);
   const hymnRequestId = useRef(0);
+  const dragOrigin = useRef<{ pointerX: number; pointerY: number; left: number; top: number } | null>(null);
+  const [bubblePosition, setBubblePosition] = useState<{ left: number; top: number } | null>(() => {
+    try {
+      const saved = window.localStorage.getItem('anba-global-player-position');
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      return Number.isFinite(parsed.left) && Number.isFinite(parsed.top)
+        ? { left: parsed.left, top: parsed.top }
+        : null;
+    } catch { return null; }
+  });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const clampBubblePosition = useCallback((left: number, top: number) => {
+    const bubbleSize = 56;
+    const margin = 10;
+    return {
+      left: Math.max(margin, Math.min(window.innerWidth - bubbleSize - margin, left)),
+      top: Math.max(margin + 8, Math.min(window.innerHeight - bubbleSize - margin, top))
+    };
+  }, []);
+
+  const handleBubblePointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    if (isOpen) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    dragOrigin.current = {
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      left: rect.left,
+      top: rect.top
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, [isOpen]);
+
+  const handleBubblePointerMove = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!dragOrigin.current) return;
+    const dx = event.clientX - dragOrigin.current.pointerX;
+    const dy = event.clientY - dragOrigin.current.pointerY;
+    if (Math.abs(dx) + Math.abs(dy) > 5) setIsDragging(true);
+    setBubblePosition(clampBubblePosition(dragOrigin.current.left + dx, dragOrigin.current.top + dy));
+  }, [clampBubblePosition]);
+
+  const handleBubblePointerUp = useCallback(() => {
+    if (!dragOrigin.current) return;
+    const current = bubblePosition;
+    if (current) {
+      const bubbleSize = 56;
+      const snapLeft = current.left + bubbleSize / 2 < window.innerWidth / 2
+        ? 10
+        : window.innerWidth - bubbleSize - 10;
+      const snapped = clampBubblePosition(snapLeft, current.top);
+      setBubblePosition(snapped);
+      try { window.localStorage.setItem('anba-global-player-position', JSON.stringify(snapped)); } catch { /* storage may be unavailable */ }
+    }
+    dragOrigin.current = null;
+    window.setTimeout(() => setIsDragging(false), 0);
+  }, [bubblePosition, clampBubblePosition]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setBubblePosition(current => current ? clampBubblePosition(current.left, current.top) : current);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [clampBubblePosition]);
 
   const refreshHymns = useCallback(async () => {
     const requestId = ++hymnRequestId.current;
@@ -93,7 +158,13 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const currentTrackSubtitle = currentHymn ? currentHymn.titleCoptic : (currentFeedTrack ? (lang === 'ar' ? 'تسجيل من المجتمع' : 'Community recording') : '');
 
   return (
-    <div className={`fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-40 flex max-w-[calc(100vw-1.5rem)] flex-col ${lang === 'ar' ? 'left-3 items-start' : 'right-3 items-end'}`}>
+    <div
+      className="fixed z-40 flex max-w-[calc(100vw-1.5rem)] flex-col items-end"
+      style={bubblePosition ? { left: bubblePosition.left, top: bubblePosition.top } : {
+        bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)',
+        ...(lang === 'ar' ? { left: 12 } : { right: 12 })
+      }}
+    >
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -233,8 +304,14 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
 
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 bg-white rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] border-2 border-[var(--color-church-cream-dark)] flex items-center justify-center text-[var(--color-church-blue)] hover:scale-105 transition-transform"
+        aria-label={lang === 'ar' ? 'افتح مشغل الصوت أو اسحبه لتغيير مكانه' : 'Open audio player or drag to move it'}
+        onPointerDown={handleBubblePointerDown}
+        onPointerMove={handleBubblePointerMove}
+        onPointerUp={handleBubblePointerUp}
+        onPointerCancel={handleBubblePointerUp}
+        onClick={() => { if (!isDragging) setIsOpen(!isOpen); }}
+        style={{ touchAction: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
+        className="h-14 w-14 select-none rounded-full border-2 border-[var(--color-church-cream-dark)] bg-white text-[var(--color-church-blue)] shadow-[0_4px_20px_rgba(0,0,0,0.18)] transition-transform hover:scale-105"
       >
         <div className="relative">
            <Music size={24} />
