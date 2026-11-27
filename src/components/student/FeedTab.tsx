@@ -741,7 +741,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
         setComposerAttachments(previous => previous.map(current => {
           if (current.id !== item.id) return current;
           if (result.error || !result.data) {
-            return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'مش قادرين نرفع الملف.' : 'Upload failed.') };
+            return { ...current, status: 'error', error: getLocalizedErrorMessage(result.error?.message || 'Upload failed.', lang) };
           }
           URL.revokeObjectURL(current.localPreviewUrl || '');
           return { ...result.data, isVoiceRecording: current.isVoiceRecording, includeInGlobalPlayer: current.includeInGlobalPlayer, globalAudioTitle: current.globalAudioTitle, localPreviewUrl: undefined };
@@ -774,7 +774,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
       setComposerAttachments(previous => previous.map(current => {
         if (current.id !== attachmentId) return current;
         if (result.error || !result.data) {
-          return { ...current, status: 'error', error: result.error?.message || (lang === 'ar' ? 'فشل رفع التسجيل.' : 'Recording upload failed.') };
+          return { ...current, status: 'error', error: getLocalizedErrorMessage(result.error?.message || 'Recording upload failed.', lang) };
         }
         URL.revokeObjectURL(current.localPreviewUrl || '');
         return { ...result.data, isVoiceRecording: true, includeInGlobalPlayer: false, globalAudioTitle: '', localPreviewUrl: undefined };
@@ -885,7 +885,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
     } catch (error) {
       recordingStreamRef.current?.getTracks().forEach(track => track.stop());
       recordingStreamRef.current = null;
-      setMediaError(error instanceof Error ? error.message : (lang === 'ar' ? 'مش قادرين نفتح الميكروفون.' : 'Could not access the microphone.'));
+      setMediaError(getLocalizedErrorMessage(error instanceof Error && error.message ? error : 'Could not access the microphone.', lang));
     }
   };
 
@@ -900,7 +900,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
       else if (recorder.state === 'paused') recorder.resume();
       else setMediaError(lang === 'ar' ? 'انتظر لحظة حتى يبدأ التسجيل.' : 'Please wait for recording to become ready.');
     } catch (error) {
-      setMediaError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر إيقاف التسجيل مؤقتًا.' : 'Could not pause or resume the recording.'));
+      setMediaError(getLocalizedErrorMessage(error instanceof Error && error.message ? error : 'Could not pause or resume the recording.', lang));
     }
   };
 
@@ -915,7 +915,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
       // including when the recorder is paused. Do not requestData() while paused.
       recorder.stop();
     } catch (error) {
-      setMediaError(error instanceof Error ? error.message : (lang === 'ar' ? 'تعذر إنهاء التسجيل.' : 'Could not finish the recording.'));
+      setMediaError(getLocalizedErrorMessage(error instanceof Error && error.message ? error : 'Could not finish the recording.', lang));
     }
   };
 
@@ -1715,7 +1715,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
               
               {/* Post Body */}
               <p className="text-gray-800 mb-4 text-sm leading-relaxed whitespace-pre-line">{post.content}</p>
-              {post.poll && <section className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-4 dark:border-violet-900/60 dark:bg-violet-950/20"><h4 className="mb-3 text-sm font-black text-violet-950 dark:text-violet-100">{post.poll.question}</h4><div className="space-y-2">{post.poll.options.map(option=>{const total=post.poll!.options.reduce((sum,item)=>sum+item.voteCount,0);const alreadyVoted=post.poll!.options.some(item=>item.hasVoted);const percent=total?Math.round(option.voteCount/total*100):0;return <button key={option.id} type="button" disabled={Boolean(option.hasVoted)||(!post.poll!.allowMultiple&&alreadyVoted)||Boolean(votingOptionId)} onClick={async()=>{setVotingOptionId(option.id);const result=await voteFeedPollInSupabase(option.id);if(result.error)setActionError(result.error.message);else{const refreshed=await fetchFeedPostsFromSupabase();if(refreshed.data)setPosts(refreshed.data);}setVotingOptionId(null);}} className="relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-start text-xs font-bold text-violet-950 disabled:cursor-default dark:border-violet-900 dark:bg-slate-900 dark:text-violet-100"><span className="absolute inset-y-0 start-0 bg-violet-200/70 transition-all dark:bg-violet-900/50" style={{width:percent+'%'}}/><span className="relative z-10">{option.label}{option.hasVoted?' ✓':''}</span><span className="relative z-10 tabular-nums">{total?percent+'% · ':''}{option.voteCount}</span></button>})}</div><p className="mt-2 text-[10px] text-violet-800/70 dark:text-violet-200/70">{post.poll.allowMultiple?(lang==='ar'?'يمكن اختيار أكثر من إجابة':'Multiple answers allowed'):(lang==='ar'?'اختيار إجابة واحدة':'Choose one answer')}</p></section>}
+              {post.poll && <section className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-4 dark:border-violet-900/60 dark:bg-violet-950/20"><h4 className="mb-3 text-sm font-black text-violet-950 dark:text-violet-100">{post.poll.question}</h4><div className="space-y-2">{post.poll.options.map(option=>{const total=post.poll!.options.reduce((sum,item)=>sum+item.voteCount,0);const alreadyVoted=post.poll!.options.some(item=>item.hasVoted);const percent=total?Math.round(option.voteCount/total*100):0;return <button key={option.id} type="button" disabled={Boolean(option.hasVoted)||(!post.poll!.allowMultiple&&alreadyVoted)||Boolean(votingOptionId)} onClick={async()=>{setVotingOptionId(option.id);const result=await voteFeedPollInSupabase(option.id);if(result.error)setActionError(getLocalizedErrorMessage(result.error.message, lang));else{const refreshed=await fetchFeedPostsFromSupabase();if(refreshed.data)setPosts(refreshed.data);}setVotingOptionId(null);}} className="relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-start text-xs font-bold text-violet-950 disabled:cursor-default dark:border-violet-900 dark:bg-slate-900 dark:text-violet-100"><span className="absolute inset-y-0 start-0 bg-violet-200/70 transition-all dark:bg-violet-900/50" style={{width:percent+'%'}}/><span className="relative z-10">{option.label}{option.hasVoted?' ✓':''}</span><span className="relative z-10 tabular-nums">{total?percent+'% · ':''}{option.voteCount}</span></button>})}</div><p className="mt-2 text-[10px] text-violet-800/70 dark:text-violet-200/70">{post.poll.allowMultiple?(lang==='ar'?'يمكن اختيار أكثر من إجابة':'Multiple answers allowed'):(lang==='ar'?'اختيار إجابة واحدة':'Choose one answer')}</p></section>}
 
               {getPostAttachments(post).length > 0 && (
                 <div className={`mb-4 grid gap-3 ${getPostAttachments(post).length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
