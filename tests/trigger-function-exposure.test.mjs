@@ -17,6 +17,6 @@ test('trigger-only security-definer functions are not exposed as authenticated R
   ];
 
   for (const name of functions) {
-    assert.match(migration, new RegExp('revoke execute on function public\\\\.' + name + '\\\\(\\\\) from public, anon, authenticated', 'i'));
+    assert.match(migration, new RegExp('revoke execute on function public\\.' + name + '\\(\\) from public, anon, authenticated', 'i'));
   }
 });
