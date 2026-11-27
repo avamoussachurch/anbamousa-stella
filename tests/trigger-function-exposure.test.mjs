@@ -5,7 +5,7 @@ import test from 'node:test';
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('trigger-only security-definer functions are not exposed as authenticated RPCs', async () => {
-  const migration = await read('../supabase/migrations/20261127163000_revoke_trigger_only_function_rpc_execution.sql');
+  const migration = await read('../supabase/migrations/20261127161810_revoke_trigger_only_function_rpc_execution.sql');
   const functions = [
     'capture_church_event_rsvp_achievement_event',
     'capture_community_poll_vote_achievement_event',
