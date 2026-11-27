@@ -12,6 +12,7 @@ import { StudentOnboardingModal } from '../auth/StudentOnboardingModal';
 import { CLASS_GROUPS, getClassGroupForGrade } from '../../lib/classGroups';
 import { COPTIC_AVATARS, DEFAULT_STUDENT_AVATAR } from '../../data/copticAvatars';
 import { ProfileCustomizationStudio } from '../profile/ProfileCustomizationStudio';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { CopticAchievementSeal, type CopticAchievementCategory } from '../design-system/CopticAchievementSeal';
 import { HelpFeedbackButton } from '../layout/HelpFeedbackButton';
 import { getCurrentChurchYear, joinClassWithCode, getStudentActiveMembership } from '../../lib/churchYearService';
@@ -160,7 +161,7 @@ export function ProfileTab({
           }] : [];
         }));
       } catch (error) {
-        if (active) setAchievementsError(error instanceof Error ? error.message : 'Could not load achievements.');
+        if (active) setAchievementsError(getLocalizedErrorMessage(error, lang));
       } finally {
         if (active) setAchievementsLoading(false);
       }
@@ -170,7 +171,7 @@ export function ProfileTab({
       active = false;
       void supabase.removeChannel(channel);
     };
-  }, [userData?.id, isGuest, achievementRefreshTick]);
+  }, [userData?.id, isGuest, achievementRefreshTick, lang]);
 
   const isStudent = workspaceRole ? workspaceRole === 'student' : hasRole(userData, 'student');
 
@@ -246,7 +247,7 @@ export function ProfileTab({
       loadMembership();
     }
     return () => { mounted = false; };
-  }, [userData?.id, isStudent, isGuest]);
+  }, [userData?.id, isStudent, isGuest, lang]);
 
   const handleJoinWithCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,7 +267,7 @@ export function ProfileTab({
           setJoinCodeSuccess(null);
         }, 1500);
       } else {
-        let msg = res.error || (lang === 'ar' ? 'مش قادرين نضمّك بالكود ده' : 'Failed to join class');
+        let msg = String(res.error || 'Failed to join class');
         if (msg.includes('INCOMPATIBLE_GRADE')) {
           msg = lang === 'ar' ? 'صفّك الدراسي مش مناسب للفصل ده. اتأكد إنك بتستخدم كود فصلك الصحيح.' : 'Your exact grade is not compatible with this class group.';
         } else if (msg.includes('ARCHIVED_YEAR_CODE')) {
@@ -278,10 +279,10 @@ export function ProfileTab({
         } else if (msg.includes('FORBIDDEN')) {
           msg = lang === 'ar' ? 'مش مسموح: التلاميذ بس يقدروا ينضموا للفصول بالكود.' : 'Forbidden: Only student accounts can join a class via code.';
         }
-        setJoinCodeError(msg);
+        setJoinCodeError(getLocalizedErrorMessage(msg, lang));
       }
     } catch (err: any) {
-      setJoinCodeError(err?.message || 'Error joining class');
+      setJoinCodeError(getLocalizedErrorMessage(err, lang));
     } finally {
       setIsJoiningCode(false);
     }
@@ -305,12 +306,12 @@ export function ProfileTab({
     getStudentFamilyLinkCode().then(result => {
       if (cancelled) return;
       if (result.error || !result.code) {
-        setFamilyCodeError(result.error?.message || 'Could not load your family code.');
+        setFamilyCodeError(getLocalizedErrorMessage(result.error?.message || 'Could not load your family code.', lang));
         return;
       }
       setStudentLinkCode(result.code);
     }).catch(error => {
-      if (!cancelled) setFamilyCodeError(error instanceof Error ? error.message : 'Could not load your family code.');
+      if (!cancelled) setFamilyCodeError(getLocalizedErrorMessage(error, lang));
     }).finally(() => {
       if (!cancelled) setFamilyCodeLoading(false);
     });
@@ -413,11 +414,11 @@ export function ProfileTab({
           setScreen('main');
         }, 1000);
       } else {
-        showToast('error', result.error || (lang === 'ar' ? 'مش قادرين نحفظ التعديلات.' : 'Failed to save changes'));
+        showToast('error', getLocalizedErrorMessage(result.error || 'Failed to save changes', lang));
       }
     } catch (err: any) {
       console.error(err);
-      showToast('error', err?.message || (lang === 'ar' ? 'حصلت مشكلة وإحنا بنحفظ.' : 'An error occurred while saving'));
+      showToast('error', getLocalizedErrorMessage(err, lang));
     } finally {
       setIsSaving(false);
     }
@@ -446,7 +447,7 @@ export function ProfileTab({
       setUserDirectly({ ...userData, hymnsTaxisLevel: result.level });
       setHymnsTaxisLevelMessage(lang === 'ar' ? 'المستوى اتحفظ.' : 'Level saved.');
     } else {
-      setHymnsTaxisLevelError(result.error || (lang === 'ar' ? 'مش قادرين نحفظ المستوى.' : 'Could not save the level.'));
+      setHymnsTaxisLevelError(getLocalizedErrorMessage(result.error || 'Could not save the level.', lang));
     }
     setIsSavingHymnsTaxisLevel(false);
   };

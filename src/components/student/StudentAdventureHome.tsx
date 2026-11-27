@@ -20,6 +20,7 @@ import type { ExtendedPost } from '../../lib/feedService';
 import { fetchFeedPostsFromSupabase } from '../../lib/feedService';
 import { BibleVerseCard } from '../shared/BibleVerseCard';
 import { StudentFeatureLinks } from './StudentFeatureLinks';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 
 interface StudentAdventureHomeProps {
   user: User;
@@ -191,7 +192,7 @@ function FeedPreview({
     fetchFeedPostsFromSupabase().then(result => {
       if (!active) return;
       if (result.error || !result.data) {
-        setError(result.error?.message || (isArabic ? 'مش قادرين نحمّل المنشورات دلوقتي.' : 'Posts are unavailable right now.'));
+        setError(getLocalizedErrorMessage(result.error?.message || 'Posts are unavailable right now.', lang));
         setPosts([]);
       } else {
         setPosts(result.data.slice(0, 2));

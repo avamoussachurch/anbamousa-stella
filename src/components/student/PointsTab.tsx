@@ -12,6 +12,7 @@ import {
   StreakLeaderboardEntry
 } from '../../lib/pointsService';
 import { LeaderboardEntry, Language } from '../../types';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { LeaderboardPodium, PodiumItem } from './LeaderboardPodium';
 import { AchievementRewardsStudio } from '../achievements/AchievementRewardsStudio';
 import { ProfileCustomizationStudio } from '../profile/ProfileCustomizationStudio';
@@ -130,7 +131,7 @@ export function PointsTab({ lang }: { lang: Language }) {
         userData.parentId
       );
       if (!result || result.error) {
-        throw new Error(result?.error?.message || 'The reward request could not be saved.');
+        throw new Error(getLocalizedErrorMessage(result?.error?.message || 'The reward request could not be saved.', lang));
       }
 
       const newPurchase = {
@@ -147,9 +148,7 @@ export function PointsTab({ lang }: { lang: Language }) {
         ? 'طلب المكافأة اتبعت بنجاح للمراجعة، وبقى مستني موافقة ولي الأمر. نقاطك لسه زي ما هي.'
         : 'Reward request saved. It is awaiting parent approval; your points have not been deducted.');
     } catch (err: any) {
-      showNotification('error', err?.message || (lang === 'ar'
-        ? 'مش قادرين نحفظ طلب المكافأة. نقاطك لم تتغير، جرّب تاني.'
-        : 'Could not save the reward request. Your points were not changed; please try again.'));
+      showNotification('error', getLocalizedErrorMessage(err instanceof Error && err.message ? err : 'Could not save the reward request. Your points were not changed; please try again.', lang));
     }
   };
 
