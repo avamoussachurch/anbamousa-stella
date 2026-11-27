@@ -776,7 +776,7 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
         <div className="lg:col-span-3 space-y-6">
           <fieldset disabled={!canEditCurrentItem} className="contents">
           {/* Metadata Card */}
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-[var(--mousa-border-sand)] space-y-4 shadow-xs">
+          <div className="min-w-0 bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-3xl border border-[var(--mousa-border-sand)] space-y-4 shadow-xs">
             <h3 className="font-black text-sm text-[var(--mousa-teal-deep)] dark:text-amber-300 flex items-center gap-2">
               <FileText size={16} />
               <span>{isAr ? '١. بيانات الطقس الكنسي والجمهور المستهدف' : '1. Ritual Metadata & Audience'}</span>
@@ -1038,11 +1038,11 @@ export function TaxisPublishingStudio({ lang = 'ar' }: TaxisPublishingStudioProp
                 <button
                   type="button"
                   onClick={addDocument}
-                  className="px-3 py-1 bg-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-bold rounded-xl border border-amber-300/40 hover:bg-amber-500/30 cursor-pointer"
+                  className="min-h-11 px-3 py-2 bg-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-bold rounded-xl border border-amber-300/40 hover:bg-amber-500/30 cursor-pointer"
                 >
                   + {isAr ? 'إضافة رابط خارجي' : 'Add external URL'}
                 </button>
-                <label className="px-3 py-1 bg-[var(--mousa-teal)] text-white text-xs font-bold rounded-xl cursor-pointer hover:opacity-90">
+                <label className="inline-flex min-h-11 items-center justify-center px-3 py-2 bg-[var(--mousa-teal)] text-white text-xs font-bold rounded-xl cursor-pointer hover:opacity-90">
                   <span>{isUploadingDocument ? (isAr ? 'جارٍ الرفع...' : 'Uploading...') : (isAr ? 'رفع ملف إلى Supabase' : 'Upload to Supabase')}</span>
                   <input
                     type="file"
