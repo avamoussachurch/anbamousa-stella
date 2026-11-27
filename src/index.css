@@ -2716,11 +2716,37 @@ button, a, input, select, textarea { max-width: 100%; }
 .anba-world-portal-card {
   isolation: isolate;
   border-radius: 1.65rem;
-  box-shadow: 0 18px 42px -26px rgba(15,67,70,.28), inset 0 1px 0 rgba(255,255,255,.8);
-  transition: box-shadow .35s ease, border-color .35s ease;
+  box-shadow:
+    0 5px 0 rgba(20,76,72,.12),
+    0 18px 42px -26px rgba(15,67,70,.28),
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 0 -10px 22px rgba(15,67,70,.045);
+  transition: box-shadow .28s ease, border-color .28s ease, filter .28s ease;
+}
+.anba-world-portal-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 1;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,.42);
+  border-radius: inherit;
+  background: linear-gradient(145deg,rgba(255,255,255,.2),transparent 38%,transparent 70%,rgba(15,67,70,.035));
 }
 .anba-world-portal-card:hover {
-  box-shadow: 0 26px 55px -28px rgba(15,67,70,.38), inset 0 1px 0 rgba(255,255,255,.9);
+  filter: saturate(1.06);
+  box-shadow:
+    0 7px 0 rgba(20,76,72,.13),
+    0 26px 55px -28px rgba(15,67,70,.42),
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -10px 22px rgba(15,67,70,.055);
+}
+.anba-world-portal-card:active {
+  box-shadow: 0 2px 0 rgba(20,76,72,.14), 0 9px 20px -15px rgba(15,67,70,.35), inset 0 1px 0 rgba(255,255,255,.8);
+}
+.dark .anba-world-portal-card::before {
+  border-color: rgba(220,245,235,.13);
+  background: linear-gradient(145deg,rgba(220,245,235,.1),transparent 42%,transparent 72%,rgba(0,0,0,.1));
 }
 .anba-world-portal-ring {
   pointer-events: none;
