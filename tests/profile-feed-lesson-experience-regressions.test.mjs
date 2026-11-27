@@ -93,5 +93,5 @@ test('lesson attribution resolves a servant display name and published servant v
   assert.match(studentLesson, /sources\.find\(s => s\.type === 'TEACHER_VOICE' && Boolean\(s\.fileUrl\)\)/);
   assert.match(studentLesson, /audioUrl=\{displayedAudioUrl\}/);
   assert.match(migration, /RETURN public\.can_read_curriculum_lesson\(v_lesson_id\)/);
-  assert.match(migration, /get_lesson_servant_display_name/);
+  assert.match(migration, /get_lesson_servant_display_name/);\n  assert.match(migration, /approved_servant_name.*!~\*/);\n  assert.match(migration, /profile\.name/);
 });
