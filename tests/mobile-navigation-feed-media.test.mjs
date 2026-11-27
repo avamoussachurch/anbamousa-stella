@@ -41,6 +41,9 @@ test('uploaded feed videos use a responsive native player with fullscreen and no
   assert.match(video, /controls/);
   assert.match(video, /playsInline/);
   assert.match(video, /preload="metadata"/);
+  assert.match(video, /poster=\{poster \|\| undefined\}/);
+  assert.match(feed, /poster=\{attachment\.mediaThumbnail\}/);
+  assert.match(feed, /poster=\{lightboxAttachment\.mediaThumbnail\}/);
   assert.match(video, /requestFullscreen/);
   assert.match(video, /controls=\{false\}/);
   assert.match(video, /Volume2/);
