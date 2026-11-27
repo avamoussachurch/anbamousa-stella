@@ -25,6 +25,8 @@ test('student, teacher, and parent surfaces localize raw service errors', async 
   assert.match(lessonEditor, /getLocalizedErrorMessage\(result\.error\.message, lang\)/);
   assert.match(hymns, /getLocalizedErrorMessage\(error, lang\)/);
   assert.doesNotMatch(hymns, /error instanceof Error \? error\.message/);
+  assert.match(hymns, /selectedHymn\?\.audioUrl, lang/);
+  assert.match(taxis, /selectedItem\?\.documents, lang/);
   assert.match(taxis, /getLocalizedErrorMessage\(error, lang\)/);
   assert.match(taxis, /\.catch\(error => \{[\s\S]*setLoadError\(getLocalizedErrorMessage\(error, lang\)\)[\s\S]*setLoading\(false\)/);
 });
