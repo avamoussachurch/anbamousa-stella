@@ -280,6 +280,7 @@ export function StudentAdventureHome({
   const lessonTitle = nextLesson && (isArabic ? nextLesson.titleAr || nextLesson.title : nextLesson.title);
   const lessonSummary = nextLesson && (isArabic ? nextLesson.summaryAr || nextLesson.summary : nextLesson.summary);
   const openPointsView = (view: 'streak' | 'leaderboard') => {
+    try { window.sessionStorage.setItem('anba-points-initial-view', view); } catch { /* storage may be unavailable */ }
     window.dispatchEvent(new CustomEvent('anba:points-view', { detail: view }));
     onNavigate('points');
   };
