@@ -605,11 +605,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         pushNotificationsEnabled: profile?.push_notifications_enabled ?? true,
         notifyLessonCompletion: profile?.notify_lesson_completion ?? true,
         notifyEventReminders: profile?.notify_event_reminders ?? true,
-        screenTimeSeconds: profile?.screen_time_seconds ?? cachedAuthUser.screenTimeSeconds ?? 0,
-        screenTimeTodaySeconds: profile?.screen_time_date === getCairoDateString()
-          ? Math.max(0, Number(profile?.screen_time_today_seconds) || 0)
-          : (cachedAuthUser.screenTimeDate === getCairoDateString() ? Math.max(0, cachedAuthUser.screenTimeTodaySeconds || 0) : 0),
-        screenTimeDate: profile?.screen_time_date || cachedAuthUser.screenTimeDate || getCairoDateString(),
+        screenTimeSeconds: Math.max(0, Number(profile?.screen_time_seconds) || 0, cachedAuthUser.screenTimeSeconds || 0),
+        screenTimeTodaySeconds: Math.max(
+          profile?.screen_time_date === getCairoDateString() ? Math.max(0, Number(profile?.screen_time_today_seconds) || 0) : 0,
+          cachedAuthUser.screenTimeDate === getCairoDateString() ? Math.max(0, cachedAuthUser.screenTimeTodaySeconds || 0) : 0
+        ),
+        screenTimeDate: getCairoDateString(),
       };
 
       setUserData(loadedUser);
