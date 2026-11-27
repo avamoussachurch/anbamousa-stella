@@ -78,4 +78,7 @@ test('feed voice waveform decoding is deferred until playback to avoid eager ful
   assert.match(voice, /const loadWaveformOnDemand = async/);
   assert.match(voice, /void loadWaveformOnDemand\(\)/);
   assert.match(voice, /waveformRequestedRef\.current/);
+  assert.match(voice, /new AbortController\(\)/);
+  assert.match(voice, /waveformAbortRef\.current\?\.abort\(\)/);
+  assert.match(voice, /requestId !== waveformRequestIdRef\.current/);
 });
