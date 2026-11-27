@@ -30,7 +30,7 @@ test('family prayer, Scripture recital, and document viewer guidance is conversa
   assert.match(altar, /حاجة نقدر نعملها في البيت/);
   assert.match(recital, /اتأكد إنك سامح للمتصفح يستخدم الميكروفون/);
   assert.match(recital, /🎉 حفظت الآية بإتقان/);
-  assert.match(recital, /التسميع ما اتراجعش لسه/);
+  assert.match(recital, /النتيجة ما اتحفظتش لسه/);
   assert.match(viewer, /تقدر تشوف شرائح ومستندات الخادم/);
   assert.match(adventure, /مقفول، خلّص المحطة اللي قبله الأول/);
   assert.match(adventure, /معاينة ضيف · بيانات تجريبية/);
