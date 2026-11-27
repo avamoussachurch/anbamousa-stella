@@ -6410,14 +6410,17 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
     const newTotalPoints = persistedCompletion.totalPoints;
     serverReviewState.userPoints[targetStudentId] = newTotalPoints;
 
-    // Authoritative cross-school streak calculation. UUID-backed students use
-    // the durable Supabase activity ledger; local IDs remain test/demo-only.
+    // A lesson with a required quiz is not a qualifying learning-streak day
+    // until the student submits that quiz. Quizless lessons still qualify on completion.
     const todayCairo = getCairoDateString(new Date(prog.completedAt));
-    let persistedStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> = null;
+    const requiresQuiz = Array.isArray(targetVersion?.quizDraft?.questions) && targetVersion.quizDraft.questions.length > 0;
+    let persistedStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> | Awaited<ReturnType<typeof loadPersistedStudentStreak>> = null;
     try {
-      persistedStreak = await persistStudentActivityDay(targetStudentId, prog.completedAt);
+      persistedStreak = requiresQuiz
+        ? await loadPersistedStudentStreak(targetStudentId)
+        : await persistStudentActivityDay(targetStudentId, prog.completedAt);
     } catch (error: any) {
-      console.error('Could not persist lesson activity day:', error);
+      console.error('Could not synchronize lesson activity day:', error);
       return res.status(502).json({
         success: false,
         error: 'STREAK_PERSISTENCE_FAILED',
@@ -6426,20 +6429,25 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
     }
 
     const previousStreak = serverReviewState.userStreaks[targetStudentId];
+    const persistedDays = Array.isArray((persistedStreak as any)?.activeCairoDays)
+      ? (persistedStreak as any).activeCairoDays
+      : [];
+    const previousDays = Array.isArray(previousStreak?.activeCairoDays) ? previousStreak.activeCairoDays : [];
     const activeCairoDays = Array.from(new Set([
-      ...(Array.isArray(previousStreak?.activeCairoDays) ? previousStreak.activeCairoDays : []),
-      todayCairo
+      ...persistedDays,
+      ...previousDays,
+      ...(!requiresQuiz ? [todayCairo] : [])
     ]));
     const calculatedStreak = calculateCairoStreakForStudent(activeCairoDays);
     const streakInfo = {
-      currentStreak: persistedStreak?.currentStreak ?? calculatedStreak.currentStreak,
+      currentStreak: persistedStreak?.currentStreak ?? previousStreak?.currentStreak ?? calculatedStreak.currentStreak,
       longestStreak: Math.max(
         persistedStreak?.longestStreak ?? 0,
         previousStreak?.longestStreak ?? 0,
         calculatedStreak.longestStreak,
-        persistedStreak?.currentStreak ?? calculatedStreak.currentStreak
+        persistedStreak?.currentStreak ?? previousStreak?.currentStreak ?? 0
       ),
-      lastActiveCairoDate: persistedStreak?.lastActiveCairoDate ?? todayCairo,
+      lastActiveCairoDate: persistedStreak?.lastActiveCairoDate ?? previousStreak?.lastActiveCairoDate ?? '',
       activeCairoDays
     };
     serverReviewState.userStreaks[targetStudentId] = streakInfo;
@@ -6499,7 +6507,7 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
         currentStreak: streakInfo.currentStreak,
         longestStreak: streakInfo.longestStreak,
         lastActiveCairoDate: streakInfo.lastActiveCairoDate,
-        isActiveToday: persistedStreak?.isActiveToday ?? true
+        isActiveToday: persistedStreak?.isActiveToday ?? activeCairoDays.includes(todayCairo)
       },
       completionHistory: serverReviewState.completionHistory[targetStudentId] || [],
       achievementResult
@@ -13265,23 +13273,25 @@ app.get("/api/church/parent/children", async (req, res) => {
 
 async function issueStudentFamilyCode(studentId: string, rotate = false): Promise<string> {
   const client = getTrustedProgressClient();
-  if (!rotate) {
-    const { data, error } = await client
-      .from('student_family_link_codes')
-      .select('code')
-      .eq('student_id', studentId)
-      .maybeSingle();
-    if (error) throw new Error(`Could not load student family code: ${error.message}`);
-    if (data?.code) return data.code;
-  }
+  const { data: existingRecord, error: readError } = await client
+    .from('student_family_link_codes')
+    .select('code')
+    .eq('student_id', studentId)
+    .maybeSingle();
+  if (readError) throw new Error(`Could not load student family code: ${readError.message}`);
 
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    // Five readable, random alphanumeric characters; never derive a code from a student ID.
+  const existingCode = typeof existingRecord?.code === 'string' ? existingRecord.code.trim().toUpperCase() : '';
+  const hasExistingRecord = Boolean(existingRecord);
+  // Keep already-valid five-character codes stable. Repair legacy/incorrectly long codes
+  // in-place so parents can use the same code format accepted by the connect-child endpoint.
+  if (!rotate && /^[A-Z0-9]{5}$/.test(existingCode)) return existingCode;
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const random = randomBytes(8);
     const code = Array.from(random.slice(0, 5), byte => alphabet[byte % alphabet.length]).join('');
 
-    if (rotate) {
+    if (hasExistingRecord) {
       const { data: updated, error: updateError } = await client
         .from('student_family_link_codes')
         .update({ code, updated_at: new Date().toISOString() })
@@ -13290,8 +13300,9 @@ async function issueStudentFamilyCode(studentId: string, rotate = false): Promis
         .maybeSingle();
       if (!updateError && updated?.code) return updated.code;
       if (updateError && updateError.code !== '23505') {
-        throw new Error(`Could not rotate student family code: ${updateError.message}`);
+        throw new Error(`Could not update student family code: ${updateError.message}`);
       }
+      continue;
     }
 
     const { error: insertError } = await client
@@ -13302,18 +13313,25 @@ async function issueStudentFamilyCode(studentId: string, rotate = false): Promis
       throw new Error(`Could not create student family code: ${insertError.message}`);
     }
 
-    // Concurrent first-time requests may have created the code already.
-    if (!rotate) {
-      const { data: existing, error: readError } = await client
+    const { data: concurrentRecord, error: concurrentError } = await client
+      .from('student_family_link_codes')
+      .select('code')
+      .eq('student_id', studentId)
+      .maybeSingle();
+    if (concurrentError) throw new Error(`Could not reload student family code: ${concurrentError.message}`);
+    if (typeof concurrentRecord?.code === 'string' && /^[A-Z0-9]{5}$/.test(concurrentRecord.code)) return concurrentRecord.code;
+    if (concurrentRecord) {
+      const { data: repaired, error: repairError } = await client
         .from('student_family_link_codes')
-        .select('code')
+        .update({ code, updated_at: new Date().toISOString() })
         .eq('student_id', studentId)
+        .select('code')
         .maybeSingle();
-      if (readError) throw new Error(`Could not reload student family code: ${readError.message}`);
-      if (existing?.code) return existing.code;
+      if (!repairError && repaired?.code) return repaired.code;
+      if (repairError && repairError.code !== '23505') throw new Error(`Could not repair student family code: ${repairError.message}`);
     }
   }
-  throw new Error('Could not allocate a unique family connection code. Please try again.');
+  throw new Error('Could not allocate a unique five-character family connection code. Please try again.');
 }
 
 app.get("/api/church/student/family-code", async (req, res) => {

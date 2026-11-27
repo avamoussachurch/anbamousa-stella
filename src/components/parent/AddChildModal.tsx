@@ -361,7 +361,7 @@ export function AddChildModal({
                           onChange={(e) => handleCodeChange(e.target.value)}
                           placeholder="A7K2M"
                           className="w-full text-center tracking-widest text-xl font-mono font-extrabold bg-gray-50 border-2 border-gray-200 rounded-2xl py-3 px-4 outline-none focus:border-[var(--color-church-blue)] focus:bg-white transition-all uppercase placeholder:text-gray-300"
-                          maxLength={12}
+                          maxLength={5}
                           autoFocus
                         />
                         <div className="absolute inset-y-0 right-3.5 rtl:right-auto rtl:left-3.5 flex items-center pointer-events-none text-gray-400">

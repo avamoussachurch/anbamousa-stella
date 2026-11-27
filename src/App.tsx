@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { BottomNav } from './components/layout/BottomNav';
 import { TopBar } from './components/layout/TopBar';
 import { WorkspaceSidebar } from './components/layout/WorkspaceSidebar';
@@ -280,6 +280,18 @@ function AppContent() {
     setActiveLessonId(null);
   };
 
+  const handleAppBack = () => {
+    if (window.history.state?.anbaMousaApp && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    if (activeLessonId) {
+      setActiveLessonId(null);
+      return;
+    }
+    handleBackToHome();
+  };
+
   const switchWorkspace = (nextWorkspace: Workspace) => {
     if (!canAccessWorkspace(userData.roles, nextWorkspace)) {
       setNavigationError(lang === 'ar' ? 'لا تملك صلاحية مساحة العمل المطلوبة.' : 'You are not assigned to that workspace.');
@@ -411,6 +423,7 @@ function AppContent() {
       <TopBar 
         lang={lang} 
         onHomeClick={handleBackToHome}
+        onBack={handleAppBack}
         onNavigate={navigate}
         activeTab={activeTab}
         workspace={activeWorkspace}
@@ -489,11 +502,30 @@ function AppContent() {
           transition={reduceMotion
             ? { duration: 0 }
             : { type: 'spring', stiffness: 280, damping: 28, mass: 0.72 }}
-          className="min-w-0"
+          className="relative min-w-0"
         >
           <React.Suspense fallback={<WorkspaceLoadingFallback lang={lang} />}>
             {renderMainContent()}
           </React.Suspense>
+          <AnimatePresence>
+            <motion.div
+              key={tabTransitionTick}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-20 overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.16, 0] }}
+              exit={{ opacity: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.38, ease: 'easeInOut' }}
+            >
+              <motion.div
+                className="absolute inset-y-0 start-0 w-1/3 bg-gradient-to-r from-transparent via-teal-400/20 to-transparent blur-xl"
+                initial={{ x: '-120%' }}
+                animate={{ x: '340%' }}
+                exit={{ opacity: 0 }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.38, ease: 'easeInOut' }}
+              />
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
       </div>
       </div>

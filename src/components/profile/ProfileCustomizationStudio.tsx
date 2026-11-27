@@ -109,16 +109,16 @@ function CosmeticArtwork({ item }: { item: Cosmetic }) {
 function ProfileFrameOverlay({ item }: { item: Cosmetic }) {
   const id = item.id;
   const color = safeColor(item.preview_end, '#E7BD65');
-  return <svg viewBox="0 0 100 100" className="pointer-events-none absolute -inset-3 z-20 h-[calc(100%+24px)] w-[calc(100%+24px)] overflow-visible" aria-hidden="true">
-    <circle cx="50" cy="50" r="46" fill="none" stroke={color} strokeWidth="4"/>
-    <circle cx="50" cy="50" r="42" fill="none" stroke="#FFF1C7" strokeWidth="1.4" opacity=".9"/>
-    {id === 'frame-halo-gold' && <>{Array.from({length:12},(_,i)=><path key={i} d="M50 1v8" stroke="#FFF0B8" strokeWidth={i%3===0?3:1.5} transform={'rotate('+(i*30)+' 50 50)'}/>)}</>}
-    {id === 'frame-desert-royal' && <><path d="M50 1l5 8 9 1-7 7 2 9-9-5-9 5 2-9-7-7 9-1Z" fill="#F4D69B"/><circle cx="4" cy="50" r="3" fill={color}/><circle cx="96" cy="50" r="3" fill={color}/></>}
-    {id === 'frame-midnight-coptic' && <><path d="M50 1v17m-8-9h16M50 82v17m-8-9h16" stroke="#C8F2F0" strokeWidth="3" strokeLinecap="round"/>{Array.from({length:8},(_,i)=><circle key={i} cx={50+Math.cos(i*Math.PI/4)*45} cy={50+Math.sin(i*Math.PI/4)*45} r="1.8" fill="#D8FFFF"/>)}</>}
-    {id === 'frame-pascha-radiance' && <><path d="M50 0v22m-9-9h18M50 78v22m-9-9h18" stroke="#FFE3A0" strokeWidth="4" strokeLinecap="round"/><path d="M5 50h12m66 0h12" stroke="#F9C96D" strokeWidth="3"/></>}
-    {id === 'frame-archangel-sapphire' && <><path d="M18 50Q2 25 15 9q19 7 25 28M82 50Q98 25 85 9q-19 7-25 28" fill="none" stroke="#C5E5FF" strokeWidth="3" strokeLinecap="round"/><path d="M50 0l5 8-5 8-5-8Z" fill="#B9D8FF"/></>}
-    {id === 'frame-martyr-ruby' && <><path d="M20 72Q0 50 18 22q2 20 17 28M80 72q20-22 2-50-2 20-17 28" fill="none" stroke="#FFC3C3" strokeWidth="3"/><path d="M50 0l6 9-6 9-6-9Z" fill="#FFB2B2"/></>}
-    {id === 'frame-olive-crown' && <><path d="M14 70Q0 42 20 15q0 18 13 22 5-17 17-25 12 8 17 25 13-4 13-22 20 27 6 55" fill="none" stroke="#D7EBA0" strokeWidth="3"/><circle cx="50" cy="6" r="4" fill="#F3E9B6"/></>}
+  return <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute -inset-2.5 z-20 h-[calc(100%+20px)] w-[calc(100%+20px)] overflow-visible" aria-hidden="true">
+    <rect x="3" y="3" width="94" height="94" rx="25" fill="none" stroke={color} strokeWidth="4.5"/>
+    <rect x="7" y="7" width="86" height="86" rx="21" fill="none" stroke="#FFF1C7" strokeWidth="1.3" opacity=".92"/>
+    {id === 'frame-halo-gold' && <>{Array.from({length:12},(_,i)=><path key={i} d="M50 0v8" stroke="#FFF0B8" strokeWidth={i%3===0?3:1.5} transform={'rotate('+(i*30)+' 50 50)'}/>)}</>}
+    {id === 'frame-desert-royal' && <><path d="M50 0l5 8 9 1-7 7 2 9-9-5-9 5 2-9-7-7 9-1Z" fill="#F4D69B"/><circle cx="4" cy="50" r="3" fill={color}/><circle cx="96" cy="50" r="3" fill={color}/></>}
+    {id === 'frame-midnight-coptic' && <><path d="M50 0v17m-8-9h16M50 83v17m-8-9h16" stroke="#C8F2F0" strokeWidth="3" strokeLinecap="round"/>{Array.from({length:8},(_,i)=><circle key={i} cx={50+Math.cos(i*Math.PI/4)*45} cy={50+Math.sin(i*Math.PI/4)*45} r="1.8" fill="#D8FFFF"/>)}</>}
+    {id === 'frame-pascha-radiance' && <><path d="M50 0v18m-9-9h18M50 82v18m-9-9h18" stroke="#FFE3A0" strokeWidth="4" strokeLinecap="round"/><path d="M0 50h12m76 0h12" stroke="#F9C96D" strokeWidth="3"/></>}
+    {id === 'frame-archangel-sapphire' && <><path d="M23 4Q3 18 4 39M77 4q20 14 19 35" fill="none" stroke="#C5E5FF" strokeWidth="3" strokeLinecap="round"/><path d="M50 0l5 8-5 8-5-8Z" fill="#B9D8FF"/></>}
+    {id === 'frame-martyr-ruby' && <><path d="M4 70Q0 45 17 20q2 20 17 28M96 70q4-25-13-50-2 20-17 28" fill="none" stroke="#FFC3C3" strokeWidth="3"/><path d="M50 0l6 9-6 9-6-9Z" fill="#FFB2B2"/></>}
+    {id === 'frame-olive-crown' && <><path d="M8 70Q0 42 20 15q0 18 13 22 5-17 17-25 12 8 17 25 13-4 13-22 20 27 12 55" fill="none" stroke="#D7EBA0" strokeWidth="3"/><circle cx="50" cy="6" r="4" fill="#F3E9B6"/></>}
   </svg>;
 }
 
@@ -319,7 +319,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
           <div className="absolute end-3 top-3 rounded-full bg-black/20 px-2.5 py-1 text-[10px] font-black text-white">{ar ? 'ملف أنبا موسى' : 'ANBA MOUSA PROFILE'}</div>
         </div>
         <div className="flex flex-wrap items-center gap-3 p-4 sm:gap-4">
-          <div className="relative -mt-10 grid h-[76px] w-[76px] shrink-0 place-items-center overflow-visible rounded-[24px] bg-[var(--surface-primary)] p-1 shadow-xl" style={{ outline: '4px solid ' + frameColor, outlineOffset: '2px', boxShadow: selectedEffect ? '0 0 28px ' + safeColor(selectedEffect.preview_end, '#D6A84F') : undefined }}>
+          <div className="relative -mt-10 grid h-[76px] w-[76px] shrink-0 place-items-center overflow-visible rounded-[24px] bg-[var(--surface-primary)] p-1 shadow-xl" style={{ outline: selectedFrame ? 'none' : '4px solid ' + frameColor, outlineOffset: '2px', boxShadow: selectedEffect ? '0 0 28px ' + safeColor(selectedEffect.preview_end, '#D6A84F') : undefined }}>
             <div className="grid h-full w-full place-items-center overflow-hidden rounded-[19px] bg-[var(--surface-secondary)]">
               {avatarUrl && !avatarFailed ? <img src={avatarUrl} alt="" onError={() => setAvatarFailed(true)} className="h-full w-full object-cover"/> : <Crown size={30} style={{ color: frameColor }}/>}
             </div>

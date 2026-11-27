@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Maximize2, Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { Maximize2, Pause, Play, Volume2, VolumeX, RotateCcw, RotateCw } from 'lucide-react';
 
 type FeedVideoPlayerProps = {
   src: string;
@@ -23,6 +23,7 @@ export function FeedVideoPlayer({ src, title, lang = 'en', onError }: FeedVideoP
   const [muted, setMuted] = useState(true);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const isArabic = lang === 'ar';
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export function FeedVideoPlayer({ src, title, lang = 'en', onError }: FeedVideoP
     setDuration(0);
     setFailed(false);
     setMuted(true);
+    setPlaybackRate(1);
   }, [src]);
 
   const togglePlayback = useCallback(async () => {
@@ -51,12 +53,30 @@ export function FeedVideoPlayer({ src, title, lang = 'en', onError }: FeedVideoP
     }
   }, [failed]);
 
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = playbackRate;
+  }, [playbackRate]);
+
   const seek = (value: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
     const next = Math.max(0, Math.min(duration, value));
     video.currentTime = next;
     setCurrent(next);
+  };
+
+  const skip = (seconds: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    const max = Number.isFinite(video.duration) ? video.duration : duration;
+    const next = Math.max(0, Math.min(max, video.currentTime + seconds));
+    video.currentTime = next;
+    setCurrent(next);
+  };
+
+  const changePlaybackRate = (rate: number) => {
+    setPlaybackRate(rate);
+    if (videoRef.current) videoRef.current.playbackRate = rate;
   };
 
   const toggleMute = () => {
@@ -138,12 +158,17 @@ export function FeedVideoPlayer({ src, title, lang = 'en', onError }: FeedVideoP
               onChange={event => seek(Number(event.target.value))}
               aria-label={isArabic ? 'تقديم أو تأخير الفيديو' : 'Seek video'}
               className="mb-2 h-1.5 w-full cursor-pointer accent-amber-300"/>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button type="button" onClick={() => void togglePlayback()} aria-label={playing ? (isArabic ? 'إيقاف مؤقت' : 'Pause video') : (isArabic ? 'تشغيل الفيديو' : 'Play video')}
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/15 transition hover:bg-white/25">
                 {playing ? <Pause size={18} fill="currentColor"/> : <Play size={18} fill="currentColor"/>}
               </button>
               <span className="min-w-[5.5rem] text-[11px] font-bold tabular-nums text-white/90">{formatTime(current)} / {formatTime(duration)}</span>
+              <button type="button" onClick={() => skip(-5)} aria-label={isArabic ? 'رجوع ٥ ثواني' : 'Rewind 5 seconds'} title={isArabic ? 'رجوع ٥ ثواني' : 'Rewind 5s'} className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/15 transition hover:bg-white/25"><RotateCcw size={17}/><span className="absolute bottom-1 text-[7px] font-black leading-none">5</span></button>
+              <button type="button" onClick={() => skip(5)} aria-label={isArabic ? 'تقديم ٥ ثواني' : 'Skip forward 5 seconds'} title={isArabic ? 'تقديم ٥ ثواني' : 'Forward 5s'} className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/15 transition hover:bg-white/25"><RotateCw size={17}/><span className="absolute bottom-1 text-[7px] font-black leading-none">5</span></button>
+              <select value={playbackRate} onChange={event => changePlaybackRate(Number(event.target.value))} aria-label={isArabic ? 'سرعة تشغيل الفيديو' : 'Video playback speed'} className="h-9 max-w-[4.3rem] rounded-full border border-white/15 bg-white/15 px-2 text-[11px] font-black text-white outline-none">
+                {[0.75,1,1.25,1.5,2].map(rate => <option key={rate} value={rate} className="bg-slate-900 text-white">{rate}x</option>)}
+              </select>
               <span className="flex-1"/>
               <button type="button" onClick={toggleMute} aria-label={muted ? (isArabic ? 'تشغيل الصوت' : 'Unmute video') : (isArabic ? 'كتم الصوت' : 'Mute video')}
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/15 transition hover:bg-white/25">

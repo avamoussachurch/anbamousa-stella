@@ -14,7 +14,8 @@ test('login and student lesson experiences use friendly Egyptian Arabic', async 
   assert.match(login, /سجّل دخولك عشان تتابع دروسك وتكسب نقاط/);
   assert.match(login, /هتستخدم الموقع بصفتك إيه؟/);
   assert.match(lesson, /لازم تسجّل دخولك وتكون متصل بالإنترنت عشان نحفظ إنك خلّصت الدرس/);
-  assert.match(lesson, /يلا ابدأ اختبار المراجعة/);
+  assert.match(lesson, /if \(hasQuiz\)[\s\S]*?setIsTakingQuiz\(true\)/);
+  assert.doesNotMatch(lesson, /Start Review Quiz|start-quiz-button/);
   assert.match(lessons, /الدروس المنشورة لفصلك موجودة تحت/);
   assert.match(lessons, /دوّر على درس أو قصة من الكتاب المقدس/);
 });

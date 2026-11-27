@@ -156,29 +156,29 @@ const REWARD_REQUESTS_KEY = 'church_synced_reward_requests_v3';
 // Generate or retrieve persistent link code for any student
 export function getOrCreateChildLinkCode(user?: User | null): string {
   if (!hasRole(user, 'student')) return '';
-  if (user.linkCode) return user.linkCode;
-  if (user.childLinkCode) return user.childLinkCode;
-  
-  // Try reading from localStorage
   const storageKey = `church_child_code_${user.id}`;
   const savedCode = typeof localStorage !== 'undefined' ? localStorage.getItem(storageKey) : null;
-  if (savedCode) return savedCode;
+  const existing = [user.linkCode, user.childLinkCode, savedCode]
+    .find(value => typeof value === 'string' && /^[A-Z0-9]{5}$/i.test(value.trim()));
+  if (existing) return existing.trim().toUpperCase();
 
-  // Generate deterministic unique 5-digit code based on user id and name
+  // Offline/demo fallback only. Online student accounts receive the server-issued
+  // random code from /api/church/student/family-code.
   let hash = 0;
-  const str = 'coptic_child_' + (user.id || 'id') + (user.fullName || '');
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
+  const seedText = 'anba-family-' + (user.id || 'id') + (user.fullName || '');
+  for (let index = 0; index < seedText.length; index += 1) {
+    hash = (hash * 31 + seedText.charCodeAt(index)) >>> 0;
   }
-  const positive = Math.abs(hash);
-  const digits = (positive % 90000 + 10000).toString();
-  const code = `ST-${digits}`;
-  
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let index = 0; index < 5; index += 1) {
+    code += alphabet[hash % alphabet.length];
+    hash = Math.floor(hash / alphabet.length);
+    hash = (hash * 1664525 + 1013904223) >>> 0;
+  }
   try {
     localStorage.setItem(storageKey, code);
-  } catch (e) {}
-
+  } catch { /* local storage may be unavailable */ }
   return code;
 }
 

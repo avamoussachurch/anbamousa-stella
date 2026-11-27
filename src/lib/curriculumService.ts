@@ -244,7 +244,7 @@ export function adaptDbLessonToAppLesson(
     latestVersion: activeVersion || undefined,
     quiz: quizQuestions,
     sourcesCount: sources?.length ?? 0,
-    approvedServantName: dbLesson.approved_servant_name || activeVersion?.approvedBy || undefined,
+    approvedServantName: dbLesson.approved_servant_name || undefined,
     approvedAt: dbLesson.approved_at || activeVersion?.approvedAt || undefined,
     scriptureVerseEn: dbLesson.scripture_verse_en || undefined,
     scriptureVerseAr: dbLesson.scripture_verse_ar || undefined,

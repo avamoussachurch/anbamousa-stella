@@ -61,6 +61,8 @@ export function ProfileTab({
   const [copiedDirectLink, setCopiedDirectLink] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [studentLinkCode, setStudentLinkCode] = useState('');
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [familyCodeLoading, setFamilyCodeLoading] = useState(false);
   const [familyCodeError, setFamilyCodeError] = useState<string | null>(null);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
@@ -68,6 +70,26 @@ export function ProfileTab({
   const [achievementsLoading, setAchievementsLoading] = useState(false);
   const [achievementsError, setAchievementsError] = useState<string | null>(null);
   const [achievementRefreshTick, setAchievementRefreshTick] = useState(0);
+  useEffect(() => {
+    if (!supabase || isGuest || !userData?.id) {
+      setFollowersCount(0);
+      setFollowingCount(0);
+      return;
+    }
+    let active = true;
+    Promise.all([
+      supabase.from('profile_follows').select('*', { count: 'exact', head: true }).eq('followed_id', userData.id),
+      supabase.from('profile_follows').select('*', { count: 'exact', head: true }).eq('follower_id', userData.id)
+    ]).then(([followers, following]) => {
+      if (!active) return;
+      setFollowersCount(followers.count || 0);
+      setFollowingCount(following.count || 0);
+    }).catch(() => {
+      if (active) { setFollowersCount(0); setFollowingCount(0); }
+    });
+    return () => { active = false; };
+  }, [userData?.id, isGuest]);
+
 
   // Church Year & Student Join Code state
   const [churchYear, setChurchYear] = useState<string>('2026 / 2027');
@@ -516,16 +538,16 @@ export function ProfileTab({
 
       <AnimatePresence mode="wait">
         {screen === 'main' && (
-          <motion.div key="main" initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }} className="space-y-6">
-            <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] mb-6 md:text-3xl">{lang === 'ar' ? 'ملفك في رحلة موسى' : 'Traveler Profile'}</h1>
+          <motion.div key="main" initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }} className="space-y-4">
+            <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] mb-2 md:text-3xl">{lang === 'ar' ? 'ملفك في رحلة موسى' : 'Traveler Profile'}</h1>
             
             <div className="md:grid md:grid-cols-[1.5fr_1fr] md:gap-8 space-y-6 md:space-y-0">
-              <div className="space-y-6">
-                <div className="bg-[var(--mousa-cream-surface)] dark:bg-[var(--surface-primary)] rounded-3xl p-6 shadow-xs border-2 border-[var(--mousa-border-sand)] text-center relative">
+              <div className="space-y-4">
+                <div className="bg-[var(--mousa-cream-surface)] dark:bg-[var(--surface-primary)] rounded-3xl p-4 sm:p-5 shadow-xs border-2 border-[var(--mousa-border-sand)] text-center relative">
                   <button onClick={handleOpenEdit} className={`absolute top-4 ${lang === 'ar' ? 'left-4' : 'right-4'} text-[var(--mousa-sand-500)] hover:text-[var(--mousa-coral)] p-2 rounded-xl hover:bg-[var(--mousa-sand-100)] transition-colors cursor-pointer`} title={lang === 'ar' ? 'تعديل ملفك الشخصي' : 'Edit Profile'}>
                     <Edit3 size={20} />
                   </button>
-                  <img src={userData.avatarUrl} alt="Avatar" className="w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full border-4 border-[var(--mousa-gold)] bg-[var(--mousa-sand-100)] mb-4 shadow-sm object-cover" />
+                  <img src={userData.avatarUrl} alt="Avatar" className="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full border-4 border-[var(--mousa-gold)] bg-[var(--mousa-sand-100)] mb-2 shadow-sm object-cover" />
                   <h2 className="text-xl md:text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB]">{userData.fullName}</h2>
                   <p className="text-[var(--mousa-sand-500)] dark:text-[var(--mousa-sand-400)] font-bold md:text-lg">{lang === 'ar' ? 'رحلة القديس الأنبا موسى' : 'The Journey of Moses'}</p>
                   {isGuest && (
@@ -534,19 +556,17 @@ export function ProfileTab({
                     </span>
                   )}
                   
-                  <div className="flex justify-center gap-6 md:gap-12 mt-6 pt-6 border-t border-[var(--mousa-border-sand)]/60">
-                    <div>
-                      <p className="text-2xl md:text-3xl font-black text-[var(--mousa-gold)] dark:text-[var(--mousa-gold-light)]">{userData.points}</p>
-                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--text-muted)] font-black uppercase tracking-wider">{lang === 'ar' ? 'نقاط البركة' : 'Points'}</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl md:text-3xl font-black text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)]">{userData.currentStreak}</p>
-                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--text-muted)] font-black uppercase tracking-wider">{lang === 'ar' ? 'شعلة الأيام' : 'Streak'}</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl md:text-3xl font-black text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]">{userData.longestStreak}</p>
-                      <p className="text-xs md:text-sm text-[var(--mousa-sand-500)] dark:text-[var(--text-muted)] font-black uppercase tracking-wider">{lang === 'ar' ? 'أعلى إنجاز' : 'Best'}</p>
-                    </div>
+                  <div className="mt-4 grid grid-cols-5 gap-1.5 border-t border-[var(--mousa-border-sand)]/60 pt-4">
+                    {[
+                      { value: userData.points, label: lang === 'ar' ? 'النقاط' : 'Points', tone: 'text-[var(--mousa-gold)] dark:text-[var(--mousa-gold-light)]' },
+                      { value: userData.currentStreak, label: lang === 'ar' ? 'المواظبة' : 'Streak', tone: 'text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)]' },
+                      { value: userData.longestStreak, label: lang === 'ar' ? 'الأفضل' : 'Best', tone: 'text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]' },
+                      { value: followersCount, label: lang === 'ar' ? 'متابعون' : 'Followers', tone: 'text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]' },
+                      { value: followingCount, label: lang === 'ar' ? 'يتابع' : 'Following', tone: 'text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]' }
+                    ].map((stat, index) => <div key={index} className="min-w-0 rounded-xl bg-[var(--surface-secondary)]/70 px-1 py-2 text-center">
+                      <p className={'truncate text-base sm:text-xl font-black tabular-nums ' + stat.tone}>{Number(stat.value || 0).toLocaleString()}</p>
+                      <p className="truncate text-[8px] sm:text-[10px] font-black text-[var(--text-muted)]">{stat.label}</p>
+                    </div>)}
                   </div>
 
                   {/* Active Screen / Study Time */}

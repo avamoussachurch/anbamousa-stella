@@ -128,7 +128,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
   const youtubeEmbedUrl = getYoutubeEmbedUrl(effectiveVideoUrl);
 
   // 2. Audio (strictly only if teacher provided, NO fake fallback, NO AI audio)
-  const teacherVoiceSource = sources.find(s => s.type === 'TEACHER_VOICE');
+  const teacherVoiceSource = sources.find(s => s.type === 'TEACHER_VOICE' && Boolean(s.fileUrl));
   const effectiveAudioUrl = lesson.audioUrl || teacherVoiceSource?.fileUrl;
 
   // 3. Slides / Documents (strictly only if provided)
@@ -207,12 +207,10 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             </button>
           )}
 
-          {lesson.approvedServantName && (
-            <span className="text-[11px] px-2.5 py-1 rounded-lg bg-[var(--mousa-sand-100)] dark:bg-stone-800 text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] border border-[var(--mousa-border-sand)] font-bold hidden sm:inline-flex items-center gap-1">
+          <span className="inline-flex max-w-full items-center gap-1 rounded-lg border border-[var(--mousa-border-sand)] bg-[var(--mousa-sand-100)] px-2.5 py-1 text-[10px] font-bold text-[var(--mousa-sand-600)] dark:bg-stone-800 dark:text-[var(--mousa-sand-400)]">
               <CheckCircle2 className="w-3 h-3 text-[var(--mousa-gold)]" />
-              <span>{isAr ? `إعداد: ${lesson.approvedServantName}` : `By ${lesson.approvedServantName}`}</span>
-            </span>
-          )}
+              <span>{isAr ? `إعداد: ${lesson.approvedServantName || lesson.teacherName || 'خادم الفصل'}` : `By ${lesson.approvedServantName || lesson.teacherName || 'Sunday School Servant'}`}</span>
+          </span>
         </div>
       </div>
 
@@ -812,14 +810,14 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           )}
 
           {/* Review Quiz button: ONLY IF QUIZ EXISTS */}
-          {hasQuiz && (!readOnly || previewMode) && (
+          {hasQuiz && previewMode && (
             <button
               onClick={onStartQuiz}
-              data-testid="lesson-footer-start-quiz-button"
+              data-testid="lesson-footer-preview-quiz-button"
               className="px-6 py-3 bg-gradient-to-r from-amber-500 via-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-110 text-white border-2 border-amber-300/40 rounded-2xl text-xs sm:text-sm font-black shadow-md ring-2 ring-amber-400/30 flex items-center gap-2 transition-all active:scale-95 cursor-pointer min-h-[48px]"
             >
               <Sparkles className="w-4 h-4 text-yellow-200" />
-              <span>{previewMode ? (isAr ? 'عاين اختبار المراجعة ⚡' : 'Preview Review Quiz') : (isAr ? 'ابدأ اختبار المراجعة ⚡' : 'Start Review Quiz')}</span>
+              <span>{isAr ? 'عاين اختبار المراجعة ⚡' : 'Preview Review Quiz'}</span>
               {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
           )}

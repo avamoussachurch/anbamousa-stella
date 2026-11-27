@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BookOpen, Sparkles, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { motion } from 'motion/react';
+import { BookOpen, Sparkles, CheckCircle2 } from 'lucide-react';
 import { mockLessons } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { useLessons } from '../../context/LessonsContext';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { 
   Language, 
   LessonVersion
@@ -15,7 +16,6 @@ import { submitStudentQuizAttempt, getStudentQuizAttempts } from '../../lib/stud
 import { getStudentMastery, evaluateStudentMastery } from '../../lib/studentMasteryService';
 import { getClassGroupForGrade, getClassGroupLabel, getClassGroupById } from '../../lib/classGroups';
 import { updateLeaderboardUser, updateStreakLeaderboardUser } from '../../lib/pointsService';
-import { RewardCelebration } from '../sunday-school/student/RewardCelebration';
 import { hasRole } from '../../lib/workspaces';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 
@@ -68,13 +68,31 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
   }, [lesson, versions, isOnlineAuth, lessonId]);
 
   const [isTakingQuiz, setIsTakingQuiz] = useState<boolean>(false);
-  const [isTransitioningToQuiz, setIsTransitioningToQuiz] = useState<boolean>(false);
   const [targetSectionId, setTargetSectionId] = useState<string | undefined>(undefined);
   const [isFinishing, setIsFinishing] = useState<boolean>(false);
   const [finishError, setFinishError] = useState<string | null>(null);
   const [finishSuccess, setFinishSuccess] = useState<boolean>(false);
   const [sectionProgressError, setSectionProgressError] = useState<string | null>(null);
   const completionInFlightRef = useRef(false);
+  const isServantIdentifier = (value?: string | null) => Boolean(value && (/^[0-9a-f-]{24,}$/i.test(value) || /^(user_|teacher_)/i.test(value)));
+  const suppliedServantName = [lesson?.approvedServantName, lesson?.teacherName].find(value => value && !isServantIdentifier(value)) || null;
+  const approvedServantId = activePublishedVersion?.approvedBy || lesson?.teacherId ||
+    [lesson?.approvedServantName, lesson?.teacherName].find(value => isServantIdentifier(value)) || null;
+  const [servantDisplayName, setServantDisplayName] = useState<string | null>(suppliedServantName);
+
+  useEffect(() => {
+    let active = true;
+    setServantDisplayName(suppliedServantName);
+    if (!suppliedServantName && approvedServantId && supabase) {
+      supabase.rpc('get_lesson_servant_display_name', { p_lesson_id: lessonId })
+        .then(({ data, error }) => {
+          if (active && !error && typeof data === 'string' && data.trim()) setServantDisplayName(data.trim());
+        });
+    }
+    return () => { active = false; };
+  }, [approvedServantId, suppliedServantName, lessonId]);
+  const displayLesson = lesson ? { ...lesson, approvedServantName: servantDisplayName || undefined, teacherName: servantDisplayName || undefined } : lesson;
+
 
   useEffect(() => {
     if (activePublishedVersion && userData && !readOnly && isOnlineAuth) {
@@ -292,7 +310,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
         setUserDirectly({
           ...userData,
           points: res.totalPoints,
-          currentStreak: res.streak?.currentStreak ?? userData.currentStreak ?? 1
+          currentStreak: res.streak?.currentStreak ?? userData.currentStreak ?? 0
         });
       }
 
@@ -324,7 +342,8 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       );
 
       if (hasQuiz) {
-        setIsTransitioningToQuiz(true);
+        setTargetSectionId(undefined);
+        setIsTakingQuiz(true);
       }
     } catch (err: any) {
       console.error(err);
@@ -337,7 +356,12 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
   // Quiz View Mode: Render Tiered Sunday School Quiz View
   if (!readOnly && isTakingQuiz && activePublishedVersion?.quizDraft) {
     return (
-      <div className="px-4 pt-4 pb-20">
+      <motion.div
+        className="px-4 pt-4 pb-20"
+        initial={{ opacity: 0, y: 28, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+      >
         <SundaySchoolQuizView
           quiz={activePublishedVersion.quizDraft}
           lessonId={lessonId}
@@ -434,7 +458,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
             setIsTakingQuiz(false);
           }}
         />
-      </div>
+      </motion.div>
     );
   }
 
@@ -442,7 +466,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
   return (
     <div className="px-4 pt-4 pb-20 relative">
       <SundaySchoolLessonView
-        lesson={lesson}
+        lesson={displayLesson || lesson}
         version={activePublishedVersion}
         sources={activeSources}
         progress={currentProgress}
@@ -500,68 +524,6 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
         }}
       />
 
-      {/* Prominent Reading-Complete Transition Dialog with Large Attractive Start Quiz Button */}
-      {isTransitioningToQuiz && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 animate-in fade-in"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="bg-[var(--mousa-cream-surface)] dark:bg-[#1E1914] border-2 border-[var(--mousa-gold)] rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center space-y-5 shadow-2xl animate-in zoom-in-95 my-auto">
-            {/* Reusable RewardCelebration with Star pulse */}
-            <RewardCelebration
-              type="star"
-              pulse={true}
-              lang={lang}
-              badgeText={lang === 'ar' ? 'خلصت قراءة الدرس بنجاح! 📖✨' : 'Reading Completed! 📖✨'}
-              titleAr="حان وقت اختبار مراجعة الدرس!"
-              title="Time for Your Review Quiz!"
-              subtitleAr="أحسنت إتمام القراءة! اختبر استيعابك الآن وأكمل الاختبار لكسب النقاط وتثبيت حضورك اليومي."
-              subtitle="Great job completing the reading! Test your knowledge now — complete the quiz to earn points and advance your streak!"
-            />
-
-            {/* VERY LARGE, OBVIOUS, ATTRACTIVE, AND EASY TO TAP START QUIZ BUTTON */}
-            <div className="pt-2 space-y-3">
-              <button
-                onClick={() => {
-                  setIsTransitioningToQuiz(false);
-                  setIsTakingQuiz(true);
-                }}
-                data-testid="start-quiz-button"
-                className="w-full min-h-[58px] sm:min-h-[66px] py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-110 active:scale-98 text-white font-black shadow-xl ring-4 ring-amber-400/40 flex items-center justify-between gap-3 transition-all cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-6 h-6 text-yellow-200 group-hover:rotate-12 transition-transform" />
-                </div>
-
-                <div className="flex flex-col items-center justify-center leading-tight flex-1">
-                  <span className="text-base sm:text-xl font-black font-sans tracking-wide">
-                    {lang === 'ar' ? 'يلا ابدأ اختبار المراجعة! ⚡' : 'Start Review Quiz'}
-                  </span>
-                  <span className="text-[11px] sm:text-xs font-bold text-amber-100 opacity-95">
-                    {lang === 'ar' ? 'كمّل الاختبار عشان تكسب نقاط.' : 'Complete the quiz to earn points.'}
-                  </span>
-                </div>
-
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                  {lang === 'ar' ? (
-                    <ChevronLeft className="w-6 h-6 text-white group-hover:-translate-x-0.5 transition-transform" />
-                  ) : (
-                    <ChevronRight className="w-6 h-6 text-white group-hover:translate-x-0.5 transition-transform" />
-                  )}
-                </div>
-              </button>
-
-              <button
-                onClick={() => setIsTransitioningToQuiz(false)}
-                className="w-full py-2 px-4 text-xs font-bold text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] hover:text-[var(--mousa-teal-deep)] dark:hover:text-white transition-colors cursor-pointer rounded-xl hover:bg-black/5 dark:hover:bg-white/5"
-              >
-                {lang === 'ar' ? 'ارجع كمّل قراءة الدرس' : 'Stay on lesson reading text'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
