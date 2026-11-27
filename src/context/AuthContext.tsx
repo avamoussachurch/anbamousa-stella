@@ -450,18 +450,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (shouldPersistLocally) {
           try {
             const key = isGuest ? 'church_guest_user' : 'church_auth_user';
-            const saved = localStorage.getItem(key);
-            if (saved) {
-              const parsed = JSON.parse(saved);
-              parsed.screenTimeSeconds = nextSecs;
-              parsed.screenTimeTodaySeconds = nextDailySeconds;
-              parsed.screenTimeDate = cairoDate;
-              localStorage.setItem(key, JSON.stringify(parsed));
-            }
+            // Persist from the live in-memory profile, not only when a previous cache exists.
+            // This makes the first activity tick durable even after cache eviction or storage repair.
+            localStorage.setItem(key, JSON.stringify({
+              ...prev,
+              screenTimeSeconds: nextSecs,
+              screenTimeTodaySeconds: nextDailySeconds,
+              screenTimeDate: cairoDate
+            }));
           } catch (e) {}
         }
 
-        // Sync lifetime and Cairo-day active time every six visible ticks (60 seconds).
+        // Sync lifetime and Cairo-day active time every three visible ticks (30 seconds).
         if (shouldSyncToSupabase && !isGuest && isSupabaseConfigured && supabase) {
           updateSupabaseProfile(prev.id, {
             screen_time_seconds: nextSecs,
