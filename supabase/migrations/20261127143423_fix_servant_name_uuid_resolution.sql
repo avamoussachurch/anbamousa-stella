@@ -24,17 +24,17 @@ BEGIN
       ELSE NULL
     END,
     COALESCE(
-      active_version.approved_by,
+      CASE
+        WHEN pg_catalog.btrim(COALESCE(active_version.approved_by, '')) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        THEN pg_catalog.btrim(active_version.approved_by)::uuid
+        ELSE NULL
+      END,
       CASE
         WHEN pg_catalog.btrim(COALESCE(lesson.approved_servant_name, '')) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
         THEN pg_catalog.btrim(lesson.approved_servant_name)::uuid
         ELSE NULL
       END,
-      CASE
-        WHEN pg_catalog.btrim(COALESCE(lesson.created_by, '')) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-        THEN pg_catalog.btrim(lesson.created_by)::uuid
-        ELSE NULL
-      END
+      lesson.created_by
     )
   INTO v_name, v_servant_id
   FROM public.lessons AS lesson
