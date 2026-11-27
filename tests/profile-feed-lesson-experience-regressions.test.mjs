@@ -87,7 +87,7 @@ test('lesson completion launches its quiz automatically and only quiz submission
 test('lesson attribution resolves a servant display name and published servant voice is available to students', () => {
   const lesson = read('../src/components/student/LessonView.tsx');
   const studentLesson = read('../src/components/sunday-school/student/SundaySchoolLessonView.tsx');
-  const migration = read('../supabase/migrations/20261127170000_allow_published_lesson_teacher_voice_for_students.sql');
+  const migration = read('../supabase/migrations/20261127170000_lesson_servant_display_name_rpc.sql');
   assert.match(lesson, /rpc\('get_lesson_servant_display_name'/);
   assert.match(lesson, /teacherName: servantDisplayName/);
   assert.match(studentLesson, /sources\.find\(s => s\.type === 'TEACHER_VOICE' && Boolean\(s\.fileUrl\)\)/);
