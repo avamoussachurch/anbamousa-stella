@@ -104,8 +104,8 @@ export function TeacherDashboard({
   activeTab: routeTab,
   onNavigate
 }: TeacherDashboardProps) {
-  const { userData, isGuest } = useAuth();
-  const isOnlineAuth = !isGuest && Boolean(userData) && isSupabaseConfigured;
+  const { userData, isGuest, currentUser } = useAuth();
+  const isOnlineAuth = !isGuest && Boolean(currentUser?.uid) && Boolean(userData) && isSupabaseConfigured;
   const { 
     lessons, 
     addLesson, 
@@ -1119,12 +1119,18 @@ export function TeacherDashboard({
         </div>
       )}
 
-      {activeTab === 'helpRequests' && <HelpRequestsPanel lang={lang} />}
+      {activeTab === 'helpRequests' && (isOnlineAuth
+        ? <HelpRequestsPanel lang={lang} />
+        : <div role="status" dir={lang === 'ar' ? 'rtl' : 'ltr'} className="mx-auto mt-8 max-w-xl rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm leading-6 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">{lang === 'ar' ? 'سجّل الدخول بحساب خادم موثّق لعرض طلبات التلاميذ الخاصة بفصولك.' : 'Sign in with a verified teacher session to view private student requests for your assigned classes.'}</div>
+      )}
       {activeTab === 'leaderboard' && <ClassLeaderboardPanel lang={lang} audience="staff" />}
       {activeTab === 'achievements' && <AchievementRewardsStudio mode="manage" lang={lang} />}
       {activeTab === 'hymnPractice' && <HymnPracticeInbox lang={lang} />}
 
-      {activeTab === 'moderation' && <TeacherModerationQueue lang={lang} />}
+      {activeTab === 'moderation' && (isOnlineAuth
+        ? <TeacherModerationQueue lang={lang} />
+        : <div role="status" dir={lang === 'ar' ? 'rtl' : 'ltr'} className="mx-auto mt-8 max-w-xl rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm leading-6 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">{lang === 'ar' ? 'سجّل الدخول بحساب خادم موثّق لمراجعة البلاغات الخاصة بفصولك.' : 'Sign in with a verified teacher session to review private reports from your assigned classes.'}</div>
+      )}
 
       {/* Lesson Edit Modal (Edit or Direct Manual Creation) */}
       {editingLesson && (
