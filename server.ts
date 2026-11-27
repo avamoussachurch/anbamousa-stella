@@ -15772,7 +15772,21 @@ Return ONLY valid JSON matching this schema:
       pointsAwarded: number;
     }>(
       response?.text || "{}",
-      (d) => typeof d?.accuracyPercentage === 'number' && typeof d?.passed === 'boolean'
+      (d) =>
+        typeof d?.transcription === 'string' &&
+        typeof d?.accuracyPercentage === 'number' &&
+        Number.isFinite(d.accuracyPercentage) &&
+        d.accuracyPercentage >= 0 && d.accuracyPercentage <= 100 &&
+        typeof d?.passed === 'boolean' &&
+        Array.isArray(d?.matchedWords) && d.matchedWords.every((word: unknown) => typeof word === 'string') &&
+        Array.isArray(d?.missedWords) && d.missedWords.every((word: unknown) => typeof word === 'string') &&
+        typeof d?.feedback === 'string' &&
+        typeof d?.aiTeacherComment === 'string' &&
+        (d?.wordAnalysis === undefined || (
+          Array.isArray(d.wordAnalysis) &&
+          d.wordAnalysis.every((item: any) => item && typeof item.word === 'string' &&
+            ['correct', 'missing', 'approximate'].includes(item.status))
+        ))
     );
 
     if (!parsed.success) {
