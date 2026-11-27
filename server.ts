@@ -15767,6 +15767,9 @@ Return ONLY valid JSON matching this schema:
       transcription: string;
       accuracyPercentage: number;
       passed: boolean;
+      matchedWords: string[];
+      missedWords: string[];
+      wordAnalysis?: Array<{ word: string; status: 'correct' | 'missing' | 'approximate'; spokenAs?: string }>;
       feedback: string;
       aiTeacherComment: string;
       pointsAwarded: number;
