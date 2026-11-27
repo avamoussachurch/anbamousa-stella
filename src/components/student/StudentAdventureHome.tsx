@@ -78,7 +78,7 @@ function JourneyPath({
       <div aria-hidden="true" className="absolute -end-24 -top-32 h-72 w-72 rounded-full bg-[#E6B75A]/10 blur-3xl" />
       <div className="relative z-10 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[.2em] text-[#E8C574]">
+          <p className="text-[11px] font-black uppercase tracking-[.2em] text-[#8A6427] dark:text-[#E8C574]">
             {isArabic ? 'رحلتك في البرية' : 'Your learning trail'}
           </p>
           <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">
@@ -376,7 +376,7 @@ export function StudentAdventureHome({
         <div className="stella-home-next-card relative overflow-hidden rounded-[1.75rem] border border-[#435361] bg-[#14232C] p-5 text-white shadow-xl sm:p-7">
           <div aria-hidden="true" className="absolute -end-16 -top-20 h-52 w-52 rounded-full bg-[#E5B85F]/10 blur-3xl" />
           <div className="relative flex h-full flex-col">
-            <div className="flex items-center gap-2 text-[#F5D98C]">
+            <div className="flex items-center gap-2 text-[#286C70] dark:text-[#F5D98C]">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#29424B]"><BookOpen size={18} /></span>
               <span className="text-[11px] font-black uppercase tracking-[.18em]">{isArabic ? 'مهمتك القادمة' : 'Your next mission'}</span>
             </div>
