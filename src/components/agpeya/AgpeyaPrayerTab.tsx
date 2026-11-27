@@ -194,14 +194,16 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
 
             {/* Cloud Sync Status */}
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 border border-white/10 text-[11px] font-semibold text-emerald-300">
-              <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
+              <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-400 animate-ping' : prayerSyncError ? 'bg-rose-400' : 'bg-emerald-400'}`} />
               <span>
-                {isSyncing 
+                {isSyncing
                   ? (lang === 'ar' ? 'بنحفظ على Supabase...' : 'Syncing to Supabase...')
-                  : (lang === 'ar' ? `متزامن مع السحابة ${lastSyncedTime ? `(${lastSyncedTime})` : ''}` : `Synced with Supabase ${lastSyncedTime ? `(${lastSyncedTime})` : ''}`)
+                  : prayerSyncError
+                    ? (lang === 'ar' ? 'المزامنة محتاجة مراجعة' : 'Sync needs attention')
+                    : (lang === 'ar' ? `متزامن مع السحابة ${lastSyncedTime ? `(${lastSyncedTime})` : ''}` : `Synced with Supabase ${lastSyncedTime ? `(${lastSyncedTime})` : ''}`)
                 }
               </span>
-              {prayerSyncError && <span role="alert" className="text-rose-300">{lang === 'ar' ? 'تعذر حفظ الصلاة' : 'Prayer sync failed'}</span>}
+              {prayerSyncError && <span role="alert" title={prayerSyncError} className="text-rose-300">{lang === 'ar' ? 'تعذر حفظ الصلاة' : 'Prayer sync failed'}</span>}
             </div>
           </div>
 
