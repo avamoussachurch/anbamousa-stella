@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Music, MessageCircle, Play, Pause, Volume2, VolumeX, X, RefreshCw } from 'lucide-react';
+import { Music, Play, Pause, Volume2, VolumeX, X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGlobalAudio } from '../../context/AudioContext';
 import { useAuth } from '../../context/AuthContext';
@@ -31,6 +31,9 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
     } catch { return null; }
   });
   const [isDragging, setIsDragging] = useState(false);
+  const playerRootRef = useRef<HTMLDivElement>(null);
+  const playerPanelRef = useRef<HTMLDivElement>(null);
+  const [panelPosition, setPanelPosition] = useState<{ left: number; top: number } | null>(null);
 
   const clampBubblePosition = useCallback((left: number, top: number) => {
     const bubbleSize = 62;
@@ -89,6 +92,41 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [clampBubblePosition]);
+
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutsidePointer = (event: PointerEvent) => {
+      if (playerRootRef.current?.contains(event.target as Node)) return;
+      setIsOpen(false);
+      setShowVolume(false);
+    };
+    const handleEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setIsOpen(false); };
+    document.addEventListener('pointerdown', handleOutsidePointer);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointer);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
+
+
+  useEffect(() => {
+    if (!isOpen) { setPanelPosition(null); return; }
+    const frame = window.requestAnimationFrame(() => {
+      const bubble = playerRootRef.current?.querySelector('button')?.getBoundingClientRect();
+      const panel = playerPanelRef.current?.getBoundingClientRect();
+      if (!bubble || !panel) return;
+      const margin = 12;
+      const left = Math.max(margin, Math.min(window.innerWidth - panel.width - margin, bubble.left));
+      const roomBelow = window.innerHeight - bubble.bottom - margin;
+      const top = roomBelow >= panel.height + 8
+        ? bubble.bottom + 8
+        : Math.max(margin, Math.min(window.innerHeight - panel.height - margin, bubble.top - panel.height - 8));
+      setPanelPosition({ left, top });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isOpen, bubblePosition]);
 
   const refreshHymns = useCallback(async () => {
     const requestId = ++hymnRequestId.current;
@@ -163,6 +201,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
 
   return (
     <motion.div
+      ref={playerRootRef}
       className={`fixed z-50 flex max-w-[calc(100vw-1.25rem)] ${(bubblePosition ? bubblePosition.left < window.innerWidth / 2 : lang === 'ar') ? 'items-start' : 'items-end'} ${bubblePosition && bubblePosition.top < window.innerHeight / 2 ? 'flex-col-reverse' : 'flex-col'}`}
       style={bubblePosition ? undefined : {
         bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)',
@@ -174,10 +213,12 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={playerPanelRef}
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className={["anba-global-player-panel rounded-3xl p-4 w-[min(18rem,calc(100vw-1.5rem))] sm:w-80 max-h-[70dvh] overflow-y-auto overflow-x-hidden", bubblePosition && bubblePosition.top < window.innerHeight / 2 ? "mt-4 mb-0" : "mb-4 mt-0"].join(" ")}
+            className="anba-global-player-panel fixed z-[51] rounded-3xl p-4 w-[min(18rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain overflow-x-hidden"
+            style={{ left: panelPosition?.left ?? 12, top: panelPosition?.top ?? 12, maxHeight: 'calc(100dvh - 24px)' }}
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-[var(--color-church-blue)] flex items-center gap-2">
@@ -319,7 +360,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
         whileHover={{ scale: 1.07, rotate: -3 }}
         whileTap={{ scale: 0.92 }}
         style={{ touchAction: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
-        className="anba-global-player-bubble relative grid h-[62px] w-[62px] select-none place-items-center rounded-full border border-white/70 text-white shadow-[0_10px_32px_rgba(8,38,55,.36)] ring-4 ring-[#1b6572]/15"
+        className="anba-global-player-bubble relative grid h-[62px] w-[62px] select-none place-items-center rounded-full border border-[#E8D19A] text-white shadow-[0_10px_28px_rgba(8,30,35,.38)]"
         animate={isDragging
           ? { scale: 1.12, rotate: 9, y: -2 }
           : isPlaying
@@ -331,16 +372,17 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
             ? { duration: 2.8, repeat: Infinity, ease: 'easeInOut' }
             : { type: 'spring', stiffness: 300, damping: 20 }}
       >
-        <span className="absolute inset-0 rounded-full bg-gradient-to-br from-[#49BFC1] via-[#187C91] to-[#183F70]" />
-        <span className="absolute inset-[4px] rounded-full border border-white/25 bg-gradient-to-br from-white/15 to-transparent shadow-[inset_0_2px_8px_rgba(255,255,255,.24)]" />
-        <span className="relative grid h-10 w-10 place-items-center">
-          <MessageCircle size={38} strokeWidth={1.8} className="absolute fill-[#F8FFFF] text-[#F8FFFF] drop-shadow-[0_2px_2px_rgba(0,0,0,.18)]" />
-          <Music size={17} strokeWidth={2.8} className="relative z-10 text-[#17627A]" />
-        </span>
-        {isPlaying && <>
-          <span className="absolute -right-0.5 -top-0.5 h-4 w-4 rounded-full border-2 border-white bg-[#F5C85D] shadow-[0_0_0_4px_rgba(245,200,93,.18)]" />
-          <span className="absolute -bottom-1 left-1/2 h-1 w-7 -translate-x-1/2 rounded-full bg-[#F5D98C] shadow-[0_0_12px_3px_rgba(245,217,140,.55)]" />
-        </>}
+        <span className="absolute inset-0 rounded-full border-2 border-[#E8D19A] bg-[radial-gradient(circle_at_30%_22%,#42696A,#173D43_72%)] shadow-[inset_0_2px_5px_rgba(255,255,255,.22),0_7px_20px_rgba(8,30,35,.35)]" />
+        <span className="absolute inset-[5px] rounded-full border border-[#F5E6BE]/35" />
+        <svg className="relative z-10 h-10 w-10 drop-shadow-[0_2px_2px_rgba(0,0,0,.3)]" viewBox="0 0 48 48" role="img" aria-label="Coptic church cymbals">
+          <circle cx="17" cy="27" r="12" fill="#D8B45F" stroke="#765326" strokeWidth="1.7" />
+          <circle cx="31" cy="27" r="12" fill="#F0D58C" stroke="#765326" strokeWidth="1.7" />
+          <circle cx="17" cy="27" r="8.5" fill="none" stroke="#FFF0BE" strokeWidth="1.1" />
+          <circle cx="31" cy="27" r="8.5" fill="none" stroke="#FFF0BE" strokeWidth="1.1" />
+          <path d="M24 4v11M19 9.5h10M24 15v5" stroke="#FFF0CE" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="17" cy="27" r="2" fill="#765326" /><circle cx="31" cy="27" r="2" fill="#765326" />
+        </svg>
+        {isPlaying && <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#173D43] bg-[#F5D98C]" />}
       </motion.button>
     </motion.div>
   );
