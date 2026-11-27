@@ -310,7 +310,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
         setUserDirectly({
           ...userData,
           points: res.totalPoints,
-          currentStreak: res.streak?.currentStreak ?? userData.currentStreak ?? 1
+          currentStreak: res.streak?.currentStreak ?? userData.currentStreak ?? 0
         });
       }
 
