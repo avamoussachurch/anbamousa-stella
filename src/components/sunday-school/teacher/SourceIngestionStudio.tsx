@@ -20,6 +20,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { isSupabaseConfigured } from '../../../lib/supabase';
 import { uploadSourceMedia } from '../../../lib/lessonSourceService';
 import { buildEvidenceMap } from '../../../lib/evidenceMapService';
+import { getLocalizedErrorMessage } from '../../../lib/localizedErrors';
 
 interface SourceIngestionStudioProps {
   session: ClassSession;
@@ -130,7 +131,7 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
             priority: 'PRIMARY'
           });
         } catch (error) {
-          setErrorMsg(error instanceof Error ? error.message : 'The recording could not be saved.');
+          setErrorMsg(getLocalizedErrorMessage(error, lang));
         } finally {
           setIsUploading(false);
         }
@@ -146,7 +147,7 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
       recordingStreamRef.current = null;
       setErrorMsg(error instanceof Error && error.name === 'NotAllowedError'
         ? (isAr ? 'اسمح للمتصفح باستخدام الميكروفون عشان تسجّل.' : 'Allow microphone access to record audio.')
-        : (error instanceof Error ? error.message : 'Could not start microphone recording.'));
+        : getLocalizedErrorMessage(error instanceof Error && error.message ? error : 'Could not start microphone recording.', lang));
     }
   };
 
@@ -347,7 +348,7 @@ export const SourceIngestionStudio: React.FC<SourceIngestionStudioProps> = ({
       onPipelineComplete(evidenceMap, outline);
     } catch (err: any) {
       console.error('Pipeline error', err);
-      setErrorMsg(err?.message || 'AI processing requires an active Gemini configuration.');
+      setErrorMsg(getLocalizedErrorMessage(err instanceof Error && err.message ? err : 'AI processing requires an active Gemini configuration.', lang));
     } finally {
       setIsProcessing(false);
       setProcessingStage('');
