@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Search, UserPlus, UserCheck, X, Flame, Trophy, Loader2, MessagesSquare, ArrowUpRight } from 'lucide-react';
+import { Search, UserPlus, UserCheck, X, Flame, Trophy, Loader2, MessagesSquare, ArrowUpRight, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type DirectoryProfile = {
@@ -40,6 +40,16 @@ const bannerBackground = (profile: DirectoryProfile): string => {
     'midnight-teal': 'linear-gradient(120deg,#102f3b,#145b62,#327e79)'
   };
   return legacyBanners[profile.banner_key || ''] || 'linear-gradient(120deg,#6f4935,#d6a15b,#f4dca6)';
+};
+const profileFrameColor = (profile: DirectoryProfile) => {
+  const frame = profile.equipped_cosmetics?.frame;
+  const colors: Record<string,string> = {
+    'frame-halo-gold':'#F6D365', 'frame-desert-royal':'#E7A84B',
+    'frame-midnight-coptic':'#6BC6C4', 'frame-pascha-radiance':'#F5C96A',
+    'frame-archangel-sapphire':'#6FA8DC', 'frame-martyr-ruby':'#D95D5D',
+    'frame-olive-crown':'#C7D86A'
+  };
+  return colors[frame || ''] || (profile.frame_key === 'olive-wreath' ? '#16865A' : profile.frame_key === 'royal-blue' ? '#245BB8' : profile.frame_key === 'desert-sand' ? '#D69A47' : profile.frame_key === 'burgundy' ? '#8F2949' : '#D6A84F');
 };
 const roleLabel = (role: string, ar: boolean) => {
   const labels: Record<string, [string,string]> = {
@@ -106,7 +116,10 @@ export function FeedPeopleDirectory({ lang, initialProfileId }: { lang: 'en'|'ar
       {open && <motion.div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/60 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onMouseDown={e=>{if(e.target===e.currentTarget)setOpen(false);}}>
         <motion.section dir={ar?'rtl':'ltr'} initial={{opacity:0,y:24,scale:.97}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:18,scale:.98}} className="flex max-h-[min(88dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1.5rem),780px)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.7rem] border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] shadow-2xl">
           <header className="flex items-center justify-between gap-3 border-b border-[var(--mousa-border-sand)] bg-gradient-to-r from-[var(--mousa-teal-deep)] to-[#1d6560] p-5 text-white">
-            <div><p className="text-[10px] font-black uppercase tracking-[.2em] text-amber-200">{ar?'عيلة الكنيسة':'CHURCH COMMUNITY'}</p><h2 className="mt-1 text-xl font-black">{ar?'دليل الأعضاء':'People directory'}</h2><p className="mt-1 text-xs text-white/75">{ar?'تعرّف على أعضاء مجتمع الكنيسة':'Discover and follow church community members'}</p></div>
+            <div className="min-w-0 flex items-center gap-3">
+              {selected && <button type="button" onClick={()=>setSelected(null)} aria-label={ar?'رجوع للأعضاء':'Back to members'} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 transition hover:bg-white/20"><ArrowLeft size={19}/></button>}
+              <div><p className="text-[10px] font-black uppercase tracking-[.2em] text-amber-200">{ar?'عيلة الكنيسة':'CHURCH COMMUNITY'}</p><h2 className="mt-1 text-xl font-black">{selected ? (ar?'الملف الشخصي':'Member profile') : (ar?'دليل الأعضاء':'People directory')}</h2><p className="mt-1 text-xs text-white/75">{selected ? (ar?'ده الشكل اللي بيظهر لأعضاء الكنيسة':'This is how the profile appears to church members') : (ar?'تعرّف على أعضاء مجتمع الكنيسة':'Discover and follow church community members')}</p></div>
+            </div>
             <button type="button" onClick={()=>setOpen(false)} aria-label={ar?'إغلاق':'Close'} className="rounded-xl bg-white/10 p-2 hover:bg-white/20"><X size={20}/></button>
           </header>
           <div className="border-b border-[var(--mousa-border-sand)] p-4">
@@ -116,8 +129,18 @@ export function FeedPeopleDirectory({ lang, initialProfileId }: { lang: 'en'|'ar
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {selected ? <div className="mx-auto max-w-md space-y-5 py-3 text-center">
               <button type="button" onClick={()=>setSelected(null)} className="mb-2 text-xs font-bold text-[var(--mousa-teal-deep)]">← {ar?'كل الأعضاء':'All members'}</button>
-               <div className="h-20 w-full rounded-2xl shadow-inner" style={{ background: bannerBackground(selected) }} />
-              <div className={'mx-auto grid h-28 w-28 place-items-center rounded-[2rem] bg-white p-1 shadow-lg '+(selected.frame_key==='olive-wreath'?'ring-4 ring-emerald-600':selected.frame_key==='royal-blue'?'ring-4 ring-blue-700':selected.frame_key==='desert-sand'?'ring-4 ring-orange-300':selected.frame_key==='burgundy'?'ring-4 ring-rose-900':'ring-4 ring-amber-400')} style={{outline:selected.equipped_cosmetics?.frame==='frame-midnight-coptic'?'4px solid #6BC6C4':selected.equipped_cosmetics?.frame==='frame-pascha-radiance'?'4px solid #F5C96A':selected.equipped_cosmetics?.frame==='frame-desert-royal'?'4px solid #E7A84B':selected.equipped_cosmetics?.frame==='frame-archangel-sapphire'?'4px solid #6FA8DC':selected.equipped_cosmetics?.frame==='frame-martyr-ruby'?'4px solid #D95D5D':selected.equipped_cosmetics?.frame==='frame-olive-crown'?'4px solid #C7D86A':selected.equipped_cosmetics?.frame==='frame-halo-gold'?'4px solid #F6D365':undefined,boxShadow:selected.equipped_cosmetics?.effect==='effect-stardust'?'0 0 28px #E9D5FF':selected.equipped_cosmetics?.effect==='effect-emerald-aura'?'0 0 28px #6EE7B7':selected.equipped_cosmetics?.effect==='effect-golden-radiance'?'0 0 28px #FDE68A':selected.equipped_cosmetics?.effect==='effect-celestial-blue'?'0 0 28px #A5B4FC':undefined}}><img src={selected.avatar_url || '/icons/icon-192.png'} alt="" className="h-full w-full rounded-[1.5rem] object-cover"/></div>
+               <div className="h-24 w-full rounded-2xl shadow-inner" style={{ background: bannerBackground(selected) }}>
+                <div className="flex h-full items-end justify-end p-3"><span className="rounded-full bg-black/30 px-3 py-1 text-[9px] font-black tracking-[.18em] text-white">{ar?'ملف أنبا موسى':'ANBA MOUSA MEMBER'}</span></div>
+              </div>
+              <div className="relative mx-auto mt-[-2.75rem] grid h-28 w-28 place-items-center rounded-[2rem] bg-white p-1 shadow-xl" style={{ boxShadow: selected.equipped_cosmetics?.effect === 'effect-stardust' ? '0 0 28px #E9D5FF' : selected.equipped_cosmetics?.effect === 'effect-emerald-aura' ? '0 0 28px #6EE7B7' : selected.equipped_cosmetics?.effect === 'effect-golden-radiance' ? '0 0 28px #FDE68A' : selected.equipped_cosmetics?.effect === 'effect-celestial-blue' ? '0 0 28px #A5B4FC' : undefined }}>
+                <div className="absolute -inset-2 rounded-[2.4rem] border-[5px] shadow-sm" style={{ borderColor: profileFrameColor(selected) }} />
+                <div className="relative h-full w-full overflow-hidden rounded-[1.55rem] bg-stone-100">
+                  <img src={selected.avatar_url || '/icons/icon-192.png'} alt="" className="h-full w-full object-cover"/>
+                </div>
+                {selected.equipped_cosmetics?.frame === 'frame-halo-gold' && <span className="pointer-events-none absolute -top-3 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-2 border-amber-200 bg-amber-400 shadow-md"/>}
+                {selected.equipped_cosmetics?.frame === 'frame-midnight-coptic' && <span className="pointer-events-none absolute -top-4 left-1/2 h-6 w-1 -translate-x-1/2 rounded-full bg-cyan-200 shadow-[0_0_8px_#a5f3fc]"/>}
+                {selected.equipped_cosmetics?.frame === 'frame-pascha-radiance' && <span className="pointer-events-none absolute -top-4 left-1/2 h-7 w-1 -translate-x-1/2 rounded-full bg-amber-200 shadow-[0_0_8px_#fcd34d]"/>}
+              </div>
               <div><h3 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-white">{selected.display_name}</h3><p className="mt-1 text-sm font-bold text-[var(--mousa-sand-500)]">{profileTitleLabel(selected.display_title,ar) || roleLabel(selected.role,ar)}</p></div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-2xl bg-white/70 p-3 dark:bg-stone-900"><strong className="block text-xl">{selected.followers_count}</strong><span className="text-[10px] text-[var(--mousa-sand-500)]">{ar?'متابع':'Followers'}</span></div>
