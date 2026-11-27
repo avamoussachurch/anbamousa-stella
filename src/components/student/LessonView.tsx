@@ -347,7 +347,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
       }
     } catch (err: any) {
       console.error(err);
-      setFinishError(err?.message || (lang === 'ar' ? 'حصلت مشكلة وإحنا بنحفظ إكمال الدرس.' : 'Error saving completion'));
+      setFinishError(getLocalizedErrorMessage(err, lang));
       setIsFinishing(false);
       completionInFlightRef.current = false;
     }
@@ -386,7 +386,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
             if (res.error || !res.data) {
               return {
                 success: false,
-                error: res.error?.message || 'The server did not confirm that your quiz was saved. Please retry.'
+                error: getLocalizedErrorMessage(res.error?.message || 'The server did not confirm that your quiz was saved. Please retry.', lang)
               };
             }
             recordQuizAttempt(res.data);
