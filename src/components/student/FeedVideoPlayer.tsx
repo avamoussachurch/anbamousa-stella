@@ -53,6 +53,10 @@ export function FeedVideoPlayer({ src, title, lang = 'en', onError }: FeedVideoP
     }
   }, [failed]);
 
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = playbackRate;
+  }, [playbackRate]);
+
   const seek = (value: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
@@ -154,7 +158,7 @@ export function FeedVideoPlayer({ src, title, lang = 'en', onError }: FeedVideoP
               onChange={event => seek(Number(event.target.value))}
               aria-label={isArabic ? 'تقديم أو تأخير الفيديو' : 'Seek video'}
               className="mb-2 h-1.5 w-full cursor-pointer accent-amber-300"/>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button type="button" onClick={() => void togglePlayback()} aria-label={playing ? (isArabic ? 'إيقاف مؤقت' : 'Pause video') : (isArabic ? 'تشغيل الفيديو' : 'Play video')}
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/15 transition hover:bg-white/25">
                 {playing ? <Pause size={18} fill="currentColor"/> : <Play size={18} fill="currentColor"/>}
