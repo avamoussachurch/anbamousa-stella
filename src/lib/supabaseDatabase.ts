@@ -730,8 +730,12 @@ export async function getAgpeyaProgressFromSupabase(
       return { success: true, data: record };
     }
 
+    if (error) {
+      return { success: false, data: localData || undefined, error: error.message };
+    }
+
     return { success: true, data: localData || undefined };
   } catch (err: any) {
-    return { success: true, data: localData || undefined, error: err?.message };
+    return { success: false, data: localData || undefined, error: err?.message || 'Could not load prayer progress.' };
   }
 }
