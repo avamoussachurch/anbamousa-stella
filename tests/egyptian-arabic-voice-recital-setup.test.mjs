@@ -35,3 +35,13 @@ test('verse recital verification failures never create a passing result or award
   assert.match(recital, /result\.pointsAwarded > 0/);
   assert.match(recital, /result\.verificationUnavailable \? \(lang === 'ar' \? 'غير متحقق' : 'Not verified'\)/);
 });
+
+test('verse recital server never trusts model-generated point awards', async () => {
+  const server = await read('../server.ts');
+  const start = server.indexOf('app.post("/api/verify-verse-recital"');
+  const end = server.indexOf('// ==============================================================================\n// HYMNS SCHOOL', start);
+  const route = server.slice(start, end);
+
+  assert.match(route, /pointsAwarded must always be 0/);
+  assert.match(route, /return res\.json\(\{ \.\.\.parsed\.data, pointsAwarded: 0 \}\)/);
+});
