@@ -69,7 +69,7 @@ Audit and localize every user-facing surface, not only the student home:
 - [ ] Full student, teacher, parent, and admin localization.
 - [x] Eleventh Egyptian Arabic pass across parent dashboard/family journey, servant service dashboard, and admin/parent/servant profile forms.
 - [x] Twelfth Egyptian Arabic pass across Coptic Taxis and Hymns learning interfaces, family altar prompts, in-app lesson document viewer, Scripture recital guidance, and student adventure home.
-- [x] Thirteenth Egyptian Arabic pass across Hymns/Taxis media resolution, playback, microphone, recording submission, completion, and service errors; failed Taxis loads now exit the loading state and show localized feedback.
+- [x] Thirteenth Egyptian Arabic pass across Hymns/Taxis media resolution, playback, microphone, recording submission, completion, teacher student-preview loading, and service errors; failed Taxis loads now exit the loading state and show localized feedback.
 - [x] Supabase connection tester: Egyptian Arabic setup instructions, connection states, and retry/save actions.
 - [x] Tenth Egyptian Arabic pass across login/registration, student lesson reading and completion, curriculum discovery, points/rewards, and community feed actions.
 - [x] Ninth Egyptian Arabic pass across admin role/account/support operations and remaining teacher dashboard demo/offline/permission feedback.
