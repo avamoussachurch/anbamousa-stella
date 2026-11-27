@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Play, Pause, Volume2, VolumeX, X, RefreshCw } from 'lucide-react';
+import { Music, Play, Pause, Volume2, VolumeX, X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGlobalAudio } from '../../context/AudioContext';
 import { useAuth } from '../../context/AuthContext';
