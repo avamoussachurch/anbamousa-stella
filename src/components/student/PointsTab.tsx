@@ -35,16 +35,15 @@ export function PointsTab({ lang }: { lang: Language }) {
   // 3. Points Leaderboard (ترتيب النقاط)
   // 4. Points Bazaar (متجر المكافآت)
   // 5. Profile Cosmetics Store (متجر مظهر الملف)
-  const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar' | 'cosmetics'>(() => {
-    try {
-      const requested = window.sessionStorage.getItem('anba-points-initial-view');
-      window.sessionStorage.removeItem('anba-points-initial-view');
-      if (requested === 'leaderboard' || requested === 'streak') return requested;
-    } catch { /* storage may be unavailable */ }
-    return 'streak';
-  });
+  const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar' | 'cosmetics'>('streak');
 
   useEffect(() => {
+    try {
+      const requested = window.sessionStorage.getItem('anba-points-initial-view');
+      if (requested === 'leaderboard' || requested === 'streak') setView(requested);
+      window.sessionStorage.removeItem('anba-points-initial-view');
+    } catch { /* storage may be unavailable */ }
+
     const handleRequestedView = (event: Event) => {
       const requested = (event as CustomEvent<string>).detail;
       if (requested === 'leaderboard' || requested === 'streak') {
