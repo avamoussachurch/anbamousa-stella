@@ -20,3 +20,15 @@ test('Supabase connection setup guidance uses clear Egyptian Arabic', async () =
   assert.match(setup, /احفظ واختبر الاتصال/);
   assert.match(setup, /إزاي تفعّل تسجيل الدخول بجوجل والإيميل/);
 });
+
+test('verse recital verification failures never create a passing result or award points', async () => {
+  const recital = await read('../src/components/student/VerseRecitalModal.tsx');
+  const catchBlock = recital.slice(recital.indexOf('} catch (err: any) {', recital.indexOf('const evaluateRecital')), recital.indexOf('} finally {', recital.indexOf('const evaluateRecital')));
+
+  assert.doesNotMatch(recital, /awardPoints/);
+  assert.match(catchBlock, /passed: false/);
+  assert.match(catchBlock, /pointsAwarded: 0/);
+  assert.match(catchBlock, /setAudioError\(/);
+  assert.doesNotMatch(catchBlock, /passed: true/);
+  assert.match(recital, /evalData\.pointsAwarded = 0/);
+});
