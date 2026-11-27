@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, CheckCircle2, RotateCcw, Sparkles, Volume2, X, Award, AlertCircle, MessageSquareQuote, Check, BookCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
+import { useAuth } from '../../context/AuthContext';
 import { Language } from '../../types';
 
 interface VerseRecitalModalProps {
@@ -34,10 +35,12 @@ interface VerificationResult {
   feedback: string;
   aiTeacherComment?: string;
   pointsAwarded: number;
-  verificationUnavailable?: boolean;
+  totalPoints?: number;
+  resultUnavailable?: boolean;
 }
 
 export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseRecitalModalProps) {
+  const { userData, syncAuthoritativeProgress } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -158,6 +161,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
       const formData = new FormData();
       formData.append('audio', audioBlob, 'verse_recital.webm');
       formData.append('targetVerse', activeTargetText);
+      formData.append('verseReference', targetVerse.referenceEn || targetVerse.referenceAr);
       formData.append('transcript', liveTranscript);
       formData.append('lang', lang);
 
@@ -176,15 +180,24 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
       }
 
       const evalData: VerificationResult = responseData;
-      // The AI endpoint currently verifies the recital but does not persist point
-      // awards. Never display model-suggested points as if they were saved.
-      evalData.pointsAwarded = 0;
+      // Point awards and the total are returned only after the server persists them.
+      evalData.pointsAwarded = Number(responseData.pointsAwarded || 0);
+      if (typeof responseData.totalPoints === 'number') {
+        evalData.totalPoints = responseData.totalPoints;
+        if (userData && !userData.id.startsWith('guest_')) {
+          syncAuthoritativeProgress(
+            responseData.totalPoints,
+            Number(userData.currentStreak || 0),
+            Number(userData.longestStreak || 0)
+          );
+        }
+      }
       setResult(evalData);
     } catch (err: any) {
       console.error("Evaluation error:", err);
       const words = activeTargetText.split(' ').filter(Boolean);
       setAudioError(lang === 'ar'
-        ? 'مش قادرين نتحقق من التسميع دلوقتي. مفيش نقاط اتضافت. جرّب تاني.'
+        ? 'مش قادرين نكمل مراجعة التسميع وحفظ النتيجة دلوقتي. جرّب تاني؛ ومش هتتحسب نقاط من غير تأكيد.'
         : getLocalizedErrorMessage(err, lang));
       setResult({
         transcription: '',
@@ -193,7 +206,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
         matchedWords: [],
         missedWords: [],
         wordAnalysis: [],
-        verificationUnavailable: true,
+        resultUnavailable: true,
         feedback: lang === 'ar'
           ? 'تعذر مراجعة التسجيل بسبب مشكلة في خدمة التحقق. جرّب تاني لما الخدمة تشتغل.'
           : 'The recital could not be verified because the review service is unavailable. Please try again.',
@@ -335,15 +348,15 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
 
               <div className="flex items-center justify-center gap-2">
                 <span className={`text-3xl font-extrabold ${result.passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                  {result.verificationUnavailable ? (lang === 'ar' ? 'غير متحقق' : 'Not verified') : `${result.accuracyPercentage}%`}
+                  {result.resultUnavailable ? (lang === 'ar' ? 'النتيجة مش محفوظة' : 'Result not saved') : `${result.accuracyPercentage}%`}
                 </span>
                 <span className="text-xs uppercase font-bold text-gray-400">
-                  {result.verificationUnavailable ? (lang === 'ar' ? 'حالة المراجعة' : 'Review status') : (lang === 'ar' ? 'نسبة الدقة' : 'Accuracy')}
+                  {result.verificationUnavailable ? (lang === 'ar' ? 'حالة النتيجة' : 'Result status') : (lang === 'ar' ? 'نسبة الدقة' : 'Accuracy')}
                 </span>
               </div>
               <h4 className="text-lg font-bold mt-1 text-[var(--color-church-blue)] dark:text-amber-200">
                 {result.verificationUnavailable
-                  ? (lang === 'ar' ? 'التسميع ما اتراجعش لسه' : 'Recital not verified yet')
+                  ? (lang === 'ar' ? 'النتيجة ما اتحفظتش لسه' : 'Result not saved yet')
                   : result.passed
                     ? (lang === 'ar' ? '🎉 حفظت الآية بإتقان! مبروك يا بطل!' : '🎉 Mastered! Outstanding Job!')
                     : (lang === 'ar' ? 'كنت قريب جدًا! راجع الكلمات وجرّب تاني.' : 'Almost there! Review and try again')}
