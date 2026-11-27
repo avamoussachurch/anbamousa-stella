@@ -597,7 +597,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
         {/* Hymn Authoring Form */}
         <div className="lg:col-span-3 space-y-6">
           {/* Card 1: Core Titles & Target Level */}
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-[var(--mousa-border-sand)] space-y-4 shadow-xs">
+          <div className="min-w-0 bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-3xl border border-[var(--mousa-border-sand)] space-y-4 shadow-xs">
             <h3 className="font-black text-sm text-[var(--mousa-teal-deep)] dark:text-amber-300 flex items-center gap-2">
               <FileText size={16} />
               <span>{isAr ? '١. البيانات الأساسية والمستوى المستهدف' : '1. Core Metadata & Target Level'}</span>
@@ -743,7 +743,7 @@ export function HymnsPublishingStudio({ lang = 'ar', onPreviewHymn }: HymnsPubli
                   placeholder="https://example.com/hymn.mp3"
                   className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-white font-mono"
                 />
-                <label className="mt-2 flex items-center gap-2 text-[11px] font-bold text-[var(--mousa-teal-deep)] dark:text-amber-300 cursor-pointer">
+                <label className="mt-2 flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-[var(--mousa-border-sand)] px-3 py-2 text-[11px] font-bold text-[var(--mousa-teal-deep)] dark:text-amber-300 cursor-pointer">
                   <Upload size={14} />
                   <span>{uploadingMediaField === 'audio' ? (isAr ? 'جارٍ رفع الصوت...' : 'Uploading audio...') : (isAr ? 'أو ارفع ملف صوتي إلى Supabase' : 'Or upload audio securely to Supabase')}</span>
                   <input
