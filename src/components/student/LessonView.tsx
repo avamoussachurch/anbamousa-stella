@@ -4,7 +4,7 @@ import { BookOpen, Sparkles, CheckCircle2 } from 'lucide-react';
 import { mockLessons } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { useLessons } from '../../context/LessonsContext';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { 
   Language, 
   LessonVersion
@@ -74,6 +74,27 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
   const [finishSuccess, setFinishSuccess] = useState<boolean>(false);
   const [sectionProgressError, setSectionProgressError] = useState<string | null>(null);
   const completionInFlightRef = useRef(false);
+  const approvedServantId = activePublishedVersion?.approvedBy ||
+    (lesson?.approvedServantName && /^[0-9a-f-]{24,}$/i.test(lesson.approvedServantName) ? lesson.approvedServantName : null);
+  const suppliedServantName = lesson?.approvedServantName && !/^[0-9a-f-]{24,}$/i.test(lesson.approvedServantName)
+    ? lesson.approvedServantName
+    : null;
+  const [servantDisplayName, setServantDisplayName] = useState<string | null>(suppliedServantName);
+
+  useEffect(() => {
+    let active = true;
+    setServantDisplayName(suppliedServantName);
+    if (!suppliedServantName && approvedServantId && supabase) {
+      supabase.from('profiles').select('name').eq('id', approvedServantId).maybeSingle()
+        .then(({ data }) => {
+          if (active && data?.name) setServantDisplayName(String(data.name));
+        })
+        .catch(() => {});
+    }
+    return () => { active = false; };
+  }, [approvedServantId, suppliedServantName]);
+  const displayLesson = lesson ? { ...lesson, approvedServantName: servantDisplayName || undefined } : lesson;
+
 
   useEffect(() => {
     if (activePublishedVersion && userData && !readOnly && isOnlineAuth) {
@@ -447,7 +468,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
   return (
     <div className="px-4 pt-4 pb-20 relative">
       <SundaySchoolLessonView
-        lesson={lesson}
+        lesson={displayLesson || lesson}
         version={activePublishedVersion}
         sources={activeSources}
         progress={currentProgress}
