@@ -2630,3 +2630,41 @@ button, a, input, select, textarea { max-width: 100%; }
     animation: none !important;
   }
 }
+
+
+/* Floating audio chat-head: luminous, tactile and legible on every workspace. */
+.anba-global-player-bubble {
+  isolation: isolate;
+  outline: none;
+  box-shadow: 0 12px 34px rgba(5, 35, 54, .38), 0 0 0 1px rgba(255,255,255,.55), inset 0 1px 0 rgba(255,255,255,.7);
+  will-change: transform;
+}
+.anba-global-player-bubble::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  z-index: -1;
+  border: 1px solid rgba(91, 205, 201, .35);
+  border-radius: 999px;
+  opacity: .75;
+  transform: scale(.96);
+  transition: transform .28s ease, opacity .28s ease;
+}
+.anba-global-player-bubble:hover::after {
+  opacity: 1;
+  transform: scale(1.12);
+}
+.anba-global-player-panel {
+  color: #EAF5F2;
+  border: 1px solid rgba(117, 199, 189, .32);
+  background: linear-gradient(150deg, rgba(17, 57, 69, .98), rgba(14, 38, 56, .98));
+  box-shadow: 0 24px 70px rgba(3, 24, 37, .38), inset 0 1px 0 rgba(255,255,255,.12);
+  backdrop-filter: blur(22px);
+}
+.anba-global-player-panel h3,
+.anba-global-player-panel p { color: inherit; }
+.anba-global-player-panel button { color: inherit; }
+.anba-global-player-panel button:hover { background-color: rgba(255,255,255,.1); }
+@media (prefers-reduced-motion: reduce) {
+  .anba-global-player-bubble::after { transition: none; }
+}
