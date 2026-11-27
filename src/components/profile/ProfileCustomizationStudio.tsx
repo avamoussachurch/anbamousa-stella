@@ -10,7 +10,7 @@ type Cosmetic = {
   description_en: string; description_ar: string; preview_start: string; preview_end: string;
   points_cost: number; rarity: 'common' | 'rare' | 'epic' | 'legendary'; display_order: number;
 };
-type Equipped = Partial<Record<CosmeticKind, string>>;
+type Equipped = Partial<Record<CosmeticKind, string>> & { avatar_position_x?: number; avatar_position_y?: number; avatar_zoom?: number };
 
 function BadgeArtwork({ item, compact = false }: { item: Cosmetic; compact?: boolean }) {
   const categoryById: Record<string, CopticAchievementCategory> = {
@@ -176,6 +176,9 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
   const [profileName, setProfileName] = useState('Anba Mousa member');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const [avatarPositionX, setAvatarPositionX] = useState(50);
+  const [avatarPositionY, setAvatarPositionY] = useState(50);
+  const [avatarZoom, setAvatarZoom] = useState(1);
   const [profileRole, setProfileRole] = useState('student');
   const [currentStreak, setCurrentStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
@@ -203,7 +206,11 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
       setFrame(customResult.data.frame_key || 'coptic-gold');
       setBanner(customResult.data.banner_key || 'desert-dawn');
       setTitle(customResult.data.display_title || '');
-      setEquipped((customResult.data.equipped_cosmetics || {}) as Equipped);
+      const savedEquipped = (customResult.data.equipped_cosmetics || {}) as Equipped;
+      setEquipped(savedEquipped);
+      setAvatarPositionX(Number.isFinite(savedEquipped.avatar_position_x) ? Number(savedEquipped.avatar_position_x) : 50);
+      setAvatarPositionY(Number.isFinite(savedEquipped.avatar_position_y) ? Number(savedEquipped.avatar_position_y) : 50);
+      setAvatarZoom(Number.isFinite(savedEquipped.avatar_zoom) ? Math.min(2.5, Math.max(1, Number(savedEquipped.avatar_zoom))) : 1);
     }
     setCatalog((catalogResult.data || []) as Cosmetic[]);
     setUnlocked((unlockResult.data || []).map((row: any) => row.cosmetic_id));
@@ -282,7 +289,8 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
     setBusyId('save'); setMessage(''); setError('');
     try {
       const { error: saveError } = await supabase.from('profile_customizations').upsert({
-        user_id: userId, frame_key: frame, banner_key: banner, display_title: title.trim() || null
+        user_id: userId, frame_key: frame, banner_key: banner, display_title: title.trim() || null,
+        equipped_cosmetics: { ...equipped, avatar_position_x: avatarPositionX, avatar_position_y: avatarPositionY, avatar_zoom: avatarZoom }
       }, { onConflict: 'user_id' });
       if (saveError) throw saveError;
       setMessage(ar ? 'تم حفظ ملفك الشخصي.' : 'Profile saved.');
@@ -321,7 +329,7 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
         <div className="flex flex-wrap items-center gap-3 p-4 sm:gap-4">
           <div className="relative -mt-10 grid h-[76px] w-[76px] shrink-0 place-items-center overflow-visible rounded-[24px] bg-[var(--surface-primary)] p-1 shadow-xl" style={{ outline: selectedFrame ? 'none' : '4px solid ' + frameColor, outlineOffset: '2px', boxShadow: selectedEffect ? '0 0 28px ' + safeColor(selectedEffect.preview_end, '#D6A84F') : undefined }}>
             <div className="grid h-full w-full place-items-center overflow-hidden rounded-[19px] bg-[var(--surface-secondary)]">
-              {avatarUrl && !avatarFailed ? <img src={avatarUrl} alt="" onError={() => setAvatarFailed(true)} className="h-full w-full object-cover"/> : <Crown size={30} style={{ color: frameColor }}/>}
+              {avatarUrl && !avatarFailed ? <img src={avatarUrl} alt="" onError={() => setAvatarFailed(true)} className="h-full w-full object-cover transition-transform" style={{ objectPosition: `${avatarPositionX}% ${avatarPositionY}%`, transform: `scale(${avatarZoom})` }}/> : <Crown size={30} style={{ color: frameColor }}/>}
             </div>
             {selectedFrame && <ProfileFrameOverlay item={selectedFrame}/>}
             {selectedEffect && <ProfileEffectOverlay item={selectedEffect}/>}
@@ -334,6 +342,11 @@ export function ProfileCustomizationStudio({ userId, lang, initialView = 'profil
             <p className="mt-1 text-[10px] text-[var(--text-secondary)]">{ar ? 'مجتمع • إيمان • تعلّم • خدمة' : 'Community • Faith • Learning • Service'}</p>
           </div>
           <div className="flex max-w-full flex-wrap gap-1.5">{equippedItems.map(item => <span key={item.id} title={ar ? item.title_ar : item.title_en} className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-1.5 py-1 text-[9px] font-bold text-[var(--text-secondary)]"><span className="h-5 w-5 shrink-0 overflow-hidden rounded-md"><CosmeticArtwork item={item}/></span><span className="max-w-20 truncate">{ar ? item.title_ar : item.title_en}</span></span>)}</div>
+          <div className="grid gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-3 text-start sm:grid-cols-3">
+            <label className="block text-[11px] font-bold text-[var(--text-secondary)]">{ar ? 'تحريك الصورة يمين / شمال' : 'Move photo left / right'}<input aria-label={ar ? 'موضع الصورة الأفقي' : 'Horizontal photo position'} type="range" min="0" max="100" value={avatarPositionX} onChange={event => setAvatarPositionX(Number(event.target.value))} className="mt-2 w-full accent-[var(--action-primary)]"/></label>
+            <label className="block text-[11px] font-bold text-[var(--text-secondary)]">{ar ? 'تحريك الصورة فوق / تحت' : 'Move photo up / down'}<input aria-label={ar ? 'موضع الصورة الرأسي' : 'Vertical photo position'} type="range" min="0" max="100" value={avatarPositionY} onChange={event => setAvatarPositionY(Number(event.target.value))} className="mt-2 w-full accent-[var(--action-primary)]"/></label>
+            <label className="block text-[11px] font-bold text-[var(--text-secondary)]">{ar ? 'تكبير الصورة' : 'Zoom / crop'}<input aria-label={ar ? 'تكبير قص الصورة' : 'Photo zoom'} type="range" min="1" max="2.5" step="0.05" value={avatarZoom} onChange={event => setAvatarZoom(Number(event.target.value))} className="mt-2 w-full accent-[var(--action-primary)]"/></label>
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-5">
           <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-secondary)] p-2.5 text-center"><p className="text-sm font-black tabular-nums text-[var(--text-primary)]">{points.toLocaleString()}</p><p className="text-[9px] font-bold text-[var(--text-secondary)]">{ar ? 'النقاط' : 'Points'}</p></div>
