@@ -13,7 +13,6 @@ import {
   RefreshCw,
   Sparkles,
   Star,
-  Trophy
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import type { Language, Lesson, User } from '../../types';
@@ -21,7 +20,6 @@ import type { ExtendedPost } from '../../lib/feedService';
 import { fetchFeedPostsFromSupabase } from '../../lib/feedService';
 import { BibleVerseCard } from '../shared/BibleVerseCard';
 import { StudentFeatureLinks } from './StudentFeatureLinks';
-import { MosesJourneyBadge } from './JourneyOfMosesVisuals';
 
 interface StudentAdventureHomeProps {
   user: User;
@@ -276,12 +274,15 @@ export function StudentAdventureHome({
 }: StudentAdventureHomeProps) {
   const isArabic = lang === 'ar';
   const reduceMotion = useReducedMotion();
-  const progress = totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
   const displayName = isGuest
     ? (isArabic ? 'يا صاحبي' : 'friend')
     : user.fullName.trim().split(/\s+/)[0] || (isArabic ? 'يا صاحبي' : 'friend');
   const lessonTitle = nextLesson && (isArabic ? nextLesson.titleAr || nextLesson.title : nextLesson.title);
   const lessonSummary = nextLesson && (isArabic ? nextLesson.summaryAr || nextLesson.summary : nextLesson.summary);
+  const openPointsView = (view: 'streak' | 'leaderboard') => {
+    window.dispatchEvent(new CustomEvent('anba:points-view', { detail: view }));
+    onNavigate('points');
+  };
 
   return (
     <main className="stella-student-home mx-auto w-full max-w-[1440px] space-y-5 px-4 pb-28 pt-5 sm:space-y-7 sm:px-7 lg:px-10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -293,39 +294,46 @@ export function StudentAdventureHome({
         <AdventureStars reduceMotion={Boolean(reduceMotion)} />
         <motion.span aria-hidden="true" className="pointer-events-none absolute end-[12%] top-[18%] z-[1] text-2xl drop-shadow-[0_0_12px_rgba(245,217,140,.75)] sm:end-[18%] sm:top-[20%]" animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-4, 4, -4] }} transition={reduceMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}>🏮</motion.span>
         <div aria-hidden="true" className="absolute -end-14 -top-24 h-72 w-72 rounded-full bg-[#E7B956]/15 blur-[75px]" />
-        <svg aria-hidden="true" viewBox="0 0 800 360" preserveAspectRatio="xMidYMid slice" className="absolute inset-x-0 bottom-0 h-[78%] w-full opacity-90">
+        <svg aria-hidden="true" viewBox="0 0 900 430" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full opacity-100">
           <defs>
-            <linearGradient id="stellaDuneFar" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#28505A" /><stop offset="1" stopColor="#173541" /></linearGradient>
-            <linearGradient id="stellaDuneNear" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#A77B46" /><stop offset="1" stopColor="#624B36" /></linearGradient>
-            <radialGradient id="stellaSun"><stop stopColor="#FFE8A1" /><stop offset="1" stopColor="#E7B956" stopOpacity=".15" /></radialGradient>
+            <linearGradient id="anbaSky" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#123E56"/><stop offset=".58" stopColor="#277A82"/><stop offset="1" stopColor="#E7B96C"/></linearGradient>
+            <linearGradient id="anbaStone" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#F7E6C5"/><stop offset="1" stopColor="#C9A879"/></linearGradient>
+            <linearGradient id="anbaShadow" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#8C6948"/><stop offset="1" stopColor="#4D4A43"/></linearGradient>
+            <radialGradient id="anbaHalo"><stop stopColor="#FFF2BE" stopOpacity=".95"/><stop offset="1" stopColor="#F5C86B" stopOpacity="0"/></radialGradient>
           </defs>
-          <circle cx="650" cy="106" r="52" fill="url(#stellaSun)" />
-          <path d="M0 228Q120 160 235 214T475 190T800 205V360H0Z" fill="url(#stellaDuneFar)" />
-          <path d="M0 275Q150 215 302 260T555 238T800 250V360H0Z" fill="#20424A" />
-          <path d="M0 315Q160 270 330 302T610 278T800 290V360H0Z" fill="url(#stellaDuneNear)" opacity=".74" />
-          <path d="M580 207V142h40v65m-48-65 28-39 28 39m-28-39V80m-12 12h24" fill="#102A36" stroke="#E4B85A" strokeWidth="3" strokeLinejoin="round" />
-          <path d="M611 165h10v12h-10m-18 17h15v13h-15m39-13h15v13h-15" fill="#E9C16A" opacity=".8" />
-          <path d="M48 318Q230 290 410 310T746 277" fill="none" stroke="#E5B85F" strokeWidth="3" strokeDasharray="4 13" strokeLinecap="round" opacity=".8" />
-          <g className="stella-cloud-drift" fill="#B7D1D1" opacity=".12">
-            <path d="M176 112c0-10 8-18 18-18 5-15 28-17 36-2 13-1 20 14 12 23h-58c-5 0-8-1-8-3Z" />
-            <path d="M390 78c0-8 7-14 15-14 4-12 22-13 28-2 10-1 15 11 9 18h-45c-4 0-7-1-7-2Z" />
-          </g>
-          <g className="stella-cloud-drift stella-cloud-drift-slow" fill="#B7D1D1" opacity=".09">
-            <path d="M72 184c0-6 5-11 12-11 3-9 16-10 21-1 8-1 11 8 7 13H78c-4 0-6 0-6-1Z" />
-          </g>
-          <g fill="#F5D98C">
-            <circle cx="95" cy="148" r="2" /><circle cx="258" cy="125" r="2" /><circle cx="442" cy="160" r="2" /><circle cx="722" cy="98" r="2" /><circle cx="540" cy="80" r="1.5" />
-          </g>
-          <g aria-hidden="true" transform="translate(710 252)" stroke="#EBCB78" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="0" cy="-57" r="25" fill="none" stroke="#F5D98C" strokeWidth="2" opacity=".8" />
-            <circle cx="0" cy="-58" r="12" fill="#D6A96A" stroke="#F5D98C" />
-            <path d="M-17 -43 Q0 -54 17 -43 L31 22 Q0 43 -31 22Z" fill="#172B37" />
-            <path d="M-9 -36 Q0 -28 9 -36" fill="none" stroke="#E8D4A4" strokeWidth="2" />
-            <path d="M-20 -17 L-43 9" fill="none" stroke="#D6A96A" strokeWidth="8" />
-            <path d="M-43 9 L-50 33" fill="none" stroke="#D6A96A" strokeWidth="5" />
-            <path d="M-50 33 L-50 -5 M-59 7 H-41" fill="none" stroke="#F5D98C" strokeWidth="4" />
-            <path d="M-10 27 L-16 51 M12 27 L18 51" fill="none" stroke="#172B37" strokeWidth="9" />
-          </g>
+          <rect width="900" height="430" fill="url(#anbaSky)"/>
+          <circle cx="680" cy="92" r="112" fill="url(#anbaHalo)"/>
+          <circle cx="680" cy="92" r="39" fill="#FFE6A2" opacity=".88"/>
+          <path d="M0 270 Q170 210 330 255T650 235T900 250V430H0Z" fill="#39756F"/>
+          <path d="M0 315 Q200 270 390 310T720 280T900 300V430H0Z" fill="#285A58"/>
+          <g opacity=".45" fill="#D4E5D4"><path d="M90 95q18-22 40 0q20-18 40 4H90Z"/><path d="M410 70q18-22 40 0q20-18 40 4H410Z"/></g>
+          <!-- Anba Mousa church courtyard -->
+          <ellipse cx="586" cy="372" rx="270" ry="35" fill="#142F3B" opacity=".3"/>
+          <path d="M365 258V190Q365 172 383 172H788Q806 172 806 190V258Z" fill="url(#anbaStone)" stroke="#FBEBCB" strokeWidth="4"/>
+          <path d="M344 187L585 115L827 187Z" fill="#E7CB9B" stroke="#FBEBCB" strokeWidth="4" strokeLinejoin="round"/>
+          <path d="M493 147V95Q493 70 518 70H652Q677 70 677 95V147Z" fill="#DCC194" stroke="#FBEBCB" strokeWidth="4"/>
+          <path d="M511 79Q585 5 659 79V99H511Z" fill="#24707A" stroke="#FBEBCB" strokeWidth="4"/>
+          <path d="M585 5V-15M575 -5H595" stroke="#F7D98C" strokeWidth="7" strokeLinecap="round"/>
+          <path d="M380 172V119Q380 92 406 92H439Q465 92 465 119V172Z" fill="#D8BD91" stroke="#FBEBCB" strokeWidth="4"/>
+          <path d="M389 104Q422 55 456 104V120H389Z" fill="#1F6976" stroke="#FBEBCB" strokeWidth="4"/>
+          <path d="M736 172V119Q736 92 762 92H795Q821 92 821 119V172Z" fill="#D8BD91" stroke="#FBEBCB" strokeWidth="4"/>
+          <path d="M745 104Q778 55 812 104V120H745Z" fill="#1F6976" stroke="#FBEBCB" strokeWidth="4"/>
+          <path d="M422 125V158M406 141H438M778 125V158M762 141H794" stroke="#F7D98C" strokeWidth="5" strokeLinecap="round"/>
+          <path d="M548 258V211Q548 178 585 178Q622 178 622 211V258Z" fill="#164956" stroke="#F7E7C9" strokeWidth="5"/>
+          <path d="M565 258V216Q565 193 585 193Q605 193 605 216V258Z" fill="#F5D38E" opacity=".72"/>
+          <path d="M405 208V185Q405 171 419 171Q433 171 433 185V208Z M700 208V185Q700 171 714 171Q728 171 728 185V208Z" fill="#1C5967" stroke="#FFF0D0" strokeWidth="3"/>
+          <path d="M585 211V238M574 222H596" stroke="#F9D98C" strokeWidth="5" strokeLinecap="round"/>
+          <path d="M480 258V221Q480 200 501 200Q522 200 522 221V258Z M648 258V221Q648 200 669 200Q690 200 690 221V258Z" fill="#1B5662" stroke="#F8E7C6" strokeWidth="3"/>
+          <!-- courtyard and processional path -->
+          <path d="M548 258L470 430H710L622 258Z" fill="#D6BC91" opacity=".92"/>
+          <path d="M584 258L566 430M604 258L635 430" stroke="#F9E7C5" strokeWidth="4" opacity=".65"/>
+          <path d="M0 378Q190 337 370 377T900 366V430H0Z" fill="#B58C5A"/>
+          <path d="M90 370Q270 330 440 358T830 350" fill="none" stroke="#F6D68D" strokeWidth="5" strokeDasharray="3 17" strokeLinecap="round"/>
+          <!-- palm silhouettes -->
+          <g stroke="#183E43" strokeWidth="8" strokeLinecap="round" fill="none"><path d="M180 337Q188 240 176 172"/><path d="M176 172q-64-56-95-10q50-18 95 10q-8-70 39-83q-28 44-39 83q45-52 87-19q-50 2-87 19q61 8 66 51q-34-30-66-51"/><path d="M820 338Q814 250 828 190"/><path d="M828 190q-58-51-89-9q47-16 89 9q-7-64 37-76q-27 41-37 76q42-48 81-18q-47 2-81 18q57 8 61 48q-32-28-61-48"/></g>
+          <!-- lanterns -->
+          <g><path d="M287 0V70M278 70H296L292 101H282Z" stroke="#F5D98C" strokeWidth="3" fill="#E9B95E"/><circle cx="287" cy="85" r="18" fill="#FFE8A5" opacity=".18"/><path d="M852 35V92M844 92H860L856 120H848Z" stroke="#F5D98C" strokeWidth="3" fill="#E9B95E"/></g>
+          <g fill="#FFE6A2"><circle cx="95" cy="150" r="3"/><circle cx="300" cy="130" r="2"/><circle cx="715" cy="48" r="2"/><circle cx="872" cy="175" r="2"/></g>
         </svg>
 
         <div className="relative z-10 flex min-h-[230px] flex-col justify-between gap-5 sm:min-h-[250px] sm:flex-row sm:items-end sm:gap-7">
@@ -349,12 +357,12 @@ export function StudentAdventureHome({
                 : 'Follow the lanterns, discover stories of faith, and walk the path of St. Moses.'}
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <button type="button" onClick={() => onNavigate('points')} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#E5B85F]/30 bg-[#172B36]/90 px-3.5 text-xs font-extrabold text-[#F5D98C] shadow-lg transition hover:bg-[#243D48] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
+              <button type="button" onClick={() => openPointsView('leaderboard')} aria-label={isArabic ? 'افتح ترتيب النقاط' : 'Open points leaderboard'} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#E5B85F]/30 bg-[#172B36]/90 px-3.5 text-xs font-extrabold text-[#F5D98C] shadow-lg transition hover:bg-[#243D48] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
                 <Star size={15} className="fill-current" /> {user.points} {isArabic ? 'نقطة' : 'points'}
               </button>
-              <span className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#79CDD0]/25 bg-[#122B36]/90 px-3.5 text-xs font-extrabold text-[#B9E4DE] shadow-lg">
+              <button type="button" onClick={() => openPointsView('streak')} aria-label={isArabic ? 'افتح نجوم المواظبة' : 'Open streak stars leaderboard'} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#79CDD0]/25 bg-[#122B36]/90 px-3.5 text-xs font-extrabold text-[#B9E4DE] shadow-lg transition hover:border-[#9EE0D4]/70 hover:bg-[#1A3D48] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
                 <Flame size={15} className="text-[#F0A27A]" /> {user.currentStreak ?? 0} {isArabic ? 'أيام مواظبة' : 'day streak'}
-              </span>
+              </button>
             </div>
           </div>
           <div className="stella-home-hero-progress flex items-center gap-3 self-start rounded-2xl border border-white/10 bg-[#102431]/80 px-4 py-3 backdrop-blur sm:self-end">
@@ -373,7 +381,7 @@ export function StudentAdventureHome({
         </div>
       </motion.section>
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,.8fr)]">
+      <section className="stella-mission-stage grid gap-4">
         <div className="stella-home-next-card relative overflow-hidden rounded-[1.75rem] border border-[#435361] bg-[#14232C] p-5 text-white shadow-xl sm:p-7">
           <div aria-hidden="true" className="absolute -end-16 -top-20 h-52 w-52 rounded-full bg-[#E5B85F]/10 blur-3xl" />
           <div className="relative flex h-full flex-col">
@@ -439,49 +447,7 @@ export function StudentAdventureHome({
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="stella-home-progress-duplicate flex-1 rounded-[1.75rem] border border-[#31505B] bg-gradient-to-br from-[#163543] to-[#10232E] p-5 text-white shadow-xl sm:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#9ACDCB]">{isArabic ? 'تقدمك' : 'Your real progress'}</p>
-                <h2 className="mt-1 text-lg font-black">{isArabic ? 'رحلة التعلّم' : 'Learning journey'}</h2>
-              </div>
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#24535A] text-[#F5D98C]"><Trophy size={19} /></span>
-            </div>
-            {curriculumLoading ? (
-              <div role="status" className="mt-6 flex items-center gap-2 text-sm text-slate-300"><LoaderCircle size={16} className="animate-spin" />{isArabic ? 'جاري تحميل التقدم...' : 'Loading progress…'}</div>
-            ) : curriculumError ? (
-              <div className="mt-4">
-                <p className="text-sm text-[#F0C9B9]">{isArabic ? 'التقدم غير متاح حتى يكتمل تحميل المنهج.' : 'Progress is unavailable until the curriculum loads.'}</p>
-                <button type="button" onClick={onRetryCurriculum} className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-xs font-bold text-[#F5D98C] hover:bg-white/5"><RefreshCw size={13} />{isArabic ? 'جرّب تاني' : 'Try again'}</button>
-              </div>
-            ) : totalLessons > 0 ? (
-              <>
-                <div className="mt-5 flex items-end justify-between gap-3">
-                  <p className="text-4xl font-black tabular-nums">{progress}<span className="ms-1 text-xl text-[#A7C6C9]">%</span></p>
-                  <p className="pb-1 text-xs font-bold text-[#C3D7D9]">{completedLessons.length} / {totalLessons} {isArabic ? 'دروس' : 'lessons'}</p>
-                </div>
-                <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#091A23]" role="progressbar" aria-label={isArabic ? 'تقدّمك في الدروس' : 'Lesson progress'} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-                  <div className="h-full rounded-full bg-gradient-to-r from-[#4BB79D] to-[#E5B85F] transition-[width] duration-700" style={{ width: `${progress}%` }} />
-                </div>
-                <p className="mt-3 text-xs leading-relaxed text-[#B8CDD0]">
-                  {completedLessons.length > 0
-                    ? (isArabic ? `أحسنت! أتممت ${completedLessons.length} ${completedLessons.length === 1 ? 'درس' : 'دروس'} في رحلتك.` : `Well done — ${completedLessons.length} ${completedLessons.length === 1 ? 'lesson' : 'lessons'} completed on your trail.`)
-                    : (isArabic ? 'ابدأ أولى خطواتك في رحلة التعلّم.' : 'Take your first step on the learning trail.')}
-                </p>
-              </>
-            ) : (
-              <p className="mt-5 rounded-xl border border-white/10 bg-white/[.04] p-3 text-sm leading-relaxed text-[#C3D7D9]">
-                {isArabic ? 'سيظهر تقدمك هنا عندما يتوفر منهج فصلك.' : 'Your progress will appear here when your class curriculum is available.'}
-              </p>
-            )}
-          </div>
-          <button type="button" onClick={() => onNavigate('points')} className="flex min-h-[76px] items-center justify-between gap-3 rounded-[1.5rem] border border-[#5C4E37] bg-[#29291F] px-5 py-4 text-start text-white transition hover:border-[#E5B85F]/70 hover:bg-[#323126] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
-            <span className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6A542E] text-[#FFE29B]"><Star size={18} className="fill-current" /></span>
-              <span><span className="block text-xs font-black">{isArabic ? 'نقاطك' : 'Your points'}</span><span className="block text-[10px] text-[#C5B99E]">{isArabic ? 'شوف إنجازاتك' : 'View your achievements'}</span></span>
-            </span>
-            <span className="text-lg font-black tabular-nums text-[#F5D98C]">{user.points}<ArrowUpRight size={14} className="ms-1 inline" /></span>
-          </button>
+
         </div>
       </section>
 
@@ -494,17 +460,7 @@ export function StudentAdventureHome({
         reduceMotion={Boolean(reduceMotion)}
       />
 
-      {completedLessons.length > 0 && (
-        <MosesJourneyBadge
-          completedLessonsCount={completedLessons.length}
-          lastCompletedLessonTitle={isArabic
-            ? completedLessons[completedLessons.length - 1].titleAr || completedLessons[completedLessons.length - 1].title
-            : completedLessons[completedLessons.length - 1].title}
-          lang={lang}
-          onExploreMore={() => onNavigate('lessons')}
-          isRecentCompletion={false}
-        />
-      )}
+}
 
       <StudentFeatureLinks lang={lang} onNavigate={onNavigate} />
 
