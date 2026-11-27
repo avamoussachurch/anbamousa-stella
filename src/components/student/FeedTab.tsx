@@ -111,6 +111,21 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
   const reportingPost = posts.find(post => post.id === reportingPostId) || null;
   const [isLoadingServerPosts, setIsLoadingServerPosts] = useState(true);
   const [feedLoadError, setFeedLoadError] = useState<string | null>(null);
+  const postIdsKey = useMemo(() => posts.map(post => post.id).join('|'), [posts]);
+  useEffect(() => {
+    if (!supabase || !userData?.id || !postIdsKey) {
+      setMyPostReactionKeys(new Set());
+      return;
+    }
+    let active = true;
+    supabase.from('feed_reactions').select('post_id,reaction_type').eq('user_id', userData.id).not('post_id', 'is', null)
+      .then(({ data, error }) => {
+        if (!active || error) return;
+        setMyPostReactionKeys(new Set((data || []).filter(row => row.post_id).map(row => String(row.post_id) + ':' + String(row.reaction_type))));
+      });
+    return () => { active = false; };
+  }, [userData?.id, postIdsKey]);
+
   useEffect(() => {
     if (!reactionPickerTarget) return;
     const closeOnOutsidePress = (event: PointerEvent) => {
