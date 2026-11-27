@@ -290,7 +290,7 @@ export function StudentAdventureHome({
       <motion.section
         initial={reduceMotion ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="stella-adventure-hero relative isolate min-h-[280px] overflow-hidden rounded-[2rem] border border-[#34505E] bg-[#0A1925] px-5 py-6 text-white shadow-[0_24px_65px_-38px_rgba(0,0,0,.65)] sm:min-h-[310px] sm:px-9 sm:py-8"
+        className="stella-adventure-hero relative isolate min-h-[360px] overflow-hidden rounded-[2rem] border border-[#34505E] bg-[#0A1925] px-5 py-6 text-white shadow-[0_24px_65px_-38px_rgba(0,0,0,.65)] sm:min-h-[410px] sm:px-9 sm:py-8"
       >
         <AdventureStars reduceMotion={Boolean(reduceMotion)} />
         <motion.span aria-hidden="true" className="pointer-events-none absolute end-[12%] top-[18%] z-[1] text-2xl drop-shadow-[0_0_12px_rgba(245,217,140,.75)] sm:end-[18%] sm:top-[20%]" animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-4, 4, -4] }} transition={reduceMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}>🏮</motion.span>
@@ -337,7 +337,7 @@ export function StudentAdventureHome({
           <g fill="#FFE6A2"><circle cx="95" cy="150" r="3"/><circle cx="300" cy="130" r="2"/><circle cx="715" cy="48" r="2"/><circle cx="872" cy="175" r="2"/></g>
         </svg>
 
-        <div className="relative z-10 flex min-h-[230px] flex-col justify-between gap-5 sm:min-h-[250px] sm:flex-row sm:items-end sm:gap-7">
+        <div className="relative z-10 flex min-h-[300px] flex-col justify-between gap-5 sm:min-h-[340px] sm:flex-row sm:items-end sm:gap-7">
           <div className="max-w-2xl sm:max-w-[min(58%,42rem)]">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#79CDD0]/25 bg-[#14313D]/80 px-3 py-1.5 text-[11px] font-black text-[#A7DCD7] backdrop-blur">
               <Sparkles size={13} className="text-[#F5D98C]" />
@@ -369,13 +369,15 @@ export function StudentAdventureHome({
       </div>
       </motion.section>
 
+      <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 mx-auto mt-[-2rem] h-24 max-w-5xl rounded-full blur-3xl ${isArabic ? 'bg-[#D6A74D]/10' : 'bg-[#43B8B0]/10'}`} />
+
       <section className="stella-mission-stage grid gap-4">
         <div className="stella-home-next-card relative overflow-hidden rounded-[1.75rem] border border-[#435361] bg-[#14232C] p-5 text-white shadow-xl sm:p-7">
           <div aria-hidden="true" className="absolute -end-16 -top-20 h-52 w-52 rounded-full bg-[#E5B85F]/10 blur-3xl" />
           <div className="relative flex h-full flex-col">
             <div className="flex items-center gap-2 text-[#F5D98C]">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#29424B]"><BookOpen size={18} /></span>
-              <span className="text-[11px] font-black uppercase tracking-[.18em]">{isArabic ? 'درسك الجاي' : 'Your next lesson'}</span>
+              <span className="text-[11px] font-black uppercase tracking-[.18em]">{isArabic ? 'مهمتك القادمة' : 'Your next mission'}</span>
             </div>
             {curriculumLoading ? (
               <div role="status" className="flex min-h-40 flex-1 flex-col items-center justify-center gap-3 text-sm text-slate-300">
@@ -449,7 +451,7 @@ export function StudentAdventureHome({
       <StudentFeatureLinks lang={lang} onNavigate={onNavigate} />
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="overflow-hidden rounded-[1.75rem] border border-[#635638] bg-[#28291F] shadow-xl [&>div]:!min-h-[210px] [&>div]:!rounded-none [&>div]:!bg-none [&>div]:!p-6 [&>div]:!text-[#FFF4D8] [&_p]:!text-[#FFF4D8] [&_span]:!text-[#F2D991]">
+        <div className="stella-verse-shell min-w-0">
           <BibleVerseCard lang={lang} />
         </div>
         <FeedPreview lang={lang} onNavigate={onNavigate} />
