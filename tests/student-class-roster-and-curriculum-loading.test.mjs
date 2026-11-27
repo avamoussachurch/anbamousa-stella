@@ -44,8 +44,19 @@ test('student roadmap has illustrated scenery, an animated active quest, and ani
   assert.match(roadmap, /DESERT_WAYPOINTS/);
 });
 
-test('student welcome hero includes the completed illustrated journey figure', () => {
-  assert.match(studentHome, /translate\(710 252\)/);
+test('student home keeps one learning trail and distinct points and streak leaderboard destinations', async () => {
+  const pointsTab = await readFile(new URL('../src/components/student/PointsTab.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(studentHome, /MosesJourneyBadge|stella-home-progress-duplicate|stella-home-hero-progress/);
+  assert.match(studentHome, /openPointsView\('leaderboard'\)/);
+  assert.match(studentHome, /openPointsView\('streak'\)/);
+  assert.match(pointsTab, /anba:points-view/);
+  assert.match(pointsTab, /setView\(requested\)/);
+});
+
+test('student welcome hero is an illustrated Anba Mousa church courtyard with a lantern-lit path', () => {
+  assert.match(studentHome, /Anba Mousa church courtyard/);
+  assert.match(studentHome, /processional path/);
+  assert.match(studentHome, /palm silhouettes/i);
   assert.match(studentHome, /aria-hidden="true"/);
   assert.match(studentHome, /F5D98C/);
 });

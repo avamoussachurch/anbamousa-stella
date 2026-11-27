@@ -36,6 +36,24 @@ export function PointsTab({ lang }: { lang: Language }) {
   // 4. Points Bazaar (متجر المكافآت)
   // 5. Profile Cosmetics Store (متجر مظهر الملف)
   const [view, setView] = useState<'streak' | 'trail' | 'leaderboard' | 'bazaar' | 'cosmetics'>('streak');
+
+  useEffect(() => {
+    try {
+      const requested = window.sessionStorage.getItem('anba-points-initial-view');
+      if (requested === 'leaderboard' || requested === 'streak') setView(requested);
+      window.sessionStorage.removeItem('anba-points-initial-view');
+    } catch { /* storage may be unavailable */ }
+
+    const handleRequestedView = (event: Event) => {
+      const requested = (event as CustomEvent<string>).detail;
+      if (requested === 'leaderboard' || requested === 'streak') {
+        setView(requested);
+        try { window.sessionStorage.removeItem('anba-points-initial-view'); } catch { /* storage may be unavailable */ }
+      }
+    };
+    window.addEventListener('anba:points-view', handleRequestedView);
+    return () => window.removeEventListener('anba:points-view', handleRequestedView);
+  }, []);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [confirmPurchaseItem, setConfirmPurchaseItem] = useState<{ id: string; name: string; cost: number } | null>(null);
   const [feedbackToast, setFeedbackToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);

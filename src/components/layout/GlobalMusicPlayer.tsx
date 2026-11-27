@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Music, Play, Pause, Volume2, VolumeX, X, RefreshCw } from 'lucide-react';
+import { Music, MessageCircle, Play, Pause, Volume2, VolumeX, X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGlobalAudio } from '../../context/AudioContext';
 import { useAuth } from '../../context/AuthContext';
@@ -21,20 +21,19 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const [hymnsError, setHymnsError] = useState<string | null>(null);
   const hymnRequestId = useRef(0);
   const dragOrigin = useRef<{ pointerX: number; pointerY: number; left: number; top: number } | null>(null);
+  const didDrag = useRef(false);
   const [bubblePosition, setBubblePosition] = useState<{ left: number; top: number } | null>(() => {
     try {
       const saved = window.localStorage.getItem('anba-global-player-position');
       if (!saved) return null;
       const parsed = JSON.parse(saved);
-      return Number.isFinite(parsed.left) && Number.isFinite(parsed.top)
-        ? { left: parsed.left, top: parsed.top }
-        : null;
+      return Number.isFinite(parsed.left) && Number.isFinite(parsed.top) ? { left: parsed.left, top: parsed.top } : null;
     } catch { return null; }
   });
   const [isDragging, setIsDragging] = useState(false);
 
   const clampBubblePosition = useCallback((left: number, top: number) => {
-    const bubbleSize = 56;
+    const bubbleSize = 62;
     const margin = 10;
     return {
       left: Math.max(margin, Math.min(window.innerWidth - bubbleSize - margin, left)),
@@ -45,12 +44,8 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const handleBubblePointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
     if (isOpen) return;
     const rect = event.currentTarget.getBoundingClientRect();
-    dragOrigin.current = {
-      pointerX: event.clientX,
-      pointerY: event.clientY,
-      left: rect.left,
-      top: rect.top
-    };
+    didDrag.current = false;
+    dragOrigin.current = { pointerX: event.clientX, pointerY: event.clientY, left: rect.left, top: rect.top };
     event.currentTarget.setPointerCapture(event.pointerId);
   }, [isOpen]);
 
@@ -58,15 +53,18 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
     if (!dragOrigin.current) return;
     const dx = event.clientX - dragOrigin.current.pointerX;
     const dy = event.clientY - dragOrigin.current.pointerY;
-    if (Math.abs(dx) + Math.abs(dy) > 5) setIsDragging(true);
-    setBubblePosition(clampBubblePosition(dragOrigin.current.left + dx, dragOrigin.current.top + dy));
+    if (Math.abs(dx) + Math.abs(dy) > 4) {
+      didDrag.current = true;
+      setIsDragging(true);
+    }
+    if (didDrag.current) setBubblePosition(clampBubblePosition(dragOrigin.current.left + dx, dragOrigin.current.top + dy));
   }, [clampBubblePosition]);
 
   const handleBubblePointerUp = useCallback(() => {
     if (!dragOrigin.current) return;
     const current = bubblePosition;
-    if (current) {
-      const bubbleSize = 56;
+    if (current && didDrag.current) {
+      const bubbleSize = 62;
       const margin = 10;
       const candidates = [
         { edge: 'left', distance: current.left },
@@ -83,13 +81,11 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
       try { window.localStorage.setItem('anba-global-player-position', JSON.stringify(snapped)); } catch { /* storage may be unavailable */ }
     }
     dragOrigin.current = null;
-    window.setTimeout(() => setIsDragging(false), 0);
+    setIsDragging(false);
   }, [bubblePosition, clampBubblePosition]);
 
   useEffect(() => {
-    const handleResize = () => {
-      setBubblePosition(current => current ? clampBubblePosition(current.left, current.top) : current);
-    };
+    const handleResize = () => setBubblePosition(current => current ? clampBubblePosition(current.left, current.top) : current);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [clampBubblePosition]);
@@ -166,12 +162,14 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   const currentTrackSubtitle = currentHymn ? currentHymn.titleCoptic : (currentFeedTrack ? (lang === 'ar' ? 'تسجيل من المجتمع' : 'Community recording') : '');
 
   return (
-    <div
-      className={`fixed z-40 flex max-w-[calc(100vw-1.5rem)] ${bubblePosition && bubblePosition.left < window.innerWidth / 2 ? 'items-start' : 'items-end'} ${bubblePosition && bubblePosition.top < window.innerHeight / 2 ? 'flex-col-reverse' : 'flex-col'}`}
-      style={bubblePosition ? { left: bubblePosition.left, top: bubblePosition.top } : {
+    <motion.div
+      className={`fixed z-50 flex max-w-[calc(100vw-1.25rem)] ${(bubblePosition ? bubblePosition.left < window.innerWidth / 2 : lang === 'ar') ? 'items-start' : 'items-end'} ${bubblePosition && bubblePosition.top < window.innerHeight / 2 ? 'flex-col-reverse' : 'flex-col'}`}
+      style={bubblePosition ? undefined : {
         bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)',
         ...(lang === 'ar' ? { left: 12 } : { right: 12 })
       }}
+      animate={bubblePosition ? { left: bubblePosition.left, top: bubblePosition.top } : undefined}
+      transition={isDragging ? { duration: 0 } : { type: 'spring', stiffness: 390, damping: 19, mass: 0.72, bounce: 0.52 }}
     >
       <AnimatePresence>
         {isOpen && (
@@ -179,7 +177,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="bg-white rounded-3xl shadow-xl border border-[var(--color-church-cream-dark)] p-4 mb-4 w-[min(18rem,calc(100vw-1.5rem))] sm:w-80 max-h-[70dvh] overflow-y-auto overflow-x-hidden"
+            className={["anba-global-player-panel rounded-3xl p-4 w-[min(18rem,calc(100vw-1.5rem))] sm:w-80 max-h-[70dvh] overflow-y-auto overflow-x-hidden", bubblePosition && bubblePosition.top < window.innerHeight / 2 ? "mt-4 mb-0" : "mb-4 mt-0"].join(" ")}
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-[var(--color-church-blue)] flex items-center gap-2">
@@ -310,27 +308,40 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
         )}
       </AnimatePresence>
 
-      <button
+      <motion.button
         type="button"
-        aria-label={lang === 'ar' ? 'افتح مشغل الصوت أو اسحبه لتغيير مكانه' : 'Open audio player or drag to move it'}
+        aria-label={lang === 'ar' ? 'افتح مشغل الألحان أو اسحب الفقاعة لتحريكها' : 'Open hymns player or drag the bubble to move it'}
         onPointerDown={handleBubblePointerDown}
         onPointerMove={handleBubblePointerMove}
         onPointerUp={handleBubblePointerUp}
         onPointerCancel={handleBubblePointerUp}
-        onClick={() => { if (!isDragging) setIsOpen(!isOpen); }}
+        onClick={() => { if (!didDrag.current) setIsOpen(!isOpen); didDrag.current = false; }}
+        whileHover={{ scale: 1.07, rotate: -3 }}
+        whileTap={{ scale: 0.92 }}
         style={{ touchAction: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
-        className="h-14 w-14 select-none rounded-full border-2 border-[var(--color-church-cream-dark)] bg-white text-[var(--color-church-blue)] shadow-[0_4px_20px_rgba(0,0,0,0.18)] transition-transform hover:scale-105"
+        className="anba-global-player-bubble relative grid h-[62px] w-[62px] select-none place-items-center rounded-full border border-white/70 text-white shadow-[0_10px_32px_rgba(8,38,55,.36)] ring-4 ring-[#1b6572]/15"
+        animate={isDragging
+          ? { scale: 1.12, rotate: 9, y: -2 }
+          : isPlaying
+            ? { scale: 1, y: [0, -2, 0], rotate: [0, 2, 0] }
+            : { scale: 1, y: 0, rotate: 0 }}
+        transition={isDragging
+          ? { type: 'spring', stiffness: 440, damping: 17, mass: 0.55 }
+          : isPlaying
+            ? { duration: 2.8, repeat: Infinity, ease: 'easeInOut' }
+            : { type: 'spring', stiffness: 300, damping: 20 }}
       >
-        <div className="relative">
-           <Music size={24} />
-           {isPlaying && (
-             <span className="absolute -top-1 -right-1 flex h-3 w-3">
-               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-church-gold)] opacity-75"></span>
-               <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--color-church-gold)]"></span>
-             </span>
-           )}
-        </div>
-      </button>
-    </div>
+        <span className="absolute inset-0 rounded-full bg-gradient-to-br from-[#49BFC1] via-[#187C91] to-[#183F70]" />
+        <span className="absolute inset-[4px] rounded-full border border-white/25 bg-gradient-to-br from-white/15 to-transparent shadow-[inset_0_2px_8px_rgba(255,255,255,.24)]" />
+        <span className="relative grid h-10 w-10 place-items-center">
+          <MessageCircle size={38} strokeWidth={1.8} className="absolute fill-[#F8FFFF] text-[#F8FFFF] drop-shadow-[0_2px_2px_rgba(0,0,0,.18)]" />
+          <Music size={17} strokeWidth={2.8} className="relative z-10 text-[#17627A]" />
+        </span>
+        {isPlaying && <>
+          <span className="absolute -right-0.5 -top-0.5 h-4 w-4 rounded-full border-2 border-white bg-[#F5C85D] shadow-[0_0_0_4px_rgba(245,200,93,.18)]" />
+          <span className="absolute -bottom-1 left-1/2 h-1 w-7 -translate-x-1/2 rounded-full bg-[#F5D98C] shadow-[0_0_12px_3px_rgba(245,217,140,.55)]" />
+        </>}
+      </motion.button>
+    </motion.div>
   );
 }

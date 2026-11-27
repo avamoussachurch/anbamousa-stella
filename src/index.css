@@ -2501,3 +2501,242 @@ button, a, input, select, textarea { max-width: 100%; }
     transition-duration: .01ms !important;
   }
 }
+
+
+/* ANBA MOUSA — immersive student world and premium story surfaces */
+.stella-student-home {
+  position: relative;
+  isolation: isolate;
+}
+.stella-student-home .stella-adventure-hero {
+  min-height: 410px;
+  border-color: rgba(211, 183, 125, .42);
+  background:
+    radial-gradient(ellipse at 78% 15%, rgba(255, 218, 137, .18), transparent 30%),
+    linear-gradient(125deg, #0b2635 0%, #123e4b 48%, #1d5860 100%);
+  box-shadow: 0 28px 80px -38px rgba(9, 42, 54, .72), inset 0 1px 0 rgba(255,255,255,.12);
+}
+.stella-student-home .stella-adventure-hero > svg {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  object-position: center;
+  opacity: .96;
+}
+.stella-student-home .stella-adventure-hero h1 {
+  text-shadow: 0 3px 18px rgba(0,0,0,.22);
+}
+.stella-student-home .stella-mission-stage {
+  perspective: 1100px;
+}
+.stella-student-home .stella-home-next-card {
+  min-height: 245px;
+  border-color: rgba(89, 151, 150, .42);
+  background:
+    radial-gradient(circle at 92% 5%, rgba(230, 183, 90, .2), transparent 28%),
+    linear-gradient(135deg, #123642 0%, #174b55 58%, #1b5a60 100%);
+  box-shadow: 0 22px 52px -30px rgba(11, 54, 65, .55), inset 0 1px 0 rgba(255,255,255,.1);
+  transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
+}
+.stella-student-home .stella-home-next-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 28px 60px -30px rgba(11, 54, 65, .68), inset 0 1px 0 rgba(255,255,255,.12);
+}
+.stella-student-home .stella-journey-path {
+  position: relative;
+  border-color: rgba(229, 190, 113, .42);
+  box-shadow: 0 22px 55px -34px rgba(7, 35, 46, .6), inset 0 1px 0 rgba(255,255,255,.1);
+}
+.stella-student-home .stella-journey-path::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(245, 217, 140, .12);
+  border-radius: 1.35rem;
+  pointer-events: none;
+}
+.stella-student-home .stella-verse-shell {
+  min-width: 0;
+}
+.stella-student-home .stella-verse-card {
+  border-color: rgba(67, 142, 144, .28);
+  background:
+    radial-gradient(ellipse at 88% 10%, rgba(255,255,255,.82), transparent 34%),
+    linear-gradient(128deg, #EAF8F4 0%, #D7EEF0 52%, #F8E8C9 100%);
+  color: #173F4B;
+}
+.dark .stella-student-home .stella-verse-card,
+[data-theme="dark"] .stella-student-home .stella-verse-card {
+  border-color: rgba(117, 195, 185, .3);
+  background:
+    radial-gradient(ellipse at 88% 10%, rgba(96, 163, 157, .22), transparent 34%),
+    linear-gradient(128deg, #153943 0%, #1b4a50 52%, #3b382d 100%);
+}
+.dark .stella-student-home .stella-verse-card p,
+[data-theme="dark"] .stella-student-home .stella-verse-card p,
+.dark .stella-student-home .stella-verse-card h2,
+[data-theme="dark"] .stella-student-home .stella-verse-card h2 {
+  color: #F4F5E9;
+}
+.dark .stella-student-home .stella-verse-card a,
+[data-theme="dark"] .stella-student-home .stella-verse-card a {
+  color: #C2E5DD;
+}
+.stella-student-home .stella-community-card {
+  border-color: rgba(79, 144, 146, .24);
+  background: linear-gradient(145deg, var(--student-surface), var(--student-surface-raised));
+}
+@media (max-width: 639px) {
+  .stella-student-home .stella-adventure-hero {
+    min-height: 420px;
+  }
+  .stella-student-home .stella-adventure-hero > svg {
+    height: 100%;
+    object-position: 58% center;
+    opacity: .68;
+  }
+  .stella-student-home .stella-verse-card {
+    min-height: 250px;
+  }
+  .stella-student-home .stella-verse-card > div.relative {
+    max-width: 82%;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stella-student-home .stella-adventure-hero > svg {
+    animation: anba-church-breathe 12s ease-in-out infinite alternate;
+    transform-origin: 70% 55%;
+  }
+  .stella-student-home .stella-journey-path li:nth-child(odd) {
+    animation: anba-trail-float 5s ease-in-out infinite;
+  }
+  .stella-student-home .stella-journey-path li:nth-child(even) {
+    animation: anba-trail-float 5.8s ease-in-out -2s infinite;
+  }
+}
+@keyframes anba-church-breathe {
+  from { scale: 1; }
+  to { scale: 1.025; }
+}
+@keyframes anba-trail-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stella-student-home .stella-adventure-hero > svg,
+  .stella-student-home .stella-journey-path li {
+    animation: none !important;
+  }
+}
+
+
+/* Floating audio chat-head: luminous, tactile and legible on every workspace. */
+.anba-global-player-bubble {
+  isolation: isolate;
+  outline: none;
+  box-shadow: 0 12px 34px rgba(5, 35, 54, .38), 0 0 0 1px rgba(255,255,255,.55), inset 0 1px 0 rgba(255,255,255,.7);
+  will-change: transform;
+}
+.anba-global-player-bubble::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  z-index: -1;
+  border: 1px solid rgba(91, 205, 201, .35);
+  border-radius: 999px;
+  opacity: .75;
+  transform: scale(.96);
+  transition: transform .28s ease, opacity .28s ease;
+}
+.anba-global-player-bubble:hover::after {
+  opacity: 1;
+  transform: scale(1.12);
+}
+.anba-global-player-panel {
+  color: #EAF5F2;
+  border: 1px solid rgba(117, 199, 189, .32);
+  background: linear-gradient(150deg, rgba(17, 57, 69, .98), rgba(14, 38, 56, .98));
+  box-shadow: 0 24px 70px rgba(3, 24, 37, .38), inset 0 1px 0 rgba(255,255,255,.12);
+  backdrop-filter: blur(22px);
+}
+.anba-global-player-panel h3,
+.anba-global-player-panel p { color: inherit; }
+.anba-global-player-panel button { color: inherit; }
+.anba-global-player-panel button:hover { background-color: rgba(255,255,255,.1); }
+@media (prefers-reduced-motion: reduce) {
+  .anba-global-player-bubble::after { transition: none; }
+}
+
+.stella-student-home .stella-home-next-card {
+  color: #173F4B;
+  border-color: rgba(76,145,143,.3);
+  background: linear-gradient(135deg,#F1FBF7 0%,#E0F2EC 58%,#D5ECEB 100%);
+  box-shadow: 0 22px 52px -30px rgba(11,54,65,.2), inset 0 1px 0 rgba(255,255,255,.8);
+}
+.stella-student-home .stella-home-next-card .text-slate-300,
+.stella-student-home .stella-home-next-card .text-slate-400 { color: #4F6C70; }
+.dark .stella-student-home .stella-home-next-card,
+[data-theme="dark"] .stella-student-home .stella-home-next-card {
+  color: #F4F1E8;
+  background: linear-gradient(135deg,#123642 0%,#174b55 58%,#1b5a60 100%);
+  border-color: rgba(89,151,150,.42);
+}
+.dark .stella-student-home .stella-home-next-card .text-slate-300,
+.dark .stella-student-home .stella-home-next-card .text-slate-400,
+[data-theme="dark"] .stella-student-home .stella-home-next-card .text-slate-300,
+[data-theme="dark"] .stella-student-home .stella-home-next-card .text-slate-400 { color: #B8C9CB; }
+.stella-student-home .stella-journey-path {
+  color: #173F4B;
+  border-color: rgba(90,146,141,.32);
+  background: linear-gradient(135deg,#EFF9F4 0%,#E1F1E8 62%,#F7EBD1 100%);
+}
+.stella-student-home .stella-journey-path .text-slate-200,
+.stella-student-home .stella-journey-path .text-slate-300,
+.stella-student-home .stella-journey-path .text-slate-400 { color: #587174; }
+.dark .stella-student-home .stella-journey-path,
+[data-theme="dark"] .stella-student-home .stella-journey-path {
+  color: #F4F1E8;
+  border-color: rgba(229,190,113,.42);
+  background: linear-gradient(135deg,#102d39,#173b43 62%,#263d3e);
+}
+.dark .stella-student-home .stella-journey-path .text-slate-200,
+.dark .stella-student-home .stella-journey-path .text-slate-300,
+.dark .stella-student-home .stella-journey-path .text-slate-400,
+[data-theme="dark"] .stella-student-home .stella-journey-path .text-slate-200,
+[data-theme="dark"] .stella-student-home .stella-journey-path .text-slate-300,
+[data-theme="dark"] .stella-student-home .stella-journey-path .text-slate-400 { color: #B8C9CB; }
+.anba-global-player-panel .text-gray-800 { color: #EDF6F2; }
+.anba-global-player-panel .text-gray-500, .anba-global-player-panel .text-gray-400 { color: #B7CBCB; }
+.anba-global-player-panel .bg-gray-100, .anba-global-player-panel .bg-white { background-color: rgba(255,255,255,.08); }
+.anba-global-player-panel .border-gray-100, .anba-global-player-panel .border-gray-200 { border-color: rgba(255,255,255,.12); }
+.anba-global-player-panel [class*="hover:bg-gray-50"]:hover { background-color: rgba(255,255,255,.1); }
+
+.anba-world-portal-card {
+  isolation: isolate;
+  border-radius: 1.65rem;
+  box-shadow: 0 18px 42px -26px rgba(15,67,70,.28), inset 0 1px 0 rgba(255,255,255,.8);
+  transition: box-shadow .35s ease, border-color .35s ease;
+}
+.anba-world-portal-card:hover {
+  box-shadow: 0 26px 55px -28px rgba(15,67,70,.38), inset 0 1px 0 rgba(255,255,255,.9);
+}
+.anba-world-portal-ring {
+  pointer-events: none;
+  animation: anba-portal-breathe 5.5s ease-in-out infinite;
+  transform-origin: center;
+}
+.anba-world-portal-card:nth-child(2) .anba-world-portal-ring { animation-delay: -2.6s; }
+@keyframes anba-portal-breathe {
+  0%, 100% { scale: .96; opacity: .7; }
+  50% { scale: 1.06; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .anba-world-portal-ring { animation: none; } }
+
+.dark .stella-student-home .stella-verse-card span,
+[data-theme="dark"] .stella-student-home .stella-verse-card span {
+  color: #F1DDA8;
+  border-color: rgba(241,221,168,.28);
+  background-color: rgba(255,255,255,.08);
+}
