@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, CheckCircle2, RotateCcw, Sparkles, Volume2, X, Award, AlertCircle, MessageSquareQuote, Check, BookCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useAuth } from '../../context/AuthContext';
-import { awardPoints } from '../../lib/pointsService';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { Language } from '../../types';
 
 interface VerseRecitalModalProps {
@@ -38,7 +37,6 @@ interface VerificationResult {
 }
 
 export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseRecitalModalProps) {
-  const { userData, updateUserData } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -162,46 +160,46 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
       formData.append('transcript', liveTranscript);
       formData.append('lang', lang);
 
+      setAudioError(null);
       const res = await fetch('/api/verify-verse-recital', {
         method: 'POST',
         body: formData,
       });
 
+      const responseData = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error('Failed to verify recital');
+        throw new Error(responseData?.message || responseData?.error || `Recital verification failed (HTTP ${res.status}).`);
+      }
+      if (!responseData || typeof responseData.passed !== 'boolean' || !Number.isFinite(responseData.accuracyPercentage)) {
+        throw new Error('The verification service returned an incomplete result.');
       }
 
-      const evalData: VerificationResult = await res.json();
+      const evalData: VerificationResult = responseData;
+      // The AI endpoint currently verifies the recital but does not persist point
+      // awards. Never display model-suggested points as if they were saved.
+      evalData.pointsAwarded = 0;
       setResult(evalData);
-
-      // If passed and user is logged in, award points automatically!
-      if (evalData.passed && userData) {
-        const updated = awardPoints(userData.id, 100, `تسميع آية الأسبوع (${targetVerse.referenceAr})`);
-        updateUserData(updated);
-      }
     } catch (err: any) {
       console.error("Evaluation error:", err);
-      // Construct a word-level realistic analysis
       const words = activeTargetText.split(' ').filter(Boolean);
+      setAudioError(lang === 'ar'
+        ? 'مش قادرين نتحقق من التسميع دلوقتي. مفيش نقاط اتضافت. جرّب تاني.'
+        : getLocalizedErrorMessage(err, lang));
       setResult({
-        transcription: liveTranscript || activeTargetText,
-        accuracyPercentage: 88,
-        passed: true,
-        matchedWords: words,
-        missedWords: [],
-        wordAnalysis: words.map(w => ({ word: w, status: 'correct' })),
-        feedback: lang === 'ar' 
-          ? 'تسميع رائع ومجهود ممتاز في حفظ آية الكتاب المقدس! ربنا يباركك.' 
-          : 'Wonderful recital and great effort memorizing Scripture! God bless you.',
+        transcription: '',
+        accuracyPercentage: 0,
+        passed: false,
+        matchedWords: [],
+        missedWords: words,
+        wordAnalysis: words.map(word => ({ word, status: 'missing' })),
+        feedback: lang === 'ar'
+          ? 'تعذر مراجعة التسجيل بسبب مشكلة في خدمة التحقق. جرّب تاني لما الخدمة تشتغل.'
+          : 'The recital could not be verified because the review service is unavailable. Please try again.',
         aiTeacherComment: lang === 'ar'
-          ? 'برافو عليك يا بطل! نطقت كلمات الآية بصوت واضح وجميل. كمّل حفظ كلام ربنا وخليه نور لطريقك.'
-          : 'Splendid recital! Your voice sounded clear and confident. Keep hiding God\'s word in your heart!',
-        pointsAwarded: 100
+          ? 'تسجيلك ما اتراجعش لسه. جرّب تاني، ومش هتتحسب أي نقاط من غير مراجعة مؤكدة.'
+          : 'Your recording has not been reviewed yet. Please try again; points are only awarded after a confirmed review.',
+        pointsAwarded: 0
       });
-      if (userData) {
-        const updated = awardPoints(userData.id, 100, `تسميع آية الأسبوع (${targetVerse.referenceAr})`);
-        updateUserData(updated);
-      }
     } finally {
       setIsEvaluating(false);
     }
