@@ -11,8 +11,11 @@ test('verse recital rewards are persisted once per student per Cairo day by a tr
   const end = server.indexOf('// ==============================================================================\n// HYMNS SCHOOL', start);
   const route = server.slice(start, end);
   const client = await read('../src/components/student/VerseRecitalModal.tsx');
+  const profilePointsMigration = await read('../supabase/migrations/20261127165753_enforce_non_null_profile_points.sql');
 
   assert.match(migration, /primary key \(student_id, activity_date\)/);
+  assert.match(profilePointsMigration, /update public\.profiles set points = 0 where points is null/i);
+  assert.match(profilePointsMigration, /alter table public\.profiles alter column points set not null/i);
   assert.match(migration, /where student_id = p_student_id[\s\S]*and activity_date = p_activity_date[\s\S]*and passed = false/);
   assert.match(migration, /on conflict \(student_id, activity_date\) do nothing/);
   assert.match(migration, /set points = coalesce\(points, 0\) \+ v_points_awarded/);
