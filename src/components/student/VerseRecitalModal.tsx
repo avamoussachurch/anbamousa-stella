@@ -376,7 +376,8 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
             )}
 
             {!result.verificationUnavailable && (
-              {/* WORD-BY-WORD ACCURACY BREAKDOWN */}
+              <>
+                {/* WORD-BY-WORD ACCURACY BREAKDOWN */}
               <div className="p-3.5 bg-gray-50 dark:bg-slate-800/60 rounded-2xl border border-gray-100 dark:border-slate-700 text-start">
                 <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block mb-2.5">
                   {lang === 'ar' ? 'مراجعة كل كلمة في الآية:' : 'Word-by-Word Evaluation:'}
@@ -417,6 +418,7 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
                   )}
                 </div>
               </div>
+              </>
             )}
 
             {result.pointsAwarded > 0 && (
