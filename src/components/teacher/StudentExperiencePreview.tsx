@@ -17,6 +17,7 @@ import type { CopticHymnItem } from '../../data/hymnsData';
 import { CANONICAL_GRADES, findCanonicalGrade, findClassGroupForGrade } from '../../lib/classGroups';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { loadServantPreviewSchoolContent } from '../../lib/servantPreview';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import type { Language, Lesson, LessonVersion, QuizDraft, StudentContentProgress, TaxisItem } from '../../types';
 
 type PreviewScreen = 'home' | 'lessons' | 'lesson' | 'quiz' | 'hymns' | 'taxis' | 'achievements';
@@ -155,7 +156,7 @@ export function StudentExperiencePreview({ lang, initialLessonId }: StudentExper
       .catch(error => {
         if (!active) return;
         setSchoolContent({ hymns: [], taxis: [] });
-        setSchoolContentError(error instanceof Error ? error.message : (isAr ? 'تعذر تحميل المنهج المنشور.' : 'Could not load published curriculum.'));
+        setSchoolContentError(getLocalizedErrorMessage(error, lang));
       })
       .finally(() => {
         if (active) setSchoolContentLoading(false);

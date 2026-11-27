@@ -23,6 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { awardPoints } from '../../lib/pointsService';
 import { Language } from '../../types';
 import { getHymns } from '../../lib/hymnsService';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { recordStudentSchoolActivity } from '../../lib/studentProgressService';
 import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
 import { HymnsTaxisLevelSetup } from '../common/HymnsTaxisLevelSetup';
@@ -139,7 +140,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       setPracticeSubmitted(true);
       setPracticeSubmissionMessage(isAr ? 'اترسل تسجيلك للخادم بنجاح. هيظهر في لوحة متابعة الخدام.' : 'Your practice recording was sent to your teacher successfully.');
     } catch (error) {
-      setPracticeSubmissionError(error instanceof Error ? error.message : (isAr ? 'تعذر إرسال التسجيل.' : 'Could not send the recording.'));
+      setPracticeSubmissionError(getLocalizedErrorMessage(error, lang));
     } finally {
       setIsSubmittingPractice(false);
     }
@@ -174,14 +175,14 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       } else {
         setHymnsList([]);
         setSelectedHymn(null);
-        setHymnsLoadError(res.error || (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
+        setHymnsLoadError(getLocalizedErrorMessage(res.error || 'Could not load Hymns.', lang));
       }
       setIsHymnsLoading(false);
     }).catch(error => {
       if (!isMounted) return;
       setHymnsList([]);
       setSelectedHymn(null);
-      setHymnsLoadError(error instanceof Error ? error.message : (isAr ? 'مش قادرين نحمّل الألحان دلوقتي.' : 'Could not load Hymns.'));
+      setHymnsLoadError(getLocalizedErrorMessage(error, lang));
       setIsHymnsLoading(false);
     });
 
@@ -199,10 +200,10 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     resolveCurriculumMediaUrl(selectedHymn.audioUrl)
       .then(url => { if (active) setResolvedAudioUrl(url); })
       .catch(error => {
-        if (active) setAudioUrlError(error instanceof Error ? error.message : 'Audio could not be loaded.');
+        if (active) setAudioUrlError(getLocalizedErrorMessage(error, lang));
       });
     return () => { active = false; };
-  }, [selectedHymn?.id, selectedHymn?.audioUrl]);
+  }, [selectedHymn?.id, selectedHymn?.audioUrl, lang]);
 
   useEffect(() => {
     let active = true;
@@ -214,11 +215,11 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
     resolveCurriculumMediaUrl(reference)
       .then(url => { if (active) setResolvedSheetMusicUrl(url); })
       .catch(error => {
-        if (active) setSheetMusicUrlError(error instanceof Error ? error.message : 'PDF could not be opened.');
+        if (active) setSheetMusicUrlError(getLocalizedErrorMessage(error, lang));
       })
       .finally(() => { if (active) setIsResolvingSheetMusic(false); });
     return () => { active = false; };
-  }, [selectedHymn?.id, selectedHymn?.sheetMusicUrl, selectedHymn?.pdfUrl]);
+  }, [selectedHymn?.id, selectedHymn?.sheetMusicUrl, selectedHymn?.pdfUrl, lang]);
 
   // Read mastered hymns
   useEffect(() => {
@@ -256,7 +257,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       setIsPlaying(true);
     } catch (error) {
       setIsPlaying(false);
-      setAudioPlaybackError(error instanceof Error ? error.message : (isAr ? 'مش قادرين نشغّل التسجيل ده.' : 'This audio could not be played.'));
+      setAudioPlaybackError(getLocalizedErrorMessage(error, lang));
     }
   };
 
@@ -286,7 +287,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       setResolvedSheetMusicUrl(freshUrl);
       setShowSheetMusicViewer(true);
     } catch (error) {
-      setSheetMusicUrlError(error instanceof Error ? error.message : 'PDF could not be opened.');
+      setSheetMusicUrlError(getLocalizedErrorMessage(error, lang));
     } finally {
       setIsResolvingSheetMusic(false);
     }
@@ -441,9 +442,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         waveformContextRef.current = null;
       }
       setIsRecordingPractice(false);
-      setPracticeRecordingError(err instanceof Error
-        ? err.message
-        : (isAr ? 'تعذر تشغيل الميكروفون. راجع صلاحيات المتصفح.' : 'Could not access the microphone. Check browser permissions.'));
+      setPracticeRecordingError(getLocalizedErrorMessage(err instanceof Error && err.message ? err : 'Could not access the microphone. Check browser permissions.', lang));
     }
   };
 
@@ -457,7 +456,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       if (recorder.state === 'recording') recorder.pause();
       else if (recorder.state === 'paused') recorder.resume();
     } catch (err) {
-      setPracticeRecordingError(err instanceof Error ? err.message : (isAr ? 'تعذر إيقاف أو استكمال التسجيل.' : 'Could not pause or resume the recording.'));
+      setPracticeRecordingError(getLocalizedErrorMessage(err, lang));
     }
   };
 
@@ -471,7 +470,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       // stop() flushes the final dataavailable event before onstop, even when paused.
       recorder.stop();
     } catch (err) {
-      setPracticeRecordingError(err instanceof Error ? err.message : (isAr ? 'تعذر إنهاء التسجيل.' : 'Could not stop the recording.'));
+      setPracticeRecordingError(getLocalizedErrorMessage(err, lang));
     }
   };
 
@@ -495,7 +494,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
           studentId: userData.id
         });
         if (res.success) masteryConfirmed = true;
-        else setMasteryError(res.error || (isAr ? 'تعذر حفظ إتقان اللحن. حاول مرة أخرى.' : 'Could not save hymn mastery. Please try again.'));
+        else setMasteryError(getLocalizedErrorMessage(res.error || 'Could not save hymn mastery. Please try again.', lang));
         if (res.success && setUserDirectly) {
           setUserDirectly({
             ...userData,

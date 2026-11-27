@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { TaxisItem, TaxisSection, TaxisCategory, Language } from '../../types';
 import { getTaxisItems } from '../../lib/taxisService';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { useAuth } from '../../context/AuthContext';
 import { recordStudentSchoolActivity } from '../../lib/studentProgressService';
 import { parseHymnsTaxisLevel } from '../../lib/hymnsTaxisLevel';
@@ -72,12 +73,18 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
       } else {
         setItems([]);
         setSelectedItem(null);
-        setLoadError(res.error || (isAr ? 'مش قادرين نحمّل دروس الطقوس دلوقتي.' : 'Could not load Taxis lessons.'));
+        setLoadError(getLocalizedErrorMessage(res.error || 'Could not load Taxis lessons.', lang));
       }
+      setLoading(false);
+    }).catch(error => {
+      if (!isMounted) return;
+      setItems([]);
+      setSelectedItem(null);
+      setLoadError(getLocalizedErrorMessage(error, lang));
       setLoading(false);
     });
     return () => { isMounted = false; };
-  }, [selectedCategory, userData?.id, userData?.roles, userData?.hymnsTaxisLevel, userData?.grade, workspace]);
+  }, [selectedCategory, userData?.id, userData?.roles, userData?.hymnsTaxisLevel, userData?.grade, workspace, lang]);
 
   // Private curriculum files need a short-lived signed URL before a browser
   // link can open them. Resolve only the currently selected item's attachments.
@@ -96,11 +103,11 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
         if (active) setResolvedDocumentUrls(Object.fromEntries(entries));
       })
       .catch(error => {
-        if (active) setDocumentUrlError(error instanceof Error ? error.message : 'A document could not be opened.');
+        if (active) setDocumentUrlError(getLocalizedErrorMessage(error, lang));
       });
 
     return () => { active = false; };
-  }, [selectedItem?.id, selectedItem?.documents]);
+  }, [selectedItem?.id, selectedItem?.documents, lang]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -162,7 +169,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
           studentId: userData.id
         });
         if (res.success) completionConfirmed = true;
-        else setCompletionError(res.error || (isAr ? 'تعذر حفظ إتمام دراسة الطقس. حاول مرة أخرى.' : 'Could not save ritual completion. Please try again.'));
+        else setCompletionError(getLocalizedErrorMessage(res.error || 'Could not save ritual completion. Please try again.', lang));
         if (res.success && setUserDirectly) {
           setUserDirectly({
             ...userData,
@@ -173,7 +180,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
         }
       } catch (err) {
         console.warn('Note on taxis activity record:', err);
-        setCompletionError(isAr ? 'تعذر حفظ إتمام دراسة الطقس. حاول مرة أخرى.' : 'Could not save ritual completion. Please try again.');
+        setCompletionError(getLocalizedErrorMessage(err, lang));
       }
     }
     if (!completionConfirmed) {
