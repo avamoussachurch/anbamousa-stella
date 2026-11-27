@@ -295,7 +295,7 @@ export function StudentAdventureHome({
         <AdventureStars reduceMotion={Boolean(reduceMotion)} />
         <motion.span aria-hidden="true" className="pointer-events-none absolute end-[12%] top-[18%] z-[1] text-2xl drop-shadow-[0_0_12px_rgba(245,217,140,.75)] sm:end-[18%] sm:top-[20%]" animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-4, 4, -4] }} transition={reduceMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}>🏮</motion.span>
         <div aria-hidden="true" className="absolute -end-14 -top-24 h-72 w-72 rounded-full bg-[#E7B956]/15 blur-[75px]" />
-        <svg aria-hidden="true" viewBox="0 0 900 430" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full opacity-100">
+        <svg aria-hidden="true" viewBox="0 0 900 430" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full opacity-100" style={isArabic ? { transform: 'scaleX(-1)' } : undefined}>
           <defs>
             <linearGradient id="anbaSky" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#123E56"/><stop offset=".58" stopColor="#277A82"/><stop offset="1" stopColor="#E7B96C"/></linearGradient>
             <linearGradient id="anbaStone" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#F7E6C5"/><stop offset="1" stopColor="#C9A879"/></linearGradient>
@@ -336,6 +336,7 @@ export function StudentAdventureHome({
           <g><path d="M287 0V70M278 70H296L292 101H282Z" stroke="#F5D98C" strokeWidth="3" fill="#E9B95E"/><circle cx="287" cy="85" r="18" fill="#FFE8A5" opacity=".18"/><path d="M852 35V92M844 92H860L856 120H848Z" stroke="#F5D98C" strokeWidth="3" fill="#E9B95E"/></g>
           <g fill="#FFE6A2"><circle cx="95" cy="150" r="3"/><circle cx="300" cy="130" r="2"/><circle cx="715" cy="48" r="2"/><circle cx="872" cy="175" r="2"/></g>
         </svg>
+        <div aria-hidden="true" className={`pointer-events-none absolute inset-0 z-[1] ${isArabic ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-[#0A2433]/95 via-[#0A2433]/68 to-transparent`} />
 
         <div className="relative z-10 flex min-h-[300px] flex-col justify-between gap-5 sm:min-h-[340px] sm:flex-row sm:items-end sm:gap-7">
           <div className="max-w-2xl sm:max-w-[min(58%,42rem)]">
