@@ -7,7 +7,7 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 test('student Scripture recital instructions and feedback use Egyptian Arabic', async () => {
   const recital = await read('../src/components/student/VerseRecitalModal.tsx');
   assert.match(recital, /اقرأ الآية واحفظها، وبعدها اضغط على الميكروفون/);
-  assert.match(recital, /التسميع ما اتراجعش لسه/);
+  assert.match(recital, /النتيجة ما اتحفظتش لسه/);
   assert.match(recital, /🎉 حفظت الآية بإتقان!/);
   assert.match(recital, /كنت قريب جدًا! راجع الكلمات وجرّب تاني/);
   assert.match(recital, /سمّع تاني/);
