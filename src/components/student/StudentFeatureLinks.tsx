@@ -82,7 +82,7 @@ export function StudentFeatureLinks({ lang, onNavigate }: { lang: Language; onNa
         whileHover={{ y: -5, scale: 1.015 }}
         whileTap={{ scale: 0.985 }}
         onClick={() => onNavigate('calendar')}
-        className="group relative flex min-h-40 flex-col justify-between overflow-hidden rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-100 p-5 text-start shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-[#65563D] dark:from-[#27323A] dark:via-[#26313A] dark:to-[#3C382A]"
+        className="anba-world-portal-card group relative flex min-h-48 flex-col justify-between overflow-hidden rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-100 p-6 text-start shadow-lg transition hover:shadow-xl dark:border-[#65563D] dark:from-[#27323A] dark:via-[#26313A] dark:to-[#3C382A]"
       >
         <div aria-hidden="true" className="anba-world-portal-ring absolute -end-8 -bottom-16 h-52 w-52 rounded-full border-[18px] border-amber-500/10 shadow-[0_0_0_12px_rgba(192,140,55,.06),inset_0_0_35px_rgba(192,140,55,.08)]" />
         <div aria-hidden="true" className="pointer-events-none absolute -end-4 -top-5 text-amber-800/10 dark:text-amber-100/10">
