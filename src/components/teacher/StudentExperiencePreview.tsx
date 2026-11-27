@@ -17,6 +17,7 @@ import type { CopticHymnItem } from '../../data/hymnsData';
 import { CANONICAL_GRADES, findCanonicalGrade, findClassGroupForGrade } from '../../lib/classGroups';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { loadServantPreviewSchoolContent } from '../../lib/servantPreview';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import type { Language, Lesson, LessonVersion, QuizDraft, StudentContentProgress, TaxisItem } from '../../types';
 
 type PreviewScreen = 'home' | 'lessons' | 'lesson' | 'quiz' | 'hymns' | 'taxis' | 'achievements';
