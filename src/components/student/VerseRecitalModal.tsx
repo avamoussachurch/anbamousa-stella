@@ -34,6 +34,7 @@ interface VerificationResult {
   feedback: string;
   aiTeacherComment?: string;
   pointsAwarded: number;
+  verificationUnavailable?: boolean;
 }
 
 export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseRecitalModalProps) {
@@ -190,8 +191,9 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
         accuracyPercentage: 0,
         passed: false,
         matchedWords: [],
-        missedWords: words,
-        wordAnalysis: words.map(word => ({ word, status: 'missing' })),
+        missedWords: [],
+        wordAnalysis: [],
+        verificationUnavailable: true,
         feedback: lang === 'ar'
           ? 'تعذر مراجعة التسجيل بسبب مشكلة في خدمة التحقق. جرّب تاني لما الخدمة تشتغل.'
           : 'The recital could not be verified because the review service is unavailable. Please try again.',
@@ -333,16 +335,18 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
 
               <div className="flex items-center justify-center gap-2">
                 <span className={`text-3xl font-extrabold ${result.passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                  {result.accuracyPercentage}%
+                  {result.verificationUnavailable ? (lang === 'ar' ? 'غير متحقق' : 'Not verified') : `${result.accuracyPercentage}%`}
                 </span>
                 <span className="text-xs uppercase font-bold text-gray-400">
-                  {lang === 'ar' ? 'نسبة الدقة' : 'Accuracy'}
+                  {result.verificationUnavailable ? (lang === 'ar' ? 'حالة المراجعة' : 'Review status') : (lang === 'ar' ? 'نسبة الدقة' : 'Accuracy')}
                 </span>
               </div>
               <h4 className="text-lg font-bold mt-1 text-[var(--color-church-blue)] dark:text-amber-200">
-                {result.passed 
-                  ? (lang === 'ar' ? '🎉 حفظت الآية بإتقان! مبروك يا بطل!' : '🎉 Mastered! Outstanding Job!') 
-                  : (lang === 'ar' ? 'كنت قريب جدًا! راجع الكلمات وجرّب تاني.' : 'Almost there! Review and try again')}
+                {result.verificationUnavailable
+                  ? (lang === 'ar' ? 'التسميع ما اتراجعش لسه' : 'Recital not verified yet')
+                  : result.passed
+                    ? (lang === 'ar' ? '🎉 حفظت الآية بإتقان! مبروك يا بطل!' : '🎉 Mastered! Outstanding Job!')
+                    : (lang === 'ar' ? 'كنت قريب جدًا! راجع الكلمات وجرّب تاني.' : 'Almost there! Review and try again')}
               </h4>
             </div>
 
@@ -413,10 +417,10 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
               </div>
             </div>
 
-            {result.passed && (
+            {result.pointsAwarded > 0 && (
               <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-bold text-xs flex items-center justify-center gap-2">
                 <Sparkles size={16} />
-                <span>{lang === 'ar' ? 'اتضافت ١٠٠ نقطة لحسابك على Supabase!' : '+100 Points added to your Church profile in Supabase!'}</span>
+                <span>{lang === 'ar' ? `اتضافت ${result.pointsAwarded} نقطة لحسابك على Supabase!` : `+${result.pointsAwarded} points added to your Church profile in Supabase!`}</span>
               </div>
             )}
 
