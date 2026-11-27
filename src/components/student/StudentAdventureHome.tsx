@@ -42,7 +42,7 @@ function AdventureStars({ reduceMotion }: { reduceMotion: boolean }) {
   ];
 
   return (
-    <div aria-hidden="true" className="stella-adventure-stars absolute inset-0 overflow-hidden pointer-events-none">
+    <div aria-hidden="true" className="stella-adventure-stars absolute inset-0 z-[2] overflow-hidden pointer-events-none">
       {stars.map(([left, top, size], index) => (
         <span
           key={`${left}-${top}`}
@@ -293,7 +293,7 @@ export function StudentAdventureHome({
         className="stella-adventure-hero relative isolate min-h-[360px] overflow-hidden rounded-[2rem] border border-[#34505E] bg-[#0A1925] px-5 py-6 text-white shadow-[0_24px_65px_-38px_rgba(0,0,0,.65)] sm:min-h-[410px] sm:px-9 sm:py-8"
       >
         <AdventureStars reduceMotion={Boolean(reduceMotion)} />
-        <motion.span aria-hidden="true" className="pointer-events-none absolute end-[12%] top-[18%] z-[1] text-2xl drop-shadow-[0_0_12px_rgba(245,217,140,.75)] sm:end-[18%] sm:top-[20%]" animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-4, 4, -4] }} transition={reduceMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}>🏮</motion.span>
+        <motion.span aria-hidden="true" className="pointer-events-none absolute end-[12%] top-[18%] z-[3] text-2xl drop-shadow-[0_0_12px_rgba(245,217,140,.75)] sm:end-[18%] sm:top-[20%]" animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-4, 4, -4] }} transition={reduceMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}>🏮</motion.span>
         <div aria-hidden="true" className="absolute -end-14 -top-24 h-72 w-72 rounded-full bg-[#E7B956]/15 blur-[75px]" />
         <svg aria-hidden="true" viewBox="0 0 900 430" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full opacity-100" style={isArabic ? { transform: 'scaleX(-1)' } : undefined}>
           <defs>
