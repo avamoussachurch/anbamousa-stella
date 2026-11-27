@@ -163,7 +163,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
 
   return (
     <motion.div
-      className={`fixed z-50 flex max-w-[calc(100vw-1.25rem)] ${bubblePosition && bubblePosition.left < window.innerWidth / 2 ? 'items-start' : 'items-end'} ${bubblePosition && bubblePosition.top < window.innerHeight / 2 ? 'flex-col-reverse' : 'flex-col'}`}
+      className={`fixed z-50 flex max-w-[calc(100vw-1.25rem)] ${(bubblePosition ? bubblePosition.left < window.innerWidth / 2 : lang === 'ar') ? 'items-start' : 'items-end'} ${bubblePosition && bubblePosition.top < window.innerHeight / 2 ? 'flex-col-reverse' : 'flex-col'}`}
       style={bubblePosition ? undefined : {
         bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)',
         ...(lang === 'ar' ? { left: 12 } : { right: 12 })
@@ -177,7 +177,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="anba-global-player-panel rounded-3xl p-4 mb-4 w-[min(18rem,calc(100vw-1.5rem))] sm:w-80 max-h-[70dvh] overflow-y-auto overflow-x-hidden"
+            className={["anba-global-player-panel rounded-3xl p-4 w-[min(18rem,calc(100vw-1.5rem))] sm:w-80 max-h-[70dvh] overflow-y-auto overflow-x-hidden", bubblePosition && bubblePosition.top < window.innerHeight / 2 ? "mt-4 mb-0" : "mb-4 mt-0"].join(" ")}
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-[var(--color-church-blue)] flex items-center gap-2">
