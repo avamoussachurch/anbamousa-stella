@@ -7,7 +7,7 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 test('student Scripture recital instructions and feedback use Egyptian Arabic', async () => {
   const recital = await read('../src/components/student/VerseRecitalModal.tsx');
   assert.match(recital, /اقرأ الآية واحفظها، وبعدها اضغط على الميكروفون/);
-  assert.match(recital, /التسميع ما اتراجعش لسه/);
+  assert.match(recital, /النتيجة ما اتحفظتش لسه/);
   assert.match(recital, /🎉 حفظت الآية بإتقان!/);
   assert.match(recital, /كنت قريب جدًا! راجع الكلمات وجرّب تاني/);
   assert.match(recital, /سمّع تاني/);
@@ -28,13 +28,13 @@ test('verse recital verification failures never create a passing result or award
   assert.doesNotMatch(recital, /awardPoints/);
   assert.match(catchBlock, /passed: false/);
   assert.match(catchBlock, /pointsAwarded: 0/);
-  assert.match(catchBlock, /verificationUnavailable: true/);
+  assert.match(catchBlock, /resultUnavailable: true/);
   assert.match(catchBlock, /setAudioError\(/);
-  assert.match(catchBlock, /مش قادرين نتحقق من التسميع دلوقتي/);
+  assert.match(catchBlock, /مش قادرين نكمل مراجعة التسميع وحفظ النتيجة دلوقتي/);
   assert.doesNotMatch(catchBlock, /passed: true/);
-  assert.match(recital, /evalData\.pointsAwarded = 0/);
+  assert.match(recital, /evalData\.pointsAwarded = Number\(responseData\.pointsAwarded \|\| 0\)/);
   assert.match(recital, /result\.pointsAwarded > 0/);
-  assert.match(recital, /result\.verificationUnavailable \? \(lang === 'ar' \? 'غير متحقق' : 'Not verified'\)/);
+  assert.match(recital, /result\.resultUnavailable \? \(lang === 'ar' \? 'النتيجة مش محفوظة' : 'Result not saved'\)/);
 });
 
 test('verse recital server never trusts model-generated point awards', async () => {
@@ -47,5 +47,7 @@ test('verse recital server never trusts model-generated point awards', async () 
   assert.match(route, /Array\.isArray\(d\?\.matchedWords\)/);
   assert.match(route, /Array\.isArray\(d\?\.missedWords\)/);
   assert.match(route, /d\.accuracyPercentage >= 0 && d\.accuracyPercentage <= 100/);
-  assert.match(route, /return res\.json\(\{ \.\.\.parsed\.data, pointsAwarded: 0 \}\)/);
+  assert.match(route, /return res\.json\(\{ \.\.\.parsed\.data, pointsAwarded, totalPoints \}\)/);
+  assert.match(route, /record_verse_recital_daily_result/);
+  assert.match(route, /hasServerRole\(authContext, 'student'\)/);
 });
