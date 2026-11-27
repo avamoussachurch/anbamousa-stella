@@ -6414,7 +6414,7 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
     // until the student submits that quiz. Quizless lessons still qualify on completion.
     const todayCairo = getCairoDateString(new Date(prog.completedAt));
     const requiresQuiz = Array.isArray(targetVersion?.quizDraft?.questions) && targetVersion.quizDraft.questions.length > 0;
-    let persistedStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> = null;
+    let persistedStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> | Awaited<ReturnType<typeof loadPersistedStudentStreak>> = null;
     try {
       persistedStreak = requiresQuiz
         ? await loadPersistedStudentStreak(targetStudentId)
