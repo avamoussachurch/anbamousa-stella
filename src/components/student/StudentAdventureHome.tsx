@@ -251,7 +251,19 @@ function FeedPreview({
               <span className="truncate">{post.authorName}</span>
               <span className="ms-auto flex shrink-0 items-center gap-1 text-[10px] text-slate-400"><MessageCircle size={12} />{post.comments.length}</span>
             </span>
-            <span className="mt-3 line-clamp-2 block text-sm leading-relaxed text-slate-100">{post.content}</span>
+            {post.attachments?.[0] && (
+              <span className="mt-3 block overflow-hidden rounded-xl border border-white/10 bg-[#0B1B25]">
+                {['image','video','youtube'].includes(post.attachments[0].mediaType) ? (
+                  <img src={post.attachments[0].mediaThumbnail || post.attachments[0].mediaUrl} alt="" loading="lazy" className="max-h-40 w-full object-cover"/>
+                ) : (
+                  <span className="flex items-center gap-2 px-3 py-3 text-xs font-bold text-[#B9E4DE]">
+                    {post.attachments[0].mediaType === 'audio' ? '♫' : '↗'}
+                    {isArabic ? (post.attachments[0].mediaType === 'audio' ? 'تسجيل صوتي' : 'مرفق') : (post.attachments[0].mediaType === 'audio' ? 'Voice recording' : 'Attachment')}
+                  </span>
+                )}
+              </span>
+            )}
+            <span className="mt-3 line-clamp-4 block text-sm leading-relaxed text-slate-100">{post.content}</span>
           </button>
         ))}
       </div>
