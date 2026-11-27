@@ -538,11 +538,11 @@ export function ProfileTab({
 
       <AnimatePresence mode="wait">
         {screen === 'main' && (
-          <motion.div key="main" initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }} className="space-y-6">
-            <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] mb-6 md:text-3xl">{lang === 'ar' ? 'ملفك في رحلة موسى' : 'Traveler Profile'}</h1>
+          <motion.div key="main" initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }} className="space-y-4">
+            <h1 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-[#FAF5EB] mb-2 md:text-3xl">{lang === 'ar' ? 'ملفك في رحلة موسى' : 'Traveler Profile'}</h1>
             
             <div className="md:grid md:grid-cols-[1.5fr_1fr] md:gap-8 space-y-6 md:space-y-0">
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="bg-[var(--mousa-cream-surface)] dark:bg-[var(--surface-primary)] rounded-3xl p-4 sm:p-5 shadow-xs border-2 border-[var(--mousa-border-sand)] text-center relative">
                   <button onClick={handleOpenEdit} className={`absolute top-4 ${lang === 'ar' ? 'left-4' : 'right-4'} text-[var(--mousa-sand-500)] hover:text-[var(--mousa-coral)] p-2 rounded-xl hover:bg-[var(--mousa-sand-100)] transition-colors cursor-pointer`} title={lang === 'ar' ? 'تعديل ملفك الشخصي' : 'Edit Profile'}>
                     <Edit3 size={20} />
