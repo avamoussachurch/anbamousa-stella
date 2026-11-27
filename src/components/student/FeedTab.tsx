@@ -103,6 +103,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
   const [syncStatusText, setSyncStatusText] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [reactionPickerTarget, setReactionPickerTarget] = useState<string | null>(null);
+  const [myPostReactionKeys, setMyPostReactionKeys] = useState<Set<string>>(() => new Set());
   const [reportingPostId, setReportingPostId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState<'spam' | 'harassment' | 'inappropriate' | 'privacy' | 'other'>('inappropriate');
   const [reportDetails, setReportDetails] = useState('');
@@ -110,6 +111,25 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
   const reportingPost = posts.find(post => post.id === reportingPostId) || null;
   const [isLoadingServerPosts, setIsLoadingServerPosts] = useState(true);
   const [feedLoadError, setFeedLoadError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!reactionPickerTarget) return;
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Element && !target.closest('[data-feed-reaction-root]')) {
+        setReactionPickerTarget(null);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setReactionPickerTarget(null);
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePress);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePress);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [reactionPickerTarget]);
+
 
   // Load authoritative posts from Supabase on mount & run safe idempotent migration
   useEffect(() => {
@@ -437,6 +457,13 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
         ...p,
         reactions: { ...p.reactions, [reactionType]: Math.max(0, (p.reactions[reactionType] || 0) + delta) }
       } : p));
+      setMyPostReactionKeys(previous => {
+        const next = new Set(previous);
+        const key = `${postId}:${reactionType}`;
+        if (res.action === 'added') next.add(key);
+        else if (res.action === 'removed') next.delete(key);
+        return next;
+      });
     } catch (error) {
       console.warn('Reaction write note:', error);
       setActionError(lang === 'ar'
@@ -1728,22 +1755,23 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
               )}
               
               {/* Post Reactions Bar */}
-              <div className="relative flex items-center gap-2 border-t border-gray-100 pt-3 pb-1 flex-wrap">
+              <div data-feed-reaction-root className="relative flex items-center gap-2 border-t border-gray-100 pt-3 pb-1 flex-wrap">
                 {FEED_REACTIONS.filter(reaction => ['heart', 'candle', 'cross'].includes(reaction.key) || (post.reactions[reaction.key] || 0) > 0).map(reaction => (
                   <motion.button
                     key={reaction.key}
                     whileTap={{ scale: 0.88 }}
-                    onClick={() => handleReactPost(post.id, reaction.key)}
+                    onClick={() => void handleReactPost(post.id, reaction.key)}
+                    aria-pressed={myPostReactionKeys.has(post.id + ':' + reaction.key)}
                     aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn}
                     title={lang === 'ar' ? reaction.labelAr : reaction.labelEn}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-full border border-[var(--border-default)] bg-[var(--surface-secondary)] px-2.5 py-1 text-xs font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--mousa-gold)] hover:bg-[var(--state-hover)]"
+                    className={'inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition-all ' + (myPostReactionKeys.has(post.id + ':' + reaction.key) ? 'border-amber-500 bg-amber-100 text-amber-950 shadow-[inset_0_1px_3px_rgba(120,75,10,.18)] ring-2 ring-amber-300/70 dark:border-amber-300 dark:bg-amber-400/20 dark:text-amber-100' : 'border-[var(--border-default)] bg-[var(--surface-secondary)] text-[var(--text-primary)] hover:border-[var(--mousa-gold)] hover:bg-[var(--state-hover)]')}
                   >
                     <span className="text-sm leading-none">{reaction.emoji}</span>
                     <span className="tabular-nums">{post.reactions[reaction.key] || 0}</span>
                   </motion.button>
                 ))}
                 <button type="button" onClick={() => setReactionPickerTarget(reactionPickerTarget === 'post:' + post.id ? null : 'post:' + post.id)} aria-label={lang === 'ar' ? 'إضافة تفاعل' : 'Add reaction'} title={lang === 'ar' ? 'إضافة تفاعل' : 'Add reaction'} className="grid h-8 w-8 place-items-center rounded-full border border-dashed border-[var(--border-default)] text-base font-black text-[var(--text-secondary)] hover:border-[var(--mousa-gold)] hover:text-[var(--mousa-gold)]">＋</button>
-                {reactionPickerTarget === 'post:' + post.id && <div className="absolute bottom-full start-0 z-30 mb-2 grid grid-cols-5 gap-1 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-2 shadow-xl">{FEED_REACTIONS.map(reaction => <button key={reaction.key} type="button" onClick={() => { void handleReactPost(post.id, reaction.key); setReactionPickerTarget(null); }} title={lang === 'ar' ? reaction.labelAr : reaction.labelEn} aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn} className="grid h-9 w-9 place-items-center rounded-xl text-lg hover:bg-[var(--state-hover)]">{reaction.emoji}</button>)}</div>}
+                {reactionPickerTarget === 'post:' + post.id && <div data-feed-reaction-picker className="absolute bottom-full start-0 z-30 mb-2 grid grid-cols-5 gap-1 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-2 shadow-xl">{FEED_REACTIONS.map(reaction => <button key={reaction.key} type="button" onClick={() => { void handleReactPost(post.id, reaction.key); setReactionPickerTarget(null); }} title={lang === 'ar' ? reaction.labelAr : reaction.labelEn} aria-label={lang === 'ar' ? reaction.labelAr : reaction.labelEn} className="grid h-9 w-9 place-items-center rounded-xl text-lg transition hover:scale-110 hover:bg-[var(--state-hover)]">{reaction.emoji}</button>)}</div>}
                 
                 <div className="flex-1"></div>
                 
