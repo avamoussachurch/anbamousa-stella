@@ -890,8 +890,8 @@ export const ServantClassManagement: React.FC<ServantClassManagementProps> = ({
                       disabled={isSubmitting || loading}
                     />
 
-                    {/* Instant Student Code Recognition Preview */}
-                    {(() => {
+                    {/* Sample student hints are shown only in offline demo mode; live accounts are validated by the server. */}
+                    {!isOnlineAuth && (() => {
                       const KNOWN_STUDENT_HINTS = [
                         { code: 'A7K2M', id: 'student-david', name: 'David Shenouda (ديفيد شنودة)', grade: 'Grade 4' },
                         { code: 'B6T2N', id: 'c1', name: 'Mina Emad (مينا عماد)', grade: 'Grade 4' },
