@@ -105,7 +105,7 @@ export function StudentFeatureLinks({ lang, onNavigate }: { lang: Language; onNa
             {isArabic ? nextFeast.feast.nameAr : nextFeast.feast.nameEn} · {feastDate}
           </p>
         </div>
-      </button>
+      </motion.button>
     </section>
   );
 }
