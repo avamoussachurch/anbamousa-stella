@@ -32,6 +32,8 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
   });
   const [isDragging, setIsDragging] = useState(false);
   const playerRootRef = useRef<HTMLDivElement>(null);
+  const playerPanelRef = useRef<HTMLDivElement>(null);
+  const [panelPosition, setPanelPosition] = useState<{ left: number; top: number } | null>(null);
 
   const clampBubblePosition = useCallback((left: number, top: number) => {
     const bubbleSize = 62;
@@ -107,6 +109,24 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
+
+
+  useEffect(() => {
+    if (!isOpen) { setPanelPosition(null); return; }
+    const frame = window.requestAnimationFrame(() => {
+      const bubble = playerRootRef.current?.querySelector('button')?.getBoundingClientRect();
+      const panel = playerPanelRef.current?.getBoundingClientRect();
+      if (!bubble || !panel) return;
+      const margin = 12;
+      const left = Math.max(margin, Math.min(window.innerWidth - panel.width - margin, bubble.left));
+      const roomBelow = window.innerHeight - bubble.bottom - margin;
+      const top = roomBelow >= panel.height + 8
+        ? bubble.bottom + 8
+        : Math.max(margin, Math.min(window.innerHeight - panel.height - margin, bubble.top - panel.height - 8));
+      setPanelPosition({ left, top });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isOpen, bubblePosition]);
 
   const refreshHymns = useCallback(async () => {
     const requestId = ++hymnRequestId.current;
@@ -193,10 +213,12 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={playerPanelRef}
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className={["anba-global-player-panel rounded-3xl p-4 w-[min(18rem,calc(100vw-1.5rem))] sm:w-80 max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain overflow-x-hidden", bubblePosition && bubblePosition.top < window.innerHeight / 2 ? "mt-4 mb-0" : "mb-4 mt-0"].join(" ")}
+            className="anba-global-player-panel fixed z-[51] rounded-3xl p-4 w-[min(18rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain overflow-x-hidden"
+            style={{ left: panelPosition?.left ?? 12, top: panelPosition?.top ?? 12, maxHeight: 'calc(100dvh - 24px)' }}
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-[var(--color-church-blue)] flex items-center gap-2">
