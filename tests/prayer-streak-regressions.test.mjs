@@ -54,6 +54,12 @@ test('workspace transitions are perceptible without overriding reduced-motion pr
   assert.match(app, /reduceMotion\s*\?\s*\{ duration: 0 \}/);
 });
 
+test('Agpeya does not display a successful cloud-sync label while a sync error is present', async () => {
+  const agpeya = await read('../src/components/agpeya/AgpeyaPrayerTab.tsx');
+  assert.match(agpeya, /prayerSyncError\s*\?\s*\(lang === 'ar' \? 'المزامنة محتاجة مراجعة' : 'Sync needs attention'\)/);
+  assert.match(agpeya, /prayerSyncError \? 'bg-rose-400' : 'bg-emerald-400'/);
+});
+
 test('Agpeya writes require Supabase confirmation before caching or awarding prayer points', async () => {
   const database = await read('../src/lib/supabaseDatabase.ts');
   const agpeya = await read('../src/components/agpeya/AgpeyaPrayerTab.tsx');
