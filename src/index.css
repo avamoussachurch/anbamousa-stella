@@ -2617,8 +2617,8 @@ button, a, input, select, textarea { max-width: 100%; }
   }
 }
 @keyframes anba-church-breathe {
-  from { transform: scale(1); }
-  to { transform: scale(1.025); }
+  from { scale: 1; }
+  to { scale: 1.025; }
 }
 @keyframes anba-trail-float {
   0%, 100% { translate: 0 0; }
