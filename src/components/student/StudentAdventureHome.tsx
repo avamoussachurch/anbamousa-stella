@@ -76,7 +76,7 @@ function JourneyPath({
   const completedIds = new Set(completedLessons.map(lesson => lesson.id));
 
   return (
-    <section className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#102433] p-5 text-white shadow-[0_24px_70px_-38px_rgba(0,0,0,.8)] sm:p-7">
+    <section className="stella-journey-path relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#102433] p-5 text-white shadow-[0_24px_70px_-38px_rgba(0,0,0,.8)] sm:p-7">
       <div aria-hidden="true" className="absolute -end-24 -top-32 h-72 w-72 rounded-full bg-[#E6B75A]/10 blur-3xl" />
       <div className="relative z-10 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -209,7 +209,7 @@ function FeedPreview({
   }, [isArabic, reload]);
 
   return (
-    <section className="rounded-[1.75rem] border border-[#29414C] bg-[#101E28] p-5 text-white sm:p-6">
+    <section className="stella-community-card rounded-[1.75rem] border border-[#29414C] bg-[#101E28] p-5 text-white sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1D4851] text-[#9EE0D4]">
@@ -288,7 +288,7 @@ export function StudentAdventureHome({
       <motion.section
         initial={reduceMotion ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="stella-adventure-hero relative isolate min-h-[300px] overflow-hidden rounded-[2rem] border border-[#34505E] bg-[#0A1925] px-5 py-5 text-white shadow-[0_32px_90px_-44px_rgba(0,0,0,.85)] sm:min-h-[330px] sm:px-9 sm:py-9"
+        className="stella-adventure-hero relative isolate min-h-[280px] overflow-hidden rounded-[2rem] border border-[#34505E] bg-[#0A1925] px-5 py-6 text-white shadow-[0_24px_65px_-38px_rgba(0,0,0,.65)] sm:min-h-[310px] sm:px-9 sm:py-8"
       >
         <AdventureStars reduceMotion={Boolean(reduceMotion)} />
         <motion.span aria-hidden="true" className="pointer-events-none absolute end-[12%] top-[18%] z-[1] text-2xl drop-shadow-[0_0_12px_rgba(245,217,140,.75)] sm:end-[18%] sm:top-[20%]" animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-4, 4, -4] }} transition={reduceMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}>🏮</motion.span>
@@ -328,8 +328,8 @@ export function StudentAdventureHome({
           </g>
         </svg>
 
-        <div className="relative z-10 flex min-h-[250px] flex-col justify-between gap-5 sm:min-h-[270px] sm:flex-row sm:items-end sm:gap-7">
-          <div className="max-w-2xl">
+        <div className="relative z-10 flex min-h-[230px] flex-col justify-between gap-5 sm:min-h-[250px] sm:flex-row sm:items-end sm:gap-7">
+          <div className="max-w-2xl sm:max-w-[min(58%,42rem)]">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#79CDD0]/25 bg-[#14313D]/80 px-3 py-1.5 text-[11px] font-black text-[#A7DCD7] backdrop-blur">
               <Sparkles size={13} className="text-[#F5D98C]" />
               {isArabic ? 'مغامرتك التعليمية بتبدأ من هنا' : 'Your next chapter starts here'}
@@ -357,7 +357,7 @@ export function StudentAdventureHome({
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-3 self-start rounded-2xl border border-white/10 bg-[#102431]/80 px-4 py-3 backdrop-blur sm:self-end">
+          <div className="stella-home-hero-progress flex items-center gap-3 self-start rounded-2xl border border-white/10 bg-[#102431]/80 px-4 py-3 backdrop-blur sm:self-end">
             <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#E5B85F] bg-[#1B3B47] text-xl">✝</span>
             <div>
               <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#9BB9BE]">{isArabic ? 'محطات رحلتك' : 'Journey progress'}</p>
@@ -374,7 +374,7 @@ export function StudentAdventureHome({
       </motion.section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,.8fr)]">
-        <div className="relative overflow-hidden rounded-[1.75rem] border border-[#435361] bg-[#14232C] p-5 text-white shadow-xl sm:p-7">
+        <div className="stella-home-next-card relative overflow-hidden rounded-[1.75rem] border border-[#435361] bg-[#14232C] p-5 text-white shadow-xl sm:p-7">
           <div aria-hidden="true" className="absolute -end-16 -top-20 h-52 w-52 rounded-full bg-[#E5B85F]/10 blur-3xl" />
           <div className="relative flex h-full flex-col">
             <div className="flex items-center gap-2 text-[#F5D98C]">
@@ -439,7 +439,7 @@ export function StudentAdventureHome({
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="flex-1 rounded-[1.75rem] border border-[#31505B] bg-gradient-to-br from-[#163543] to-[#10232E] p-5 text-white shadow-xl sm:p-6">
+          <div className="stella-home-progress-duplicate flex-1 rounded-[1.75rem] border border-[#31505B] bg-gradient-to-br from-[#163543] to-[#10232E] p-5 text-white shadow-xl sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#9ACDCB]">{isArabic ? 'تقدمك' : 'Your real progress'}</p>
