@@ -19,9 +19,9 @@ test('core entry and role dashboards contain Egyptian Arabic UI copy and retain 
   assert.match(login, /اعمل حساب جديد وانضم لمدارس الأحد/);
   assert.match(login, /Sign in to follow lessons & earn points/);
 
-  assert.match(student, /خطوة ورا خطوة، اكتشف حكايات الإيمان/);
+  assert.match(student, /أبواب الكنيسة مفتوحة ليك/);
   assert.match(student, /بنحمّل المنشورات/);
-  assert.match(student, /Your next chapter starts here/);
+  assert.match(student, /The church courtyard is open/);
 
   assert.match(teacher, /بنحمّل بيانات الخدمة/);
   assert.match(teacher, /لسه مفيش فصل نشط متسجل على حسابك/);
