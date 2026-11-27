@@ -203,7 +203,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         if (active) setAudioUrlError(getLocalizedErrorMessage(error, lang));
       });
     return () => { active = false; };
-  }, [selectedHymn?.id, selectedHymn?.audioUrl]);
+  }, [selectedHymn?.id, selectedHymn?.audioUrl, lang]);
 
   useEffect(() => {
     let active = true;
@@ -219,7 +219,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       })
       .finally(() => { if (active) setIsResolvingSheetMusic(false); });
     return () => { active = false; };
-  }, [selectedHymn?.id, selectedHymn?.sheetMusicUrl, selectedHymn?.pdfUrl]);
+  }, [selectedHymn?.id, selectedHymn?.sheetMusicUrl, selectedHymn?.pdfUrl, lang]);
 
   // Read mastered hymns
   useEffect(() => {
