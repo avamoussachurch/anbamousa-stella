@@ -2398,3 +2398,106 @@ button, a, input, select, textarea { max-width: 100%; }
   from { opacity: .35; translate: 0 22px; scale: .985; }
   to { opacity: 1; translate: 0 0; scale: 1; }
 }
+
+
+/* Student home experience: coherent surfaces in both themes, with a responsive storybook hero. */
+.stella-student-home {
+  --student-surface: #fffdf7;
+  --student-surface-raised: #ffffff;
+  --student-border: #e6dcc8;
+  --student-ink: #243b43;
+  --student-muted: #52666b;
+  --student-accent: #9a6a24;
+  color: var(--student-ink);
+}
+.dark .stella-student-home,
+[data-theme="dark"] .stella-student-home {
+  --student-surface: #14232c;
+  --student-surface-raised: #192f39;
+  --student-border: #34505a;
+  --student-ink: #f4f1e8;
+  --student-muted: #b8c9cb;
+  --student-accent: #f5d98c;
+}
+.stella-student-home .stella-adventure-hero {
+  min-height: 0;
+  background:
+    radial-gradient(ellipse at 82% 18%, rgba(231,185,86,.19), transparent 34%),
+    linear-gradient(118deg, #102d39 0%, #17424b 58%, #263e43 100%);
+}
+.stella-student-home .stella-adventure-hero > svg {
+  height: min(72%, 250px);
+  object-fit: contain;
+}
+.stella-student-home .stella-home-next-card,
+.stella-student-home .stella-community-card {
+  border-color: var(--student-border);
+  background: var(--student-surface);
+  color: var(--student-ink);
+  box-shadow: 0 14px 36px rgba(31, 52, 49, .08);
+}
+.stella-student-home .stella-home-next-card .text-slate-300,
+.stella-student-home .stella-home-next-card .text-slate-400,
+.stella-student-home .stella-community-card .text-slate-100,
+.stella-student-home .stella-community-card .text-slate-300,
+.stella-student-home .stella-community-card .text-slate-400 {
+  color: var(--student-muted);
+}
+.stella-student-home .stella-home-next-card h2,
+.stella-student-home .stella-community-card h2 {
+  color: var(--student-ink);
+}
+.stella-student-home .stella-community-card [class*="bg-white"] {
+  background-color: var(--student-surface-raised);
+}
+.stella-student-home .stella-community-card button {
+  color: var(--student-ink);
+}
+.stella-student-home .stella-journey-path {
+  border-color: #36545b;
+  background:
+    radial-gradient(ellipse at 90% 0%, rgba(230,183,90,.13), transparent 36%),
+    linear-gradient(135deg, #102d39, #173b43 62%, #263d3e);
+}
+.dark .stella-student-home .stella-home-next-card,
+.dark .stella-student-home .stella-community-card,
+[data-theme="dark"] .stella-student-home .stella-home-next-card,
+[data-theme="dark"] .stella-student-home .stella-community-card {
+  border-color: var(--student-border);
+  background: var(--student-surface);
+  color: var(--student-ink);
+}
+.stella-student-home .stella-home-progress-duplicate,
+.stella-student-home .stella-home-hero-progress {
+  display: none;
+}
+.stella-student-home .stella-home-next-card button:focus-visible,
+.stella-student-home .stella-journey-path button:focus-visible {
+  outline-offset: 3px;
+}
+@media (max-width: 639px) {
+  .stella-student-home .stella-adventure-hero {
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+  }
+  .stella-student-home .stella-adventure-hero > svg {
+    height: 58%;
+    opacity: .72;
+  }
+  .stella-student-home .stella-adventure-hero h1 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: clamp(1.8rem, 8vw, 2.45rem);
+  }
+  .stella-student-home .stella-home-next-card,
+  .stella-student-home .stella-community-card {
+    border-radius: 1.35rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stella-student-home .stella-adventure-hero *,
+  .stella-student-home .stella-journey-path * {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
