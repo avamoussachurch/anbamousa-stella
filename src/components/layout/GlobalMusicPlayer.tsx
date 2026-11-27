@@ -177,7 +177,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="bg-white rounded-3xl shadow-xl border border-[var(--color-church-cream-dark)] p-4 mb-4 w-[min(18rem,calc(100vw-1.5rem))] sm:w-80 max-h-[70dvh] overflow-y-auto overflow-x-hidden"
+            className="anba-global-player-panel rounded-3xl p-4 mb-4 w-[min(18rem,calc(100vw-1.5rem))] sm:w-80 max-h-[70dvh] overflow-y-auto overflow-x-hidden"
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-[var(--color-church-blue)] flex items-center gap-2">
@@ -319,7 +319,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
         whileHover={{ scale: 1.07, rotate: -3 }}
         whileTap={{ scale: 0.92 }}
         style={{ touchAction: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
-        className="relative grid h-[62px] w-[62px] select-none place-items-center rounded-full border border-white/70 text-white shadow-[0_10px_32px_rgba(8,38,55,.36)] ring-4 ring-[#1b6572]/15"
+        className="anba-global-player-bubble relative grid h-[62px] w-[62px] select-none place-items-center rounded-full border border-white/70 text-white shadow-[0_10px_32px_rgba(8,38,55,.36)] ring-4 ring-[#1b6572]/15"
         animate={isPlaying ? { y: [0, -2, 0], rotate: [0, 2, 0] } : { y: 0, rotate: 0 }}
         transition={isPlaying ? { duration: 2.8, repeat: Infinity, ease: 'easeInOut' } : { type: 'spring', stiffness: 300, damping: 20 }}
       >
