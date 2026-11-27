@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { BottomNav } from './components/layout/BottomNav';
 import { TopBar } from './components/layout/TopBar';
 import { WorkspaceSidebar } from './components/layout/WorkspaceSidebar';
@@ -490,23 +490,21 @@ function AppContent() {
       {/* Container for responsive layout */}
       <div className="mx-auto w-full min-w-0 px-2 md:px-4 md:pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
         {navigationError && <p role="alert" className="mx-auto my-2 max-w-3xl rounded-xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-900">{navigationError}</p>}
-        <motion.div
-          initial={false}
-          animate={reduceMotion
-            ? { opacity: 1, y: 0, scale: 1 }
-            : {
-                opacity: [0.9, 1],
-                y: [tabTransitionTick % 2 === 0 ? 18 : -18, 0],
-                scale: [0.985, 1]
-              }}
-          transition={reduceMotion
-            ? { duration: 0 }
-            : { type: 'spring', stiffness: 280, damping: 28, mass: 0.72 }}
-          className="min-w-0"
-        >
-          <React.Suspense fallback={<WorkspaceLoadingFallback lang={lang} />}>
-            {renderMainContent()}
-          </React.Suspense>
+        <motion.div className="min-w-0">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={`${activeWorkspace}:${activeTab}:${activeLessonId || ''}:${tabTransitionTick}`}
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: tabTransitionTick % 2 === 0 ? 18 : -18, scale: 0.985 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -12, scale: 0.99 }}
+              transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 280, damping: 28, mass: 0.72 }}
+              className="min-w-0"
+            >
+              <React.Suspense fallback={<WorkspaceLoadingFallback lang={lang} />}>
+                {renderMainContent()}
+              </React.Suspense>
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
       </div>
       </div>
