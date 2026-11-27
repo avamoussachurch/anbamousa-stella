@@ -28,7 +28,14 @@ test('authenticated teacher attendance UI uses server APIs rather than demo loca
   const dashboard = await read('../src/components/teacher/TeacherDashboard.tsx');
   const component = await read('../src/components/teacher/TeacherAttendanceWorkspace.tsx');
   const service = await read('../src/lib/teacherAttendanceService.ts');
+  const demoTracker = await read('../src/components/teacher/AttendanceVisitationTracker.tsx');
+  const classManagement = await read('../src/components/teacher/ServantClassManagement.tsx');
+  assert.match(dashboard, /currentUser\?\.uid/);
+  assert.match(demoTracker, /Demo mode — not official attendance/);
+  assert.match(classManagement, /!isOnlineAuth && \(\(\) =>/);
   assert.match(dashboard, /<TeacherAttendanceWorkspace lang=\{lang\} \/>/);
+  assert.match(dashboard, /activeTab === 'helpRequests' && \(isOnlineAuth/);
+  assert.match(dashboard, /activeTab === 'moderation' && \(isOnlineAuth/);
   assert.match(component, /getTeacherAttendance\(/);
   assert.match(component, /saveTeacherAttendance\(/);
   assert.match(component, /logTeacherVisitation\(/);
