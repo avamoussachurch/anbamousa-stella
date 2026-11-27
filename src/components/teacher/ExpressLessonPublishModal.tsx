@@ -27,6 +27,7 @@ import { isSupabaseConfigured } from '../../lib/supabase';
 import { publishExpressLesson } from '../../lib/lessonAuthoringService';
 import { uploadSourceMedia } from '../../lib/lessonSourceService';
 import { hasRole } from '../../lib/workspaces';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 
 interface ExpressLessonPublishModalProps {
   isOpen: boolean;
@@ -144,7 +145,7 @@ export function ExpressLessonPublishModal({
           setAudioFileName(file.name);
           setErrorMessage(null);
         } catch (error) {
-          setErrorMessage(error instanceof Error ? error.message : 'The recording upload failed.');
+          setErrorMessage(getLocalizedErrorMessage(error, lang));
         } finally {
           setIsUploadingMedia(false);
           setUploadNote('');
@@ -160,7 +161,7 @@ export function ExpressLessonPublishModal({
       recordingStreamRef.current = null;
       setErrorMessage(error instanceof Error && error.name === 'NotAllowedError'
         ? (isAr ? 'اسمح للمتصفح باستخدام الميكروفون عشان تسجّل.' : 'Allow microphone access to record audio.')
-        : (error instanceof Error ? error.message : 'Could not start microphone recording.'));
+        : getLocalizedErrorMessage(error instanceof Error && error.message ? error : 'Could not start microphone recording.', lang));
     }
   };
 
@@ -179,7 +180,7 @@ export function ExpressLessonPublishModal({
     try {
       const upload = await uploadSourceMedia(file);
       if (!upload.success || !upload.fileUrl) {
-        setErrorMessage(upload.error || (isAr ? 'مش قادرين نحفظ الملف بشكل دائم. جرّب تاني.' : 'The file could not be saved persistently. Please try again.'));
+        setErrorMessage(getLocalizedErrorMessage(upload.error || 'The file could not be saved persistently. Please try again.', lang));
         return;
       }
       const fileUrl = upload.fileUrl;
@@ -194,7 +195,7 @@ export function ExpressLessonPublishModal({
         setVideoUrl(fileUrl);
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || (isAr ? 'مش قادرين نرفع الملف. جرّب تاني.' : 'The file upload failed. Please try again.'));
+      setErrorMessage(getLocalizedErrorMessage(err instanceof Error && err.message ? err : 'The file upload failed. Please try again.', lang));
     } finally {
       setIsUploadingMedia(false);
       setUploadNote('');
@@ -355,7 +356,7 @@ export function ExpressLessonPublishModal({
       onClose();
     } catch (err: any) {
       console.error('Express publishing error:', err);
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to save the lesson.');
+      setErrorMessage(getLocalizedErrorMessage(err, lang));
     } finally {
       setIsSubmitting(false);
     }
