@@ -11,6 +11,10 @@ test('prayer streak is calculated independently from persisted Agpeya days', asy
   assert.match(database, /getPrayerStreakFromSupabase/);
   assert.match(database, /completedHours || hasPersonalPrayer/);
   assert.match(database, /calculateCairoStreak\(qualifyingDays\)/);
+  assert.match(database, /const pageSize = 1000/);
+  assert.match(database, /\.range\(offset, offset \+ pageSize - 1\)/);
+  assert.match(database, /historyRows\.push\(\.\.\.rows\)/);
+  assert.match(database, /if \(rows\.length < pageSize\) break/);
   assert.match(agpeya, /getPrayerStreakFromSupabase\(userData\.id\)/);
   assert.match(agpeya, /const \[streakDays, setStreakDays\] = useState<number>\(0\)/);
   assert.doesNotMatch(agpeya, /useState<number>\(4\)/);
