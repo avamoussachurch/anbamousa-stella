@@ -120,11 +120,10 @@ async function runQuizUXTests() {
   const lessonViewPath = path.join(__dirname, '..', 'src', 'components', 'student', 'LessonView.tsx');
   const lessonViewCode = fs.readFileSync(lessonViewPath, 'utf8');
 
-  assert(lessonViewCode.includes('data-testid="start-quiz-button"'), '2.1 Prominent start-quiz-button rendered in transition screen');
-  assert(lessonViewCode.includes('ابدأ اختبار المراجعة الآن'), '2.2 Clear Arabic label displayed');
-  assert(lessonViewCode.includes('Start Review Quiz'), '2.3 Clear English label displayed');
-  assert(lessonViewCode.includes('setIsTakingQuiz(true)'), '2.4 Clicking button immediately launches the quiz');
-  assert(lessonViewCode.includes('min-h-[58px]') || lessonViewCode.includes('min-h-[66px]'), '2.5 Large responsive tap target for mobile phones');
+  assert(!lessonViewCode.includes('data-testid="start-quiz-button"'), '2.1 The obsolete manual start-quiz button is removed');
+  assert(lessonViewCode.includes('if (hasQuiz)') && lessonViewCode.includes('setIsTakingQuiz(true)'), '2.2 Completing a lesson with a quiz opens it automatically');
+  assert(lessonViewCode.includes("type: 'spring'"), '2.3 The quiz enters with a spring animation');
+  assert(!lessonViewCode.includes('isTransitioningToQuiz'), '2.4 No extra confirmation screen blocks the required quiz');
 
   // ---------------------------------------------------------------------------
   // 3. SERVER-AUTHORITATIVE STREAK CALCULATION & SAVING
