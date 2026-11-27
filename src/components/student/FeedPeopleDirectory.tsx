@@ -8,7 +8,7 @@ type DirectoryProfile = {
   points: number; current_streak: number; longest_streak: number;
   followers_count: number; following_count: number; is_following: boolean;
   frame_key?: string; banner_key?: string; display_title?: string | null;
-  equipped_cosmetics?: Partial<Record<'frame' | 'banner' | 'badge' | 'effect', string>>;
+  equipped_cosmetics?: Partial<Record<'frame' | 'banner' | 'badge' | 'effect', string>> & { avatar_position_x?: number; avatar_position_y?: number; avatar_zoom?: number };
   earned_badges?: Array<{ id: string; title_en: string; title_ar: string; category: string; icon: string; style: string }>;
 };
 
@@ -25,7 +25,8 @@ const profileTitleLabel = (title: string | null | undefined, ar: boolean) => {
 const bannerBackground = (profile: DirectoryProfile): string => {
   const equipped = profile.equipped_cosmetics?.banner;
   const cosmeticBanners: Record<string, string> = {
-    'banner-kiahk-stars': 'linear-gradient(120deg,#101D46,#5B78C7)',
+    'banner-kiahk-stars': 'radial-gradient(circle at 78% 24%,#FFF0B8 0 3%,transparent 4%),linear-gradient(120deg,#101D46,#5B78C7)',
+    'banner-desert-dawn': 'radial-gradient(circle at 78% 24%,#FFE4A0 0 8%,transparent 9%),linear-gradient(120deg,#6F4935,#D6A15B)',
     'banner-pascha-light': 'linear-gradient(120deg,#4A1020,#D7A94A)',
     'banner-heavenly-blue': 'linear-gradient(120deg,#164E83,#8BC5E8)',
     'banner-nile-moonlight': 'linear-gradient(120deg,#0F3448,#38A6A8)',
@@ -169,14 +170,22 @@ export function FeedPeopleDirectory({ lang, initialProfileId }: { lang: 'en'|'ar
                <div className="h-24 w-full rounded-2xl shadow-inner" style={{ background: bannerBackground(selected) }}>
                 <div className="flex h-full items-end justify-end p-3"><span className="rounded-full bg-black/30 px-3 py-1 text-[9px] font-black tracking-[.18em] text-white">{ar?'ملف أنبا موسى':'ANBA MOUSA MEMBER'}</span></div>
               </div>
-              <div className="relative mx-auto mt-[-2.75rem] grid h-28 w-28 place-items-center rounded-[2rem] bg-white p-1 shadow-xl" style={{ boxShadow: selected.equipped_cosmetics?.effect === 'effect-stardust' ? '0 0 28px #E9D5FF' : selected.equipped_cosmetics?.effect === 'effect-emerald-aura' ? '0 0 28px #6EE7B7' : selected.equipped_cosmetics?.effect === 'effect-golden-radiance' ? '0 0 28px #FDE68A' : selected.equipped_cosmetics?.effect === 'effect-celestial-blue' ? '0 0 28px #A5B4FC' : undefined }}>
-                <div className="absolute -inset-2 rounded-[2.4rem] border-[5px] shadow-sm" style={{ borderColor: profileFrameColor(selected) }} />
+              <div className="relative mx-auto mt-[-2.75rem] grid h-28 w-28 place-items-center rounded-[2rem] bg-white p-1 shadow-xl" style={{ boxShadow: selected.equipped_cosmetics?.effect === 'effect-stardust' ? '0 0 30px 8px #E9D5FF' : selected.equipped_cosmetics?.effect === 'effect-emerald-aura' ? '0 0 30px 8px #6EE7B7' : selected.equipped_cosmetics?.effect === 'effect-golden-radiance' ? '0 0 30px 8px #FDE68A' : selected.equipped_cosmetics?.effect === 'effect-celestial-blue' ? '0 0 30px 8px #A5B4FC' : undefined }}>
+                <div className="absolute -inset-2 rounded-[2.4rem] border-[5px] shadow-sm" style={{ borderColor: profileFrameColor(selected), borderStyle: selected.equipped_cosmetics?.frame === 'frame-midnight-coptic' ? 'dotted' : selected.equipped_cosmetics?.frame === 'frame-martyr-ruby' ? 'double' : 'solid' }} />
                 <div className="relative h-full w-full overflow-hidden rounded-[1.55rem] bg-stone-100">
-                  <img src={selected.avatar_url || '/icons/icon-192.png'} alt="" className="h-full w-full object-cover"/>
+                  <img src={selected.avatar_url || '/icons/icon-192.png'} alt="" className="h-full w-full object-cover" style={{ objectPosition: `${selected.equipped_cosmetics?.avatar_position_x ?? 50}% ${selected.equipped_cosmetics?.avatar_position_y ?? 50}%`, transform: `scale(${Math.min(2.5, Math.max(1, selected.equipped_cosmetics?.avatar_zoom ?? 1))})` }}/>
                 </div>
-                {selected.equipped_cosmetics?.frame === 'frame-halo-gold' && <span className="pointer-events-none absolute -top-3 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-2 border-amber-200 bg-amber-400 shadow-md"/>}
+                {selected.equipped_cosmetics?.frame === 'frame-halo-gold' && <><span className="pointer-events-none absolute -top-3 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-2 border-amber-200 bg-amber-400 shadow-md"/><span className="pointer-events-none absolute -left-3 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-amber-200 shadow-[0_0_9px_#fde68a]"/><span className="pointer-events-none absolute -right-3 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-amber-200 shadow-[0_0_9px_#fde68a]"/></>}
                 {selected.equipped_cosmetics?.frame === 'frame-midnight-coptic' && <span className="pointer-events-none absolute -top-4 left-1/2 h-6 w-1 -translate-x-1/2 rounded-full bg-cyan-200 shadow-[0_0_8px_#a5f3fc]"/>}
                 {selected.equipped_cosmetics?.frame === 'frame-pascha-radiance' && <span className="pointer-events-none absolute -top-4 left-1/2 h-7 w-1 -translate-x-1/2 rounded-full bg-amber-200 shadow-[0_0_8px_#fcd34d]"/>}
+                {selected.equipped_cosmetics?.frame === 'frame-desert-royal' && <span className="pointer-events-none absolute -top-4 left-1/2 h-5 w-5 -translate-x-1/2 rotate-45 border-2 border-amber-200 bg-amber-500 shadow-md"/>}
+                {selected.equipped_cosmetics?.frame === 'frame-archangel-sapphire' && <span className="pointer-events-none absolute -top-3 left-1/2 h-5 w-5 -translate-x-1/2 rounded-full border-2 border-sky-200 bg-sky-400/70 shadow-[0_0_12px_#93c5fd]"/>}
+                {selected.equipped_cosmetics?.frame === 'frame-martyr-ruby' && <><span className="pointer-events-none absolute -left-3 top-1/2 h-7 w-2 -translate-y-1/2 rounded-full bg-red-300 shadow-[0_0_10px_#fca5a5]"/><span className="pointer-events-none absolute -right-3 top-1/2 h-7 w-2 -translate-y-1/2 rounded-full bg-red-300 shadow-[0_0_10px_#fca5a5]"/></>}
+                {selected.equipped_cosmetics?.frame === 'frame-olive-crown' && <span className="pointer-events-none absolute -top-4 left-1/2 h-4 w-8 -translate-x-1/2 rounded-t-full border-t-[4px] border-x-2 border-lime-300"/>}
+                {selected.equipped_cosmetics?.effect === 'effect-stardust' && <span className="pointer-events-none absolute -left-3 top-2 text-lg text-purple-200 drop-shadow-[0_0_7px_#e9d5ff]">✦</span>}
+                {selected.equipped_cosmetics?.effect === 'effect-emerald-aura' && <span className="pointer-events-none absolute -right-3 bottom-2 text-lg text-emerald-200 drop-shadow-[0_0_7px_#6ee7b7]">✧</span>}
+                {selected.equipped_cosmetics?.effect === 'effect-golden-radiance' && <span className="pointer-events-none absolute -top-3 right-1 text-lg text-amber-200 drop-shadow-[0_0_7px_#fde68a]">✦</span>}
+                {selected.equipped_cosmetics?.effect === 'effect-celestial-blue' && <span className="pointer-events-none absolute -bottom-3 left-1 text-lg text-indigo-200 drop-shadow-[0_0_7px_#a5b4fc]">✧</span>}
               </div>
               <div><h3 className="text-2xl font-black text-[var(--mousa-teal-deep)] dark:text-white">{selected.display_name}</h3><p className="mt-1 text-sm font-bold text-[var(--mousa-sand-500)]">{profileTitleLabel(selected.display_title,ar) || roleLabel(selected.role,ar)}</p></div>
               <div className="grid grid-cols-3 gap-2">
