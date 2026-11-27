@@ -84,14 +84,14 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
     let active = true;
     setServantDisplayName(suppliedServantName);
     if (!suppliedServantName && approvedServantId && supabase) {
-      supabase.from('profiles').select('name').eq('id', approvedServantId).maybeSingle()
+      supabase.rpc('get_lesson_servant_display_name', { p_lesson_id: lessonId })
         .then(({ data }) => {
-          if (active && data?.name) setServantDisplayName(String(data.name));
+          if (active && typeof data === 'string' && data.trim()) setServantDisplayName(data.trim());
         })
         .catch(() => {});
     }
     return () => { active = false; };
-  }, [approvedServantId, suppliedServantName]);
+  }, [approvedServantId, suppliedServantName, lessonId]);
   const displayLesson = lesson ? { ...lesson, approvedServantName: servantDisplayName || undefined, teacherName: servantDisplayName || undefined } : lesson;
 
 
