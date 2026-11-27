@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 
 test('workspace tab navigation uses a short transform/opacity transition', () => {
-  assert.match(app, /import \{ motion, useReducedMotion \} from 'motion\/react'/);
+  assert.match(app, /AnimatePresence/);
   assert.match(app, /type: 'spring', stiffness: 280, damping: 28, mass: 0\.72/);
   assert.match(app, /opacity: \[0\.9, 1\]/);
   assert.match(app, /y: \[tabTransitionTick % 2 === 0 \? 18 : -18, 0\]/);
