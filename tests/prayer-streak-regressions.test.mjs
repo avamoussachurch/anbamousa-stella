@@ -27,6 +27,15 @@ test('Agpeya daily records use Cairo calendar dates, not UTC date slicing', asyn
   assert.doesNotMatch(agpeya, /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
 });
 
+test('Agpeya load failures remain visible while preserving a local progress fallback', async () => {
+  const database = await read('../src/lib/supabaseDatabase.ts');
+  const agpeya = await read('../src/components/agpeya/AgpeyaPrayerTab.tsx');
+
+  assert.match(database, /if \(error\) \{\s*return \{ success: false, data: localData \|\| undefined, error: error\.message \}/);
+  assert.match(database, /return \{ success: false, data: localData \|\| undefined, error: err\?\.message/);
+  assert.match(agpeya, /setPrayerSyncError\(prayerStreak\.error \|\| res\.error \|\| null\)/);
+});
+
 test('prayer activity only qualifies from a completed hour or a non-empty saved personal prayer', async () => {
   const database = await read('../src/lib/supabaseDatabase.ts');
 
