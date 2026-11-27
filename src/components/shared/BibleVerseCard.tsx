@@ -100,7 +100,7 @@ export function BibleVerseCard({ lang }: { lang: Language }) {
           </span>
           <div>
             <p className="text-[10px] font-black uppercase tracking-[.2em] text-[#28777B]">{lang === 'ar' ? 'من كنوز الكتاب المقدس' : 'A little light for today'}</p>
-            <h2 className="text-base font-black text-[#173F4B]">{lang === 'ar' ? 'آية اليوم' : 'Verse of the Day'}</h2>
+            <h2 className="text-base font-black text-[#173F4B]">{lang === 'ar' ? 'آية النهارده للحفظ والتأمل' : 'Verse of the Day'}</h2>
           </div>
           <Sparkles size={17} className="ms-auto text-[#B47C2D]" />
         </div>
