@@ -167,7 +167,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
 
   return (
     <div
-      className={`fixed z-40 flex max-w-[calc(100vw-1.5rem)] ${bubblePosition && bubblePosition.left < window.innerWidth / 2 ? 'items-start' : 'items-end'} ${bubblePosition && bubblePosition.top < window.innerHeight / 2 ? 'flex-col' : 'flex-col-reverse'}`}
+      className={`fixed z-40 flex max-w-[calc(100vw-1.5rem)] ${bubblePosition && bubblePosition.left < window.innerWidth / 2 ? 'items-start' : 'items-end'} ${bubblePosition && bubblePosition.top < window.innerHeight / 2 ? 'flex-col-reverse' : 'flex-col'}`}
       style={bubblePosition ? { left: bubblePosition.left, top: bubblePosition.top } : {
         bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)',
         ...(lang === 'ar' ? { left: 12 } : { right: 12 })
