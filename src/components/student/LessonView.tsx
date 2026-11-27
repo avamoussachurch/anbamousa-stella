@@ -85,10 +85,9 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
     setServantDisplayName(suppliedServantName);
     if (!suppliedServantName && approvedServantId && supabase) {
       supabase.rpc('get_lesson_servant_display_name', { p_lesson_id: lessonId })
-        .then(({ data }) => {
-          if (active && typeof data === 'string' && data.trim()) setServantDisplayName(data.trim());
-        })
-        .catch(() => {});
+        .then(({ data, error }) => {
+          if (active && !error && typeof data === 'string' && data.trim()) setServantDisplayName(data.trim());
+        });
     }
     return () => { active = false; };
   }, [approvedServantId, suppliedServantName, lessonId]);
