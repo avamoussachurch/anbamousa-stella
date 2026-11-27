@@ -74,11 +74,10 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
   const [finishSuccess, setFinishSuccess] = useState<boolean>(false);
   const [sectionProgressError, setSectionProgressError] = useState<string | null>(null);
   const completionInFlightRef = useRef(false);
-  const approvedServantId = activePublishedVersion?.approvedBy ||
-    (lesson?.approvedServantName && /^[0-9a-f-]{24,}$/i.test(lesson.approvedServantName) ? lesson.approvedServantName : null);
-  const suppliedServantName = lesson?.approvedServantName && !/^[0-9a-f-]{24,}$/i.test(lesson.approvedServantName)
-    ? lesson.approvedServantName
-    : null;
+  const isServantIdentifier = (value?: string | null) => Boolean(value && (/^[0-9a-f-]{24,}$/i.test(value) || /^(user_|teacher_)/i.test(value)));
+  const suppliedServantName = [lesson?.approvedServantName, lesson?.teacherName].find(value => value && !isServantIdentifier(value)) || null;
+  const approvedServantId = activePublishedVersion?.approvedBy || lesson?.teacherId ||
+    [lesson?.approvedServantName, lesson?.teacherName].find(value => isServantIdentifier(value)) || null;
   const [servantDisplayName, setServantDisplayName] = useState<string | null>(suppliedServantName);
 
   useEffect(() => {
@@ -93,7 +92,7 @@ export function LessonView({ lessonId, onBack, lang = 'ar', readOnly = false }: 
     }
     return () => { active = false; };
   }, [approvedServantId, suppliedServantName]);
-  const displayLesson = lesson ? { ...lesson, approvedServantName: servantDisplayName || undefined } : lesson;
+  const displayLesson = lesson ? { ...lesson, approvedServantName: servantDisplayName || undefined, teacherName: servantDisplayName || undefined } : lesson;
 
 
   useEffect(() => {
