@@ -436,8 +436,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!recentlyActive && !mediaIsPlaying) return;
 
       screenTimeSyncTicksRef.current += 1;
-      const shouldPersistLocally = screenTimeSyncTicksRef.current % 3 === 0;
-      const shouldSyncToSupabase = screenTimeSyncTicksRef.current % 6 === 0;
+      const shouldPersistLocally = true;
+      // Persist to the server every 30 seconds so a refresh cannot discard a full minute.
+      const shouldSyncToSupabase = screenTimeSyncTicksRef.current % 3 === 0;
       const cairoDate = getCairoDateString();
       setUserData((prev) => {
         if (!prev) return null;
@@ -555,7 +556,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const uid = session.user.id;
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, name, email, avatar, points, current_streak, longest_streak, grade, contact_phone, hymns_taxis_level, require_reward_approval, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, screen_time_seconds')
+        .select('id, name, email, avatar, points, current_streak, longest_streak, grade, contact_phone, hymns_taxis_level, require_reward_approval, push_notifications_enabled, notify_lesson_completion, notify_event_reminders, screen_time_seconds, screen_time_today_seconds, screen_time_date')
         .eq('id', uid)
         .single();
 
@@ -605,6 +606,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         notifyLessonCompletion: profile?.notify_lesson_completion ?? true,
         notifyEventReminders: profile?.notify_event_reminders ?? true,
         screenTimeSeconds: profile?.screen_time_seconds ?? cachedAuthUser.screenTimeSeconds ?? 0,
+        screenTimeTodaySeconds: profile?.screen_time_date === getCairoDateString()
+          ? Math.max(0, Number(profile?.screen_time_today_seconds) || 0)
+          : (cachedAuthUser.screenTimeDate === getCairoDateString() ? Math.max(0, cachedAuthUser.screenTimeTodaySeconds || 0) : 0),
+        screenTimeDate: profile?.screen_time_date || cachedAuthUser.screenTimeDate || getCairoDateString(),
       };
 
       setUserData(loadedUser);
