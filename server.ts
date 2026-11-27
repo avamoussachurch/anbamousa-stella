@@ -15674,7 +15674,7 @@ Provide a structured JSON response:
 app.post("/api/verify-verse-recital", requireAiAuth(['student', 'teacher', 'admin']), upload.single("audio"), async (req, res) => {
   const file = req.file;
   try {
-    const { targetVerse, transcript, lang = 'ar' } = req.body;
+    const { targetVerse, verseReference, transcript, lang = 'ar' } = req.body;
 
     if (!targetVerse || typeof targetVerse !== 'string' || !targetVerse.trim()) {
       return res.status(400).json({
@@ -15689,6 +15689,14 @@ app.post("/api/verify-verse-recital", requireAiAuth(['student', 'teacher', 'admi
         success: false,
         error: "INPUT_TOO_LARGE",
         message: "targetVerse exceeds maximum 1000 characters."
+      });
+    }
+
+    if (!verseReference || typeof verseReference !== 'string' || !verseReference.trim() || verseReference.length > 160) {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_VERSE_REFERENCE",
+        message: "A valid verse reference is required."
       });
     }
 
@@ -15801,7 +15809,34 @@ Return ONLY valid JSON matching this schema:
       });
     }
 
-    return res.json({ ...parsed.data, pointsAwarded: 0 });
+    const authContext = await verifyServerRequestAuth(req);
+    let pointsAwarded = 0;
+    let totalPoints: number | undefined;
+    if (hasServerRole(authContext, 'student') && authContext.userId) {
+      const trustedClient = getTrustedProgressClient();
+      const { data: reward, error: rewardError } = await trustedClient.rpc('record_verse_recital_daily_result', {
+        p_student_id: authContext.userId,
+        p_activity_date: getCairoDateString(),
+        p_verse_reference: verseReference.trim(),
+        p_accuracy_percentage: parsed.data.accuracyPercentage,
+        p_passed: parsed.data.passed,
+        p_transcription: parsed.data.transcription,
+        p_feedback: parsed.data.feedback,
+        p_ai_teacher_comment: parsed.data.aiTeacherComment
+      });
+      if (rewardError) {
+        console.error('Verified verse recital result could not be persisted:', rewardError.message);
+        return res.status(503).json({
+          success: false,
+          error: 'RECITAL_RESULT_PERSISTENCE_FAILED',
+          message: 'The recital was checked, but the result could not be saved. Please try again.'
+        });
+      }
+      pointsAwarded = Number(reward?.pointsAwarded || 0);
+      totalPoints = Number(reward?.totalPoints || 0);
+    }
+
+    return res.json({ ...parsed.data, pointsAwarded, totalPoints });
   } catch (error: any) {
     return handleGeminiError(error, res, "Failed to evaluate verse recital");
   } finally {
