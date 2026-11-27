@@ -107,7 +107,7 @@ export function CopticTaxisTab({ lang = 'ar' }: CopticTaxisTabProps) {
       });
 
     return () => { active = false; };
-  }, [selectedItem?.id, selectedItem?.documents]);
+  }, [selectedItem?.id, selectedItem?.documents, lang]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
