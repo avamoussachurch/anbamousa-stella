@@ -11,6 +11,9 @@ test('global player dismisses on outside interaction and keeps its controls view
   assert.match(player, /document\.addEventListener\('keydown', handleEscape\)/);
   assert.match(player, /max-h-\[calc\(100dvh-2rem\)\]/);
   assert.match(player, /clampBubblePosition/);
+  assert.match(player, /panelPosition\?\.left/);
+  assert.match(player, /window\.innerWidth - panel\.width - margin/);
+  assert.match(player, /position/);
   assert.match(player, /Coptic church cymbals/);
   assert.match(player, /setIsOpen\(false\)/);
 });
