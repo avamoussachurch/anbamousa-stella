@@ -13265,23 +13265,25 @@ app.get("/api/church/parent/children", async (req, res) => {
 
 async function issueStudentFamilyCode(studentId: string, rotate = false): Promise<string> {
   const client = getTrustedProgressClient();
-  if (!rotate) {
-    const { data, error } = await client
-      .from('student_family_link_codes')
-      .select('code')
-      .eq('student_id', studentId)
-      .maybeSingle();
-    if (error) throw new Error(`Could not load student family code: ${error.message}`);
-    if (data?.code) return data.code;
-  }
+  const { data: existingRecord, error: readError } = await client
+    .from('student_family_link_codes')
+    .select('code')
+    .eq('student_id', studentId)
+    .maybeSingle();
+  if (readError) throw new Error(`Could not load student family code: ${readError.message}`);
 
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    // Five readable, random alphanumeric characters; never derive a code from a student ID.
+  const existingCode = typeof existingRecord?.code === 'string' ? existingRecord.code.trim().toUpperCase() : '';
+  const hasExistingRecord = Boolean(existingRecord);
+  // Keep already-valid five-character codes stable. Repair legacy/incorrectly long codes
+  // in-place so parents can use the same code format accepted by the connect-child endpoint.
+  if (!rotate && /^[A-Z0-9]{5}$/.test(existingCode)) return existingCode;
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const random = randomBytes(8);
     const code = Array.from(random.slice(0, 5), byte => alphabet[byte % alphabet.length]).join('');
 
-    if (rotate) {
+    if (hasExistingRecord) {
       const { data: updated, error: updateError } = await client
         .from('student_family_link_codes')
         .update({ code, updated_at: new Date().toISOString() })
@@ -13290,8 +13292,9 @@ async function issueStudentFamilyCode(studentId: string, rotate = false): Promis
         .maybeSingle();
       if (!updateError && updated?.code) return updated.code;
       if (updateError && updateError.code !== '23505') {
-        throw new Error(`Could not rotate student family code: ${updateError.message}`);
+        throw new Error(`Could not update student family code: ${updateError.message}`);
       }
+      continue;
     }
 
     const { error: insertError } = await client
@@ -13302,18 +13305,25 @@ async function issueStudentFamilyCode(studentId: string, rotate = false): Promis
       throw new Error(`Could not create student family code: ${insertError.message}`);
     }
 
-    // Concurrent first-time requests may have created the code already.
-    if (!rotate) {
-      const { data: existing, error: readError } = await client
+    const { data: concurrentRecord, error: concurrentError } = await client
+      .from('student_family_link_codes')
+      .select('code')
+      .eq('student_id', studentId)
+      .maybeSingle();
+    if (concurrentError) throw new Error(`Could not reload student family code: ${concurrentError.message}`);
+    if (typeof concurrentRecord?.code === 'string' && /^[A-Z0-9]{5}$/.test(concurrentRecord.code)) return concurrentRecord.code;
+    if (concurrentRecord) {
+      const { data: repaired, error: repairError } = await client
         .from('student_family_link_codes')
-        .select('code')
+        .update({ code, updated_at: new Date().toISOString() })
         .eq('student_id', studentId)
+        .select('code')
         .maybeSingle();
-      if (readError) throw new Error(`Could not reload student family code: ${readError.message}`);
-      if (existing?.code) return existing.code;
+      if (!repairError && repaired?.code) return repaired.code;
+      if (repairError && repairError.code !== '23505') throw new Error(`Could not repair student family code: ${repairError.message}`);
     }
   }
-  throw new Error('Could not allocate a unique family connection code. Please try again.');
+  throw new Error('Could not allocate a unique five-character family connection code. Please try again.');
 }
 
 app.get("/api/church/student/family-code", async (req, res) => {
