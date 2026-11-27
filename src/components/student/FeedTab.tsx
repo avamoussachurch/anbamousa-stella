@@ -436,18 +436,16 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
     }
     setReportBusy(true);
     setActionError(null);
-    const { error } = await supabase.from('feed_post_reports').insert({
-      post_id: reportingPost.id,
-      reporter_id: userData.id,
-      reported_user_id: reportingPost.authorId,
-      reason: reportReason,
-      details: reportDetails.trim() || null
+    const { data, error } = await supabase.rpc('submit_feed_post_report', {
+      p_post_id: reportingPost.id,
+      p_reason: reportReason,
+      p_details: reportDetails.trim() || null
     });
     setReportBusy(false);
-    if (error) {
-      setActionError(error.code === '23505'
+    if (error || data?.already_reported || !data?.success) {
+      setActionError(data?.already_reported
         ? (lang === 'ar' ? 'أرسلت بلاغاً عن المنشور ده بالفعل.' : 'You have already reported this post.')
-        : (lang === 'ar' ? 'تعذر إرسال البلاغ. حاول مرة أخرى.' : 'The report could not be submitted. Please try again.'));
+        : (lang === 'ar' ? 'تعذر إرسال البلاغ. حاول مرة أخرى.' : 'The report could not be submitted. Please try again.'))
       return;
     }
     setReportingPostId(null);
