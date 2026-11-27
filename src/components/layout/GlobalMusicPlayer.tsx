@@ -320,8 +320,16 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
         whileTap={{ scale: 0.92 }}
         style={{ touchAction: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
         className="anba-global-player-bubble relative grid h-[62px] w-[62px] select-none place-items-center rounded-full border border-white/70 text-white shadow-[0_10px_32px_rgba(8,38,55,.36)] ring-4 ring-[#1b6572]/15"
-        animate={isPlaying ? { y: [0, -2, 0], rotate: [0, 2, 0] } : { y: 0, rotate: 0 }}
-        transition={isPlaying ? { duration: 2.8, repeat: Infinity, ease: 'easeInOut' } : { type: 'spring', stiffness: 300, damping: 20 }}
+        animate={isDragging
+          ? { scale: 1.12, rotate: 9, y: -2 }
+          : isPlaying
+            ? { scale: 1, y: [0, -2, 0], rotate: [0, 2, 0] }
+            : { scale: 1, y: 0, rotate: 0 }}
+        transition={isDragging
+          ? { type: 'spring', stiffness: 440, damping: 17, mass: 0.55 }
+          : isPlaying
+            ? { duration: 2.8, repeat: Infinity, ease: 'easeInOut' }
+            : { type: 'spring', stiffness: 300, damping: 20 }}
       >
         <span className="absolute inset-0 rounded-full bg-gradient-to-br from-[#49BFC1] via-[#187C91] to-[#183F70]" />
         <span className="absolute inset-[4px] rounded-full border border-white/25 bg-gradient-to-br from-white/15 to-transparent shadow-[inset_0_2px_8px_rgba(255,255,255,.24)]" />
