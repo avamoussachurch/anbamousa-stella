@@ -490,19 +490,40 @@ function AppContent() {
       {/* Container for responsive layout */}
       <div className="mx-auto w-full min-w-0 px-2 md:px-4 md:pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
         {navigationError && <p role="alert" className="mx-auto my-2 max-w-3xl rounded-xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-900">{navigationError}</p>}
-        <motion.div className="min-w-0">
-          <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          initial={false}
+          animate={reduceMotion
+            ? { opacity: 1, y: 0, scale: 1 }
+            : {
+                opacity: [0.9, 1],
+                y: [tabTransitionTick % 2 === 0 ? 18 : -18, 0],
+                scale: [0.985, 1]
+              }}
+          transition={reduceMotion
+            ? { duration: 0 }
+            : { type: 'spring', stiffness: 280, damping: 28, mass: 0.72 }}
+          className="relative min-w-0"
+        >
+          <React.Suspense fallback={<WorkspaceLoadingFallback lang={lang} />}>
+            {renderMainContent()}
+          </React.Suspense>
+          <AnimatePresence>
             <motion.div
-              key={`${activeWorkspace}:${activeTab}:${activeLessonId || ''}:${tabTransitionTick}`}
-              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: tabTransitionTick % 2 === 0 ? 18 : -18, scale: 0.985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -12, scale: 0.99 }}
-              transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 280, damping: 28, mass: 0.72 }}
-              className="min-w-0"
+              key={tabTransitionTick}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-20 overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.16, 0] }}
+              exit={{ opacity: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.38, ease: 'easeInOut' }}
             >
-              <React.Suspense fallback={<WorkspaceLoadingFallback lang={lang} />}>
-                {renderMainContent()}
-              </React.Suspense>
+              <motion.div
+                className="absolute inset-y-0 start-0 w-1/3 bg-gradient-to-r from-transparent via-teal-400/20 to-transparent blur-xl"
+                initial={{ x: '-120%' }}
+                animate={{ x: '340%' }}
+                exit={{ opacity: 0 }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.38, ease: 'easeInOut' }}
+              />
             </motion.div>
           </AnimatePresence>
         </motion.div>
