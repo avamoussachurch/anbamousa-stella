@@ -31,6 +31,7 @@ import { Lesson, ClassSession, QuizQuestion, QuestionDifficulty, PresentationSli
 import { useAuth } from '../../../context/AuthContext';
 import { hasRole } from '../../../lib/workspaces';
 import { isSupabaseConfigured } from '../../../lib/supabase';
+import { getLocalizedErrorMessage } from '../../../lib/localizedErrors';
 import { publishExpressLesson } from '../../../lib/lessonAuthoringService';
 import { getAuthorizedSourceUrl, uploadSourceMedia } from '../../../lib/lessonSourceService';
 import { InAppDocumentViewer } from '../viewers/InAppDocumentViewer';
@@ -267,7 +268,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
           setAudioFileName(file.name);
           setFeedbackMessage({ type: 'success', text: isAr ? 'تم حفظ تسجيلك الصوتي. احفظ الدرس أو انشره عشان يظهر للطلاب.' : 'Your voice recording is saved. Save or publish the lesson to make it available to students.' });
         } catch (error) {
-          setFeedbackMessage({ type: 'error', text: error instanceof Error ? error.message : 'The recording upload failed.' });
+          setFeedbackMessage({ type: 'error', text: getLocalizedErrorMessage(error, lang) });
         } finally {
           setIsUploadingMedia(false);
           setUploadNote('');
@@ -286,7 +287,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
         type: 'error',
         text: error instanceof Error && error.name === 'NotAllowedError'
           ? (isAr ? 'اسمح للمتصفح باستخدام الميكروفون عشان تسجّل شرح الدرس.' : 'Allow microphone access in your browser to record the lesson.')
-          : (error instanceof Error ? error.message : 'Could not start microphone recording.')
+          : getLocalizedErrorMessage(error instanceof Error && error.message ? error : 'Could not start microphone recording.', lang)
       });
     }
   };
@@ -308,7 +309,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
       if (!upload.success || !upload.fileUrl) {
         setFeedbackMessage({
           type: 'error',
-          text: upload.error || (isAr ? 'مش قادرين نحفظ الملف بشكل دائم. جرّب تاني.' : 'The file could not be saved persistently. Please try again.')
+          text: getLocalizedErrorMessage(upload.error || 'The file could not be saved persistently. Please try again.', lang)
         });
         return;
       }
@@ -328,7 +329,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
     } catch (err: any) {
       setFeedbackMessage({
         type: 'error',
-        text: err?.message || (isAr ? 'مش قادرين نرفع الملف. جرّب تاني.' : 'The file upload failed. Please try again.')
+        text: getLocalizedErrorMessage(err, lang)
       });
     } finally {
       setIsUploadingMedia(false);
@@ -550,7 +551,7 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
       console.error('Publish error:', err);
       setFeedbackMessage({
         type: 'error',
-        text: err instanceof Error ? err.message : (isAr ? 'تعذر نشر الدرس.' : 'Lesson publication failed.')
+        text: getLocalizedErrorMessage(err, lang)
       });
     } finally {
       setIsSaving(false);
