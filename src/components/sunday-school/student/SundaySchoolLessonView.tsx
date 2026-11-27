@@ -207,10 +207,10 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
             </button>
           )}
 
-          {lesson.approvedServantName && (
+          {(lesson.approvedServantName || lesson.teacherName || true) && (
             <span className="text-[11px] px-2.5 py-1 rounded-lg bg-[var(--mousa-sand-100)] dark:bg-stone-800 text-[var(--mousa-sand-600)] dark:text-[var(--mousa-sand-400)] border border-[var(--mousa-border-sand)] font-bold hidden sm:inline-flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3 text-[var(--mousa-gold)]" />
-              <span>{isAr ? `إعداد: ${lesson.approvedServantName}` : `By ${lesson.approvedServantName}`}</span>
+              <span>{isAr ? `إعداد: ${lesson.approvedServantName || lesson.teacherName || 'خادم الفصل'}` : `By ${lesson.approvedServantName || lesson.teacherName || 'Sunday School Servant'}`}</span>
             </span>
           )}
         </div>
