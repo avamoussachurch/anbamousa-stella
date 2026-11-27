@@ -128,7 +128,7 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
   const youtubeEmbedUrl = getYoutubeEmbedUrl(effectiveVideoUrl);
 
   // 2. Audio (strictly only if teacher provided, NO fake fallback, NO AI audio)
-  const teacherVoiceSource = sources.find(s => s.type === 'TEACHER_VOICE');
+  const teacherVoiceSource = sources.find(s => s.type === 'TEACHER_VOICE' && Boolean(s.fileUrl));
   const effectiveAudioUrl = lesson.audioUrl || teacherVoiceSource?.fileUrl;
 
   // 3. Slides / Documents (strictly only if provided)
