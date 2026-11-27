@@ -2733,3 +2733,10 @@ button, a, input, select, textarea { max-width: 100%; }
   50% { scale: 1.06; opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .anba-world-portal-ring { animation: none; } }
+
+.dark .stella-student-home .stella-verse-card span,
+[data-theme="dark"] .stella-student-home .stella-verse-card span {
+  color: #F1DDA8;
+  border-color: rgba(241,221,168,.28);
+  background-color: rgba(255,255,255,.08);
+}
