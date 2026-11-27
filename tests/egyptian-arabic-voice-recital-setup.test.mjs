@@ -7,7 +7,7 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 test('student Scripture recital instructions and feedback use Egyptian Arabic', async () => {
   const recital = await read('../src/components/student/VerseRecitalModal.tsx');
   assert.match(recital, /اقرأ الآية واحفظها، وبعدها اضغط على الميكروفون/);
-  assert.match(recital, /برافو عليك يا بطل! نطقت كلمات الآية بصوت واضح وجميل/);
+  assert.match(recital, /التسميع ما اتراجعش لسه/);
   assert.match(recital, /🎉 حفظت الآية بإتقان!/);
   assert.match(recital, /كنت قريب جدًا! راجع الكلمات وجرّب تاني/);
   assert.match(recital, /سمّع تاني/);
@@ -30,6 +30,7 @@ test('verse recital verification failures never create a passing result or award
   assert.match(catchBlock, /pointsAwarded: 0/);
   assert.match(catchBlock, /verificationUnavailable: true/);
   assert.match(catchBlock, /setAudioError\(/);
+  assert.match(catchBlock, /مش قادرين نتحقق من التسميع دلوقتي/);
   assert.doesNotMatch(catchBlock, /passed: true/);
   assert.match(recital, /evalData\.pointsAwarded = 0/);
   assert.match(recital, /result\.pointsAwarded > 0/);
