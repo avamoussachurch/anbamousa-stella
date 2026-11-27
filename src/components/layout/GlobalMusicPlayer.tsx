@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Music, MessageCircle, Play, Pause, Volume2, VolumeX, X, RefreshCw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGlobalAudio } from '../../context/AudioContext';
 import { useAuth } from '../../context/AuthContext';
@@ -338,7 +338,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
         whileHover={{ scale: 1.07, rotate: -3 }}
         whileTap={{ scale: 0.92 }}
         style={{ touchAction: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
-        className="anba-global-player-bubble relative grid h-[62px] w-[62px] select-none place-items-center rounded-full border border-white/70 text-white shadow-[0_10px_32px_rgba(8,38,55,.36)] ring-4 ring-[#1b6572]/15"
+        className="anba-global-player-bubble relative grid h-[62px] w-[62px] select-none place-items-center rounded-full border border-[#E8D19A] text-white shadow-[0_10px_28px_rgba(8,30,35,.38)]"
         animate={isDragging
           ? { scale: 1.12, rotate: 9, y: -2 }
           : isPlaying
