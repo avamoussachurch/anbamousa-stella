@@ -23,6 +23,7 @@ test('active learning time persists with the Cairo date and is reset on a new da
   assert.match(auth, /screen_time_today_seconds: nextDailySeconds/);
   assert.match(auth, /screen_time_date: cairoDate/);
   assert.match(auth, /prev\.screenTimeDate === cairoDate/);
+  assert.match(auth, /localStorage\.setItem\(key, JSON\.stringify\(\{\s*\.\.\.prev,\s*screenTimeSeconds: nextSecs,\s*screenTimeTodaySeconds: nextDailySeconds,\s*screenTimeDate: cairoDate/);
 });
 
 test('parent workspace reads only the linked child active-time field for today', () => {
