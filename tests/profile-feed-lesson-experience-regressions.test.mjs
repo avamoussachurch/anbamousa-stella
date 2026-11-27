@@ -25,6 +25,7 @@ test('student family codes are repaired to five characters and the parent input 
   assert.match(server, /Could not allocate a unique five-character family connection code/);
   assert.match(parentModal, /maxLength=\{5\}/);
   assert.match(parser, /normalized\.length === 5/);
+  assert.match(parser, /alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'/);
 });
 
 test('feed voice notes use decoded waveform data, seeking, correct duration and playback speeds', () => {
@@ -74,7 +75,8 @@ test('lesson completion launches its quiz automatically and only quiz submission
   const lesson = read('../src/components/student/LessonView.tsx');
   const server = read('../server.ts');
   assert.match(lesson, /if \(hasQuiz\)[\s\S]*?setIsTakingQuiz\(true\)/);
-  assert.match(lesson, /type: 'spring'/);\n  assert.match(lesson, /currentStreak: res\\.streak\\?\\.currentStreak \\?\\? userData\\.currentStreak \\?\\? 0/);
+  assert.match(lesson, /type: 'spring'/);
+  assert.match(lesson, /currentStreak: res\.streak\?\.currentStreak \?\? userData\.currentStreak \?\? 0/);
   assert.doesNotMatch(lesson, /start-quiz-button|isTransitioningToQuiz/);
   assert.match(server, /const requiresQuiz = Array\.isArray\(targetVersion\?\.quizDraft\?\.questions\)/);
   assert.match(server, /requiresQuiz[\s\S]*?loadPersistedStudentStreak[\s\S]*?: await persistStudentActivityDay/);
@@ -84,9 +86,10 @@ test('lesson attribution resolves a servant display name and published servant v
   const lesson = read('../src/components/student/LessonView.tsx');
   const studentLesson = read('../src/components/sunday-school/student/SundaySchoolLessonView.tsx');
   const migration = read('../supabase/migrations/20261127170000_allow_published_lesson_teacher_voice_for_students.sql');
-  assert.match(lesson, /from\('profiles'\)\.select\('name'\)/);
+  assert.match(lesson, /rpc\('get_lesson_servant_display_name'/);
   assert.match(lesson, /teacherName: servantDisplayName/);
   assert.match(studentLesson, /sources\.find\(s => s\.type === 'TEACHER_VOICE' && Boolean\(s\.fileUrl\)\)/);
   assert.match(studentLesson, /audioUrl=\{displayedAudioUrl\}/);
   assert.match(migration, /RETURN public\.can_read_curriculum_lesson\(v_lesson_id\)/);
+  assert.match(migration, /get_lesson_servant_display_name/);
 });
