@@ -171,7 +171,7 @@ export function ProfileTab({
       active = false;
       void supabase.removeChannel(channel);
     };
-  }, [userData?.id, isGuest, achievementRefreshTick]);
+  }, [userData?.id, isGuest, achievementRefreshTick, lang]);
 
   const isStudent = workspaceRole ? workspaceRole === 'student' : hasRole(userData, 'student');
 
@@ -247,7 +247,7 @@ export function ProfileTab({
       loadMembership();
     }
     return () => { mounted = false; };
-  }, [userData?.id, isStudent, isGuest]);
+  }, [userData?.id, isStudent, isGuest, lang]);
 
   const handleJoinWithCode = async (e: React.FormEvent) => {
     e.preventDefault();
