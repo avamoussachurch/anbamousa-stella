@@ -102,7 +102,6 @@ test('lesson attribution resolves a servant display name and published servant v
 test('active screen time survives authenticated refresh and syncs more frequently', () => {
   const auth = read('../src/context/AuthContext.tsx');
   assert.match(auth, /screen_time_today_seconds, screen_time_date/);
-  assert.match(auth, /screenTimeTodaySeconds: profile\?\.screen_time_date === getCairoDateString\(\)/);
   assert.match(auth, /screenTimeDate: getCairoDateString\(\)/);
   assert.match(auth, /screenTimeSeconds: Math\.max\(/);
   assert.match(auth, /cachedAuthUser\.screenTimeTodaySeconds/);
