@@ -308,7 +308,7 @@ export function StudentAdventureHome({
           <path d="M0 270 Q170 210 330 255T650 235T900 250V430H0Z" fill="#39756F"/>
           <path d="M0 315 Q200 270 390 310T720 280T900 300V430H0Z" fill="#285A58"/>
           <g opacity=".45" fill="#D4E5D4"><path d="M90 95q18-22 40 0q20-18 40 4H90Z"/><path d="M410 70q18-22 40 0q20-18 40 4H410Z"/></g>
-          <!-- Anba Mousa church courtyard -->
+          {/* Anba Mousa church courtyard */}
           <ellipse cx="586" cy="372" rx="270" ry="35" fill="#142F3B" opacity=".3"/>
           <path d="M365 258V190Q365 172 383 172H788Q806 172 806 190V258Z" fill="url(#anbaStone)" stroke="#FBEBCB" strokeWidth="4"/>
           <path d="M344 187L585 115L827 187Z" fill="#E7CB9B" stroke="#FBEBCB" strokeWidth="4" strokeLinejoin="round"/>
@@ -325,14 +325,14 @@ export function StudentAdventureHome({
           <path d="M405 208V185Q405 171 419 171Q433 171 433 185V208Z M700 208V185Q700 171 714 171Q728 171 728 185V208Z" fill="#1C5967" stroke="#FFF0D0" strokeWidth="3"/>
           <path d="M585 211V238M574 222H596" stroke="#F9D98C" strokeWidth="5" strokeLinecap="round"/>
           <path d="M480 258V221Q480 200 501 200Q522 200 522 221V258Z M648 258V221Q648 200 669 200Q690 200 690 221V258Z" fill="#1B5662" stroke="#F8E7C6" strokeWidth="3"/>
-          <!-- courtyard and processional path -->
+          {/* Courtyard and processional path */}
           <path d="M548 258L470 430H710L622 258Z" fill="#D6BC91" opacity=".92"/>
           <path d="M584 258L566 430M604 258L635 430" stroke="#F9E7C5" strokeWidth="4" opacity=".65"/>
           <path d="M0 378Q190 337 370 377T900 366V430H0Z" fill="#B58C5A"/>
           <path d="M90 370Q270 330 440 358T830 350" fill="none" stroke="#F6D68D" strokeWidth="5" strokeDasharray="3 17" strokeLinecap="round"/>
-          <!-- palm silhouettes -->
+          {/* Palm silhouettes */}
           <g stroke="#183E43" strokeWidth="8" strokeLinecap="round" fill="none"><path d="M180 337Q188 240 176 172"/><path d="M176 172q-64-56-95-10q50-18 95 10q-8-70 39-83q-28 44-39 83q45-52 87-19q-50 2-87 19q61 8 66 51q-34-30-66-51"/><path d="M820 338Q814 250 828 190"/><path d="M828 190q-58-51-89-9q47-16 89 9q-7-64 37-76q-27 41-37 76q42-48 81-18q-47 2-81 18q57 8 61 48q-32-28-61-48"/></g>
-          <!-- lanterns -->
+          {/* Lanterns */}
           <g><path d="M287 0V70M278 70H296L292 101H282Z" stroke="#F5D98C" strokeWidth="3" fill="#E9B95E"/><circle cx="287" cy="85" r="18" fill="#FFE8A5" opacity=".18"/><path d="M852 35V92M844 92H860L856 120H848Z" stroke="#F5D98C" strokeWidth="3" fill="#E9B95E"/></g>
           <g fill="#FFE6A2"><circle cx="95" cy="150" r="3"/><circle cx="300" cy="130" r="2"/><circle cx="715" cy="48" r="2"/><circle cx="872" cy="175" r="2"/></g>
         </svg>
