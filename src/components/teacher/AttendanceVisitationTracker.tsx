@@ -279,6 +279,10 @@ export function AttendanceVisitationTracker({ lang }: { lang: 'en' | 'ar' }) {
 
   return (
     <div className="space-y-6">
+      <div role="status" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs leading-6 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+        <strong>{lang === 'ar' ? 'وضع تجريبي — ليس سجلاً رسمياً للحضور.' : 'Demo mode — not official attendance.'}</strong>{' '}
+        {lang === 'ar' ? 'الأسماء هنا تجريبية والتغييرات محفوظة على هذا المتصفح فقط. سجّل الدخول بجلسة خادم موثّقة لاستخدام كشف الفصل الحقيقي وحفظ الحضور على الخادم.' : 'These are sample names and changes are saved only in this browser. Sign in with a verified teacher session to use your real class roster and server-persisted attendance.'}
+      </div>
       {/* Stage Selector Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {SUNDAY_SCHOOL_STAGES.map(stage => (
