@@ -5,7 +5,7 @@ import test from 'node:test';
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('student, teacher, and parent surfaces localize raw service errors', async () => {
-  const [feed, lesson, teacher, parent, lessonEditor, hymns, taxis, preview, manualLesson, sourceIngestion, expressLesson, feedTab] = await Promise.all([
+  const [feed, lesson, teacher, parent, lessonEditor, hymns, taxis, preview, manualLesson, sourceIngestion, expressLesson, feedTab, pointsTab, profileTab, adventure] = await Promise.all([
     read('../src/components/student/FeedTab.tsx'),
     read('../src/components/student/LessonView.tsx'),
     read('../src/components/teacher/TeacherDashboard.tsx'),
@@ -18,9 +18,12 @@ test('student, teacher, and parent surfaces localize raw service errors', async 
     read('../src/components/sunday-school/teacher/SourceIngestionStudio.tsx'),
     read('../src/components/teacher/ExpressLessonPublishModal.tsx'),
     read('../src/components/student/FeedTab.tsx'),
+    read('../src/components/student/PointsTab.tsx'),
+    read('../src/components/student/ProfileTab.tsx'),
+    read('../src/components/student/StudentAdventureHome.tsx'),
   ]);
 
-  for (const source of [feed, lesson, teacher, parent, lessonEditor, hymns, taxis, preview, manualLesson, sourceIngestion, expressLesson, feedTab]) {
+  for (const source of [feed, lesson, teacher, parent, lessonEditor, hymns, taxis, preview, manualLesson, sourceIngestion, expressLesson, feedTab, pointsTab, profileTab, adventure]) {
     assert.match(source, /getLocalizedErrorMessage/);
   }
   assert.match(feed, /getLocalizedErrorMessage\(res\.error\.message, lang\)/);
@@ -40,4 +43,8 @@ test('student, teacher, and parent surfaces localize raw service errors', async 
   assert.match(expressLesson, /getLocalizedErrorMessage\(error, lang\)/);
   assert.match(feedTab, /getLocalizedErrorMessage\(result\.error\?\.message/);
   assert.match(feedTab, /getLocalizedErrorMessage\(error instanceof Error && error\.message/);
+  assert.match(pointsTab, /getLocalizedErrorMessage\(err instanceof Error && err\.message/);
+  assert.match(profileTab, /getLocalizedErrorMessage\(result\.error\?\.message/);
+  assert.match(profileTab, /getLocalizedErrorMessage\(error, lang\)/);
+  assert.match(adventure, /getLocalizedErrorMessage\(result\.error\?\.message/);
 });
