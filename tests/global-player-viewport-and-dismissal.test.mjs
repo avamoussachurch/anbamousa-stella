@@ -9,7 +9,7 @@ test('global player dismisses on outside interaction and keeps its controls view
   assert.match(player, /playerRootRef/);
   assert.match(player, /document\.addEventListener\('pointerdown', handleOutsidePointer\)/);
   assert.match(player, /document\.addEventListener\('keydown', handleEscape\)/);
-  assert.match(player, /max-h-\[calc\(100dvh-2rem\)\]/);
+  assert.match(player, /max-h-\[calc\(100dvh-1.5rem\)\]/);
   assert.match(player, /clampBubblePosition/);
   assert.match(player, /panelPosition\?\.left/);
   assert.match(player, /window\.innerWidth - panel\.width - margin/);
