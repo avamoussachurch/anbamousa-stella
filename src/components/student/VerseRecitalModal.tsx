@@ -375,47 +375,49 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
               </div>
             )}
 
-            {/* WORD-BY-WORD ACCURACY BREAKDOWN */}
-            <div className="p-3.5 bg-gray-50 dark:bg-slate-800/60 rounded-2xl border border-gray-100 dark:border-slate-700 text-start">
-              <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block mb-2.5">
-                {lang === 'ar' ? 'مراجعة كل كلمة في الآية:' : 'Word-by-Word Evaluation:'}
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {result.wordAnalysis && result.wordAnalysis.length > 0 ? (
-                  result.wordAnalysis.map((item, idx) => (
-                    <span 
-                      key={idx}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold ${
-                        item.status === 'correct'
-                          ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300/60'
-                          : item.status === 'approximate'
-                            ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-300/60'
-                            : 'bg-red-50 dark:bg-red-950/80 text-[var(--color-church-burgundy)] dark:text-red-300 border border-red-200 dark:border-red-900/60 line-through'
-                      }`}
-                    >
-                      {item.status === 'correct' && <Check size={12} />}
-                      <span>{item.word}</span>
-                      {item.spokenAs && item.status === 'approximate' && (
-                        <span className="text-[10px] opacity-75 font-normal">({item.spokenAs})</span>
-                      )}
-                    </span>
-                  ))
-                ) : (
-                  <>
-                    {result.matchedWords.map((word, idx) => (
-                      <span key={idx} className="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 text-xs font-medium border border-emerald-200">
-                        ✓ {word}
+            {!result.verificationUnavailable && (
+              {/* WORD-BY-WORD ACCURACY BREAKDOWN */}
+              <div className="p-3.5 bg-gray-50 dark:bg-slate-800/60 rounded-2xl border border-gray-100 dark:border-slate-700 text-start">
+                <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block mb-2.5">
+                  {lang === 'ar' ? 'مراجعة كل كلمة في الآية:' : 'Word-by-Word Evaluation:'}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {result.wordAnalysis && result.wordAnalysis.length > 0 ? (
+                    result.wordAnalysis.map((item, idx) => (
+                      <span 
+                        key={idx}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold ${
+                          item.status === 'correct'
+                            ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300/60'
+                            : item.status === 'approximate'
+                              ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-300/60'
+                              : 'bg-red-50 dark:bg-red-950/80 text-[var(--color-church-burgundy)] dark:text-red-300 border border-red-200 dark:border-red-900/60 line-through'
+                        }`}
+                      >
+                        {item.status === 'correct' && <Check size={12} />}
+                        <span>{item.word}</span>
+                        {item.spokenAs && item.status === 'approximate' && (
+                          <span className="text-[10px] opacity-75 font-normal">({item.spokenAs})</span>
+                        )}
                       </span>
-                    ))}
-                    {result.missedWords.map((word, idx) => (
-                      <span key={idx} className="px-2.5 py-1 rounded-xl bg-red-50 dark:bg-red-950/80 text-[var(--color-church-burgundy)] dark:text-red-300 text-xs font-medium line-through border border-red-200 dark:border-red-900/60">
-                        {word}
-                      </span>
-                    ))}
-                  </>
-                )}
+                    ))
+                  ) : (
+                    <>
+                      {result.matchedWords.map((word, idx) => (
+                        <span key={idx} className="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 text-xs font-medium border border-emerald-200">
+                          ✓ {word}
+                        </span>
+                      ))}
+                      {result.missedWords.map((word, idx) => (
+                        <span key={idx} className="px-2.5 py-1 rounded-xl bg-red-50 dark:bg-red-950/80 text-[var(--color-church-burgundy)] dark:text-red-300 text-xs font-medium line-through border border-red-200 dark:border-red-900/60">
+                          {word}
+                        </span>
+                      ))}
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {result.pointsAwarded > 0 && (
               <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-bold text-xs flex items-center justify-center gap-2">
