@@ -280,6 +280,18 @@ function AppContent() {
     setActiveLessonId(null);
   };
 
+  const handleAppBack = () => {
+    if (window.history.state?.anbaMousaApp && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    if (activeLessonId) {
+      setActiveLessonId(null);
+      return;
+    }
+    handleBackToHome();
+  };
+
   const switchWorkspace = (nextWorkspace: Workspace) => {
     if (!canAccessWorkspace(userData.roles, nextWorkspace)) {
       setNavigationError(lang === 'ar' ? 'لا تملك صلاحية مساحة العمل المطلوبة.' : 'You are not assigned to that workspace.');
@@ -411,6 +423,7 @@ function AppContent() {
       <TopBar 
         lang={lang} 
         onHomeClick={handleBackToHome}
+        onBack={handleAppBack}
         onNavigate={navigate}
         activeTab={activeTab}
         workspace={activeWorkspace}
