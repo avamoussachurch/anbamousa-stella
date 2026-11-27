@@ -19,11 +19,12 @@ export function FeedVoiceMessage({ src, lang }: Props) {
   const [waveformLevels, setWaveformLevels] = useState<number[]>(() => Array(48).fill(5));
 
   const waveformRequestedRef = useRef(false);
-  const waveformCancelledRef = useRef(false);
+  const waveformRequestIdRef = useRef(0);
+  const waveformAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     waveformRequestedRef.current = false;
-    waveformCancelledRef.current = false;
+    waveformRequestIdRef.current += 1;
     setWaveformLevels(Array(48).fill(5));
     setPlaying(false);
     setCurrent(0);
@@ -37,7 +38,9 @@ export function FeedVoiceMessage({ src, lang }: Props) {
     }
 
     return () => {
-      waveformCancelledRef.current = true;
+      waveformRequestIdRef.current += 1;
+      waveformAbortRef.current?.abort();
+      waveformAbortRef.current = null;
     };
   }, [src]);
 
@@ -46,15 +49,18 @@ export function FeedVoiceMessage({ src, lang }: Props) {
   const loadWaveformOnDemand = async () => {
     if (waveformRequestedRef.current || typeof window === 'undefined' || !('AudioContext' in window)) return;
     waveformRequestedRef.current = true;
+    const requestId = waveformRequestIdRef.current;
+    const controller = new AbortController();
+    waveformAbortRef.current = controller;
     let context: AudioContext | null = null;
     try {
-      const response = await fetch(src, { mode: 'cors' });
+      const response = await fetch(src, { mode: 'cors', signal: controller.signal });
       if (!response.ok) throw new Error('Waveform source unavailable');
       const buffer = await response.arrayBuffer();
-      if (waveformCancelledRef.current) return;
+      if (requestId !== waveformRequestIdRef.current) return;
       context = new AudioContext();
       const decoded = await context.decodeAudioData(buffer.slice(0));
-      if (waveformCancelledRef.current) return;
+      if (requestId !== waveformRequestIdRef.current) return;
       const channel = decoded.getChannelData(0);
       const count = 48;
       const levels = Array.from({ length: count }, (_, index) => {
@@ -75,6 +81,7 @@ export function FeedVoiceMessage({ src, lang }: Props) {
       // Keep a neutral waveform rather than fabricating audio peaks.
     } finally {
       if (context) void context.close().catch(() => {});
+      if (waveformAbortRef.current === controller) waveformAbortRef.current = null;
     }
   };
 
