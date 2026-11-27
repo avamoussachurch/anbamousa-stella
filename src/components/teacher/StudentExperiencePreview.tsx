@@ -155,7 +155,7 @@ export function StudentExperiencePreview({ lang, initialLessonId }: StudentExper
       .catch(error => {
         if (!active) return;
         setSchoolContent({ hymns: [], taxis: [] });
-        setSchoolContentError(error instanceof Error ? error.message : (isAr ? 'تعذر تحميل المنهج المنشور.' : 'Could not load published curriculum.'));
+        setSchoolContentError(getLocalizedErrorMessage(error, lang));
       })
       .finally(() => {
         if (active) setSchoolContentLoading(false);
