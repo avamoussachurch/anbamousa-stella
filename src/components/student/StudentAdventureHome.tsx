@@ -365,20 +365,7 @@ export function StudentAdventureHome({
               </button>
             </div>
           </div>
-          <div className="stella-home-hero-progress flex items-center gap-3 self-start rounded-2xl border border-white/10 bg-[#102431]/80 px-4 py-3 backdrop-blur sm:self-end">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#E5B85F] bg-[#1B3B47] text-xl">✝</span>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#9BB9BE]">{isArabic ? 'محطات رحلتك' : 'Journey progress'}</p>
-              <p className="mt-0.5 text-sm font-black text-white">
-                {curriculumLoading
-                  ? (isArabic ? 'بنحمّل المنهج' : 'Loading curriculum')
-                  : totalLessons > 0
-                    ? `${completedLessons.length} / ${totalLessons} · ${progress}%`
-                    : (isArabic ? 'مستنيين المنهج' : 'Curriculum pending')}
-              </p>
-            </div>
-          </div>
-        </div>
+      </div>
       </motion.section>
 
       <section className="stella-mission-stage grid gap-4">
@@ -425,7 +412,7 @@ export function StudentAdventureHome({
             ) : (
               <div className="mt-5 flex flex-1 flex-col items-start justify-center">
                 <span className="text-3xl" aria-hidden="true">🏜️</span>
-                <h2 className="mt-3 text-xl font-black">{isArabic ? 'رحلتك مستنياك' : 'Your path is waiting'}</h2>
+                <h2 className="mt-3 text-xl font-black">{isArabic ? 'محطتك القادمة قيد التجهيز' : 'Your next chapter is being prepared'}</h2>
                 <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-300">
                   {totalLessons > 0
                     ? (isArabic ? 'أكملت كل الدروس المتاحة في منهج فصلك. عد لاحقاً لمحطات جديدة.' : 'You have completed every available class lesson. Come back for new stops.')
@@ -446,9 +433,6 @@ export function StudentAdventureHome({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-
-        </div>
       </section>
 
       <JourneyPath
@@ -460,7 +444,6 @@ export function StudentAdventureHome({
         reduceMotion={Boolean(reduceMotion)}
       />
 
-}
 
       <StudentFeatureLinks lang={lang} onNavigate={onNavigate} />
 
