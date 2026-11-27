@@ -2668,3 +2668,47 @@ button, a, input, select, textarea { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .anba-global-player-bubble::after { transition: none; }
 }
+
+.stella-student-home .stella-home-next-card {
+  color: #173F4B;
+  border-color: rgba(76,145,143,.3);
+  background: linear-gradient(135deg,#F1FBF7 0%,#E0F2EC 58%,#D5ECEB 100%);
+  box-shadow: 0 22px 52px -30px rgba(11,54,65,.2), inset 0 1px 0 rgba(255,255,255,.8);
+}
+.stella-student-home .stella-home-next-card .text-slate-300,
+.stella-student-home .stella-home-next-card .text-slate-400 { color: #4F6C70; }
+.dark .stella-student-home .stella-home-next-card,
+[data-theme="dark"] .stella-student-home .stella-home-next-card {
+  color: #F4F1E8;
+  background: linear-gradient(135deg,#123642 0%,#174b55 58%,#1b5a60 100%);
+  border-color: rgba(89,151,150,.42);
+}
+.dark .stella-student-home .stella-home-next-card .text-slate-300,
+.dark .stella-student-home .stella-home-next-card .text-slate-400,
+[data-theme="dark"] .stella-student-home .stella-home-next-card .text-slate-300,
+[data-theme="dark"] .stella-student-home .stella-home-next-card .text-slate-400 { color: #B8C9CB; }
+.stella-student-home .stella-journey-path {
+  color: #173F4B;
+  border-color: rgba(90,146,141,.32);
+  background: linear-gradient(135deg,#EFF9F4 0%,#E1F1E8 62%,#F7EBD1 100%);
+}
+.stella-student-home .stella-journey-path .text-slate-200,
+.stella-student-home .stella-journey-path .text-slate-300,
+.stella-student-home .stella-journey-path .text-slate-400 { color: #587174; }
+.dark .stella-student-home .stella-journey-path,
+[data-theme="dark"] .stella-student-home .stella-journey-path {
+  color: #F4F1E8;
+  border-color: rgba(229,190,113,.42);
+  background: linear-gradient(135deg,#102d39,#173b43 62%,#263d3e);
+}
+.dark .stella-student-home .stella-journey-path .text-slate-200,
+.dark .stella-student-home .stella-journey-path .text-slate-300,
+.dark .stella-student-home .stella-journey-path .text-slate-400,
+[data-theme="dark"] .stella-student-home .stella-journey-path .text-slate-200,
+[data-theme="dark"] .stella-student-home .stella-journey-path .text-slate-300,
+[data-theme="dark"] .stella-student-home .stella-journey-path .text-slate-400 { color: #B8C9CB; }
+.anba-global-player-panel .text-gray-800 { color: #EDF6F2; }
+.anba-global-player-panel .text-gray-500, .anba-global-player-panel .text-gray-400 { color: #B7CBCB; }
+.anba-global-player-panel .bg-gray-100, .anba-global-player-panel .bg-white { background-color: rgba(255,255,255,.08); }
+.anba-global-player-panel .border-gray-100, .anba-global-player-panel .border-gray-200 { border-color: rgba(255,255,255,.12); }
+.anba-global-player-panel [class*="hover:bg-gray-50"]:hover { background-color: rgba(255,255,255,.1); }
