@@ -6410,14 +6410,17 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
     const newTotalPoints = persistedCompletion.totalPoints;
     serverReviewState.userPoints[targetStudentId] = newTotalPoints;
 
-    // Authoritative cross-school streak calculation. UUID-backed students use
-    // the durable Supabase activity ledger; local IDs remain test/demo-only.
+    // A lesson with a required quiz is not a qualifying learning-streak day
+    // until the student submits that quiz. Quizless lessons still qualify on completion.
     const todayCairo = getCairoDateString(new Date(prog.completedAt));
+    const requiresQuiz = Array.isArray(targetVersion?.quizDraft?.questions) && targetVersion.quizDraft.questions.length > 0;
     let persistedStreak: Awaited<ReturnType<typeof persistStudentActivityDay>> = null;
     try {
-      persistedStreak = await persistStudentActivityDay(targetStudentId, prog.completedAt);
+      persistedStreak = requiresQuiz
+        ? await loadPersistedStudentStreak(targetStudentId)
+        : await persistStudentActivityDay(targetStudentId, prog.completedAt);
     } catch (error: any) {
-      console.error('Could not persist lesson activity day:', error);
+      console.error('Could not synchronize lesson activity day:', error);
       return res.status(502).json({
         success: false,
         error: 'STREAK_PERSISTENCE_FAILED',
@@ -6426,20 +6429,25 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
     }
 
     const previousStreak = serverReviewState.userStreaks[targetStudentId];
+    const persistedDays = Array.isArray((persistedStreak as any)?.activeCairoDays)
+      ? (persistedStreak as any).activeCairoDays
+      : [];
+    const previousDays = Array.isArray(previousStreak?.activeCairoDays) ? previousStreak.activeCairoDays : [];
     const activeCairoDays = Array.from(new Set([
-      ...(Array.isArray(previousStreak?.activeCairoDays) ? previousStreak.activeCairoDays : []),
-      todayCairo
+      ...persistedDays,
+      ...previousDays,
+      ...(!requiresQuiz ? [todayCairo] : [])
     ]));
     const calculatedStreak = calculateCairoStreakForStudent(activeCairoDays);
     const streakInfo = {
-      currentStreak: persistedStreak?.currentStreak ?? calculatedStreak.currentStreak,
+      currentStreak: persistedStreak?.currentStreak ?? previousStreak?.currentStreak ?? calculatedStreak.currentStreak,
       longestStreak: Math.max(
         persistedStreak?.longestStreak ?? 0,
         previousStreak?.longestStreak ?? 0,
         calculatedStreak.longestStreak,
-        persistedStreak?.currentStreak ?? calculatedStreak.currentStreak
+        persistedStreak?.currentStreak ?? previousStreak?.currentStreak ?? 0
       ),
-      lastActiveCairoDate: persistedStreak?.lastActiveCairoDate ?? todayCairo,
+      lastActiveCairoDate: persistedStreak?.lastActiveCairoDate ?? previousStreak?.lastActiveCairoDate ?? '',
       activeCairoDays
     };
     serverReviewState.userStreaks[targetStudentId] = streakInfo;
@@ -6499,7 +6507,7 @@ app.post("/api/church/student-progress/complete-lesson", async (req, res) => {
         currentStreak: streakInfo.currentStreak,
         longestStreak: streakInfo.longestStreak,
         lastActiveCairoDate: streakInfo.lastActiveCairoDate,
-        isActiveToday: persistedStreak?.isActiveToday ?? true
+        isActiveToday: persistedStreak?.isActiveToday ?? activeCairoDays.includes(todayCairo)
       },
       completionHistory: serverReviewState.completionHistory[targetStudentId] || [],
       achievementResult
