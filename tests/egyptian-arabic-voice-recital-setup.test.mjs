@@ -30,7 +30,7 @@ test('verse recital verification failures never create a passing result or award
   assert.match(catchBlock, /pointsAwarded: 0/);
   assert.match(catchBlock, /resultUnavailable: true/);
   assert.match(catchBlock, /setAudioError\(/);
-  assert.match(catchBlock, /مش قادرين نتحقق من التسميع دلوقتي/);
+  assert.match(catchBlock, /مش قادرين نكمل مراجعة التسميع وحفظ النتيجة دلوقتي/);
   assert.doesNotMatch(catchBlock, /passed: true/);
   assert.match(recital, /evalData\.pointsAwarded = Number\(responseData\.pointsAwarded \|\| 0\)/);
   assert.match(recital, /result\.pointsAwarded > 0/);
