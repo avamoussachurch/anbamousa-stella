@@ -103,7 +103,9 @@ test('active screen time survives authenticated refresh and syncs more frequentl
   const auth = read('../src/context/AuthContext.tsx');
   assert.match(auth, /screen_time_today_seconds, screen_time_date/);
   assert.match(auth, /screenTimeTodaySeconds: profile\?\.screen_time_date === getCairoDateString\(\)/);
-  assert.match(auth, /screenTimeDate: profile\?\.screen_time_date/);
+  assert.match(auth, /screenTimeDate: getCairoDateString\(\)/);
+  assert.match(auth, /screenTimeSeconds: Math\.max\(/);
+  assert.match(auth, /cachedAuthUser\.screenTimeTodaySeconds/);
   assert.match(auth, /screenTimeSyncTicksRef\.current % 3 === 0/);
 });
 
