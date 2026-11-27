@@ -67,10 +67,18 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
     const current = bubblePosition;
     if (current) {
       const bubbleSize = 56;
-      const snapLeft = current.left + bubbleSize / 2 < window.innerWidth / 2
-        ? 10
-        : window.innerWidth - bubbleSize - 10;
-      const snapped = clampBubblePosition(snapLeft, current.top);
+      const margin = 10;
+      const candidates = [
+        { edge: 'left', distance: current.left },
+        { edge: 'right', distance: window.innerWidth - bubbleSize - current.left },
+        { edge: 'top', distance: current.top },
+        { edge: 'bottom', distance: window.innerHeight - bubbleSize - current.top }
+      ];
+      const nearest = candidates.reduce((best, candidate) => candidate.distance < best.distance ? candidate : best);
+      const snapped = clampBubblePosition(
+        nearest.edge === 'left' ? margin : nearest.edge === 'right' ? window.innerWidth - bubbleSize - margin : current.left,
+        nearest.edge === 'top' ? margin + 8 : nearest.edge === 'bottom' ? window.innerHeight - bubbleSize - margin : current.top
+      );
       setBubblePosition(snapped);
       try { window.localStorage.setItem('anba-global-player-position', JSON.stringify(snapped)); } catch { /* storage may be unavailable */ }
     }
@@ -159,7 +167,7 @@ export function GlobalMusicPlayer({ lang }: { lang: 'en' | 'ar' }) {
 
   return (
     <div
-      className="fixed z-40 flex max-w-[calc(100vw-1.5rem)] flex-col items-end"
+      className={`fixed z-40 flex max-w-[calc(100vw-1.5rem)] ${bubblePosition && bubblePosition.left < window.innerWidth / 2 ? 'items-start' : 'items-end'} ${bubblePosition && bubblePosition.top < window.innerHeight / 2 ? 'flex-col' : 'flex-col-reverse'}`}
       style={bubblePosition ? { left: bubblePosition.left, top: bubblePosition.top } : {
         bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)',
         ...(lang === 'ar' ? { left: 12 } : { right: 12 })
