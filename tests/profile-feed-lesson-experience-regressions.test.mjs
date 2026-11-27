@@ -76,6 +76,8 @@ test('lesson completion launches its quiz automatically and only quiz submission
   const server = read('../server.ts');
   assert.match(lesson, /if \(hasQuiz\)[\s\S]*?setIsTakingQuiz\(true\)/);
   assert.match(lesson, /type: 'spring'/);
+  const studentLesson = read('../src/components/sunday-school/student/SundaySchoolLessonView.tsx');
+  assert.doesNotMatch(studentLesson, /lesson-footer-start-quiz-button|Start Review Quiz/);
   assert.match(lesson, /currentStreak: res\.streak\?\.currentStreak \?\? userData\.currentStreak \?\? 0/);
   assert.doesNotMatch(lesson, /start-quiz-button|isTransitioningToQuiz/);
   assert.match(server, /const requiresQuiz = Array\.isArray\(targetVersion\?\.quizDraft\?\.questions\)/);
