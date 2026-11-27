@@ -74,7 +74,7 @@ test('lesson completion launches its quiz automatically and only quiz submission
   const lesson = read('../src/components/student/LessonView.tsx');
   const server = read('../server.ts');
   assert.match(lesson, /if \(hasQuiz\)[\s\S]*?setIsTakingQuiz\(true\)/);
-  assert.match(lesson, /type: 'spring'/);
+  assert.match(lesson, /type: 'spring'/);\n  assert.match(lesson, /currentStreak: res\\.streak\\?\\.currentStreak \\?\\? userData\\.currentStreak \\?\\? 0/);
   assert.doesNotMatch(lesson, /start-quiz-button|isTransitioningToQuiz/);
   assert.match(server, /const requiresQuiz = Array\.isArray\(targetVersion\?\.quizDraft\?\.questions\)/);
   assert.match(server, /requiresQuiz[\s\S]*?loadPersistedStudentStreak[\s\S]*?: await persistStudentActivityDay/);
