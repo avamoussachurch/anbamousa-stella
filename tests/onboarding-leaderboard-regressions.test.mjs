@@ -48,3 +48,15 @@ test('leaderboard routes are allowed in parent, teacher, and admin workspaces', 
     assert.match(navigation, new RegExp(role + ': \\['));
   }
 });
+
+test('staff leaderboard works without a linked child and is scoped by class, not family', async () => {
+  const panel = await read('../src/components/leaderboard/ClassLeaderboardPanel.tsx');
+  const teacher = await read('../src/components/teacher/TeacherDashboard.tsx');
+  const admin = await read('../src/components/admin/AdminWorkspace.tsx');
+
+  assert.match(panel, /const isParentView = audience === 'parent'/);
+  assert.match(panel, /const canLoadLeaderboard = !isParentView \|\| Boolean\(effectiveChildId\)/);
+  assert.match(panel, /isParentView \? \{ studentId: effectiveChildId \} : selectedClassGroupId && scope === 'class' \? \{ classGroupId: selectedClassGroupId \} : \{\}/);
+  assert.match(teacher, /<ClassLeaderboardPanel lang=\{lang\} audience="staff" \/>/);
+  assert.match(admin, /<ClassLeaderboardPanel lang=\{lang\} audience="staff" \/>/);
+});
