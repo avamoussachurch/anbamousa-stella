@@ -1543,7 +1543,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                         ) : attachment.mediaType === 'youtube' || attachment.mediaType === 'embed' ? (
                           <FeedEmbeddedMediaPlayer src={attachment.mediaUrl} title="Media preview" />
                         ) : attachment.mediaType === 'video' ? (
-                          <FeedVideoPlayer src={attachment.mediaUrl} title={attachment.originalFilename || 'Video preview'} lang={lang === 'ar' ? 'ar' : 'en'} />
+                          <FeedVideoPlayer src={attachment.mediaUrl} poster={attachment.mediaThumbnail} title={attachment.originalFilename || 'Video preview'} lang={lang === 'ar' ? 'ar' : 'en'} />
                         ) : (
                           <img src={attachment.mediaUrl} alt={attachment.originalFilename || 'Attachment preview'} className="aspect-video w-full object-cover" />
                         )}
@@ -1737,6 +1737,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
                       ) : attachment.mediaType === 'video' ? (
                         <FeedVideoPlayer
                           src={attachment.mediaUrl}
+                          poster={attachment.mediaThumbnail}
                           title={attachment.originalFilename || (lang === 'ar' ? 'فيديو المجتمع' : 'Community video')}
                           onError={() => setMissingMediaIds(previous => new Set(previous).add(attachment.id))}
                         />
@@ -2047,7 +2048,7 @@ export function FeedTab({ lang, initialPostId, initialProfileId }: { lang: Langu
               )}
               {lightboxAttachment.mediaType === 'video' ? (
                 <div className="w-[min(92vw,64rem)] overflow-hidden rounded-2xl bg-black shadow-2xl">
-                  <FeedVideoPlayer src={lightboxAttachment.mediaUrl} title={lightboxAttachment.originalFilename || 'Community video'} />
+                  <FeedVideoPlayer src={lightboxAttachment.mediaUrl} poster={lightboxAttachment.mediaThumbnail} title={lightboxAttachment.originalFilename || 'Community video'} />
                 </div>
               ) : (
                 <img
