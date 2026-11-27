@@ -77,7 +77,7 @@ export function AgpeyaPrayerTab({ lang }: { lang: Language }) {
         }
         const prayerStreak = await getPrayerStreakFromSupabase(userData.id);
         if (isMounted && !prayerStreak.error) setStreakDays(prayerStreak.currentStreak);
-        if (isMounted) setPrayerSyncError(prayerStreak.error || null);
+        if (isMounted) setPrayerSyncError(prayerStreak.error || res.error || null);
         if (isMounted && prayerStreak.error) console.error('Could not load prayer streak history:', prayerStreak.error);
         setIsSyncing(false);
       }
