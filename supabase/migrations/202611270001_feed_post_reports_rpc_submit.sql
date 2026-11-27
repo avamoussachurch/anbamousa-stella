@@ -1,7 +1,23 @@
--- Student reports are submitted through a SECURITY DEFINER RPC so reporter identity
--- and the reported post author are derived from the authenticated session/database.
-REVOKE INSERT ON public.feed_post_reports FROM authenticated;
-DROP POLICY IF EXISTS feed_post_reports_insert_own ON public.feed_post_reports;
+-- Keep report submission under invoker privileges and enforce reporter identity with RLS.
+CREATE UNIQUE INDEX IF NOT EXISTS feed_post_reports_reporter_post_unique
+  ON public.feed_post_reports (reporter_id, post_id);
+
+GRANT INSERT ON public.feed_post_reports TO authenticated;
+DROP POLICY IF EXISTS feed_post_reports_insert_student ON public.feed_post_reports;
+CREATE POLICY feed_post_reports_insert_student
+  ON public.feed_post_reports
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    reporter_id = (SELECT auth.uid())
+    AND public.has_role('student')
+    AND EXISTS (
+      SELECT 1
+      FROM public.feed_posts AS p
+      WHERE p.id = post_id
+        AND p.author_id = reported_user_id
+        AND p.is_hidden = false
+    )
+  );
 
 CREATE OR REPLACE FUNCTION public.submit_feed_post_report(
   p_post_id text,
@@ -10,7 +26,7 @@ CREATE OR REPLACE FUNCTION public.submit_feed_post_report(
 )
 RETURNS jsonb
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public, auth
 AS $$
 DECLARE
@@ -30,9 +46,9 @@ BEGIN
     RAISE EXCEPTION 'REPORT_DETAILS_TOO_LONG' USING ERRCODE = '22023';
   END IF;
 
-  SELECT author_id INTO v_reported_user_id
-    FROM public.feed_posts
-   WHERE id = p_post_id AND is_hidden = false;
+  SELECT p.author_id INTO v_reported_user_id
+    FROM public.feed_posts AS p
+   WHERE p.id = p_post_id AND p.is_hidden = false;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'POST_NOT_FOUND_OR_HIDDEN' USING ERRCODE = 'P0002';
   END IF;
@@ -40,14 +56,14 @@ BEGIN
     RAISE EXCEPTION 'CANNOT_REPORT_OWN_POST' USING ERRCODE = '42501';
   END IF;
 
-  BEGIN
-    INSERT INTO public.feed_post_reports (post_id, reporter_id, reported_user_id, reason, details)
-    VALUES (p_post_id, (SELECT auth.uid()), v_reported_user_id, p_reason, NULLIF(btrim(p_details), ''))
-    RETURNING id INTO v_report_id;
-  EXCEPTION WHEN unique_violation THEN
-    RETURN jsonb_build_object('success', false, 'already_reported', true);
-  END;
+  INSERT INTO public.feed_post_reports (post_id, reporter_id, reported_user_id, reason, details)
+  VALUES (p_post_id, (SELECT auth.uid()), v_reported_user_id, p_reason, NULLIF(btrim(p_details), ''))
+  ON CONFLICT (reporter_id, post_id) DO NOTHING
+  RETURNING id INTO v_report_id;
 
+  IF v_report_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'already_reported', true);
+  END IF;
   RETURN jsonb_build_object('success', true, 'report_id', v_report_id);
 END;
 $$;
