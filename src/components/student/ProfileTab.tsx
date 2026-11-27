@@ -556,17 +556,29 @@ export function ProfileTab({
                     </span>
                   )}
                   
-                  <div className="mt-4 grid grid-cols-5 gap-1.5 border-t border-[var(--mousa-border-sand)]/60 pt-4">
-                    {[
-                      { value: userData.points, label: lang === 'ar' ? 'النقاط' : 'Points', tone: 'text-[var(--mousa-gold)] dark:text-[var(--mousa-gold-light)]' },
-                      { value: userData.currentStreak, label: lang === 'ar' ? 'المواظبة' : 'Streak', tone: 'text-[var(--mousa-coral-dark)] dark:text-[var(--mousa-coral-glow)]' },
-                      { value: userData.longestStreak, label: lang === 'ar' ? 'الأفضل' : 'Best', tone: 'text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]' },
-                      { value: followersCount, label: lang === 'ar' ? 'متابعون' : 'Followers', tone: 'text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]' },
-                      { value: followingCount, label: lang === 'ar' ? 'يتابع' : 'Following', tone: 'text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]' }
-                    ].map((stat, index) => <div key={index} className="min-w-0 rounded-xl bg-[var(--surface-secondary)]/70 px-1 py-2 text-center">
-                      <p className={'truncate text-base sm:text-xl font-black tabular-nums ' + stat.tone}>{Number(stat.value || 0).toLocaleString()}</p>
-                      <p className="truncate text-[8px] sm:text-[10px] font-black text-[var(--text-muted)]">{stat.label}</p>
-                    </div>)}
+                  <div className="mt-4 border-t border-[var(--mousa-border-sand)]/60 pt-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-2xl border border-orange-300/50 bg-gradient-to-br from-orange-50 to-amber-100 px-3 py-3 text-center dark:from-orange-950/50 dark:to-amber-950/40">
+                        <p className="text-[10px] font-black uppercase tracking-wide text-orange-800 dark:text-orange-200">{lang === 'ar' ? 'مواظبتك الحالية' : 'Current streak'}</p>
+                        <p className="mt-1 text-3xl font-black tabular-nums text-orange-700 dark:text-orange-200">{Number(userData.currentStreak || 0).toLocaleString()}</p>
+                        <p className="text-[10px] font-bold text-orange-800/80 dark:text-orange-100/80">{lang === 'ar' ? 'يوم متواصل' : 'days in a row'}</p>
+                      </div>
+                      <div className="rounded-2xl border border-amber-300/50 bg-gradient-to-br from-amber-50 to-yellow-100 px-3 py-3 text-center dark:from-amber-950/50 dark:to-yellow-950/40">
+                        <p className="text-[10px] font-black uppercase tracking-wide text-amber-900 dark:text-amber-200">{lang === 'ar' ? 'أفضل مواظبة' : 'Personal best'}</p>
+                        <p className="mt-1 text-3xl font-black tabular-nums text-amber-800 dark:text-amber-200">{Number(userData.longestStreak || 0).toLocaleString()}</p>
+                        <p className="text-[10px] font-bold text-amber-900/80 dark:text-amber-100/80">{lang === 'ar' ? 'أطول سلسلة أيام' : 'longest streak'}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-1.5">
+                      {[
+                        { value: userData.points, label: lang === 'ar' ? 'النقاط' : 'Points' },
+                        { value: followersCount, label: lang === 'ar' ? 'المتابعون' : 'Followers' },
+                        { value: followingCount, label: lang === 'ar' ? 'يتابع' : 'Following' }
+                      ].map((stat, index) => <div key={index} className="min-w-0 rounded-xl bg-[var(--surface-secondary)]/70 px-1 py-2 text-center">
+                        <p className="truncate text-base font-black tabular-nums text-[var(--mousa-teal)] dark:text-[var(--mousa-teal-glow)]">{Number(stat.value || 0).toLocaleString()}</p>
+                        <p className="truncate text-[9px] font-black text-[var(--text-muted)]">{stat.label}</p>
+                      </div>)}
+                    </div>
                   </div>
 
                   {/* Active Screen / Study Time */}

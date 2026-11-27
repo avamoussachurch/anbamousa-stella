@@ -251,7 +251,19 @@ function FeedPreview({
               <span className="truncate">{post.authorName}</span>
               <span className="ms-auto flex shrink-0 items-center gap-1 text-[10px] text-slate-400"><MessageCircle size={12} />{post.comments.length}</span>
             </span>
-            <span className="mt-3 line-clamp-2 block text-sm leading-relaxed text-slate-100">{post.content}</span>
+            {post.attachments?.[0] && (
+              <span className="mt-3 block overflow-hidden rounded-xl border border-white/10 bg-[#0B1B25]">
+                {['image','video','youtube'].includes(post.attachments[0].mediaType) ? (
+                  <img src={post.attachments[0].mediaThumbnail || post.attachments[0].mediaUrl} alt="" loading="lazy" className="max-h-40 w-full object-cover"/>
+                ) : (
+                  <span className="flex items-center gap-2 px-3 py-3 text-xs font-bold text-[#B9E4DE]">
+                    {post.attachments[0].mediaType === 'audio' ? '♫' : '↗'}
+                    {isArabic ? (post.attachments[0].mediaType === 'audio' ? 'تسجيل صوتي' : 'مرفق') : (post.attachments[0].mediaType === 'audio' ? 'Voice recording' : 'Attachment')}
+                  </span>
+                )}
+              </span>
+            )}
+            <span className="mt-3 line-clamp-4 block text-sm leading-relaxed text-slate-100">{post.content}</span>
           </button>
         ))}
       </div>
@@ -290,12 +302,12 @@ export function StudentAdventureHome({
       <motion.section
         initial={reduceMotion ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="stella-adventure-hero relative isolate min-h-[360px] overflow-hidden rounded-[2rem] border border-[#34505E] bg-[#0A1925] px-5 py-6 text-white shadow-[0_24px_65px_-38px_rgba(0,0,0,.65)] sm:min-h-[410px] sm:px-9 sm:py-8"
+        className="stella-adventure-hero relative isolate min-h-[300px] overflow-hidden rounded-[2rem] border border-[#34505E] bg-[#0A1925] px-5 py-6 text-white shadow-[0_24px_65px_-38px_rgba(0,0,0,.65)] sm:min-h-[360px] sm:px-9 sm:py-8"
       >
         <AdventureStars reduceMotion={Boolean(reduceMotion)} />
         <motion.span aria-hidden="true" className="pointer-events-none absolute end-[12%] top-[18%] z-[3] text-2xl drop-shadow-[0_0_12px_rgba(245,217,140,.75)] sm:end-[18%] sm:top-[20%]" animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-4, 4, -4] }} transition={reduceMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}>🏮</motion.span>
         <div aria-hidden="true" className="absolute -end-14 -top-24 h-72 w-72 rounded-full bg-[#E7B956]/15 blur-[75px]" />
-        <svg aria-hidden="true" viewBox="0 0 900 430" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full opacity-100" style={isArabic ? { transform: 'scaleX(-1)' } : undefined}>
+        <svg aria-hidden="true" viewBox="0 0 900 430" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full opacity-100">
           <defs>
             <linearGradient id="anbaSky" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#123E56"/><stop offset=".58" stopColor="#277A82"/><stop offset="1" stopColor="#E7B96C"/></linearGradient>
             <linearGradient id="anbaStone" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#F7E6C5"/><stop offset="1" stopColor="#C9A879"/></linearGradient>

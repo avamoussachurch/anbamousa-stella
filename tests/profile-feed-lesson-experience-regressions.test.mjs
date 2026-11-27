@@ -97,3 +97,33 @@ test('lesson attribution resolves a servant display name and published servant v
   assert.match(migration, /approved_servant_name.*!~\*/);
   assert.match(migration, /profile\.name/);
 });
+
+
+test('active screen time survives authenticated refresh and syncs more frequently', () => {
+  const auth = read('../src/context/AuthContext.tsx');
+  assert.match(auth, /screen_time_today_seconds, screen_time_date/);
+  assert.match(auth, /screenTimeDate: getCairoDateString\(\)/);
+  assert.match(auth, /screenTimeSeconds: Math\.max\(/);
+  assert.match(auth, /cachedAuthUser\.screenTimeTodaySeconds/);
+  assert.match(auth, /screenTimeSyncTicksRef\.current % 3 === 0/);
+});
+
+test('Arabic student home illustration is not mirrored and mobile hero wastes less vertical space', () => {
+  const home = read('../src/components/student/StudentAdventureHome.tsx');
+  assert.doesNotMatch(home, /transform: 'scaleX\(-1\)'/);
+  assert.match(home, /min-h-\[300px\]/);
+  assert.match(home, /preserveAspectRatio="xMidYMid slice"/);
+  assert.match(home, /post\.attachments\?\.\[0\]/);
+});
+
+test('profile editor saves avatar crop position and public profiles render the same crop', () => {
+  const studio = read('../src/components/profile/ProfileCustomizationStudio.tsx');
+  const directory = read('../src/components/student/FeedPeopleDirectory.tsx');
+  assert.match(studio, /avatar_position_x/);
+  assert.match(studio, /avatar_position_y/);
+  assert.match(studio, /avatar_zoom/);
+  assert.match(studio, /Photo zoom|تكبير الصورة/);
+  assert.match(directory, /avatar_position_x/);
+  assert.match(directory, /avatar_position_y/);
+  assert.match(directory, /avatar_zoom/);
+});
