@@ -15729,7 +15729,7 @@ Task:
 2. Transcribe exactly what the child said into 'transcription'.
 3. For EVERY word in the target verse, evaluate whether the child pronounced it correctly ('correct'), missed it ('missing'), or approximated it ('approximate').
 4. Compute an honest accuracy percentage (0-100).
-5. If accuracy >= 70, passed is true and pointsAwarded is 100, else false and pointsAwarded 0.
+5. If accuracy >= 70, passed is true; otherwise passed is false. Do not assign or mention points. pointsAwarded must always be 0 because this activity has no durable server-side points award yet.
 6. Provide 'feedback' (a 1-2 sentence evaluation).
 7. Provide 'aiTeacherComment': An authentic, personalized Coptic Sunday School teacher comment directly referencing the exact words they pronounced, praise for their voice and spirit, or gentle correction on any word they skipped.
 
@@ -15745,7 +15745,7 @@ Return ONLY valid JSON matching this schema:
   ],
   "feedback": string,
   "aiTeacherComment": string,
-  "pointsAwarded": number
+  "pointsAwarded": 0
 }`;
 
     const parts: any[] = [{ text: prompt }];
@@ -15767,12 +15767,29 @@ Return ONLY valid JSON matching this schema:
       transcription: string;
       accuracyPercentage: number;
       passed: boolean;
+      matchedWords: string[];
+      missedWords: string[];
+      wordAnalysis?: Array<{ word: string; status: 'correct' | 'missing' | 'approximate'; spokenAs?: string }>;
       feedback: string;
       aiTeacherComment: string;
       pointsAwarded: number;
     }>(
       response?.text || "{}",
-      (d) => typeof d?.accuracyPercentage === 'number' && typeof d?.passed === 'boolean'
+      (d) =>
+        typeof d?.transcription === 'string' &&
+        typeof d?.accuracyPercentage === 'number' &&
+        Number.isFinite(d.accuracyPercentage) &&
+        d.accuracyPercentage >= 0 && d.accuracyPercentage <= 100 &&
+        typeof d?.passed === 'boolean' &&
+        Array.isArray(d?.matchedWords) && d.matchedWords.every((word: unknown) => typeof word === 'string') &&
+        Array.isArray(d?.missedWords) && d.missedWords.every((word: unknown) => typeof word === 'string') &&
+        typeof d?.feedback === 'string' &&
+        typeof d?.aiTeacherComment === 'string' &&
+        (d?.wordAnalysis === undefined || (
+          Array.isArray(d.wordAnalysis) &&
+          d.wordAnalysis.every((item: any) => item && typeof item.word === 'string' &&
+            ['correct', 'missing', 'approximate'].includes(item.status))
+        ))
     );
 
     if (!parsed.success) {
@@ -15784,7 +15801,7 @@ Return ONLY valid JSON matching this schema:
       });
     }
 
-    return res.json(parsed.data);
+    return res.json({ ...parsed.data, pointsAwarded: 0 });
   } catch (error: any) {
     return handleGeminiError(error, res, "Failed to evaluate verse recital");
   } finally {

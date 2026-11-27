@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, CheckCircle2, RotateCcw, Sparkles, Volume2, X, Award, AlertCircle, MessageSquareQuote, Check, BookCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useAuth } from '../../context/AuthContext';
-import { awardPoints } from '../../lib/pointsService';
+import { getLocalizedErrorMessage } from '../../lib/localizedErrors';
 import { Language } from '../../types';
 
 interface VerseRecitalModalProps {
@@ -35,10 +34,10 @@ interface VerificationResult {
   feedback: string;
   aiTeacherComment?: string;
   pointsAwarded: number;
+  verificationUnavailable?: boolean;
 }
 
 export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseRecitalModalProps) {
-  const { userData, updateUserData } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -162,46 +161,47 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
       formData.append('transcript', liveTranscript);
       formData.append('lang', lang);
 
+      setAudioError(null);
       const res = await fetch('/api/verify-verse-recital', {
         method: 'POST',
         body: formData,
       });
 
+      const responseData = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error('Failed to verify recital');
+        throw new Error(responseData?.message || responseData?.error || `Recital verification failed (HTTP ${res.status}).`);
+      }
+      if (!responseData || typeof responseData.passed !== 'boolean' || !Number.isFinite(responseData.accuracyPercentage)) {
+        throw new Error('The verification service returned an incomplete result.');
       }
 
-      const evalData: VerificationResult = await res.json();
+      const evalData: VerificationResult = responseData;
+      // The AI endpoint currently verifies the recital but does not persist point
+      // awards. Never display model-suggested points as if they were saved.
+      evalData.pointsAwarded = 0;
       setResult(evalData);
-
-      // If passed and user is logged in, award points automatically!
-      if (evalData.passed && userData) {
-        const updated = awardPoints(userData.id, 100, `تسميع آية الأسبوع (${targetVerse.referenceAr})`);
-        updateUserData(updated);
-      }
     } catch (err: any) {
       console.error("Evaluation error:", err);
-      // Construct a word-level realistic analysis
       const words = activeTargetText.split(' ').filter(Boolean);
+      setAudioError(lang === 'ar'
+        ? 'مش قادرين نتحقق من التسميع دلوقتي. مفيش نقاط اتضافت. جرّب تاني.'
+        : getLocalizedErrorMessage(err, lang));
       setResult({
-        transcription: liveTranscript || activeTargetText,
-        accuracyPercentage: 88,
-        passed: true,
-        matchedWords: words,
+        transcription: '',
+        accuracyPercentage: 0,
+        passed: false,
+        matchedWords: [],
         missedWords: [],
-        wordAnalysis: words.map(w => ({ word: w, status: 'correct' })),
-        feedback: lang === 'ar' 
-          ? 'تسميع رائع ومجهود ممتاز في حفظ آية الكتاب المقدس! ربنا يباركك.' 
-          : 'Wonderful recital and great effort memorizing Scripture! God bless you.',
+        wordAnalysis: [],
+        verificationUnavailable: true,
+        feedback: lang === 'ar'
+          ? 'تعذر مراجعة التسجيل بسبب مشكلة في خدمة التحقق. جرّب تاني لما الخدمة تشتغل.'
+          : 'The recital could not be verified because the review service is unavailable. Please try again.',
         aiTeacherComment: lang === 'ar'
-          ? 'برافو عليك يا بطل! نطقت كلمات الآية بصوت واضح وجميل. كمّل حفظ كلام ربنا وخليه نور لطريقك.'
-          : 'Splendid recital! Your voice sounded clear and confident. Keep hiding God\'s word in your heart!',
-        pointsAwarded: 100
+          ? 'تسجيلك ما اتراجعش لسه. جرّب تاني، ومش هتتحسب أي نقاط من غير مراجعة مؤكدة.'
+          : 'Your recording has not been reviewed yet. Please try again; points are only awarded after a confirmed review.',
+        pointsAwarded: 0
       });
-      if (userData) {
-        const updated = awardPoints(userData.id, 100, `تسميع آية الأسبوع (${targetVerse.referenceAr})`);
-        updateUserData(updated);
-      }
     } finally {
       setIsEvaluating(false);
     }
@@ -335,16 +335,18 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
 
               <div className="flex items-center justify-center gap-2">
                 <span className={`text-3xl font-extrabold ${result.passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                  {result.accuracyPercentage}%
+                  {result.verificationUnavailable ? (lang === 'ar' ? 'غير متحقق' : 'Not verified') : `${result.accuracyPercentage}%`}
                 </span>
                 <span className="text-xs uppercase font-bold text-gray-400">
-                  {lang === 'ar' ? 'نسبة الدقة' : 'Accuracy'}
+                  {result.verificationUnavailable ? (lang === 'ar' ? 'حالة المراجعة' : 'Review status') : (lang === 'ar' ? 'نسبة الدقة' : 'Accuracy')}
                 </span>
               </div>
               <h4 className="text-lg font-bold mt-1 text-[var(--color-church-blue)] dark:text-amber-200">
-                {result.passed 
-                  ? (lang === 'ar' ? '🎉 حفظت الآية بإتقان! مبروك يا بطل!' : '🎉 Mastered! Outstanding Job!') 
-                  : (lang === 'ar' ? 'كنت قريب جدًا! راجع الكلمات وجرّب تاني.' : 'Almost there! Review and try again')}
+                {result.verificationUnavailable
+                  ? (lang === 'ar' ? 'التسميع ما اتراجعش لسه' : 'Recital not verified yet')
+                  : result.passed
+                    ? (lang === 'ar' ? '🎉 حفظت الآية بإتقان! مبروك يا بطل!' : '🎉 Mastered! Outstanding Job!')
+                    : (lang === 'ar' ? 'كنت قريب جدًا! راجع الكلمات وجرّب تاني.' : 'Almost there! Review and try again')}
               </h4>
             </div>
 
@@ -373,52 +375,56 @@ export function VerseRecitalModal({ isOpen, onClose, targetVerse, lang }: VerseR
               </div>
             )}
 
-            {/* WORD-BY-WORD ACCURACY BREAKDOWN */}
-            <div className="p-3.5 bg-gray-50 dark:bg-slate-800/60 rounded-2xl border border-gray-100 dark:border-slate-700 text-start">
-              <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block mb-2.5">
-                {lang === 'ar' ? 'مراجعة كل كلمة في الآية:' : 'Word-by-Word Evaluation:'}
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {result.wordAnalysis && result.wordAnalysis.length > 0 ? (
-                  result.wordAnalysis.map((item, idx) => (
-                    <span 
-                      key={idx}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold ${
-                        item.status === 'correct'
-                          ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300/60'
-                          : item.status === 'approximate'
-                            ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-300/60'
-                            : 'bg-red-50 dark:bg-red-950/80 text-[var(--color-church-burgundy)] dark:text-red-300 border border-red-200 dark:border-red-900/60 line-through'
-                      }`}
-                    >
-                      {item.status === 'correct' && <Check size={12} />}
-                      <span>{item.word}</span>
-                      {item.spokenAs && item.status === 'approximate' && (
-                        <span className="text-[10px] opacity-75 font-normal">({item.spokenAs})</span>
-                      )}
-                    </span>
-                  ))
-                ) : (
-                  <>
-                    {result.matchedWords.map((word, idx) => (
-                      <span key={idx} className="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 text-xs font-medium border border-emerald-200">
-                        ✓ {word}
+            {!result.verificationUnavailable && (
+              <>
+                {/* WORD-BY-WORD ACCURACY BREAKDOWN */}
+              <div className="p-3.5 bg-gray-50 dark:bg-slate-800/60 rounded-2xl border border-gray-100 dark:border-slate-700 text-start">
+                <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block mb-2.5">
+                  {lang === 'ar' ? 'مراجعة كل كلمة في الآية:' : 'Word-by-Word Evaluation:'}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {result.wordAnalysis && result.wordAnalysis.length > 0 ? (
+                    result.wordAnalysis.map((item, idx) => (
+                      <span 
+                        key={idx}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold ${
+                          item.status === 'correct'
+                            ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300/60'
+                            : item.status === 'approximate'
+                              ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-300/60'
+                              : 'bg-red-50 dark:bg-red-950/80 text-[var(--color-church-burgundy)] dark:text-red-300 border border-red-200 dark:border-red-900/60 line-through'
+                        }`}
+                      >
+                        {item.status === 'correct' && <Check size={12} />}
+                        <span>{item.word}</span>
+                        {item.spokenAs && item.status === 'approximate' && (
+                          <span className="text-[10px] opacity-75 font-normal">({item.spokenAs})</span>
+                        )}
                       </span>
-                    ))}
-                    {result.missedWords.map((word, idx) => (
-                      <span key={idx} className="px-2.5 py-1 rounded-xl bg-red-50 dark:bg-red-950/80 text-[var(--color-church-burgundy)] dark:text-red-300 text-xs font-medium line-through border border-red-200 dark:border-red-900/60">
-                        {word}
-                      </span>
-                    ))}
-                  </>
-                )}
+                    ))
+                  ) : (
+                    <>
+                      {result.matchedWords.map((word, idx) => (
+                        <span key={idx} className="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 text-xs font-medium border border-emerald-200">
+                          ✓ {word}
+                        </span>
+                      ))}
+                      {result.missedWords.map((word, idx) => (
+                        <span key={idx} className="px-2.5 py-1 rounded-xl bg-red-50 dark:bg-red-950/80 text-[var(--color-church-burgundy)] dark:text-red-300 text-xs font-medium line-through border border-red-200 dark:border-red-900/60">
+                          {word}
+                        </span>
+                      ))}
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+              </>
+            )}
 
-            {result.passed && (
+            {result.pointsAwarded > 0 && (
               <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-bold text-xs flex items-center justify-center gap-2">
                 <Sparkles size={16} />
-                <span>{lang === 'ar' ? 'اتضافت ١٠٠ نقطة لحسابك على Supabase!' : '+100 Points added to your Church profile in Supabase!'}</span>
+                <span>{lang === 'ar' ? `اتضافت ${result.pointsAwarded} نقطة لحسابك على Supabase!` : `+${result.pointsAwarded} points added to your Church profile in Supabase!`}</span>
               </div>
             )}
 
