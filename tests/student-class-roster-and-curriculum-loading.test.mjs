@@ -44,8 +44,10 @@ test('student roadmap has illustrated scenery, an animated active quest, and ani
   assert.match(roadmap, /DESERT_WAYPOINTS/);
 });
 
-test('student welcome hero includes the completed illustrated journey figure', () => {
-  assert.match(studentHome, /translate\(710 252\)/);
+test('student welcome hero is an illustrated Anba Mousa church courtyard with a lantern-lit path', () => {
+  assert.match(studentHome, /Anba Mousa church courtyard/);
+  assert.match(studentHome, /processional path/);
+  assert.match(studentHome, /palm silhouettes/);
   assert.match(studentHome, /aria-hidden="true"/);
   assert.match(studentHome, /F5D98C/);
 });
