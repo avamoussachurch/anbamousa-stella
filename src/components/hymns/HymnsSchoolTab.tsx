@@ -442,7 +442,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
         waveformContextRef.current = null;
       }
       setIsRecordingPractice(false);
-      setPracticeRecordingError(getLocalizedErrorMessage(err, lang));
+      setPracticeRecordingError(getLocalizedErrorMessage(err instanceof Error && err.message ? err : 'Could not access the microphone. Check browser permissions.', lang));
     }
   };
 
