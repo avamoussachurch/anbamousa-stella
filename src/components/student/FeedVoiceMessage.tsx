@@ -18,9 +18,12 @@ export function FeedVoiceMessage({ src, lang }: Props) {
   const [playbackRate, setPlaybackRate] = useState(1);
   const [waveformLevels, setWaveformLevels] = useState<number[]>(() => Array(48).fill(5));
 
+  const waveformRequestedRef = useRef(false);
+  const waveformCancelledRef = useRef(false);
+
   useEffect(() => {
-    let cancelled = false;
-    let context: AudioContext | null = null;
+    waveformRequestedRef.current = false;
+    waveformCancelledRef.current = false;
     setWaveformLevels(Array(48).fill(5));
     setPlaying(false);
     setCurrent(0);
@@ -33,48 +36,47 @@ export function FeedVoiceMessage({ src, lang }: Props) {
       audioRef.current.playbackRate = 1;
     }
 
-    // Decode the actual uploaded recording and sample its amplitude into timeline bars.
-    // If the host blocks waveform decoding with CORS, playback still works normally.
-    if (typeof window !== 'undefined' && 'AudioContext' in window) {
-      void fetch(src, { mode: 'cors' })
-        .then(response => {
-          if (!response.ok) throw new Error('Waveform source unavailable');
-          return response.arrayBuffer();
-        })
-        .then(buffer => {
-          if (cancelled) return null;
-          context = new AudioContext();
-          return context.decodeAudioData(buffer.slice(0));
-        })
-        .then(decoded => {
-          if (!decoded || cancelled) return;
-          const channel = decoded.getChannelData(0);
-          const count = 48;
-          const levels = Array.from({ length: count }, (_, index) => {
-            const start = Math.floor(index * channel.length / count);
-            const end = Math.max(start + 1, Math.floor((index + 1) * channel.length / count));
-            let energy = 0;
-            let peak = 0;
-            for (let sample = start; sample < end; sample += 1) {
-              const amplitude = Math.abs(channel[sample] || 0);
-              energy += amplitude * amplitude;
-              peak = Math.max(peak, amplitude);
-            }
-            const rms = Math.sqrt(energy / Math.max(1, end - start));
-            return Math.max(4, Math.min(34, Math.round(4 + Math.max(rms * 42, peak * 15))));
-          });
-          setWaveformLevels(levels);
-        })
-        .catch(() => {
-          // Keep a neutral waveform rather than fabricating audio peaks.
-        });
-    }
-
     return () => {
-      cancelled = true;
-      if (context) void context.close().catch(() => {});
+      waveformCancelledRef.current = true;
     };
   }, [src]);
+
+  // Only fetch and decode the full recording after the user chooses to play it.
+  // Fetching every visible voice post on mount duplicates media transfer and wastes egress.
+  const loadWaveformOnDemand = async () => {
+    if (waveformRequestedRef.current || typeof window === 'undefined' || !('AudioContext' in window)) return;
+    waveformRequestedRef.current = true;
+    let context: AudioContext | null = null;
+    try {
+      const response = await fetch(src, { mode: 'cors' });
+      if (!response.ok) throw new Error('Waveform source unavailable');
+      const buffer = await response.arrayBuffer();
+      if (waveformCancelledRef.current) return;
+      context = new AudioContext();
+      const decoded = await context.decodeAudioData(buffer.slice(0));
+      if (waveformCancelledRef.current) return;
+      const channel = decoded.getChannelData(0);
+      const count = 48;
+      const levels = Array.from({ length: count }, (_, index) => {
+        const start = Math.floor(index * channel.length / count);
+        const end = Math.max(start + 1, Math.floor((index + 1) * channel.length / count));
+        let energy = 0;
+        let peak = 0;
+        for (let sample = start; sample < end; sample += 1) {
+          const amplitude = Math.abs(channel[sample] || 0);
+          energy += amplitude * amplitude;
+          peak = Math.max(peak, amplitude);
+        }
+        const rms = Math.sqrt(energy / Math.max(1, end - start));
+        return Math.max(4, Math.min(34, Math.round(4 + Math.max(rms * 42, peak * 15))));
+      });
+      setWaveformLevels(levels);
+    } catch {
+      // Keep a neutral waveform rather than fabricating audio peaks.
+    } finally {
+      if (context) void context.close().catch(() => {});
+    }
+  };
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = playbackRate;
@@ -84,6 +86,7 @@ export function FeedVoiceMessage({ src, lang }: Props) {
     const audio = audioRef.current;
     if (!audio || failed) return;
     if (audio.paused) {
+      void loadWaveformOnDemand();
       try { await audio.play(); } catch { setFailed(true); }
     } else {
       audio.pause();
