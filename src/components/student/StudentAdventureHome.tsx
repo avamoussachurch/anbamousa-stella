@@ -314,7 +314,7 @@ export function StudentAdventureHome({
           <path d="M344 187L585 115L827 187Z" fill="#E7CB9B" stroke="#FBEBCB" strokeWidth="4" strokeLinejoin="round"/>
           <path d="M493 147V95Q493 70 518 70H652Q677 70 677 95V147Z" fill="#DCC194" stroke="#FBEBCB" strokeWidth="4"/>
           <path d="M511 79Q585 5 659 79V99H511Z" fill="#24707A" stroke="#FBEBCB" strokeWidth="4"/>
-          <path d="M585 5V-15M575 -5H595" stroke="#F7D98C" strokeWidth="7" strokeLinecap="round"/>
+          <path d="M585 28V5M575 16H595" stroke="#F7D98C" strokeWidth="7" strokeLinecap="round"/>
           <path d="M380 172V119Q380 92 406 92H439Q465 92 465 119V172Z" fill="#D8BD91" stroke="#FBEBCB" strokeWidth="4"/>
           <path d="M389 104Q422 55 456 104V120H389Z" fill="#1F6976" stroke="#FBEBCB" strokeWidth="4"/>
           <path d="M736 172V119Q736 92 762 92H795Q821 92 821 119V172Z" fill="#D8BD91" stroke="#FBEBCB" strokeWidth="4"/>
@@ -342,7 +342,7 @@ export function StudentAdventureHome({
           <div className="max-w-2xl sm:max-w-[min(58%,42rem)]">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#79CDD0]/25 bg-[#14313D]/80 px-3 py-1.5 text-[11px] font-black text-[#A7DCD7] backdrop-blur">
               <Sparkles size={13} className="text-[#F5D98C]" />
-              {isArabic ? 'مغامرتك التعليمية بتبدأ من هنا' : 'Your next chapter starts here'}
+              {isArabic ? 'أبواب الكنيسة مفتوحة ليك' : 'The church courtyard is open'}
             </span>
             {isGuest && (
               <span className="ms-2 inline-flex items-center rounded-full border border-[#E5B85F]/35 bg-[#392F1E]/80 px-3 py-1.5 text-[10px] font-extrabold text-[#F5D98C]">
@@ -355,8 +355,8 @@ export function StudentAdventureHome({
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#D1E0E2] sm:text-base">
               {isArabic
-                ? 'خطوة ورا خطوة، اكتشف حكايات الإيمان وكمّل رحلتك مع الأنبا موسى.'
-                : 'Follow the lanterns, discover stories of faith, and walk the path of St. Moses.'}
+                ? 'أبواب الكنيسة مفتوحة ليك. امشي ورا نور الفوانيس، واكتشف حكايات الإيمان، وكمل رحلتك مع الأنبا موسى.'
+                : 'The church gates are open. Follow the lantern-lit path, uncover stories of faith, and grow with St. Moses.'}
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <button type="button" onClick={() => openPointsView('leaderboard')} aria-label={isArabic ? 'افتح ترتيب النقاط' : 'Open points leaderboard'} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#E5B85F]/30 bg-[#172B36]/90 px-3.5 text-xs font-extrabold text-[#F5D98C] shadow-lg transition hover:bg-[#243D48] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5D98C]">
