@@ -148,7 +148,7 @@ test('community reports are private, staff-scoped, actionable, and hidden posts 
   assert.match(migration, /review_feed_post_report/);
   assert.match(migration, /is_hidden = true/);
   assert.match(feedService, /\.eq\('is_hidden', false\)/);
-  const submitMigration = readFileSync(new URL('../supabase/migrations/202611190004_feed_post_reports_rpc_submit.sql', import.meta.url), 'utf8');
+  const submitMigration = readFileSync(new URL('../supabase/migrations/20261127155116_feed_post_reports_rpc_submit.sql', import.meta.url), 'utf8');
   assert.match(feedService, /feed_posts!inner\(is_hidden\)/);
   assert.match(submitMigration, /public\.has_role\('student'\)/);
   assert.match(submitMigration, /REVOKE INSERT ON public\.feed_post_reports/);
