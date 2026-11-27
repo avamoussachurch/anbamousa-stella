@@ -4,6 +4,7 @@ import { Maximize2, Pause, Play, Volume2, VolumeX, RotateCcw, RotateCw } from 'l
 type FeedVideoPlayerProps = {
   src: string;
   title?: string;
+  poster?: string;
   lang?: 'ar' | 'en';
   onError?: () => void;
 };
@@ -14,7 +15,7 @@ function formatTime(seconds: number) {
   return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0');
 }
 
-export function FeedVideoPlayer({ src, title, lang = 'en', onError }: FeedVideoPlayerProps) {
+export function FeedVideoPlayer({ src, title, poster, lang = 'en', onError }: FeedVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [aspectRatio, setAspectRatio] = useState(9 / 16);
@@ -118,6 +119,7 @@ export function FeedVideoPlayer({ src, title, lang = 'en', onError }: FeedVideoP
           <video
             ref={videoRef}
             src={src}
+            poster={poster || undefined}
             controls={false}
             playsInline
             preload="metadata"
