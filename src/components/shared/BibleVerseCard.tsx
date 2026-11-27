@@ -68,38 +68,53 @@ export function BibleVerseCard({ lang }: { lang: Language }) {
   const isCoptic = lang === 'cop' || lang === 'copt';
 
   return (
-    <>
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-amber-950 p-5 rounded-3xl shadow-sm relative overflow-hidden min-h-[140px]"
-      >
-        <div className="absolute -right-4 -top-4 opacity-15 pointer-events-none">
-          <BookOpen size={110} />
-        </div>
+    <motion.div
+      initial={{ opacity: 0, y: 18, scale: 0.985 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+      className="stella-verse-card relative isolate min-h-[230px] overflow-hidden rounded-[1.75rem] border p-5 shadow-[0_18px_45px_rgba(20,65,74,.12)] sm:p-7"
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+    >
+      <div aria-hidden="true" className="pointer-events-none absolute -end-10 -top-16 h-64 w-64 rounded-full bg-[#F2C86D]/35 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 start-1/4 h-48 w-48 rounded-full bg-[#73C9BD]/25 blur-3xl" />
+      <svg aria-hidden="true" viewBox="0 0 260 250" className="pointer-events-none absolute -end-3 bottom-0 h-[92%] w-[46%] max-w-[250px] opacity-75 sm:end-5 sm:w-[34%]">
+        <defs>
+          <linearGradient id="verseGlass" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#F7D98A"/><stop offset=".52" stopColor="#66B9B2"/><stop offset="1" stopColor="#2B7380"/></linearGradient>
+          <linearGradient id="verseStone" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#FFF7E5"/><stop offset="1" stopColor="#C9DED6"/></linearGradient>
+        </defs>
+        <path d="M32 250V100Q32 16 130 8Q228 16 228 100V250Z" fill="url(#verseStone)" opacity=".8"/>
+        <path d="M53 250V106Q53 37 130 28Q207 37 207 106V250Z" fill="#1C5965" opacity=".92"/>
+        <path d="M72 250V109Q72 55 130 47Q188 55 188 109V250Z" fill="url(#verseGlass)"/>
+        <path d="M130 48V250M72 142H188" stroke="#F9E8BD" strokeWidth="5" opacity=".9"/>
+        <path d="M130 76V117M112 95H148" stroke="#FFF1C8" strokeWidth="7" strokeLinecap="round"/>
+        <path d="M91 250V190Q91 160 112 160Q130 160 130 184Q130 160 148 160Q169 160 169 190V250" fill="#F4D58E" opacity=".75"/>
+        <circle cx="130" cy="108" r="76" fill="none" stroke="#F8E6BB" strokeWidth="3" opacity=".55"/>
+        <path d="M12 250H248" stroke="#A77B45" strokeWidth="6" strokeLinecap="round"/>
+        <g fill="#F5D98C"><circle cx="20" cy="80" r="3"/><circle cx="238" cy="57" r="3"/><circle cx="222" cy="160" r="2"/></g>
+      </svg>
 
-        <div className="relative z-10 flex flex-col gap-2">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-amber-950">
-              <BookOpen size={16} />
-              <span>{lang === 'ar' ? 'آية النهارده للحفظ والتأمل' : 'Verse of the Day'}</span>
-            </div>
-          </div>
-
+      <div className="relative z-10 max-w-[72%] sm:max-w-[70%]">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl border border-white/70 bg-white/65 text-[#246E75] shadow-sm">
+            <BookOpen size={19} />
+          </span>
           <div>
-            <p className="font-bold leading-relaxed text-base sm:text-lg italic text-amber-950">
-              "{lang === 'ar' ? verse.ar : isCoptic ? (verse.copt || verse.ar) : verse.en}"
-            </p>
-            <span className="inline-block mt-1 font-extrabold text-xs text-amber-900">
-              ({lang === 'ar' ? verse.referenceAr : isCoptic ? (verse.referenceCopt || verse.referenceAr) : verse.referenceEn})
-            </span>
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-amber-900/15 pt-2 text-[9px] font-bold text-amber-950/75">
-              <a href="https://ebible.org/arb-vd/" target="_blank" rel="noreferrer" className="underline underline-offset-2">{lang === 'ar' ? 'النص العربي: فان دايك' : 'Arabic text: Van Dyck'}</a>
-              <a href="https://st-takla.org/Bibles/BibleSearch/" target="_blank" rel="noreferrer" className="underline underline-offset-2">{lang === 'ar' ? 'اقرأ التفاسير القبطية في الأنبا تكلا' : 'Coptic Orthodox study at St-Takla'}</a>
-            </div>
+            <p className="text-[10px] font-black uppercase tracking-[.2em] text-[#28777B]">{lang === 'ar' ? 'من كنوز الكتاب المقدس' : 'A little light for today'}</p>
+            <h2 className="text-base font-black text-[#173F4B]">{lang === 'ar' ? 'آية اليوم' : 'Verse of the Day'}</h2>
           </div>
+          <Sparkles size={17} className="ms-auto text-[#B47C2D]" />
         </div>
-      </motion.div>
-    </>
+        <p className="text-base font-extrabold leading-[1.8] text-[#173F4B] sm:text-lg">
+          “{lang === 'ar' ? verse.ar : isCoptic ? (verse.copt || verse.ar) : verse.en}”
+        </p>
+        <span className="mt-2 inline-flex rounded-full border border-[#B68A4A]/25 bg-white/55 px-3 py-1 text-[11px] font-black text-[#805B2F]">
+          {lang === 'ar' ? verse.referenceAr : isCoptic ? (verse.referenceCopt || verse.referenceAr) : verse.referenceEn}
+        </span>
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-[#2D7475]/15 pt-3 text-[10px] font-bold text-[#426B6D]">
+          <a href="https://ebible.org/arb-vd/" target="_blank" rel="noreferrer" className="underline underline-offset-2">{lang === 'ar' ? 'النص العربي: فان دايك' : 'Arabic text: Van Dyck'}</a>
+          <a href="https://st-takla.org/Bibles/BibleSearch/" target="_blank" rel="noreferrer" className="underline underline-offset-2">{lang === 'ar' ? 'تفاسير الأنبا تكلا' : 'Coptic Orthodox study'}</a>
+        </div>
+      </div>
+    </motion.div>
   );
 }
