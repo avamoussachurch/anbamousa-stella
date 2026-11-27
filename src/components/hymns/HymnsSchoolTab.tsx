@@ -287,7 +287,7 @@ export function HymnsSchoolTab({ lang }: { lang: Language }) {
       setResolvedSheetMusicUrl(freshUrl);
       setShowSheetMusicViewer(true);
     } catch (error) {
-      setSheetMusicUrlError(error instanceof Error ? error.message : 'PDF could not be opened.');
+      setSheetMusicUrlError(getLocalizedErrorMessage(error, lang));
     } finally {
       setIsResolvingSheetMusic(false);
     }
