@@ -43,5 +43,8 @@ test('verse recital server never trusts model-generated point awards', async () 
   const route = server.slice(start, end);
 
   assert.match(route, /pointsAwarded must always be 0/);
+  assert.match(route, /Array\.isArray\(d\?\.matchedWords\)/);
+  assert.match(route, /Array\.isArray\(d\?\.missedWords\)/);
+  assert.match(route, /d\.accuracyPercentage >= 0 && d\.accuracyPercentage <= 100/);
   assert.match(route, /return res\.json\(\{ \.\.\.parsed\.data, pointsAwarded: 0 \}\)/);
 });
