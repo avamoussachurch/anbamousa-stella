@@ -810,14 +810,14 @@ export const SundaySchoolLessonView: React.FC<SundaySchoolLessonViewProps> = ({
           )}
 
           {/* Review Quiz button: ONLY IF QUIZ EXISTS */}
-          {hasQuiz && (!readOnly || previewMode) && (
+          {hasQuiz && previewMode && (
             <button
               onClick={onStartQuiz}
-              data-testid="lesson-footer-start-quiz-button"
+              data-testid="lesson-footer-preview-quiz-button"
               className="px-6 py-3 bg-gradient-to-r from-amber-500 via-[var(--mousa-gold)] to-[var(--mousa-coral)] hover:brightness-110 text-white border-2 border-amber-300/40 rounded-2xl text-xs sm:text-sm font-black shadow-md ring-2 ring-amber-400/30 flex items-center gap-2 transition-all active:scale-95 cursor-pointer min-h-[48px]"
             >
               <Sparkles className="w-4 h-4 text-yellow-200" />
-              <span>{previewMode ? (isAr ? 'عاين اختبار المراجعة ⚡' : 'Preview Review Quiz') : (isAr ? 'ابدأ اختبار المراجعة ⚡' : 'Start Review Quiz')}</span>
+              <span>{isAr ? 'عاين اختبار المراجعة ⚡' : 'Preview Review Quiz'}</span>
               {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
           )}
