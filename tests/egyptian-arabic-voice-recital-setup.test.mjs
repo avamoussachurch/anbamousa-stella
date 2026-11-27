@@ -28,7 +28,10 @@ test('verse recital verification failures never create a passing result or award
   assert.doesNotMatch(recital, /awardPoints/);
   assert.match(catchBlock, /passed: false/);
   assert.match(catchBlock, /pointsAwarded: 0/);
+  assert.match(catchBlock, /verificationUnavailable: true/);
   assert.match(catchBlock, /setAudioError\(/);
   assert.doesNotMatch(catchBlock, /passed: true/);
   assert.match(recital, /evalData\.pointsAwarded = 0/);
+  assert.match(recital, /result\.pointsAwarded > 0/);
+  assert.match(recital, /result\.verificationUnavailable \? \(lang === 'ar' \? 'غير متحقق' : 'Not verified'\)/);
 });
