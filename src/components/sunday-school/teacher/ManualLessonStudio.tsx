@@ -698,13 +698,13 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
           </div>
 
           {/* Core Action Buttons */}
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          <div className="flex w-full flex-wrap items-stretch gap-2.5 sm:w-auto sm:justify-end">
             {/* Save Draft */}
             <button
               type="button"
-              disabled={isSaving}
+              disabled={isSaving || isUploadingMedia}
               onClick={handleSaveDraft}
-              className="px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              className="min-h-11 min-w-0 flex-1 justify-center px-3 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer disabled:opacity-50 sm:flex-none"
             >
               <Save className="w-4 h-4 text-stone-400" />
               <span>{isAr ? 'حفظ كمسودة' : 'Save Draft'}</span>
@@ -713,9 +713,9 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
             {/* Direct 1-Click Publish to Sunday Session (Primary Golden CTA) */}
             <button
               type="button"
-              disabled={isSaving}
+              disabled={isSaving || isUploadingMedia}
               onClick={handlePublishToClass}
-              className="px-5 py-2.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              className="min-h-11 min-w-0 flex-[1.5] justify-center px-3 py-2.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all active:scale-95 cursor-pointer disabled:opacity-50 sm:flex-none"
             >
               <Sparkles className="w-4 h-4 text-stone-950 stroke-[2.5]" />
               <span>{isAr ? '🚀 نشر الدرس لحصة الأحد' : '🚀 Publish Lesson to Sunday Class'}</span>
@@ -1034,8 +1034,9 @@ export const ManualLessonStudio: React.FC<ManualLessonStudioProps> = ({
                       )}
                     </button>
 
-                    <label className="p-2.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 cursor-pointer" title="Upload Audio File">
-                      <Upload className="w-4 h-4" />
+                    <label className="flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-stone-100 px-3 py-2.5 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 cursor-pointer" title="Upload Audio File">
+                      <Upload className="w-4 h-4 shrink-0" />
+                      <span className="text-[11px] font-bold">{isAr ? 'رفع صوت' : 'Upload audio'}</span>
                       <input
                         type="file"
                         accept="audio/*"
