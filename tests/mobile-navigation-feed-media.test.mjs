@@ -70,3 +70,15 @@ test('Vimeo links stay on the provider embed path instead of being passed to the
   assert.match(vimeo, /mediaType: 'embed'/);
   assert.match(vimeo, /player\.vimeo\.com\/video/);
 });
+
+test('feed voice waveform decoding is deferred until playback to avoid eager full-file downloads', () => {
+  const voice = read('../src/components/student/FeedVoiceMessage.tsx');
+  const initialEffect = voice.slice(voice.indexOf('useEffect(() => {'), voice.indexOf('  const loadWaveformOnDemand'));
+  assert.doesNotMatch(initialEffect, /fetch\(src/);
+  assert.match(voice, /const loadWaveformOnDemand = async/);
+  assert.match(voice, /void loadWaveformOnDemand\(\)/);
+  assert.match(voice, /waveformRequestedRef\.current/);
+  assert.match(voice, /new AbortController\(\)/);
+  assert.match(voice, /waveformAbortRef\.current\?\.abort\(\)/);
+  assert.match(voice, /requestId !== waveformRequestIdRef\.current/);
+});
