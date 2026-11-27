@@ -647,17 +647,28 @@ export async function getPrayerStreakFromSupabase(
     };
   }
 
-  const { data, error } = await supabase
-    .from('agpeya_prayers')
-    .select('date, completed_hours, personal_prayer')
-    .eq('user_id', userId)
-    .order('date', { ascending: true });
+  // Supabase applies a default row limit to selects. Fetch the complete history in
+  // stable date order so long-standing prayer streaks are not silently truncated.
+  const pageSize = 1000;
+  const historyRows: any[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data: page, error } = await supabase
+      .from('agpeya_prayers')
+      .select('date, completed_hours, personal_prayer')
+      .eq('user_id', userId)
+      .order('date', { ascending: true })
+      .range(offset, offset + pageSize - 1);
 
-  if (error) {
-    return { currentStreak: 0, longestStreak: 0, isActiveToday: false, error: error.message };
+    if (error) {
+      return { currentStreak: 0, longestStreak: 0, isActiveToday: false, error: error.message };
+    }
+
+    const rows = page || [];
+    historyRows.push(...rows);
+    if (rows.length < pageSize) break;
   }
 
-  const qualifyingDays = (data || []).filter((row: any) => {
+  const qualifyingDays = historyRows.filter((row: any) => {
     const completedHours = row.completed_hours && typeof row.completed_hours === 'object'
       ? Object.values(row.completed_hours).some(Boolean)
       : false;
