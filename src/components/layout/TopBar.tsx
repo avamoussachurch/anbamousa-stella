@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Award, Bell, Cross, Flame, X, Sun, Moon, CheckCheck } from 'lucide-react';
+import { Award, Bell, Cross, Flame, X, Sun, Moon, CheckCheck, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { PWAInstallButton } from './PWAInstallButton';
 import { HelpFeedbackButton } from './HelpFeedbackButton';
@@ -26,6 +26,7 @@ import {
 interface TopBarProps {
   lang: Language;
   onHomeClick?: () => void;
+  onBack?: () => void;
   onNavigate?: (tab: string) => void;
   activeTab?: string;
   workspace?: Workspace;
@@ -35,6 +36,7 @@ interface TopBarProps {
 export function TopBar({ 
   lang, 
   onHomeClick,
+  onBack,
   onNavigate,
   activeTab,
   workspace,
@@ -133,6 +135,14 @@ export function TopBar({
     <header className="app-topbar sticky top-0 z-50 border-b shadow-md">
       <div className="max-w-7xl mx-auto flex justify-between items-center p-2.5 sm:p-4 px-2 sm:px-4 gap-2">
         
+        {activeTab && activeTab !== 'home' && (
+          <button type="button" onClick={onBack || onHomeClick} aria-label={lang === 'ar' ? 'رجوع خطوة للخلف' : 'Go back one step'}
+            title={lang === 'ar' ? 'رجوع' : 'Back'}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-[var(--navigation-text)] transition hover:bg-white/20 active:scale-95">
+            <ArrowLeft size={19}/>
+          </button>
+        )}
+
         {/* Church Brand */}
         <button
           type="button"
