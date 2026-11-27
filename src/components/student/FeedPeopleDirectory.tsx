@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Search, UserPlus, UserCheck, X, Flame, Trophy, Loader2, MessagesSquare, ArrowUpRight, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -68,6 +68,34 @@ export function FeedPeopleDirectory({ lang, initialProfileId }: { lang: 'en'|'ar
   const [loading,setLoading] = useState(false);
   const [busyId,setBusyId] = useState<string|null>(null);
   const [error,setError] = useState('');
+  const modalHistoryRef = useRef(false);
+  const openDirectory = () => {
+    setOpen(true);
+    setSelected(null);
+    if (!window.history.state?.anbaCommunityOverlay) {
+      window.history.pushState({ ...(window.history.state || {}), anbaCommunityOverlay: true, anbaCommunityProfile: false }, '', window.location.href);
+      modalHistoryRef.current = true;
+    }
+  };
+  const openProfile = (person: DirectoryProfile) => {
+    if (!window.history.state?.anbaCommunityProfile) {
+      window.history.pushState({ ...(window.history.state || {}), anbaCommunityOverlay: true, anbaCommunityProfile: true }, '', window.location.href);
+    }
+    setSelected(person);
+  };
+  const backWithinDirectory = () => {
+    if (selected && window.history.state?.anbaCommunityProfile) window.history.back();
+    else setSelected(null);
+  };
+  const closeDirectory = () => {
+    setOpen(false);
+    setSelected(null);
+    if (window.history.state?.anbaCommunityOverlay) {
+      modalHistoryRef.current = false;
+      window.history.back();
+    }
+  };
+
 
   const load = useCallback(async (search: string) => {
     if (!supabase) return;
@@ -80,9 +108,18 @@ export function FeedPeopleDirectory({ lang, initialProfileId }: { lang: 'en'|'ar
 
   useEffect(() => { if (open) void load(query); },[open,load]);
   useEffect(() => {
+    if (!open) return;
+    const handleDirectoryPop = () => {
+      if (selected) setSelected(null);
+      else { setOpen(false); modalHistoryRef.current = false; }
+    };
+    window.addEventListener('popstate', handleDirectoryPop);
+    return () => window.removeEventListener('popstate', handleDirectoryPop);
+  }, [open, selected]);
+
+  useEffect(() => {
     if (!initialProfileId) return;
-    setOpen(true);
-    setSelected(null);
+    openDirectory();
     void load('');
   }, [initialProfileId, load]);
   useEffect(() => {
@@ -106,21 +143,21 @@ export function FeedPeopleDirectory({ lang, initialProfileId }: { lang: 'en'|'ar
   };
 
   return <>
-    <button type="button" onClick={()=>{setOpen(true);setSelected(null);}} className="group inline-flex min-h-11 items-center gap-2.5 rounded-xl border-2 border-[#7C79F6]/60 bg-gradient-to-br from-[#5865F2] via-[#5059D8] to-[#3D43A8] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_22px_-10px_rgba(76,83,220,.8)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_rgba(76,83,220,.9)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8F96FF]">
+    <button type="button" onClick={openDirectory} className="group inline-flex min-h-11 items-center gap-2.5 rounded-xl border-2 border-[#7C79F6]/60 bg-gradient-to-br from-[#5865F2] via-[#5059D8] to-[#3D43A8] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_22px_-10px_rgba(76,83,220,.8)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_rgba(76,83,220,.9)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8F96FF]">
       <span className="grid h-7 w-7 place-items-center rounded-lg bg-white/15 ring-1 ring-white/20"><MessagesSquare size={17}/></span>
       <span>{ar?'مجتمعنا':'Community'}</span>
       <span className="rounded-full bg-white/15 px-2 py-1 text-[9px] font-black text-white/90">{ar?'اكتشف':'Explore'}</span>
       <ArrowUpRight size={14} className="opacity-75 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/>
     </button>
     <AnimatePresence>
-      {open && <motion.div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/60 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onMouseDown={e=>{if(e.target===e.currentTarget)setOpen(false);}}>
+      {open && <motion.div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/60 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onMouseDown={e=>{if(e.target===e.currentTarget)closeDirectory();}}>
         <motion.section dir={ar?'rtl':'ltr'} initial={{opacity:0,y:24,scale:.97}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:18,scale:.98}} className="flex max-h-[min(88dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1.5rem),780px)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.7rem] border border-[var(--mousa-border-sand)] bg-[var(--mousa-cream-surface)] shadow-2xl">
           <header className="flex items-center justify-between gap-3 border-b border-[var(--mousa-border-sand)] bg-gradient-to-r from-[var(--mousa-teal-deep)] to-[#1d6560] p-5 text-white">
             <div className="min-w-0 flex items-center gap-3">
-              {selected && <button type="button" onClick={()=>setSelected(null)} aria-label={ar?'رجوع للأعضاء':'Back to members'} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 transition hover:bg-white/20"><ArrowLeft size={19}/></button>}
+              {selected && <button type="button" onClick={backWithinDirectory} aria-label={ar?'رجوع للأعضاء':'Back to members'} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 transition hover:bg-white/20"><ArrowLeft size={19}/></button>}
               <div><p className="text-[10px] font-black uppercase tracking-[.2em] text-amber-200">{ar?'عيلة الكنيسة':'CHURCH COMMUNITY'}</p><h2 className="mt-1 text-xl font-black">{selected ? (ar?'الملف الشخصي':'Member profile') : (ar?'دليل الأعضاء':'People directory')}</h2><p className="mt-1 text-xs text-white/75">{selected ? (ar?'ده الشكل اللي بيظهر لأعضاء الكنيسة':'This is how the profile appears to church members') : (ar?'تعرّف على أعضاء مجتمع الكنيسة':'Discover and follow church community members')}</p></div>
             </div>
-            <button type="button" onClick={()=>setOpen(false)} aria-label={ar?'إغلاق':'Close'} className="rounded-xl bg-white/10 p-2 hover:bg-white/20"><X size={20}/></button>
+            <button type="button" onClick={closeDirectory} aria-label={ar?'إغلاق':'Close'} className="rounded-xl bg-white/10 p-2 hover:bg-white/20"><X size={20}/></button>
           </header>
           <div className="border-b border-[var(--mousa-border-sand)] p-4">
             <label className="flex items-center gap-2 rounded-xl border border-[var(--mousa-border-sand)] bg-white/70 px-3 py-2.5 dark:bg-stone-900"><Search size={17} className="text-[var(--mousa-sand-500)]"/><input value={query} onChange={e=>{setQuery(e.target.value);void load(e.target.value);}} placeholder={ar?'ابحث عن عضو بالاسم…':'Search members by name…'} className="w-full bg-transparent text-sm outline-none"/></label>
@@ -128,7 +165,7 @@ export function FeedPeopleDirectory({ lang, initialProfileId }: { lang: 'en'|'ar
           {error && <p role="alert" className="px-4 pt-3 text-xs font-bold text-red-600">{error}</p>}
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {selected ? <div className="mx-auto max-w-md space-y-5 py-3 text-center">
-              <button type="button" onClick={()=>setSelected(null)} className="mb-2 text-xs font-bold text-[var(--mousa-teal-deep)]">← {ar?'كل الأعضاء':'All members'}</button>
+              <button type="button" onClick={backWithinDirectory} className="mb-2 text-xs font-bold text-[var(--mousa-teal-deep)]">← {ar?'كل الأعضاء':'All members'}</button>
                <div className="h-24 w-full rounded-2xl shadow-inner" style={{ background: bannerBackground(selected) }}>
                 <div className="flex h-full items-end justify-end p-3"><span className="rounded-full bg-black/30 px-3 py-1 text-[9px] font-black tracking-[.18em] text-white">{ar?'ملف أنبا موسى':'ANBA MOUSA MEMBER'}</span></div>
               </div>
@@ -152,7 +189,7 @@ export function FeedPeopleDirectory({ lang, initialProfileId }: { lang: 'en'|'ar
               <p className="text-[10px] leading-relaxed text-[var(--mousa-sand-500)]">{ar?'المعروض هنا معلومات عامة فقط. بيانات الحساب والعائلة ووسائل الاتصال تظل خاصة.':'Only public community details appear here. Account, family and contact information remain private.'}</p>
             </div> : loading ? <div className="grid min-h-48 place-items-center"><Loader2 className="animate-spin text-[var(--mousa-teal-deep)]" size={28}/></div> : people.length===0 ? <div className="grid min-h-48 place-items-center text-sm text-[var(--mousa-sand-500)]">{ar?'لا يوجد أعضاء مطابقون للبحث.':'No members match your search.'}</div> : <div className="grid gap-3 sm:grid-cols-2">
               {people.map(person=><article key={person.user_id} className="flex min-w-0 items-center gap-3 rounded-2xl border border-[var(--mousa-border-sand)] bg-white/70 p-3 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md dark:bg-stone-900">
-                <button type="button" onClick={()=>setSelected(person)} className="flex min-w-0 flex-1 items-center gap-3 text-start">
+                <button type="button" onClick={()=>openProfile(person)} className="flex min-w-0 flex-1 items-center gap-3 text-start">
                   <img src={person.avatar_url || '/icons/icon-192.png'} alt="" className="h-12 w-12 shrink-0 rounded-xl border border-[var(--mousa-border-sand)] bg-[var(--mousa-sand-100)] object-cover"/>
                   <span className="min-w-0"><strong className="block truncate text-sm text-[var(--mousa-teal-deep)] dark:text-white">{person.display_name}</strong><span className="mt-0.5 block text-[11px] text-[var(--mousa-sand-500)]">{roleLabel(person.role,ar)}</span><span className="mt-1 block text-[10px] text-[var(--mousa-sand-500)]">{person.followers_count} {ar?'متابع':'followers'}</span></span>
                 </button>
