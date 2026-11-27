@@ -139,7 +139,7 @@ export function TopBar({
           <button type="button" onClick={onBack || onHomeClick} aria-label={lang === 'ar' ? 'رجوع خطوة للخلف' : 'Go back one step'}
             title={lang === 'ar' ? 'رجوع' : 'Back'}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-[var(--navigation-text)] transition hover:bg-white/20 active:scale-95">
-            <ArrowLeft size={19}/>
+            <ArrowLeft size={19} className={lang === 'ar' ? 'rotate-180' : ''} />
           </button>
         )}
 
